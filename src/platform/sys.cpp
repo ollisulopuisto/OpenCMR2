@@ -322,6 +322,8 @@ const char s_defaultSettings[] =
     "; stretch_movies = 0\n"
     "; 1 = wait for the display's refresh, 0 = draw frames as soon as they are ready.\n"
     "; vsync = 1\n"
+    "; 1 = optional lingering world-space dry dirt/gravel clouds, bounded pool budget.\n"
+    "; dust_plume = 0\n"
     "; Renderer: sdl_gpu (Vulkan, Direct3D 12, Metal), opengl (OpenGL 3.3, for\n"
     "; older GPUs), or auto = SDL_GPU when the GPU has a driver for it.\n"
     "; graphics_api = auto\n"

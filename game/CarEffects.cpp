@@ -1,3 +1,5 @@
+#include "port/sys.h"
+#include "DustPlume.h"
 #include "WheelParticleEmission.h"
 #include "CarInfo.h"
 #include "FloatToInt.h"
@@ -1565,9 +1567,13 @@ void CarEffect_UpdateWheelSurfaceParticles(int car)
     int velZ;
 
     count = 0;
-    if (car >= 8)
+    if (car < 0 || car >= 8)
         return;
     pCar = Car_Get(car);
+    // One phase per effects update, not wall-clock: catch-up simulation calls
+    // must not all land on the same GetFrameTime()/20 phase.
+    static unsigned cloudPhase[8] = {};
+    unsigned phase = ++cloudPhase[car];
     for (wheel = 0; wheel < 4; wheel++) {
         snow = 0;
         surface = pCar->wheelSurfaceType[wheel];
@@ -1725,6 +1731,18 @@ void CarEffect_UpdateWheelSurfaceParticles(int car)
         // could never emit a particle in the lower speed band.
         count = WheelParticle_Count(Car_GetWheelSpeed(pCar, (BYTE)wheel, 0),
             pCar->cornerOnGround[wheel] != 0, water != 0 || emit != 0, (unsigned)rand());
+        // Opt-in dry dust, separate from chips/water/snow. Existing per-wheel
+        // contact/speed gating above supplies emission opportunity. Use a
+        // stable per-wheel cadence, no extra global RNG/physics state changes.
+        if (count > 0 && DustPlume_Surface(dirt, gravel, water, snow, ice) &&
+            Sys_GetOption("video.dust_plume", 0) != 0 &&
+            ((phase + (unsigned)wheel + (unsigned)car) % 3 == 0)) {
+            FixVector cloudWorld = g_trailPos[car][wheel];
+            FixVector cloudVelocity = {pCar->cornerVelocity[wheel].x/12, 0x800,
+                                       pCar->cornerVelocity[wheel].z/12};
+            DustPlume_Emit(&cloudWorld, &cloudVelocity, colour, g_trailLevel[car][wheel],
+                          (BYTE)pCar->pBodyNode->viewMask);
+        }
         FixVecLength(&pCar->cornerVelocity[wheel]);
         velY = pCar->cornerVelocity[wheel].y;
         velX = -(pCar->cornerVelocity[wheel].x / 4);
