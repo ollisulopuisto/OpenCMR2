@@ -176,6 +176,14 @@ struct GfxExecutor {
     // OpenCMR2: directional shadows. `type` 0=off, 1=on; `bias` (0..100)
     // is the depth bias in hundredths of a depth unit.
     virtual void SetShadows(int, int) {}
+    // OpenCMR2: lens/camera "grime" post-process effects, applied after the
+    // scene is rendered. `video.chromatic_aberration` (0..100) is the strength
+    // of color fringing toward screen edges. `video.vignette` (0..100) is how
+    // much the corners and edges darken. `video.film_grain` (0..100) adds a
+    // subtle noise overlay for grit. SDL_GPU only.
+    virtual void SetChromaticAberration(int) {}
+    virtual void SetVignette(int) {}
+    virtual void SetFilmGrain(int) {}
     // Runs the recorded commands; with present, shows the back buffer and
     // ends the frame (otherwise the next commands continue it).
     virtual void Execute(GfxFrame &frame, std::vector<GfxTexture *> &textures, GfxReadback &readback, bool present,

@@ -245,6 +245,13 @@ void Gfx_SetParticles(int type, int intensity);
 /* OpenCMR2: directional shadows. `type` 0=off, 1=on; `bias` (0..100) is the
    shadow depth bias. Takes effect at once. [video] video.shadows */
 void Gfx_SetShadows(int type, int bias);
+/* OpenCMR2: lens grime post-process effects, applied after the scene is
+   rendered. `video.chromatic_aberration` (0..100) is color-fringing strength
+   toward screen edges. `video.vignette` (0..100) darkens corners and edges.
+   `video.film_grain` (0..100) adds a subtle noise overlay. SDL_GPU only. */
+void Gfx_SetChromaticAberration(int strength);
+void Gfx_SetVignette(int strength);
+void Gfx_SetFilmGrain(int strength);
 /* OpenCMR2: whether the OpenGL 3.3 renderer is active (SDL_GPU otherwise).
    Bloom, motion blur, particles and shadows are SDL_GPU-only. */
 int Gfx_IsOpenGL(void);

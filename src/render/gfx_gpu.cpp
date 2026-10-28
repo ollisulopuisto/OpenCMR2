@@ -193,6 +193,7 @@ struct Executor : GfxExecutor {
     SDL_GPUShader *fsBrightPass = nullptr, *fsBlur = nullptr, *fsComposite = nullptr;
     SDL_GPUShader *vsParticle = nullptr, *fsParticle = nullptr;
     SDL_GPUShader *vsShadow = nullptr, *fsShadow = nullptr;
+    SDL_GPUShader *fsLensGrime = nullptr;
     SDL_GPUTexture *backColor = nullptr, *backDepth = nullptr;
     SDL_GPUTexture *backdrop = nullptr;    // the copy of backColor the distance fade reads
     SDL_GPUTexture *motionBlurPrevious = nullptr;  // the previous frame, for motion blur
@@ -234,6 +235,11 @@ struct Executor : GfxExecutor {
     int particleType = 0;
     int particleIntensity = 0;
     uint32_t particleLastTicks = 0;
+    // OpenCMR2: lens grime (chromatic aberration, vignette, film grain).
+    float chromaticAberration = 0;
+    float vignette = 0;
+    float filmGrain = 0;
+    SDL_GPUGraphicsPipeline *lensGrimePipeline = nullptr;
     // OpenCMR2: directional shadows. type 0=off, 1=on; bias in depth units.
     int shadowType = 0;
     float shadowBias = 0.0005f;
@@ -299,12 +305,14 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUShader(device, fsComposite);
         SDL_ReleaseGPUShader(device, vsParticle);
         SDL_ReleaseGPUShader(device, fsParticle);
+        SDL_ReleaseGPUShader(device, fsLensGrime);
         SDL_ReleaseGPUGraphicsPipeline(device, motionBlurPipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, bloomBrightPassPipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, bloomBlurPipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, bloomCompositePipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, particlePipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, shadowPipeline);
+        SDL_ReleaseGPUGraphicsPipeline(device, lensGrimePipeline);
         SDL_ReleaseGPUBuffer(device, particleVB);
         SDL_ReleaseGPUTexture(device, shadowMap);
         SDL_ReleaseGPUTexture(device, shadowDepth);
@@ -395,12 +403,13 @@ struct Executor : GfxExecutor {
         fsBrightPass = Shader(SHADER_CODE(brightpass_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
         fsBlur = Shader(SHADER_CODE(blur_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
         fsComposite = Shader(SHADER_CODE(composite_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1);
+        fsLensGrime = Shader(SHADER_CODE(lens_grime_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
         vsParticle = Shader(SHADER_CODE(particle_vert), SDL_GPU_SHADERSTAGE_VERTEX, 0, 1);
         fsParticle = Shader(SHADER_CODE(particle_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
         vsShadow = Shader(SHADER_CODE(shadow_vert), SDL_GPU_SHADERSTAGE_VERTEX, 0, 1);
         fsShadow = Shader(SHADER_CODE(shadow_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 0, 1);
         if (!vs3d || !vsTL || !fs || !vsClear || !fsClear || !vsMotionBlur || !fsMotionBlur ||
-            !fsBrightPass || !fsBlur || !fsComposite || !vsParticle || !fsParticle ||
+            !fsBrightPass || !fsBlur || !fsComposite || !fsLensGrime || !vsParticle || !fsParticle ||
             !vsShadow || !fsShadow)
             return false;
 
@@ -583,6 +592,22 @@ struct Executor : GfxExecutor {
             shadowDepth = CreateTexture(SDL_GPU_TEXTURETYPE_2D, depthFormat, 1024, 1024,
                                         1, 1, SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET);
         }
+    }
+
+    // OpenCMR2: lens grime post-process strength settings.
+    void SetChromaticAberration(int strength) override
+    {
+        chromaticAberration = strength < 0 ? 0 : strength > 100 ? 100 : strength;
+    }
+
+    void SetVignette(int strength) override
+    {
+        vignette = strength < 0 ? 0 : strength > 100 ? 100 : strength;
+    }
+
+    void SetFilmGrain(int strength) override
+    {
+        filmGrain = strength < 0 ? 0 : strength > 100 ? 100 : strength;
     }
 
     // ---- textures ----
@@ -1092,6 +1117,38 @@ struct Executor : GfxExecutor {
         if (shadowPipeline == NULL)
             Sys_Log("gfx: shadow pipeline: %s", SDL_GetError());
         return shadowPipeline;
+    }
+
+    // Full-screen lens grime pipeline: chromatic aberration, vignetting,
+    // film grain; reads the scene texture and writes the final frame.
+    SDL_GPUGraphicsPipeline *LensGrimePipeline()
+    {
+        if (lensGrimePipeline != nullptr)
+            return lensGrimePipeline;
+        SDL_GPUColorTargetDescription color = {};
+        color.format = colorFormat;
+        color.blend_state.enable_blend = false;
+        SDL_GPUGraphicsPipelineCreateInfo info = {};
+        info.vertex_shader = vsMotionBlur;
+        info.fragment_shader = fsLensGrime;
+        info.vertex_input_state.vertex_buffer_descriptions = nullptr;
+        info.vertex_input_state.num_vertex_buffers = 0;
+        info.vertex_input_state.vertex_attributes = nullptr;
+        info.vertex_input_state.num_vertex_attributes = 0;
+        info.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+        info.rasterizer_state.fill_mode = SDL_GPU_FILLMODE_FILL;
+        info.rasterizer_state.cull_mode = SDL_GPU_CULLMODE_NONE;
+        info.depth_stencil_state.enable_depth_test = false;
+        info.depth_stencil_state.enable_depth_write = false;
+        info.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_ALWAYS;
+        info.target_info.color_target_descriptions = &color;
+        info.target_info.num_color_targets = 1;
+        info.target_info.depth_stencil_format = depthFormat;
+        info.target_info.has_depth_stencil_target = true;
+        lensGrimePipeline = SDL_CreateGPUGraphicsPipeline(device, &info);
+        if (lensGrimePipeline == NULL)
+            Sys_Log("gfx: lens grime pipeline: %s", SDL_GetError());
+        return lensGrimePipeline;
     }
 
     // ---- particles ----
@@ -1963,6 +2020,22 @@ struct Executor : GfxExecutor {
             presentSource = output;
         } else if (!bloomEnabled) {
             motionBlurHasPrevious = false;
+        }
+
+        // OpenCMR2: lens grime — chromatic aberration, vignette, film grain —
+        // applied as a final full-screen pass before present.
+        if ((chromaticAberration > 0 || vignette > 0 || filmGrain > 0) &&
+            presentSource != NULL) {
+            float uniforms[3] = { chromaticAberration / 100.0f,
+                                  vignette / 100.0f,
+                                  filmGrain / 100.0f };
+            SDL_GPUTextureSamplerBinding bindings[2] = {
+                { presentSource, Sampler(GfxStageState()) },
+                { white2D, Sampler(GfxStageState()) },
+            };
+            PostProcessPass(cmd, LensGrimePipeline(), motionBlurTemp, bindings, 2,
+                            uniforms, sizeof(uniforms));
+            presentSource = motionBlurTemp;
         }
 
         if (vsync != presentModeVsync) {

@@ -422,6 +422,24 @@ extern "C" void Gfx_SetShadows(int type, int bias)
         s_executor->SetShadows(type, bias);
 }
 
+extern "C" void Gfx_SetChromaticAberration(int strength)
+{
+    if (s_executor != NULL)
+        s_executor->SetChromaticAberration(strength);
+}
+
+extern "C" void Gfx_SetVignette(int strength)
+{
+    if (s_executor != NULL)
+        s_executor->SetVignette(strength);
+}
+
+extern "C" void Gfx_SetFilmGrain(int strength)
+{
+    if (s_executor != NULL)
+        s_executor->SetFilmGrain(strength);
+}
+
 extern "C" int Gfx_IsOpenGL(void)
 {
     return ChooseBackend() == BACKEND_GL;

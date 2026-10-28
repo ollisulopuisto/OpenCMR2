@@ -4075,6 +4075,10 @@ void Race_PlayScrapeAndShakeCar(int view, int strength, int listener)
             // ([video] video.camera_effects).
             if (Sys_GetOption("video.camera_effects", 1) != 0)
                 g_lensDirt[view] = LensDirt_Accumulate(g_lensDirt[view], shake * 20);
+            // OpenCMR2: dirt on the windscreen from driving hard
+            // ([video] video.windscreen_dirt).
+            if (Sys_GetOption("video.windscreen_dirt", 40) != 0)
+                g_windscreenDirt[view] = WindscreenDirt_Accumulate(g_windscreenDirt[view], shake * 10);
         }
     }
 }
@@ -4656,6 +4660,17 @@ void Race_UpdateFrameEffects(int param_1)
     Particle_Interpolate(param_1);
     StageObject_InterpolateSecondaryRampRecords(param_1);
     Dash_Interpolate(param_1);
+    // OpenCMR2: windscreen dirt accumulates while driving; faster = more dirt.
+    if (Sys_GetOption("video.windscreen_dirt", 40) != 0) {
+        Car *pPlayer = Car_Get(0);
+        int speed = pPlayer->speed;
+        if (speed > 0x8000) {
+            int amount = FixMul(speed, 0x0800) >> 16;
+            if (amount < 1)
+                amount = 1;
+            g_windscreenDirt[0] = WindscreenDirt_Accumulate(g_windscreenDirt[0], amount);
+        }
+    }
     if ((BYTE)RallyData_IsChampionshipFinalStage()) {
         StageObject_UpdateDebris(param_1);
     }

@@ -2584,6 +2584,14 @@ void FrontendMenu_BuildAdvancedGraphicsOptions(void)
     // ([video] video.shadows).
     Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x15);
     Menu_GetItem(&g_menu0x0081cd78, 0x15)->text = (char *)"Shadows";
+    // OpenCMR2: windscreen wipers — sweep across the screen clearing dirt
+    // ([video] video.windscreen_wipers).
+    Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x16);
+    Menu_GetItem(&g_menu0x0081cd78, 0x16)->text = (char *)"Windscreen Wipers";
+    // OpenCMR2: windscreen dirt — grime builds up as you drive
+    // ([video] video.windscreen_dirt).
+    Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 101, 0, 0, 0, 0, 0x17);
+    Menu_GetItem(&g_menu0x0081cd78, 0x17)->text = (char *)"Windscreen Dirt";
     Menu_AddItemType1(&g_menu0x0081cd78, 0, 0x67, (MenuItemAction)FrontendMenu_ApplyAdvancedGraphicsOptions, 0xe);
     Menu_SetCallbacks(&g_menu0x0081cd78, FrontendMenu_EnterAdvancedGraphicsOptions, (MenuCallback)FrontendMenu_UpdateAdvancedGraphicsOptions, (MenuCallback)FrontendMenu_DrawAdvancedGraphicsOptions, NULL);
     Menu_ValidateCursor(&g_menu0x0081cd78, 0);

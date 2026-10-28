@@ -4001,6 +4001,10 @@ void FrontendMenu_EnterAdvancedGraphicsOptions(Menu *pMenu, int param)
     Menu_GetItem(pMenu, 0x13)->max = isOpenGL ? 0 : Sys_GetOption("video.bloom", 1) != 0 ? 1 : 0;
     Menu_GetItem(pMenu, 0x14)->max = isOpenGL ? 0 : Sys_GetOption("video.particles", 1);
     Menu_GetItem(pMenu, 0x15)->max = isOpenGL ? 0 : Sys_GetOption("video.shadows", 1) != 0 ? 1 : 0;
+    // OpenCMR2: windscreen wipers on by default.
+    Menu_GetItem(pMenu, 0x16)->max = Sys_GetOption("video.windscreen_wipers", 1) != 0 ? 1 : 0;
+    // OpenCMR2: windscreen dirt strength default 40.
+    Menu_GetItem(pMenu, 0x17)->max = Sys_GetOption("video.windscreen_dirt", 40);
     if (CGameInfo::GetPreviewMode() != 0) {
         Menu_GetItem(pMenu, 10)->max = 1;
         return;
@@ -4072,6 +4076,12 @@ void FrontendMenu_ApplyAdvancedGraphicsOptions(Menu *pMenu, int param)
     int shadows = isOpenGL ? 0 : Menu_GetItem(pMenu, 0x15)->max;
     Sys_SetOption("video.shadows", shadows);
     Gfx_SetShadows(shadows, shadows != 0 ? 5 : 0);
+    // OpenCMR2: windscreen wipers on/off.
+    int wipers = Menu_GetItem(pMenu, 0x16)->max;
+    Sys_SetOption("video.windscreen_wipers", wipers);
+    // OpenCMR2: windscreen dirt strength (0..100).
+    int dirt = Menu_GetItem(pMenu, 0x17)->max;
+    Sys_SetOption("video.windscreen_dirt", dirt);
 }
 
 // FUNCTION: CMR2 0x004f1e40

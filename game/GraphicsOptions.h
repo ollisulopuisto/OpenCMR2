@@ -267,6 +267,80 @@ inline int AnimTexture_Index(int baseTexture, int frame)
     return baseTexture + frame;
 }
 
+// OpenCMR2: dirt on the windscreen. A level of 0 is a clean windscreen; 255 is
+// completely obscured. Driving in rain/dust/mud adds dirt, wipers clear it.
+// [video] video.windscreen_dirt gates accumulation; video.windscreen_wipers
+// gates clearing.
+#define WINDSCREEN_DIRT_MAX 255u
+
+// Adds `amount` of dirt to `level`, clamping at WINDSCREEN_DIRT_MAX.
+inline unsigned int WindscreenDirt_Accumulate(unsigned int level, int amount)
+{
+    unsigned int sum = level + (unsigned int)amount;
+    return sum > WINDSCREEN_DIRT_MAX ? WINDSCREEN_DIRT_MAX : sum;
+}
+
+// Decays `level` by `amount` per frame, flooring at 0.
+inline unsigned int WindscreenDirt_Decay(unsigned int level, int amount)
+{
+    return level < (unsigned int)amount ? 0 : level - (unsigned int)amount;
+}
+
+// Whether the dirt level is worth drawing (any non-zero level shows).
+inline bool WindscreenDirt_ShouldDraw(unsigned int level)
+{
+    return level != 0;
+}
+
+// Per-view dirt-on-the-windscreen levels, defined in RallyData.cpp.
+extern unsigned int g_windscreenDirt[8];
+
+// OpenCMR2: windscreen wipers. `video.windscreen_wipers` turns them on/off.
+// The wiper sweeps back and forth across the screen, clearing dirt as it
+// passes. State is per-view, kept in a global table.
+#define WIPER_SWEEP_TIME 60 // frames for one full sweep (about 1 second at 60 fps)
+
+// Per-view wiper state.
+struct WindscreenWiper {
+    uint8_t active;    // 1 if wipers are on
+    uint8_t phase;     // sweep phase (0..WIPER_SWEEP_TIME-1)
+    uint8_t dir;       // sweep direction: 0 = left-to-right, 1 = right-to-left
+};
+
+// Table of per-view wiper state.
+extern struct WindscreenWiper g_windscreenWipers[8];
+
+// Returns the wiper sweep position (0.0 = left edge, 1.0 = right edge) for
+// the given view, advancing the phase by one tick.
+inline float WindscreenWiper_Sweep(int view)
+{
+    struct WindscreenWiper *w = &g_windscreenWipers[view];
+    if (!w->active)
+        return -1.0f; // wipers off: no sweep
+    w->phase++;
+    if (w->phase >= WIPER_SWEEP_TIME) {
+        w->phase = 0;
+        w->dir = w->dir ? 0 : 1; // reverse direction at end of sweep
+    }
+    float t = (float)w->phase / (float)(WIPER_SWEEP_TIME - 1);
+    return w->dir ? t : 1.0f - t;
+}
+
+// Clears dirt under the wiper sweep at the given position (0..1 across screen).
+inline void WindscreenWiper_ClearDirt(int view, float pos)
+{
+    // The wiper is a vertical band about 6% of screen width wide.
+    float band = 0.06f;
+    // Dirt is cleared in a circular/oval region centered on the sweep.
+    // We clear a fixed amount proportional to the dirt level.
+    unsigned int *level = &g_windscreenDirt[view];
+    if (*level == 0)
+        return;
+    // Clear more when dirt is heavy.
+    unsigned int clear = (*level > 128) ? 15 : (*level > 64) ? 10 : 5;
+    *level = *level < clear ? 0 : *level - clear;
+}
+
 // OpenCMR2: motion blur between frames. `video.motion_blur` is 0 (off) to
 // MOTION_BLUR_MAX; the mix factor is how much of the previous frame to blend
 // into the current one. A value of 0 disables it; the useful range is small

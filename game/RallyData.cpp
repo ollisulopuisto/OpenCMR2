@@ -6017,6 +6017,13 @@ void RallyData_DrawProjectedChallengeScene(int param1, int param2)
 // Accumulates on impacts, decays each frame; stages start clean.
 unsigned int g_lensDirt[8];
 
+// OpenCMR2: per-view dirt-on-the-windscreen level (0 = clean, 255 = obscured).
+// Accumulates from driving in rain/dust/mud; cleared by wipers.
+unsigned int g_windscreenDirt[8];
+
+// OpenCMR2: per-view windscreen wiper state.
+struct WindscreenWiper g_windscreenWipers[8];
+
 // Draws the dirt overlay (dark tint, alpha from dirt level) and the sun lens
 // flare (additive bright sprite at screen centre, scaled by sun visibility)
 // over the finished frame.
@@ -6035,6 +6042,38 @@ static void CameraEffects_DrawOverlays(short *pRect)
         Sprite_FillRect(&g_pGraphics->field309_0x150, rect, colour, 1);
         // Decay each frame so dirt clears after a few seconds.
         g_lensDirt[view] = LensDirt_Decay(g_lensDirt[view], 4);
+    }
+
+    // ---- dirt on the windscreen --------------------------------------------
+    for (int view = 0; view < 8; view++) {
+        if (g_windscreenDirt[view] == 0)
+            continue;
+        BYTE colour[4] = { 0x30, 0x28, 0x20, (BYTE)g_windscreenDirt[view] };
+        short rect[4] = { 0, 0, (short)resX, (short)resY };
+        Sprite_FillRect(&g_pGraphics->field309_0x150, rect, colour, 1);
+        // Decay slowly so windscreen dirt lingers longer than lens dirt.
+        g_windscreenDirt[view] = WindscreenDirt_Decay(g_windscreenDirt[view], 2);
+    }
+
+    // ---- windscreen wipers --------------------------------------------------
+    if (Sys_GetOption("video.windscreen_wipers", 1) != 0) {
+        for (int view = 0; view < 8; view++) {
+            float pos = WindscreenWiper_Sweep(view);
+            if (pos < 0.0f)
+                continue;
+            // Draw the wiper as a thin vertical line at the sweep position.
+            int x = (int)(pos * (float)resX);
+            int w = 3;
+            if (x < 0)
+                x = 0;
+            if (x + w > resX)
+                x = resX - w;
+            BYTE colour[4] = { 0xff, 0xff, 0xff, 0xc0 };
+            short rect[4] = { (short)x, 0, (short)w, (short)resY };
+            Sprite_FillRect(&g_pGraphics->field309_0x150, rect, colour, 1);
+            // The wiper clears dirt in its path.
+            WindscreenWiper_ClearDirt(view, pos);
+        }
     }
 
     // ---- lens flare -------------------------------------------------------

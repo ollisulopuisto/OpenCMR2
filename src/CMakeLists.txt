@@ -124,7 +124,7 @@ if(OPENCMR2_SHADERS_MSL OR OPENCMR2_RENDERER_GL)
 endif()
 
 set(SHADER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/render/shaders)
-set(SHADER_SOURCES fixed3d.vert fixedtl.vert fixed.frag clear.vert clear.frag motionblur.vert motionblur.frag brightpass.frag blur.frag composite.frag particle.vert particle.frag shadow.vert shadow.frag)
+set(SHADER_SOURCES fixed3d.vert fixedtl.vert fixed.frag clear.vert clear.frag motionblur.vert motionblur.frag brightpass.frag blur.frag composite.frag particle.vert particle.frag shadow.vert shadow.frag lens_grime.frag)
 set(SHADER_FILES)
 foreach(shader IN LISTS SHADER_SOURCES)
     set(output ${CMAKE_CURRENT_BINARY_DIR}/shaders/${shader}.spv)
