@@ -223,3 +223,18 @@ if(OPENCMR2_SHADER_PIXEL_TESTS)
     add_test(NAME spatial_aa_pixels COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/spatial_aa_shader.py)
 endif()
+
+# Compile the standalone MetalFX probe on existing Mac CI. This does not add
+# MetalFX to the game or execute a GPU probe on hosted runners.
+if(APPLE AND NOT ANDROID)
+    enable_language(OBJCXX)
+    find_library(OPENCMR2_METALFX_FRAMEWORK MetalFX)
+    if(OPENCMR2_METALFX_FRAMEWORK)
+        add_executable(metalfx_spatial_probe ../tools/metalfx/spatial_probe.mm)
+        target_compile_options(metalfx_spatial_probe PRIVATE -fobjc-arc)
+        target_link_libraries(metalfx_spatial_probe PRIVATE
+            "-framework Foundation" "-framework Metal" ${OPENCMR2_METALFX_FRAMEWORK})
+    else()
+        message(WARNING "MetalFX SDK unavailable: native spatial probe is NOT compiled")
+    endif()
+endif()

@@ -33,5 +33,7 @@ Temporal remains separate: motion vectors, jitter, history reset and HUD separat
 Primary API examples and placement advice:
 https://developer.apple.com/videos/play/wwdc2022/10103/
 
-The standalone probe deliberately does not change CMake, workflows, minimum game
-OS, signing, runner settings or the default game render path.
+Existing Mac builds now compile this standalone target when the SDK provides
+MetalFX, without running it or linking MetalFX into the game. The normal game
+minimum OS, workflows, signing, runner settings and default rendering stay
+unchanged. A missing SDK produces an explicit warning, not a probe pass.
