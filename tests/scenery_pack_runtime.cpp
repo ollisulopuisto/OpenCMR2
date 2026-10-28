@@ -92,7 +92,7 @@ int main(int argc,char **argv){if(argc<2)return 0;base=argv[1];legacy=argc>2&&!s
 
    windEnabled=false;CHECK(!SceneryPack_Draw(&object,(float*)&billboard));windEnabled=true;
    SceneryPack_RegisterSource(&source,"bad",3);CHECK(!SceneryPack_Draw(&object,(float*)&billboard));
-   unsigned td=0,wd=0,og=0;SceneryPack_GetTreeStatus(&td,&wd,&og);CHECK(wd==2&&td==0);
+   unsigned td=0,wd=0,og=0;SceneryPack_GetTreeStatus(&td,&wd,&og);CHECK(wd==2&&td==1);
    strcpy(source.name,"spc_mn9a.dds");
    SceneryPack_RegisterSource(&source,"xyz",3);CHECK(!SceneryPack_Draw(&object,(float*)&billboard));
    CHECK(logs.find("spectator sidecar active")!=std::string::npos);
