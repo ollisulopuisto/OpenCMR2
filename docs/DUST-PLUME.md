@@ -1,6 +1,8 @@
 # Dry dirt/gravel plume, first visual implementation
 
-Enable `[video] dust_plume = 1`; default0 preserves current rendering.
+Dry dirt/gravel clouds now default on, as explicitly requested. Set
+`[video] dust_plume = 0` to disable the added clouds. Existing explicit values
+are respected; this changes fallback defaults, not saved settings.
 Uses the existing smoke texture and billboard/depth-tested/no-depth-write path.
 No downloaded artwork, scene collision changes or volumetric simulation.
 
@@ -17,7 +19,7 @@ Bounded to96clouds inside the existing400particle pool, leaving64free slots
 before cloud emission can occur. No pool growth or evicting original particles
 for clouds. Lower quality modes naturally have a smaller budget. A private RNG
 for added-cloud spawn spread avoids advancing the game's global random stream.
-The plume is opt-in because its actual appearance/overdraw cost is unmeasured.
+Its actual appearance/overdraw cost is still unmeasured on native Mac.
 
 ## Evidence and remaining acceptance
 
@@ -32,13 +34,14 @@ terrain, depth intersections, billboard transparency ordering, near-camera
 overdraw, camera cuts/replays, snow separation and M2Air frame time. There is no
 soft-depth intersection, light scattering, volumetric shadow, GPU simulation or
 FPS claim. Existing billboard sorting/material limits remain. Keep this draft
-opt-in until a real game capture confirms density/placement and acceptable cost.
+under visual review until a real game capture confirms density/placement and acceptable cost.
 
 ## Experimental world-density GPU body
 
 `[video] dust_plume=1` plus `dust_volume=1` adds a world-space ray-integrated
-body behind the original sheet/debris fallback. Both default0, no default
-change. This is an early opt-in prototype, not a finished correction of all
+body behind the original sheet/debris fallback. Both now default1 by explicit user request. Existing explicit0 settings are
+not overwritten. Set dust_volume=0 to retain ordinary sheets without the GPU
+body, or dust_plume=0 to stop new dry-cloud emission. This is an early prototype, not a finished correction of all
 camera-facing dust: the ordinary billboards still coexist. Sixteen active
 lobes maximum,32steps, depth-clipped, fixed world-space procedural noise.
 The new path snapshots the camera at particle draw submission, executes before
@@ -57,5 +60,5 @@ worst-case samples can still be expensive. M2Air acceptance remains needed,
 along with lobe
 selection by camera relevance instead of first16pool entries, replay/reset,
 viewport orientation and native projection/terrain/HUD integration still need
-acceptance. Keep defaultOFF. Tests are software-GPU pixels and CPU matrix
+acceptance. Native performance remains unverified despite the requested default change. Tests are software-GPU pixels and CPU matrix
 contracts, not native Metal gameplay or a frame-time result.

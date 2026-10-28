@@ -1731,11 +1731,11 @@ void CarEffect_UpdateWheelSurfaceParticles(int car)
         // could never emit a particle in the lower speed band.
         count = WheelParticle_Count(Car_GetWheelSpeed(pCar, (BYTE)wheel, 0),
             pCar->cornerOnGround[wheel] != 0, water != 0 || emit != 0, (unsigned)rand());
-        // Opt-in dry dust, separate from chips/water/snow. Existing per-wheel
+        // Default-on dry dust, separate from chips/water/snow. Explicit0 opts out. Existing per-wheel
         // contact/speed gating above supplies emission opportunity. Use a
         // stable per-wheel cadence, no extra global RNG/physics state changes.
         if (count > 0 && DustPlume_Surface(dirt, gravel, water, snow, ice) &&
-            Sys_GetOption("video.dust_plume", 0) != 0 &&
+            Sys_GetOption("video.dust_plume", 1) != 0 &&
             ((phase + (unsigned)wheel + (unsigned)car) % 3 == 0)) {
             FixVector cloudWorld = g_trailPos[car][wheel];
             FixVector cloudVelocity = {pCar->cornerVelocity[wheel].x/12, 0x800,

@@ -12,3 +12,11 @@ assert 'if (!color.texture || !depth.texture) return nullptr' in b
 sh=s[s.index('if (shadowType != 0 && shadowMap != NULL'):s.index('for (size_t i = 0; i < frame.commands.size(); i++)')]
 assert 'depth.texture = shadowDepth' in sh
 print('all render-pass attachment sites audited; native Metal acceptance remains open')
+
+# Default changes must respect saved choices, not set/overwrite them.
+root=Path(__file__).resolve().parents[1]
+car=(root/'game/CarEffects.cpp').read_text()
+graphics=(root/'game/Graphics.cpp').read_text()
+assert 'Sys_GetOption("video.dust_plume", 1)' in car
+assert 'Sys_GetOption("video.dust_volume",1)' in graphics
+assert 'Sys_SetOption("video.dust_' not in car+graphics
