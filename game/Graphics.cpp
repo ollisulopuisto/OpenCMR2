@@ -5564,7 +5564,7 @@ void Particle_DrawAll(SceneNode *pCamera, BYTE view)
 
     def.flags = 0;
     GfxDustLobe lobes[16]={};int lobeCount=0;
-    bool volume=Sys_GetOption("video.dust_volume",0)!=0;
+    bool volume=Sys_GetOption("video.dust_volume",1)!=0;
     mask = 1 << view;
     if (g_particleCount > 0) {
         pb = (BYTE *)g_particles + offsetof(Particle, field0x55);
