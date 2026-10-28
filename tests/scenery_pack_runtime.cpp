@@ -41,11 +41,11 @@ GfxExecutor *Gfx_CreateGpuExecutor(){return new Capture;}
 int main(int argc,char **argv){if(argc<2)return 0;base=argv[1];CHECK(Gfx_SetVideoMode(640,480,FALSE));
  D3DTextureManager manager={};CGraphics::m_pTextureManager=&manager;CGraphics::m_textureCount=1;
  Texture source={};strcpy(source.name,"C:\\textures\\TRE_MD1.TGA");GenericFile archive={};source.pArchive=&archive;manager.textureBuffer[0]=&source;
- MeshTriangle triangle={};MeshVertexF verts[3]={};verts[1].y=2;Mesh mesh={};mesh.flags=2;mesh.pTriangles=&triangle;mesh.triangleCount=1;mesh.pVertexData=(DWORD*)verts;mesh.field_0x10=3;
+ MeshTriangle triangle={};MeshVertexF verts[3]={};verts[1].y=2;verts[2].x=1;verts[0].textureCoordinates[0][1]=1;verts[2].textureCoordinates[0][0]=1;verts[2].textureCoordinates[0][1]=1;Mesh mesh={};mesh.flags=2;mesh.pTriangles=&triangle;mesh.triangleCount=1;mesh.pVertexData=(DWORD*)verts;mesh.field_0x10=3;
  StageObject object={};object.pMesh=&mesh;object.matrix.right.x=object.matrix.up.y=object.matrix.forward.z=65536;object.matrix.position.x=3*65536;
  GfxMatrix billboard={};billboard._11=billboard._22=billboard._33=billboard._44=1;billboard._41=99;
  CHECK(!SceneryPack_Draw(&object,(float*)&billboard));SceneryPack_RegisterArchive(&archive,"DATA/FRAHIT.BFL");
- CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(draws==2);CHECK(world._41==3&&world._11==2);CHECK(mesh.flags==2&&object.pMesh==&mesh);
+ CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(draws==2);CHECK(world._41==3&&world._11==1);CHECK(mesh.flags==2&&object.pMesh==&mesh);
  strcpy(source.name,"spc_mn9a.dds");draws=0;CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(draws==1&&world._41==99);auto first=bound;
  for(int i=0;i<10;i++)CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(bound==first);
  for(int i=0;i<5;i++)SceneryPack_Advance(65536);CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(bound!=first);

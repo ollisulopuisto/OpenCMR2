@@ -344,3 +344,6 @@ add_executable(dust_volume_recording_test dust_volume_recording.cpp
 target_include_directories(dust_volume_recording_test PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/game)
 target_link_libraries(dust_volume_recording_test PRIVATE SDL3::SDL3)
 add_test(NAME dust_volume_recording COMMAND dust_volume_recording_test)
+add_executable(scenery_source_fit_test scenery_source_fit.cpp)
+target_include_directories(scenery_source_fit_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src)
+add_test(NAME scenery_source_fit COMMAND scenery_source_fit_test)
