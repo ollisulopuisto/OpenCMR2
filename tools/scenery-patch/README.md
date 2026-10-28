@@ -18,8 +18,8 @@ Use Python 3.10+ and `uv` in the checked-out source directory:
 ```sh
 uv venv tools/scenery-patch/.venv --python 3.12
 uv pip install --python tools/scenery-patch/.venv/bin/python -r tools/scenery-patch/requirements.txt
-uv run --no-project --python tools/scenery-patch/.venv/bin/python tools/scenery-patch/convert.py --input-dir /path/to/owned/game-data --output-dir /path/to/private/scenery-pack --check-only
-uv run --no-project --python tools/scenery-patch/.venv/bin/python tools/scenery-patch/convert.py --input-dir /path/to/owned/game-data --output-dir /path/to/private/scenery-pack
+uv run --no-project --python tools/scenery-patch/.venv/bin/python tools/scenery-patch/convert.py --input-dir /path/to/owned/game-data --output-dir /path/to/private/user-dir/scenery-pack --check-only
+uv run --no-project --python tools/scenery-patch/.venv/bin/python tools/scenery-patch/convert.py --input-dir /path/to/owned/game-data --output-dir /path/to/private/user-dir/scenery-pack
 ```
 
 `uv pip` installs dependencies into this local environment. Dependency install
@@ -42,11 +42,25 @@ fixed. `ticks=5` is interpreted by the separate engine loader, not render FPS.
 
 ## Use and undo
 
-Use the external-pack loader from OpenCMR2 PR18. In the existing `[video]`
-section set `scenery_pack=/path/to/private/scenery-pack`; the engine option is
-`video.scenery_pack`. Do not overwrite original game data. No pack is installed
-automatically. To undo, disable `scenery_overrides` or remove the separate pack
-and its configuration. Keep generated artwork out of Git and public releases.
+The loader from PR18 is merged into this fork. No manual `git apply` is needed
+when building current `main`. Generate into `scenery-pack` inside a separate
+private user directory, outside the original game installation. Launch with:
+
+```sh
+./build/macos/src/opencmr2 --data /path/to/owned/game-data --user-dir /path/to/private/user-dir
+```
+
+The loader's default relative `scenery-pack` path is found under that user
+directory. No INI change is needed for a new profile. Do not set an absolute
+`scenery_pack` path: game-file reads resolve relative to the user/data roots,
+not arbitrary absolute filesystem paths. If changing the relative folder name,
+use `[video] scenery_pack=relative-folder-name` in that profile's INI.
+
+A separate user directory isolates this test's saves/settings/logs. Existing
+settings and saves are left untouched, not copied into the new profile. Do not
+overwrite original game data. To undo, stop using the separate profile or set
+`scenery_overrides=0` in its existing `[video]` section. Keep generated artwork
+out of Git and public releases.
 
 The original conversion recipe was privately checked against four supplied
 archives. This source revision also tests missing, corrupt and duplicate inputs,
