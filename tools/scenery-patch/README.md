@@ -54,26 +54,42 @@ working spectators.
 
 ## Use and undo
 
-The base loader from PR18 is merged into this fork; this tree recipe also
-needs PR27's source-fit runtime. No manual `git apply` is needed
-when building current `main`. Generate into `scenery-pack` inside a separate
-private user directory, outside the original game installation. Launch with:
+Build current `main`; the source-fit and separate read-only asset-root loaders
+are merged. Generate into a NEW folder outside the original game installation.
+Do not overwrite a previous pack. For example, after the setup commands above:
 
 ```sh
-./build/macos/src/opencmr2 --data /path/to/owned/game-data --user-dir /path/to/private/user-dir
+uv run --no-project --python tools/scenery-patch/.venv/bin/python tools/scenery-patch/convert.py --input-dir "/path/to/owned/game-data" --output-dir "/path/to/private-assets/scenery-pack-sourcefit-v1" --tree-geometry crossed --check-only
+uv run --no-project --python tools/scenery-patch/.venv/bin/python tools/scenery-patch/convert.py --input-dir "/path/to/owned/game-data" --output-dir "/path/to/private-assets/scenery-pack-sourcefit-v1" --tree-geometry crossed
+./build/macos/src/opencmr2 --data "/path/to/owned/game-data" --scenery-dir "/path/to/private-assets/scenery-pack-sourcefit-v1"
 ```
 
-The loader's default relative `scenery-pack` path is found under that user
-directory. No INI change is needed for a new profile. Do not set an absolute
-`scenery_pack` path: game-file reads resolve relative to the user/data roots,
-not arbitrary absolute filesystem paths. If changing the relative folder name,
-use `[video] scenery_pack=relative-folder-name` in that profile's INI.
+Replace these example paths with your own. Omit `--tree-geometry crossed` for
+the default shell experiment. Neither option is native-accepted. The new folder
+must contain `manifest.tsv` directly, not another nested `scenery-pack` folder.
+Do NOT add `--user-dir` to load artwork: it selects a different driver/save and
+settings profile. `--scenery-dir` only reads assets and keeps the default
+profile, progress, settings and logs where they already are. It does not copy,
+move, migrate or overwrite anything. A previously chosen explicit `--user-dir`
+can stay only when you intentionally want that profile.
 
-A separate user directory isolates this test's saves/settings/logs. Existing
-settings and saves are left untouched, not copied into the new profile. Do not
-overwrite original game data. To undo, stop using the separate profile or set
-`scenery_overrides=0` in its existing `[video]` section. Keep generated artwork
-out of Git and public releases.
+The earlier pack had112entries (64trees+48spectators). This recipe produces51
+(3experimental trees+48spectators). Headerless old tree OBJ files are rejected
+on purpose; adding a header by hand cannot repair their geometry. Regenerate
+from owned originals into the new folder. The existing pack remains usable
+for its spectators, but it is not compatible tree geometry.
+
+A parsed manifest is not proof of an active tree. Check stage-run logs for
+`tree sidecar active (source-fitted successful override draw)`. Spectators have
+a separate success line. The loader names rejected archive/source/asset and
+reason, such as missing source-canvas header, dimensions, invalid source card,
+or texture preparation. Cropped/nonplanar cards deliberately stay original,
+so even a valid3mapping pack will not replace every placement.
+
+To undo, launch without `--scenery-dir` (or select the previous folder). Existing
+relative-pack settings can still load another pack; `scenery_overrides=0`
+disables all overrides if needed. Do not change save roots as an undo step.
+Keep generated artwork out of Git and public releases.
 
 Source hashes originate in four privately supplied original archives.
 The3 deterministic tree candidates were offscreen-GPU checked from their
