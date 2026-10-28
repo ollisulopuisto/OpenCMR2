@@ -237,6 +237,68 @@ EXPANDED_LIMBS = {'spc_mn11a': {'angles': [0, -7, -14, -7],
                         [117, 42],
                         [111, 38],
                         [105, 38]]}}
+FINLAND_LIMBS = {'spc_ma02': {'angles': [0, -7, -14, -7],
+              'pivot': [115, 43],
+              'polygon': [[113, 41],
+                          [118, 43],
+                          [119, 54],
+                          [118, 66],
+                          [116, 78],
+                          [111, 77],
+                          [112, 67],
+                          [113, 55]]},
+ 'spc_ma05': {'angles': [0, 7, 14, 7],
+              'pivot': [13, 42],
+              'polygon': [[11, 40],
+                          [16, 41],
+                          [16, 49],
+                          [15, 58],
+                          [15, 64],
+                          [11, 66],
+                          [8, 63],
+                          [9, 55],
+                          [10, 47]]},
+ 'spc_ma07': {'angles': [0, 7, 14, 7],
+              'pivot': [12, 43],
+              'polygon': [[8, 41],
+                          [15, 41],
+                          [15, 51],
+                          [16, 61],
+                          [15, 71],
+                          [10, 72],
+                          [8, 66],
+                          [8, 55]]},
+ 'spc_ma08': {'angles': [0, -7, -14, -7],
+              'pivot': [116, 44],
+              'polygon': [[114, 42],
+                          [119, 43],
+                          [120, 51],
+                          [119, 61],
+                          [117, 68],
+                          [113, 67],
+                          [114, 59],
+                          [114, 50]]},
+ 'spc_ma11': {'angles': [0, 7, 14, 7],
+              'pivot': [11, 47],
+              'polygon': [[9, 47],
+                          [13, 45],
+                          [18, 48],
+                          [23, 49],
+                          [25, 52],
+                          [21, 55],
+                          [15, 53],
+                          [10, 51]]},
+ 'spc_ma12': {'angles': [0, -7, -14, -7],
+              'pivot': [120, 37],
+              'polygon': [[117, 35],
+                          [122, 36],
+                          [124, 43],
+                          [124, 49],
+                          [120, 53],
+                          [116, 51],
+                          [118, 46],
+                          [117, 41]]}}
+FOREGROUND_LIMBS.update(FINLAND_LIMBS)
 FOREGROUND_LIMBS.update(EXPANDED_LIMBS)
 def foreground_limb_poses(src,name):
  original_size=src.size
@@ -275,7 +337,7 @@ def foreground_limb_poses(src,name):
 def spectator(a,rel):
  p=root/rel;p.mkdir(parents=True,exist_ok=True);src=Image.open(a['path']).convert('RGBA');frames=[]
  name=Path(a.get('texture','')).stem
- if a.get('archive') in ('frahit.bfl','fralot.bfl') and (name in FOREGROUND_LIMBS or name=='spc_mn9a'):
+ if a.get('archive') in ('frahit.bfl','fralot.bfl','finhit.bfl','finlot.bfl') and (name in FOREGROUND_LIMBS or name=='spc_mn9a'):
   for i,pose in enumerate(foreground_limb_poses(src,name)):
    path=p/f'frame-{i:02}.tga';pose.save(path,compression=None);frames.append(str(rel/path.name))
   return frames
