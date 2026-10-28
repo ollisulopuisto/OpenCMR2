@@ -1,3 +1,4 @@
+#include "DustPlume.h"
 #include "GraphicsOptions.h"
 #include "port/sys.h"
 #include "port/vector_sprite.h"
@@ -5649,10 +5650,18 @@ void Particle_Spawn(int typeIndex, FixVector *pSource, FixVector *pPosition,
     int randomY;
     int randomZ;
     BYTE directionMask = 1;
+    // Extra cosmetic clouds must not consume the gameplay/global rand stream.
+    static unsigned cloudSeed = 0x5a17d93u;
+    auto random = [&]() -> int {
+        if (typeIndex != DUST_PLUME_TYPE) return rand();
+        cloudSeed = cloudSeed * 1664525u + 1013904223u;
+        return (int)((cloudSeed >> 1) % ((unsigned)RAND_MAX + 1u));
+    };
 
     if (typeIndex >= 0 && typeIndex < g_particleTypeCount)
         pType = &g_particleTypes[typeIndex];
-    if ((pType->flags & directionMask) == 0)
+    if (pType == NULL || g_particles == NULL || g_particleCount <= 0 ||
+        (pType->flags & directionMask) == 0)
         return;
     hasBasis = false;
 
@@ -5744,9 +5753,9 @@ void Particle_Spawn(int typeIndex, FixVector *pSource, FixVector *pPosition,
 
 particleFound:
 
-    randomX = -0x8000 - (int)FTOI(__int64, X87S_MUL(X87S_MUL(X87S_FILD(float, rand()), g_oneOverRandMax), g_minus65536));
-    randomY = -0x8000 - (int)FTOI(__int64, X87S_MUL(X87S_MUL(X87S_FILD(float, rand()), g_oneOverRandMax), g_minus65536));
-    randomZ = -0x8000 - (int)FTOI(__int64, X87S_MUL(X87S_MUL(X87S_FILD(float, rand()), g_oneOverRandMax), g_minus65536));
+    randomX = -0x8000 - (int)FTOI(__int64, X87S_MUL(X87S_MUL(X87S_FILD(float, random()), g_oneOverRandMax), g_minus65536));
+    randomY = -0x8000 - (int)FTOI(__int64, X87S_MUL(X87S_MUL(X87S_FILD(float, random()), g_oneOverRandMax), g_minus65536));
+    randomZ = -0x8000 - (int)FTOI(__int64, X87S_MUL(X87S_MUL(X87S_FILD(float, random()), g_oneOverRandMax), g_minus65536));
 
     pParticle->position.x = pPosition->x;
     pParticle->position.y = pPosition->y;
@@ -5801,7 +5810,7 @@ particleFound:
     }
     if ((pType->flags & 0x10) != 0) {
         int sizeVariation = pType->sizeVariation;
-        int variation = (int)FTOI(__int64, X87S_MUL(X87S_MUL(X87S_FILD(float, rand()), g_oneOverRandMax), CGraphics::m_65536));
+        int variation = (int)FTOI(__int64, X87S_MUL(X87S_MUL(X87S_FILD(float, random()), g_oneOverRandMax), CGraphics::m_65536));
         pParticle->size = pType->size + FixMul(sizeVariation, variation);
     } else {
         pParticle->size = pType->size;
@@ -6969,3 +6978,21 @@ void Graphics_DrawMeshTextureBatches(Mesh *pMesh)
 }
 
 
+void DustPlume_Update(Particle *p, ParticleType *, SceneNode *)
+{
+    DustPlume_Step(*p, g_particleWind);
+}
+
+void DustPlume_Emit(FixVector *world, FixVector *velocity, BYTE *colour, BYTE shade, BYTE viewMask)
+{
+    if (!g_particles || !g_particleTypes || g_particleTypeCount <= DUST_PLUME_TYPE || g_particleCount <= 64 || !viewMask) return;
+    int clouds = 0, active = 0;
+    for (int i=0; i<g_particleCount; ++i) {
+        if (!g_particles[i].active) continue;
+        ++active;
+        if (g_particles[i].pType == &g_particleTypes[DUST_PLUME_TYPE]) ++clouds;
+    }
+    if (!DustPlume_HasBudget(active, clouds, g_particleCount)) return;
+    // No attachment matrix or owner callback: this cloud stays on the old road.
+    Particle_Spawn(DUST_PLUME_TYPE, world, velocity, world->y, NULL, colour, shade, NULL, viewMask);
+}

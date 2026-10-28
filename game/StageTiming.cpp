@@ -1,3 +1,4 @@
+#include "DustPlume.h"
 #include "AIReferenceRoute.h"
 #include "FloatToInt.h"
 #include "TyreWear.h"
@@ -6182,7 +6183,7 @@ void StageTiming_InitEffectParticleTypes(void)
 {
     int iVar1;
     int uVar2;
-    int unset; // never assigned: the original reads this stack slot as is
+    int unset = 100; // bounded fallback for otherwise unknown quality mode
 
   if (CGameInfo::GetGraphicsOptionBits25To26() == 1)
     uVar2 = 100;
@@ -6415,6 +6416,17 @@ void StageTiming_InitEffectParticleTypes(void)
   ParticleEdit_CopyTemplate(0x1a);
   ParticleEdit_SetTextureParams(g_unk0x00547fb4,0xffffe667,0x1999,0x1999,0xffffe667);
   ParticleEdit_SetCallbacks(0,0,0,0,0);
+  ParticleEdit_CommitCurrentType();
+  // Optional lingering dry-surface clouds. Reuse the existing soft smoke
+  // texture rather than add external assets or animated chip sprites.
+  ParticleEdit_Select(DUST_PLUME_TYPE);
+  ParticleEdit_SetTextureParams(g_unk0x00543664, -0x10000, 0x10000, 0x10000, -0x10000);
+  ParticleEdit_SetMotion(DUST_PLUME_LIFE << 16, 0, 0, 0, 0, 0, 0);
+  ParticleEdit_SetAlphaRamp(0, 0, 0, 0);
+  ParticleEdit_SetColour(0xff,0xff,0xff,1);
+  ParticleEdit_SetSizeRamp(0x6000,0x36000,0);
+  ParticleEdit_SetSpread(0x1000,0x600,0x1000,0);
+  ParticleEdit_SetCallbacks(0,DustPlume_Update,0,0,0);
   ParticleEdit_CommitCurrentType();
   return;
 }
