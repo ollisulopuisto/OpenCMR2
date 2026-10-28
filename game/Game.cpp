@@ -2334,48 +2334,53 @@ static int AnimObject_Index(StageObject *pObject);
 // OpenCMR2: animated scenery idle cycles. Per-object animation state lives in
 // the global table g_animStates (the draw path reinterprets the same bytes as
 // a world matrix, so the state cannot share the object's unused tail).
-//   baseTexture (int), [4] frame, [5] frameCount, [6] timer, [7] initialized.
+// State resolves lazily but never uses a pre-allocation table pointer.
+// Resolve the index FIRST. AnimObject_Index may allocate/reallocate the
+// table; evaluating g_animStates[Index(...)] may use the old/null base.
+static AnimState *AnimObject_State(StageObject *object)
+{
+    if (object == NULL) return NULL;
+    int index = AnimObject_Index(object);
+    if (index < 0 || g_animStates == NULL || (unsigned)index >= g_animStateCount)
+        return NULL;
+    return &g_animStates[index];
+}
+
 static int AnimState_GetBaseTexture(StageObject *pObject)
 {
-    int v;
-    __builtin_memcpy(&v, &g_animStates[AnimObject_Index(pObject)].baseTexture, 4);
-    return v;
+    if (!pObject || !pObject->pMesh) return -1;
+    Mesh *mesh = pObject->pMesh;
+    if (mesh->partCount > 0 && mesh->pParts[0])
+        return mesh->pParts[0]->texture;
+    if (mesh->pTriangles) return mesh->pTriangles->textures[0];
+    return -1;
 }
 
-static void AnimState_SetBaseTexture(StageObject *pObject, int v)
+int AnimObject_Update(StageObject *pObject)
 {
-    __builtin_memcpy(&g_animStates[AnimObject_Index(pObject)].baseTexture, &v, 4);
+    AnimState *state = AnimObject_State(pObject);
+    if (!state) return 0;
+    if (!state->initialized) {
+        state->baseTexture = AnimState_GetBaseTexture(pObject);
+        // No authored/verified material-to-frame mapping exists yet. Adjacent
+        // texture IDs are unrelated assets, not four animation frames.
+        state->frame = 0;
+        state->frameCount = 1;
+        state->timer = 5;
+        state->initialized = 1;
+    }
+    int timer = state->timer;
+    state->frame = (BYTE)AnimFrame_Advance(state->frame,state->frameCount,&timer);
+    state->timer = (BYTE)timer;
+    return state->frame;
 }
 
-static void AnimObject_Init(StageObject *pObject, int baseTexture)
-{
-    AnimState_SetBaseTexture(pObject, baseTexture);
-    g_animStates[AnimObject_Index(pObject)].frame = 0;        // frame
-    g_animStates[AnimObject_Index(pObject)].frameCount = 4;   // frameCount
-    g_animStates[AnimObject_Index(pObject)].timer = 5;        // timer
-    g_animStates[AnimObject_Index(pObject)].initialized = 1; // initialized
-}
-
-// Advances the animation clock and returns the current frame (0..frameCount-1).
-static int AnimObject_Update(StageObject *pObject)
-{
-    AnimState *pState = &g_animStates[AnimObject_Index(pObject)];
-    int frame = pState->frame;
-    int timer = pState->timer;
-    frame = AnimFrame_Advance(frame, pState->frameCount, &timer);
-    pState->frame = (BYTE)frame;
-    pState->timer = (BYTE)timer;
-    return frame;
-}
-
-// Returns the animated texture index (base + current frame) for an object.
 static int AnimObject_Texture(StageObject *pObject, int baseTexture)
 {
-    AnimState *pState = &g_animStates[AnimObject_Index(pObject)];
-    if (!pState->initialized)
-        AnimObject_Init(pObject, baseTexture);
-    AnimObject_Update(pObject);
-    return AnimTexture_Index(baseTexture, pState->frame);
+    // Static-texture fallback until explicit frame sets are authored. Do not
+    // advance again in each draw pass or replace the real base with texture0.
+    (void)pObject;
+    return baseTexture;
 }
 
 // OpenCMR2: per-object animation state, keyed by the StageObject pointer.
@@ -2391,6 +2396,7 @@ static int AnimObject_Index(StageObject *pObject)
         if (g_animStates[i].pObject == pObject)
             return (int)i;
     if (g_animStateCount >= g_animStateCapacity) {
+        if (g_animStateCapacity > 0x3fffffffu) return -1;
         unsigned int cap = g_animStateCapacity ? g_animStateCapacity * 2 : 256;
         struct AnimState *p = (struct AnimState *)realloc(g_animStates, cap * sizeof(struct AnimState));
         if (p == NULL)

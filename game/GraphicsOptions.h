@@ -258,12 +258,15 @@ struct AnimState {
 // stage is unloaded so a fresh stage starts its objects still.
 extern struct AnimState *g_animStates;
 extern unsigned int g_animStateCount;
+int AnimObject_Update(StageObject *object);
 void AnimObject_ClearTable(void);
 
 // Advances the animation frame by one tick: decrements the timer, and when it
 // reaches zero, wraps the frame within frameCount and resets the timer.
 inline int AnimFrame_Advance(int frame, int frameCount, int *timer)
 {
+    if (!timer) return 0;
+    if (frameCount <= 1) { *timer = 5; return 0; }
     (*timer)--;
     if (*timer <= 0) {
         *timer = 5; // ticks per frame (about 1/12 s at 60 fps)
