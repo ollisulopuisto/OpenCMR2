@@ -15,11 +15,11 @@ prog=ctx.program(vertex_shader=vert,fragment_shader=frag);prog['DustVolumeUnifor
 pixels=np.zeros((h,w,4),dtype='u1');pixels[:]=[45,70,53,255]
 scene=ctx.texture((w,h),4,pixels.tobytes());scene.use(0)
 out=ctx.texture((w,h),4);fbo=ctx.framebuffer([out]);vao=ctx.vertex_array(prog,[])
-def render(yaw,count=3,depth=1.,density=1.,offset=0.,large=False,clouds=None,trail=False):
+def render(yaw,count=3,depth=1.,density=1.,offset=0.,large=False,clouds=None,trail=False,close=False,transmittance=False):
  eye=np.array([np.sin(yaw)*7,2,np.cos(yaw)*7]);eye[0]+=offset;target=np.array([offset,1,0]);forward=(target-eye);forward/=np.linalg.norm(forward);right=np.cross(forward,[0,1,0]);right/=np.linalg.norm(right);up=np.cross(right,forward)
  view=np.eye(4);view[:3,:3]=[right,up,forward];view[:3,3]=-view[:3,:3]@eye
  if trail:
-  eye=np.array([18+offset,5,55.]);target=np.array([4.,2.,26.]);forward=target-eye;forward/=np.linalg.norm(forward);right=np.cross(forward,[0,1,0]);right/=np.linalg.norm(right);up=np.cross(right,forward);view[:3,:3]=[right,up,forward];view[:3,3]=-view[:3,:3]@eye
+  eye=np.array([18+offset,5,55.]) if not close else np.array([20+offset*.3,2.5,28.]);target=np.array([4.,3.,16.]);forward=target-eye;forward/=np.linalg.norm(forward);right=np.cross(forward,[0,1,0]);right/=np.linalg.norm(right);up=np.cross(right,forward);view[:3,:3]=[right,up,forward];view[:3,3]=-view[:3,:3]@eye
  # positiveZ D3D-style projection depth0..1, as game shaders consume
  near,far=.1,150 if trail else 30;proj=np.zeros((4,4));proj[0,0]=1.4*h/w;proj[1,1]=1.4;proj[2,2]=far/(far-near);proj[2,3]=-near*far/(far-near);proj[3,2]=1
  inv=np.linalg.inv(proj@view).astype('f4')
@@ -39,7 +39,7 @@ def render(yaw,count=3,depth=1.,density=1.,offset=0.,large=False,clouds=None,tra
   background[valid,:3]=np.where(grid[valid,None],[53,68,42],[61,77,49])
   road=(abs(hit[:,:,0]-8*np.sin(hit[:,:,2]*.06))<2)&valid;background[road,:3]=[100,88,65]
   # A 4.2m x 1.8m x 1.5m box is a scale cue, not a game car model.
-  lo=np.array([-1.9,0.,48.]);hi=lo+np.array([1.8,1.5,4.2])
+  lo=np.array([13.,0.,8.]);hi=lo+np.array([1.8,1.5,4.2])
   safe=np.where(abs(ray)<1e-9,1e-9,ray);ta=(lo-eye)/safe;tb=(hi-eye)/safe
   entry=np.max(np.minimum(ta,tb),axis=-1);exit=np.min(np.maximum(ta,tb),axis=-1)
   car=(entry>0)&(entry<exit)&((~valid)|(entry<t))
@@ -47,7 +47,7 @@ def render(yaw,count=3,depth=1.,density=1.,offset=0.,large=False,clouds=None,tra
   hc=np.concatenate([hit,np.ones((h,w,1))],axis=-1)@(proj@view).T
   depths[valid]=(hc[:,:,2]/hc[:,:,3])[valid]
  d=ctx.texture((w,h),1,depths.tobytes(),dtype='f4');d.use(0);prog['sceneDepth'].value=0
- fbo.use();vao.render(vertices=3);raw=np.frombuffer(fbo.read(components=4),dtype='u1').reshape(h,w,4).copy();arr=raw.copy();arr[:,:,:3]=np.clip(raw[:,:,:3].astype(float)+background[:,:,:3].astype(float)*raw[:,:,3,None]/255.,0,255);arr[:,:,3]=pixels[:,:,3];ubo.release();d.release();return arr
+ fbo.use();vao.render(vertices=3);raw=np.frombuffer(fbo.read(components=4),dtype='u1').reshape(h,w,4).copy();arr=raw.copy();arr[:,:,:3]=np.clip(raw[:,:,:3].astype(float)+background[:,:,:3].astype(float)*raw[:,:,3,None]/255.,0,255);arr[:,:,3]=pixels[:,:,3];ubo.release();d.release();return raw[:,:,3] if transmittance else arr
 assert np.array_equal(render(0,count=0),pixels)
 assert np.array_equal(render(0,density=0),pixels)
 assert np.array_equal(render(0,depth=0),pixels),'opaque foreground must occlude cloud'
@@ -74,7 +74,18 @@ if args.output:
  import json
  poolpath=args.pool_fixture
  if poolpath is not None:
-  clouds=np.array(json.loads(poolpath.read_text()),dtype='f4');frames=[]
+  clouds=np.array(json.loads(poolpath.read_text()),dtype='f4')
+  fixed=clouds.copy();trans=render(0,clouds=clouds,trail=True,transmittance=True)
+  assert np.min(trans)<51,'large plume must have genuinely opaque core (<20% transmission)'
+  assert np.array_equal(clouds,fixed),'rendering must not mutate world anchors'
+  close_frames=[]
+  for n in [0,8,16,23]:
+   im=Image.fromarray(render(0,clouds=clouds,trail=True,close=True,offset=n*.7)).transpose(Image.Transpose.FLIP_TOP_BOTTOM).convert('RGB').resize((720,480))
+   ImageDraw.Draw(im).text((8,8),'SYNTHETIC ROAD-LEVEL GPU | fixed world density | white box=4.2m car',fill='white');close_frames.append(im)
+  contact=Image.new('RGB',(1440,960))
+  for i,im in enumerate(close_frames):contact.paste(im,((i%2)*720,(i//2)*480))
+  contact.save(str(Path(args.output).with_name('world-dust-pool-close.png')))
+  frames=[]
   for n in range(24):
    arr=render(0,clouds=clouds,trail=True,offset=n*.7)
    im=Image.fromarray(arr).transpose(Image.Transpose.FLIP_TOP_BOTTOM).convert('RGB').resize((720,480))
