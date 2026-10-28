@@ -218,6 +218,8 @@ endif()
 option(OPENCMR2_SHADER_PIXEL_TESTS "Run optional EGL shader pixel tests" OFF)
 if(OPENCMR2_SHADER_PIXEL_TESTS)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_test(NAME post_effects_pixels COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/post_effects_shader.py)
     add_test(NAME spatial_aa_pixels COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/spatial_aa_shader.py)
 endif()

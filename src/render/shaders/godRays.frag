@@ -1,42 +1,32 @@
 #version 450
-
-layout(location = 0) in vec2 inTex;
 layout(location = 0) out vec4 outColor;
-
-layout(set = 2, binding = 0) uniform sampler2D scene;   // the rendered frame
-layout(set = 2, binding = 1) uniform sampler2D depthTex; // depth buffer (R channel)
-
+layout(set = 2, binding = 0) uniform sampler2D scene;
+layout(set = 2, binding = 1) uniform sampler2D depthTex;
 layout(std140, set = 3, binding = 0) uniform GodRaysUniforms {
-    float intensity;   // 0..1: god rays strength
-    float pad[3];
+    vec4 settings; // intensity, artistic screen-space sun x/y, unused
 };
-
 void main()
 {
-    vec4 sceneColor = textureLod(scene, inTex, 0.0);
-    // Ray-march from this pixel toward the light source (sun is above-right).
-    // Accumulate light along the ray where it's not occluded by depth.
-    vec2 lightDir = normalize(vec2(0.35, -0.8)); // sun direction in screen space
-    float maxDist = 100.0;
-    int steps = 32;
-    float step = maxDist / float(steps);
-    float accum = 0.0;
-    vec2 pos = inTex;
-    float startDepth = textureLod(depthTex, inTex, 0.0).r;
-
-    for (int i = 0; i < steps; i++) {
-        pos += lightDir * step * 0.002; // step in screen space
-        if (pos.x < 0.0 || pos.x > 1.0 || pos.y < 0.0 || pos.y > 1.0)
-            break;
-        float sampleDepth = textureLod(depthTex, pos, 0.0).r;
-        // If the sample point is in front of the current depth, it's occluded.
-        if (sampleDepth < startDepth)
-            break;
-        accum += 1.0;
+    vec2 uv = gl_FragCoord.xy / vec2(textureSize(scene, 0));
+    vec4 center = texture(scene, uv);
+    vec2 delta = (settings.yz - uv) * (0.85 / 32.0);
+    vec2 pos = uv;
+    vec3 light = vec3(0.0);
+    float decay = 1.0;
+    float total = 0.0;
+    // Bright sky is the light mask. Geometry blocks it instead of receiving
+    // an unconditional white veil. Normalization keeps exposure step-independent.
+    for (int i = 0; i < 32; ++i) {
+        pos += delta;
+        if (any(lessThan(pos, vec2(0))) || any(greaterThan(pos, vec2(1)))) break;
+        float sky = smoothstep(0.995, 0.9999, texture(depthTex, pos).r);
+        vec3 source = texture(scene, pos).rgb;
+        float bright = smoothstep(0.55, 0.9, dot(source, vec3(0.299, 0.587, 0.114)));
+        light += source * sky * bright * decay;
+        total += decay;
+        decay *= 0.96;
     }
-
-    float godRay = accum / float(steps) * intensity;
-    sceneColor.rgb += godRay * vec3(1.0, 0.95, 0.8); // warm sun tint
-
-    outColor = sceneColor;
+    vec3 shafts = light / max(total, 1.0) * settings.x * 0.2 * vec3(1.0, 0.97, 0.9);
+    // Screen blend protects highlight headroom instead of clipping additive white.
+    outColor = vec4(vec3(1.0) - (vec3(1.0) - center.rgb) * (vec3(1.0) - shafts), center.a);
 }

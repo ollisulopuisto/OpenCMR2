@@ -1,34 +1,34 @@
 #version 450
-
-layout(location = 0) in vec2 inTex;
 layout(location = 0) out vec4 outColor;
-
-layout(set = 2, binding = 0) uniform sampler2D sceneTex;   // the rendered frame
-layout(set = 2, binding = 1) uniform sampler2D depthTex; // depth texture (R channel)
-
+layout(set = 2, binding = 0) uniform sampler2D sceneTex;
+layout(set = 2, binding = 1) uniform sampler2D depthTex;
 layout(std140, set = 3, binding = 0) uniform DoFUniforms {
-    float focalDistance;   // focus distance (0..1 depth)
-    float focalRange;      // focus range (0..1 depth)
-    float maxBlur;         // max blur radius in pixels
+    float focalDistance;
+    float focalRange;
+    float maxBlur;
     float pad;
 };
-
 void main()
 {
-    vec4 sceneColor = texture(sceneTex, inTex);
-    float depth = texture(depthTex, inTex).r;
-
-    // Depth-of-field blur amount based on depth distance from focal plane.
-    float depthDiff = abs(depth - focalDistance);
-    float blur = smoothstep(0.0, focalRange, depthDiff) * maxBlur;
-
-    if (blur > 0.01) {
-        // Simple blur simulation - reduce contrast based on blur amount.
-        // This simulates the defocus effect without expensive sampling.
-        float blurFactor = 1.0 - blur * 0.3;
-        vec3 mid = vec3(0.5);
-        sceneColor.rgb = mid + (sceneColor.rgb - mid) * blurFactor;
+    vec2 pixel = 1.0 / vec2(textureSize(sceneTex, 0));
+    vec2 uv = gl_FragCoord.xy * pixel;
+    vec4 center = texture(sceneTex, uv);
+    float depth = texture(depthTex, uv).r;
+    float coc = smoothstep(0.0, max(focalRange, 0.001), abs(depth - focalDistance));
+    float radius = coc * max(maxBlur, 0.0);
+    if (radius < 0.25) { outColor = center; return; }
+    // Golden-angle disk: smoother defocus than a box, with foreground rejection
+    // to avoid pulling a sharp foreground silhouette into the blurred distance.
+    vec3 sum = center.rgb;
+    float weight = 1.0;
+    for (int i = 0; i < 16; ++i) {
+        float angle = float(i) * 2.39996323;
+        float r = sqrt((float(i) + 0.5) / 16.0) * radius;
+        vec2 pos = uv + vec2(cos(angle), sin(angle)) * r * pixel;
+        float sampleDepth = texture(depthTex, pos).r;
+        float w = 1.0 - smoothstep(0.002, 0.02, depth - sampleDepth);
+        sum += texture(sceneTex, pos).rgb * w;
+        weight += w;
     }
-
-    outColor = sceneColor;
+    outColor = vec4(sum / weight, center.a);
 }
