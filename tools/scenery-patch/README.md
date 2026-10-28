@@ -32,6 +32,14 @@ and validates then exits without running the game. No selection is saved to INI.
 No new launcher config or remembered path is created. Existing `--data`/folder
 selection behavior stays as it was.
 
+Newly generated packs also include source-identities.tsv with exact original DDS
+byte hashes. The renderer captures identity when a texture loads, including loose
+textures and stage-specific archives. Filenames alone never authorize a new-pack
+replacement. Old packs without identity records keep their strict archive-based
+matching; regenerate using this revision into a new cache for corrected routing.
+An active draw marker proves the override was submitted, not native appearance or
+frame-time acceptance. Animated spectators remain subtle sprite upper-body sway.
+
 Generated cache is under `enhancements/` in the already-selected user profile;
 this does NOT change the user/profile root. It never moves or overwrites an old
 pack, original archive or save. Each reuse rechecks original hashes and every

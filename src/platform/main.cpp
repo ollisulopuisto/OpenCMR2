@@ -6,6 +6,7 @@
 #include "diagnostics/timing.h"
 #include "main.h"
 #include "platform/enhancements.h"
+#include "platform/key_remapping.h"
 #include <cstring>
 #include <cstdio>
 
@@ -17,7 +18,8 @@
 
 int main(int argc, char **argv)
 {
-    for(int i=1;i<argc;i++)if(!std::strcmp(argv[i],"--help")||!std::strcmp(argv[i],"--help-enhancements")){std::puts(EnhancementHelp());return 0;}
+    for(int i=1;i<argc;i++)if(!std::strcmp(argv[i],"--help")||!std::strcmp(argv[i],"--help-enhancements")){std::puts(EnhancementHelp());std::puts(KeyRemappingHelp());return 0;}
+    for(int i=1;i<argc;i++)if(!std::strcmp(argv[i],"--help-controls")){std::puts(KeyRemappingHelp());return 0;}
     SDL_SetMainReady();
     if (!Platform_Init(argc, argv))
         return Platform_WasSetupCanceled() ? 0 : 1;

@@ -196,7 +196,7 @@ def main():
  destination=root
  with tempfile.TemporaryDirectory(prefix='.cmr2-patch-',dir=root.parent) as staging:
   root=Path(staging)/'pack';root.mkdir()
-  rows=['kind\tsource_archive\tsource_texture\tasset\tframes\tticks'];coverage=[]
+  rows=['kind\tsource_archive\tsource_texture\tasset\tframes\tticks'];coverage=[];identities=[]
   with tempfile.TemporaryDirectory(prefix='cmr2-source-') as tmp:
    for key,rec in index.items():
     archive,leaf=key.split('/');a={**rec,'archive':archive,'texture':leaf};rel=Path(Path(archive).stem)/Path(leaf).stem
@@ -206,7 +206,9 @@ def main():
     elif rec.get('category')=='spectator':
      frames=spectator(a,Path('spectators')/rel);rows.append('\t'.join(['spectator',archive,leaf,frames[0],','.join(frames),'5']));status='converted'
     else:status='retained-original'
+    if status!='retained-original':identities.append('\t'.join([key,str(len(data[key])),rec['sha256']]))
     coverage.append({k:v for k,v in a.items() if k!='path'}|{'status':status})
+  (root/'source-identities.tsv').write_text('\n'.join(identities)+'\n')
   (root/'manifest.tsv').write_text('\n'.join(rows)+'\n',encoding='utf-8')
   (root/'coverage.json').write_text(json.dumps(coverage,indent=2)+'\n',encoding='utf-8')
   if destination.exists():destination.rmdir() # fails if another process populated it

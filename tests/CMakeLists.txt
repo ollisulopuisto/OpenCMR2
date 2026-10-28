@@ -365,3 +365,19 @@ target_link_libraries(enhancement_io_probe PRIVATE opencmr2_platform)
 if(Python3_Interpreter_FOUND)
  add_test(NAME enhancement_overlay_io COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/enhancement_binary.py $<TARGET_FILE:enhancement_io_probe> overlay)
 endif()
+
+add_executable(key_remapping_test key_remapping.cpp)
+target_link_libraries(key_remapping_test PRIVATE opencmr2_platform)
+add_test(NAME key_remapping COMMAND key_remapping_test)
+
+add_test(NAME scenery_identity_routing COMMAND scenery_pack_runtime_test ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/scenery-pack identity)
+if(NOT APPLE AND NOT MSVC)
+ add_executable(scenery_texture_capture_test scenery_texture_capture.cpp)
+ target_link_libraries(scenery_texture_capture_test PRIVATE opencmr2_platform)
+ target_link_options(scenery_texture_capture_test PRIVATE
+  -Wl,--wrap=_ZN18CGenericFileLoader17FindFileInArchiveEP11GenericFilePcPj
+  -Wl,--wrap=_ZN9CGraphics26CreateTextureFromImageDataEPcPvj
+  -Wl,--wrap=_Z26SceneryPack_RegisterSourceP7TexturePKvj
+  -Wl,--wrap=_ZN9CGraphics21LoadDDSThenTGATextureEPcj)
+ add_test(NAME scenery_texture_capture COMMAND scenery_texture_capture_test)
+endif()

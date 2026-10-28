@@ -1,3 +1,4 @@
+#include "port/sys.h"
 #include "Input.h"
 #include "GameInfo.h"
 #include "Graphics.h"
@@ -881,24 +882,14 @@ void CInput::ReadKeyboardDevice(DeviceInfo *pDevice)
         if (m_keyboardState[INPUT_KEY_F2] & 0x80)
             pDevice->field_0x4 |= 0x2000;
     } else {
-        if (m_keyboardState[pDevice->keyboard.field_0x468] & 0x80)
-            pDevice->field_0x4 = 1;
-        if (m_keyboardState[pDevice->keyboard.field_0x469] & 0x80)
-            pDevice->field_0x4 |= 0x2;
-        if (m_keyboardState[pDevice->keyboard.field_0x46a] & 0x80)
-            pDevice->field_0x4 |= 0x4;
-        if (m_keyboardState[pDevice->keyboard.field_0x46b] & 0x80)
-            pDevice->field_0x4 |= 0x8;
-        if (m_keyboardState[pDevice->keyboard.field_0x46c] & 0x80)
-            pDevice->field_0x4 |= 0x10;
-        if (m_keyboardState[pDevice->keyboard.field_0x46d] & 0x80)
-            pDevice->field_0x4 |= 0x20;
-        if (m_keyboardState[pDevice->keyboard.field_0x46e] & 0x80)
-            pDevice->field_0x4 |= 0x40;
-        if (m_keyboardState[pDevice->keyboard.field_0x46f] & 0x80)
-            pDevice->field_0x4 |= 0x80;
-        if (m_keyboardState[pDevice->keyboard.field_0x470] & 0x80)
-            pDevice->field_0x4 |= 0x100;
+        BYTE keys[9];
+        memcpy(keys, &pDevice->keyboard.field_0x468, sizeof(keys));
+        // Never modify the device or saved control tables for CLI overrides.
+        int keyboard = pDevice == &m_availableDevices[0] ? 0 : pDevice == &m_availableDevices[1] ? 1 : -1;
+        Sys_ApplyGameplayKeys(keyboard, keys);
+        for (int action = 0; action < 9; action++)
+            if (keys[action] != 0 && (m_keyboardState[keys[action]] & 0x80))
+                pDevice->field_0x4 |= 1u << action;
         if (m_keyboardState[pDevice->keyboard.field_0x471] & 0x80)
             pDevice->field_0x4 |= 0x200;
         if (m_keyboardState[pDevice->keyboard.field_0x472] & 0x80)

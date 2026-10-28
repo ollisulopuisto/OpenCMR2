@@ -86,6 +86,7 @@ enum SysMessageBoxResult {
 int Sys_MessageBox(const char *title, const char *text, int buttons);
 
 /* Logs a line to stderr and opencmr2.log in the user directory. */
+void Sys_ApplyGameplayKeys(int keyboard, unsigned char *keys); // nine gameplay actions, per launch only
 void Sys_Log(const char *format, ...);
 /* Shows the message and terminates the process. */
 void Sys_Fatal(const char *format, ...);
