@@ -27,6 +27,10 @@ std::set<std::string> unmatched;
 struct PackTexture { GfxTexture *surface=nullptr; int width=0,height=0; };
 std::vector<GfxTexture*> ownedTextures;
 uint64_t animationTime=0;
+const StageObject *diagnosticObject=nullptr;
+unsigned diagnosticFrame=0,diagnosticChanges=0;uint64_t diagnosticTime=0;
+unsigned loggedSecond=0;
+
 struct Part { std::vector<GfxVertex> vertices; PackTexture *texture=nullptr; };
 struct Asset { std::map<const Mesh*,std::vector<Part>> fitted; int sourceWidth=0,sourceHeight=0; SceneryFormat::Entry entry; std::string failure; std::set<std::string> loggedFailures; bool attempted=false,ready=false; std::vector<Part> parts; std::vector<PackTexture*> frames; };
 std::vector<Asset> assets;
@@ -155,7 +159,7 @@ void SceneryPack_RegisterSource(Texture *texture,const void *bytes,unsigned size
     if(candidate)sourceIdentities[texture]=SceneryIdentity::SHA256(bytes,size);
 }
 void SceneryPack_RegisterArchive(GenericFile *file,const char *path){if(file&&path)archives[file]=Leaf(path);}
-void SceneryPack_Clear(){assets.clear();archives.clear();sourceIdentities.clear();identities.clear();unmatched.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;identityContract=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;}
+void SceneryPack_Clear(){assets.clear();archives.clear();sourceIdentities.clear();identities.clear();unmatched.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;identityContract=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;diagnosticObject=nullptr;diagnosticFrame=diagnosticChanges=loggedSecond=0;diagnosticTime=0;}
 void SceneryPack_Advance(int step){if(step>0)animationTime+=(unsigned)step;}
 bool SceneryPack_Draw(StageObject *object,const float *billboard){
     if(!object||!object->pMesh||!billboard||Sys_GetOption("video.scenery_overrides",1)==0)return false;
@@ -202,7 +206,18 @@ bool SceneryPack_Draw(StageObject *object,const float *billboard){
             unsigned ix=mesh->pTriangles[i].vertexIndex[j];if(ix>=(unsigned)mesh->field_0x10)return false;
             auto &p=v[ix];vertices.push_back({p.x,p.y,p.z,p.nx,p.ny,p.nz,p.diffuseColour,p.specularColour,p.textureCoordinates[0][0],p.textureCoordinates[0][1],0,0});}
         if(!spectatorLogged){Sys_Log("options: spectator sidecar active (first successful override draw)");spectatorLogged=true;}
-        State(*(const GfxMatrix*)billboard);Gfx_SetTexture(0,t->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,vertices.data(),vertices.size());Gfx_PopState();return true;
+        State(*(const GfxMatrix*)billboard);Gfx_SetTexture(0,t->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,vertices.data(),vertices.size());Gfx_PopState();
+        if(!diagnosticObject)diagnosticObject=object;
+        if(diagnosticObject==object){
+            if(diagnosticFrame!=frame)++diagnosticChanges;
+            diagnosticFrame=frame;diagnosticTime=animationTime;
+            unsigned second=(unsigned)(animationTime/(25ull*65536));
+            if(second!=loggedSecond&&second<=5){
+                Sys_Log("options: spectator animation tick=%llu frame=%u/%u bound-frame-changes=%u texture=%s",(unsigned long long)(animationTime/65536),frame,(unsigned)asset->frames.size(),diagnosticChanges,asset->entry.frames[frame].c_str());
+                loggedSecond=second;
+            }
+        }
+        return true;
     }
     if(source->width!=asset->sourceWidth||source->height!=asset->sourceHeight){
         Reject(*asset,"source texture dimensions differ from tree header");LogRejection(*asset);return false;
@@ -239,4 +254,12 @@ bool SceneryPack_Draw(StageObject *object,const float *billboard){
         Gfx_SetTexture(0,p.texture->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,p.vertices.data(),p.vertices.size());
     }
     Gfx_PopState();return true;
+}
+
+bool SceneryPack_GetAnimationStatus(unsigned long long *tick,unsigned *frame,unsigned *changes){
+    if(!diagnosticObject)return false;
+    if(tick)*tick=(unsigned long long)(diagnosticTime/65536);
+    if(frame)*frame=diagnosticFrame;
+    if(changes)*changes=diagnosticChanges;
+    return true;
 }

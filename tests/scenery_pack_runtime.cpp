@@ -76,6 +76,10 @@ int main(int argc,char **argv){if(argc<2)return 0;base=argv[1];legacy=argc>2&&!s
    CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);auto firstFrame=bound;
    for(int i=0;i<5;i++)SceneryPack_Advance(65536);
    CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(bound!=firstFrame);
+   unsigned long long tick=0;unsigned frame=0,changes=0;CHECK(SceneryPack_GetAnimationStatus(&tick,&frame,&changes));CHECK(tick==5&&changes>0);
+   for(int i=0;i<25;i++)SceneryPack_Advance(65536);
+   CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(SceneryPack_GetAnimationStatus(&tick,&frame,&changes)&&tick==30&&changes>1);
+   CHECK(logs.find("bound-frame-changes=")!=std::string::npos);
    SceneryPack_RegisterSource(&source,"xyz",3);CHECK(!SceneryPack_Draw(&object,(float*)&billboard));
    CHECK(logs.find("spectator sidecar active")!=std::string::npos);
    SceneryPack_Clear();SceneryPack_RegisterArchive(&archive,"DATA/FRAHIT.BFL");source.pArchive=&archive;
