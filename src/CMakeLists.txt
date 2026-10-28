@@ -155,7 +155,7 @@ foreach(shader IN LISTS SHADER_SOURCES)
             set(interface in)
         endif()
         set(renames)
-        foreach(location RANGE 5)
+        foreach(location RANGE 8)
             list(APPEND renames --rename-interface-variable ${interface} ${location} varying${location})
         endforeach()
         add_custom_command(
