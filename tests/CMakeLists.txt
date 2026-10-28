@@ -238,3 +238,8 @@ if(APPLE AND NOT ANDROID)
         message(WARNING "MetalFX SDK unavailable: native spatial probe is NOT compiled")
     endif()
 endif()
+
+if(Python3_Interpreter_FOUND)
+    add_test(NAME metalfx_patch_safety COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/metalfx_patch.py)
+endif()

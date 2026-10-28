@@ -37,3 +37,32 @@ Existing Mac builds now compile this standalone target when the SDK provides
 MetalFX, without running it or linking MetalFX into the game. The normal game
 minimum OS, workflows, signing, runner settings and default rendering stay
 unchanged. A missing SDK produces an explicit warning, not a probe pass.
+
+## SDL integration (experimental)
+
+`OPENCMR2_METALFX=ON` on Mac builds uses pinned vendored SDL3.4.18 and applies the
+isolated backend extension before compiling it. It links MetalFX into that SDL
+library. Non-Mac builds and `OPENCMR2_METALFX=OFF` remain unchanged. An unmodified
+system SDL still runs the game, but cannot provide this extension.
+
+Set `[video] metalfx_spatial = 1`, restart, and select a game resolution smaller
+than the drawable/window to exercise scaling. It does not automatically lower
+the game's render resolution. It falls back for unsupported OS/device, unavailable
+extension, no upscaling, unsupported texture usage/format, movie stretch, or active
+film grain/chromatic aberration. Existing game geometry/HUD remain one input;
+text and grain separation is not implemented. Enable spatial_aa separately if
+needed: MetalFX spatial expects antialiased input, not temporal reconstruction.
+
+The backend encodes on the current SDL command buffer, tracks input/output via
+SDL's in-flight references, cycles output textures rather than overwriting a busy
+frame, and uses ordinary SDL blit for same-size letterbox placement. Cached scaler
+rebuilds on input/output dimension changes. The game sees only a narrow callback
+property, never native handles or private SDL structs. This is a single renderer /
+render-thread path; no new cross-thread ownership promise is made.
+
+Native compile/GPU/game output have not yet been verified. The first log says
+whether a frame encoded or fell back, not that all later frames succeeded or that
+FPS improved. Actual visual inspection/API validation and frame-time remain gates.
+Temporal is the next phase, not hidden inside spatial scaling: per-object previous
+transforms, projected motion, jitter, history invalidation and HUD separation must
+be implemented and verified on moving scenes before it can be advertised.
