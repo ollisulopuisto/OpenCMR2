@@ -1,3 +1,4 @@
+#include "WheelParticleEmission.h"
 #include "CarInfo.h"
 #include "FloatToInt.h"
 #include "TyreWear.h"
@@ -1719,13 +1720,11 @@ void CarEffect_UpdateWheelSurfaceParticles(int car)
         }
         if ((water == 0 && emit == 0) || pCar->cornerOnGround[wheel] == 0)
             continue;
-        spin = Car_GetWheelSpeed(pCar, 2, 0);
-        if (spin < 0)
-            spin = -spin;
-        if (spin > 0xa0000)
-            count = rand() % 4 / 4;
-        if (spin > 0xf0000)
-            count = rand() % 3 / 2;
+        // Each grounded wheel supplies its own speed. The old rear-left proxy
+        // hid front-only spin, leaked the count across wheels and rand()%4/4
+        // could never emit a particle in the lower speed band.
+        count = WheelParticle_Count(Car_GetWheelSpeed(pCar, (BYTE)wheel, 0),
+            pCar->cornerOnGround[wheel] != 0, water != 0 || emit != 0, (unsigned)rand());
         FixVecLength(&pCar->cornerVelocity[wheel]);
         velY = pCar->cornerVelocity[wheel].y;
         velX = -(pCar->cornerVelocity[wheel].x / 4);
