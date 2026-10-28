@@ -31,6 +31,11 @@ char (*NameTable())[20] {
         namesChecked=true;
         nameStatus="original (disabled)";
         if (Sys_GetOption("video.driver_name_overrides",1)!=0) {
+            if(Sys_GetOption("video.real_driver_names",0)!=0){
+                const char *names[15]={"t. makinen","c. mcrae","r. burns","d. auriol","c. sainz","j. kankkunen","m. gronholm","f. loix","f. delecour","h. rovanpera","t. radstrom","t. gardemeister","p. liatti","p. solberg","b. thiry"};
+                for(int i=0;i<15;i++)std::strcpy(customNames[i],names[i]);
+                namesAvailable=true;nameStatus="real (built-in15name display mapping; saves unchanged)";return customNames;
+            }
             nameStatus="original (sidecar missing)";
             SysFile *file=Sys_OpenFile("driver-names.tsv",SYS_FILE_READ);
             if (file) {

@@ -5,6 +5,9 @@
 #include "port/sys.h"
 #include "diagnostics/timing.h"
 #include "main.h"
+#include "platform/enhancements.h"
+#include <cstring>
+#include <cstdio>
 
 // On Android, SDLActivity calls SDL_main, which SDL_main.h renames main to.
 #ifndef __ANDROID__
@@ -14,9 +17,11 @@
 
 int main(int argc, char **argv)
 {
+    for(int i=1;i<argc;i++)if(!std::strcmp(argv[i],"--help")||!std::strcmp(argv[i],"--help-enhancements")){std::puts(EnhancementHelp());return 0;}
     SDL_SetMainReady();
     if (!Platform_Init(argc, argv))
         return Platform_WasSetupCanceled() ? 0 : 1;
+    for(int i=1;i<argc;i++)if(!std::strcmp(argv[i],"--prepare-only")){Platform_Shutdown();return 0;}
     Diagnostics::StartProfileFromEnvironment();
     unsigned int code = CMain::Initialize(Sys_GetCommandLine());
     Diagnostics::StopProfile();

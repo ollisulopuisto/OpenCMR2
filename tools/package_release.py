@@ -79,6 +79,9 @@ def main():
     else:
         files = [binary, *args.library]
     entries = [(path, f"{folder}/{path.name}") for path in files]
+    helper_root = ROOT / "tools/scenery-patch"
+    for leaf in ('prepare.py', 'convert.py', 'source-index.json', 'requirements.txt', 'car-index.json'):
+        entries.append((helper_root / leaf, f"{folder}/enhancements/scenery-patch/{leaf}"))
     licenses = [(ROOT / "LICENSE", "OpenCMR2-LICENSE"),
                 (ROOT / "third_party/enet/LICENSE", "ENet-LICENSE"),
                 (ROOT / "third_party/potrace/COPYING", "Potrace-COPYING"),

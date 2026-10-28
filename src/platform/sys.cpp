@@ -2,6 +2,7 @@
 
 #include "platform/platform.h"
 #include "platform/testing.h"
+#include "platform/enhancements.h"
 #include "port/sys.h"
 #include "port/gfx.h"
 
@@ -28,6 +29,8 @@ namespace {
 SDL_Window *s_window;
 std::string s_dataDir;     // game data, read only (ends with '/')
 std::string s_sceneryDir; // optional read-only scenery root, independent of saves
+EnhancementOptions s_enhancements;
+std::string s_carDir;
 std::string s_userDir;     // saves, settings, logs (ends with '/')
 std::string s_commandLine;
 std::map<std::string, std::string> s_settings;  // "section.key" -> value
@@ -157,6 +160,11 @@ std::string ResolveForReading(const char *gamePath)
     std::vector<std::string> parts = SplitGamePath(gamePath);
     if (parts.empty())
         return std::string();
+    // Car overlays affect READS under Game/Cars only. Saves and writes never route here.
+    if(!s_carDir.empty()&&parts.size()>=3&&Lower(parts[0])=="game"&&Lower(parts[1])=="cars"){
+        std::vector<std::string> car(parts.begin()+2,parts.end());
+        std::string over=FindUnder(s_carDir,car);if(!over.empty())return over;
+    }
     std::string found = FindUnder(s_userDir, parts);
     if (found.empty())
         found = FindUnder(s_dataDir, parts);
@@ -623,10 +631,63 @@ void UpdateMenuShortcut(const std::string &settingsFile)
 
 } // namespace
 
+namespace {
+bool PrepareEnhancementPack(bool cars=false){
+#ifdef __ANDROID__
+    fprintf(stderr,"Automatic asset preparation requires the desktop build; use --scenery-dir with a prepared pack.\n");return false;
+#else
+    namespace fs=std::filesystem;
+    fs::path helper;
+    const char *base=SDL_GetBasePath();
+    std::vector<fs::path> roots;
+    if(base)roots.emplace_back(fs::path(base)/"enhancements"/"scenery-patch");
+#ifdef OPENCMR2_SOURCE_ROOT
+    roots.emplace_back(fs::path(OPENCMR2_SOURCE_ROOT)/"tools"/"scenery-patch");
+#endif
+    for(const auto &root:roots)if(fs::is_regular_file(root/"prepare.py")){helper=root/"prepare.py";break;}
+    if(helper.empty()){fprintf(stderr,"Enhancement preparation helper missing beside executable. Rebuild/reinstall this release; no files changed.\n");return false;}
+    const fs::path cache=fs::path(s_userDir)/"enhancements";
+    if(fs::is_symlink(cache)){fprintf(stderr,"Refusing symlink enhancement cache; select a regular profile directory.\n");return false;}
+    std::vector<std::vector<std::string>> interpreters;
+#ifdef OPENCMR2_SOURCE_ROOT
+#ifdef _WIN32
+    fs::path existing=fs::path(OPENCMR2_SOURCE_ROOT)/"tools/scenery-patch/.venv/Scripts/python.exe";
+#else
+    fs::path existing=fs::path(OPENCMR2_SOURCE_ROOT)/"tools/scenery-patch/.venv/bin/python";
+#endif
+    if(fs::is_regular_file(existing))interpreters.push_back({existing.u8string()});
+#endif
+    interpreters.push_back({"python3"});
+    if(s_enhancements.installDependencies)interpreters.push_back({"uv","run","--no-project","--python","3.12"});
+    else interpreters.push_back({"uv","run","--offline","--no-python-downloads","--no-project","--python","3.12"});
+    for(auto args:interpreters){
+        args.insert(args.end(),{helper.u8string(),"--input-dir",s_dataDir,"--cache-dir",cache.u8string(),cars?"--cars":"--mode",cars?s_enhancements.cars:(s_enhancements.trees=="shell"?"shell":"crossed")});
+        if(cars){args.push_back("--mods-dir");args.push_back(s_enhancements.modsDir);}
+        if(s_enhancements.installDependencies)args.push_back("--install-deps");
+        std::vector<const char*> raw;for(auto &arg:args)raw.push_back(arg.c_str());raw.push_back(nullptr);
+        SDL_Process *process=SDL_CreateProcess(raw.data(),true);if(!process)continue;
+        size_t length=0;int code=-1;char *out=(char*)SDL_ReadProcess(process,&length,&code);
+        std::string text=out?std::string(out,length):"";SDL_free(out);SDL_DestroyProcess(process);
+        fprintf(stdout,"%s",text.c_str());
+        if(code==78)continue;
+        if(code!=0){fprintf(stderr,"Enhancement helper exited %d; stopping without starting game.\n",code);return false;}
+        const std::string marker=cars?"OPENCMR2_CARS=":"OPENCMR2_PACK=";auto pos=text.rfind(marker);
+        if(pos==text.npos)continue;
+        std::string value=text.substr(pos+marker.size());value=value.substr(0,value.find_first_of("\r\n"));
+        std::error_code ec;auto selected=fs::canonical(value,ec);if(ec)continue;
+        auto parent=fs::canonical(cache,ec);if(ec||selected.parent_path()!=parent||(!cars&&!fs::is_regular_file(selected/"manifest.tsv")))continue;
+        if(cars)s_carDir=WithSlash(selected.u8string());else s_sceneryDir=WithSlash(selected.u8string());return true;
+    }
+    fprintf(stderr,"Scenery preparation failed. Requires Python3.10+ with Pillow/numpy or uv. No dependencies are downloaded unless --install-enhancement-deps is supplied. Existing packs/saves/originals were not replaced.\n");return false;
+#endif
+}
+}
+
 // ---- platform lifecycle ------------------------------------------------------
 
 bool Platform_Init(int argc, char **argv)
 {
+    s_enhancements=EnhancementOptions{};s_carDir.clear();
     s_dataDir.clear();
     s_sceneryDir.clear();
     s_commandLine.clear();
@@ -675,7 +736,10 @@ bool Platform_Init(int argc, char **argv)
 
     std::string dataDir;
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--data") == 0 && i + 1 < argc) {
+        std::string error;
+        if(s_enhancements.Consume(i,argc,argv,error)){
+            if(!error.empty()){fprintf(stderr,"%s\n",error.c_str());Platform_Shutdown();return false;}
+        } else if (strcmp(argv[i], "--data") == 0 && i + 1 < argc) {
             dataDir = argv[++i];
         } else if (strcmp(argv[i], "--scenery-dir") == 0 && i + 1 < argc) {
             s_sceneryDir = WithSlash(argv[++i]);
@@ -726,6 +790,19 @@ bool Platform_Init(int argc, char **argv)
         Platform_Shutdown();
         return false;
     }
+    s_enhancements.Apply();
+    if(!s_sceneryDir.empty()&&s_enhancements.NeedsPack()){
+        fprintf(stderr,"Do not combine --scenery-dir with automatic --trees/--spectators preparation. Select one route.\n");Platform_Shutdown();return false;
+    }
+    if(s_enhancements.installDependencies&&!s_enhancements.NeedsPack()){
+        fprintf(stderr,"--install-enhancement-deps is only meaningful with --trees shell/crossed or --spectators animated.\n");Platform_Shutdown();return false;
+    }
+    if(s_enhancements.NeedsPack()&&!PrepareEnhancementPack()) {Platform_Shutdown();return false;}
+    if(!s_enhancements.cars.empty()&&s_enhancements.cars!="original"){
+        if(s_enhancements.modsDir.empty()){fprintf(stderr,"--cars needs --mods-dir\n");Platform_Shutdown();return false;}
+        if(!PrepareEnhancementPack(true)){Platform_Shutdown();return false;}
+    }
+    if(!s_carDir.empty())Sys_Log("options: car overlay read-only=%s; replacement slots, native compatibility/physics unverified",s_carDir.c_str());
     Sys_Log("game data: %s", s_dataDir.c_str());
     Sys_Log("user directory: %s", s_userDir.c_str());
     if(!s_sceneryDir.empty())Sys_Log("scenery directory: %s (read-only assets; save/settings roots unchanged)",s_sceneryDir.c_str());
@@ -1238,7 +1315,8 @@ extern "C" const char *Sys_GetInstallSetting(const char *name)
 
 extern "C" int Sys_GetOption(const char *name, int fallback)
 {
-    return Platform_GetSettingInt(name, fallback);
+    auto it=s_enhancements.overrides.find(Lower(name));
+    return it==s_enhancements.overrides.end()?Platform_GetSettingInt(name, fallback):it->second;
 }
 
 extern "C" const char *Sys_GetOptionText(const char *name, const char *fallback)

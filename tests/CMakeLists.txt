@@ -318,7 +318,7 @@ if(NOT APPLE AND NOT MSVC)
  target_link_options(driver_names_runtime_test PRIVATE
   -Wl,--wrap=Sys_GetOption -Wl,--wrap=Sys_OpenFile -Wl,--wrap=Sys_GetFileSize
   -Wl,--wrap=Sys_ReadFile -Wl,--wrap=Sys_CloseFile -Wl,--wrap=Sys_Log)
- foreach(mode valid missing invalid disabled)
+ foreach(mode valid missing invalid disabled real)
   add_test(NAME driver_names_runtime_${mode} COMMAND driver_names_runtime_test ${mode})
  endforeach()
 endif()
@@ -351,3 +351,17 @@ target_include_directories(scenery_source_fit_test PRIVATE ${PROJECT_SOURCE_DIR}
 add_test(NAME scenery_source_fit COMMAND scenery_source_fit_test)
 
 add_test(NAME scenery_legacy_fallback COMMAND scenery_pack_runtime_test ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/scenery-pack legacy)
+
+add_executable(enhancements_test enhancements.cpp)
+target_link_libraries(enhancements_test PRIVATE opencmr2_platform)
+add_test(NAME enhancements COMMAND enhancements_test)
+add_test(NAME enhancement_help COMMAND opencmr2 --help-enhancements)
+if(Python3_Interpreter_FOUND)
+ add_test(NAME enhancement_prepare COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tools/scenery-patch/test_prepare.py)
+ add_test(NAME enhancement_binary COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/enhancement_binary.py $<TARGET_FILE:opencmr2>)
+endif()
+add_executable(enhancement_io_probe enhancement_io_probe.cpp)
+target_link_libraries(enhancement_io_probe PRIVATE opencmr2_platform)
+if(Python3_Interpreter_FOUND)
+ add_test(NAME enhancement_overlay_io COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/enhancement_binary.py $<TARGET_FILE:enhancement_io_probe> overlay)
+endif()
