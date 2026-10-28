@@ -135,6 +135,8 @@ class PrepareTests(unittest.TestCase):
         with patch.object(p, 'HERE', helper):
             with self.assertRaisesRegex(ValueError, 'Unknown'):
                 p.prepare_cars(mods, self.cache, 'missing')
+            with self.assertRaisesRegex(ValueError, 'Missing owned ZIP'):
+                p.prepare_cars(mods/'absent', self.cache, 'one')
             idx = json.loads((helper / 'car-index.json').read_text())
             idx['one']['files'][0]['bytes'] += 1
             (helper / 'car-index.json').write_text(json.dumps(idx))

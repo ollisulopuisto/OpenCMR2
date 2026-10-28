@@ -118,6 +118,8 @@ def prepare_cars(mods, cache, choices):
     for name in selected:
         rec = index[name]
         archive = mods / rec['archive']
+        if not archive.is_file():
+            raise ValueError('Missing owned ZIP ' + rec['archive'] + '; --mods-dir must contain original ZIP filenames, see --help-enhancements. Nothing downloaded.')
         if archive.is_symlink() or hashlib.sha256(archive.read_bytes()).hexdigest() != rec['sha256']:
             raise ValueError('Unsupported or modified owned ZIP: ' + rec['archive'])
         with zipfile.ZipFile(archive) as z:

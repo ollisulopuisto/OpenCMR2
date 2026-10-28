@@ -68,6 +68,12 @@ else()
 endif()
 target_link_libraries(opencmr2 PRIVATE opencmr2_platform)
 # Source-only preparation helpers ship with desktop binaries. No game artwork.
+set_property(TARGET opencmr2 APPEND PROPERTY LINK_DEPENDS
+    ${PROJECT_SOURCE_DIR}/tools/scenery-patch/prepare.py
+    ${PROJECT_SOURCE_DIR}/tools/scenery-patch/convert.py
+    ${PROJECT_SOURCE_DIR}/tools/scenery-patch/source-index.json
+    ${PROJECT_SOURCE_DIR}/tools/scenery-patch/car-index.json
+    ${PROJECT_SOURCE_DIR}/tools/scenery-patch/requirements.txt)
 add_custom_command(TARGET opencmr2 POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:opencmr2>/enhancements/scenery-patch
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
