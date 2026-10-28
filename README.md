@@ -151,7 +151,8 @@ See [enable, mapping and undo instructions](tools/driver-name-patch/README.md).
 ## Configuration
 
 Settings are stored in `opencmr2.ini` in the user directory
-(`~/.local/share/OpenCMR2/` on Linux,
+(`~/Library/Application Support/OpenCMR2/` on macOS,
+`~/.local/share/OpenCMR2/` on Linux,
 `%APPDATA%\OpenCMR2\` on Windows; files from the older
 `OpenCMR2/OpenCMR2` folder are moved there).
 It is created with comments on first launch. The Screen page of the
@@ -205,7 +206,7 @@ otherwise CMake downloads and builds it and places it next to the executable
 (to force this, pass `-DOPENCMR2_VENDORED_SDL=ON`). Start by cloning the repository:
 
 ```sh
-git clone https://github.com/pablocpas/OpenCMR2.git
+git clone https://github.com/ollisulopuisto/OpenCMR2.git
 cd OpenCMR2
 ```
 
@@ -238,18 +239,108 @@ cmake --build --preset linux
 
 The executable is `build/linux/src/opencmr2`.
 
-### macOS
+### macOS (Apple silicon, including M1/M2)
+
+Run these commands in Terminal. Install Apple's Command Line Tools first if
+`clang` is not available (`xcode-select --install`), and install
+[Homebrew](https://brew.sh/) if `brew` is not available. The tools and source
+build do not include the original game data.
+
+From a fresh clone, enter the `OpenCMR2` directory as shown above. For an
+existing checkout, enter that checkout instead; its folder name may differ.
+The commands below must run from the directory containing `CMakePresets.json`.
 
 ```sh
-brew install cmake ninja glslang sdl3
-cmake --preset macos
+brew install cmake ninja glslang spirv-cross python
+cmake --preset macos \
+  -DOPENCMR2_VENDORED_SDL=ON \
+  -DOPENCMR2_SHADERS_MSL=ON \
+  -DOPENCMR2_RENDERER_GL=OFF \
+  -DOPENCMR2_METALFX=ON
 cmake --build --preset macos
+ctest --preset macos
 ```
 
-Metal needs MSL shaders, and the OpenGL renderer on Linux and Windows GLSL
-330 ones, so the build fetches SPIRV-Cross to translate them (or uses
-`spirv-cross` from the `PATH`). `-DOPENCMR2_RENDERER_GL=OFF` leaves the OpenGL
-renderer out.
+This builds `build/macos/src/opencmr2` for ARM64 with Clang. It uses the pinned
+vendored SDL, including this fork's optional MetalFX spatial extension. CMake
+needs network access to fetch SDL if its sources are not cached. SPIRV-Cross
+from Homebrew translates the shaders locally instead of fetching that tool.
+MetalFX SDK absence produces a warning and falls back to ordinary Metal;
+compiling MetalFX support does not force it on at runtime. Passing unit tests
+is not proof that native graphics or gameplay work on your Mac.
+
+#### Launch with your original game installation
+
+Replace `/path/to/owned/CMR2` with your installed/extracted PC game folder,
+containing `Game`, `FrontEnd`, `Sounds`, `CountrySpecific` and `SetupRep`.
+Keep the quotes when the path contains spaces. The original files are not
+needed to compile; they are needed to play.
+
+```sh
+./build/macos/src/opencmr2 --data "/path/to/owned/CMR2"
+```
+
+Without `--data`, the first-launch folder picker asks for that installation.
+Normal Mac settings, saves and logs live in
+`~/Library/Application Support/OpenCMR2/`. You can use a separate profile
+without changing the existing one:
+
+```sh
+./build/macos/src/opencmr2 --data "/path/to/owned/CMR2" --user-dir "$HOME/OpenCMR2-private"
+```
+
+This creates separate settings/saves/logs; it does not copy your existing
+profile. The chosen user directory must be outside the original game folder.
+
+#### Recover an earlier build with MSL disabled
+
+If startup prints `SDL_CreateGPUDevice: No supported SDL_GPU backend found!`,
+first check how the executable was built. SDL_GPU Metal requires MSL shaders;
+a build with `OPENCMR2_SHADERS_MSL=OFF` only advertises SPIR-V and is not a
+usable default Mac renderer. This error alone does not prove the GPU lacks
+Metal. Changing the resolution cannot supply the missing shader format.
+
+Install `spirv-cross` and repeat the configure/build commands above in the same
+checkout. The explicit `OPENCMR2_SHADERS_MSL=ON` overrides an earlier cached
+OFF value; running the bare preset does not reset cached options. There is no
+need to delete the build directory, original data or player profile. OpenGL
+OFF is the normal Mac setting. If fetching SDL fails, fix that network error
+rather than disabling MSL to bypass it.
+
+For ordinary Metal without this fork's MetalFX extension, an installed
+SDL 3.4+ can be used with `OPENCMR2_METALFX=OFF` and
+`OPENCMR2_VENDORED_SDL=OFF`; MSL must stay ON. This is a separate fallback,
+not the MetalFX build above.
+
+#### Optional private scenery pack
+
+Current `main` already includes the external pack loader and local procedural
+patcher. No extra `git apply` step or public artwork download is needed.
+To generate trees and spectator animation from your own supported originals,
+follow the [local patcher setup and conversion commands](tools/scenery-patch/README.md).
+Generate into `$HOME/OpenCMR2-private/scenery-pack`, then launch with the
+separate `--user-dir "$HOME/OpenCMR2-private"` command above. The default
+relative `scenery-pack` root works without an INI edit in a new profile.
+**Patching does not change your original files.** The patcher opens the input
+archives read-only, verifies their hashes, and writes generated assets into a
+separate directory. It rejects output inside the input tree and refuses to
+replace nonempty output. Generation is staged in a temporary directory and the
+complete pack is moved into place only after success. `--check-only` verifies
+the originals without generating output. The game reads the sidecar pack;
+it does not patch the original archives in place.
+
+Do not put an absolute path in `scenery_pack` and do not overwrite original
+archives yourself. Keep the separate `--user-dir` launch above: the game writes
+settings, saves and logs in that private profile, not in the original data
+folder. The pack output directory must be new or empty. The patcher requires the
+supported France/Finland archives and checks their hashes before generation;
+other releases may be rejected.
+
+Complete generated assets stay private and out of Git/public releases.
+Generation success does not verify native placement, appearance or M2
+performance. To undo this isolated setup, stop using that private profile or
+set `scenery_overrides=0` in its INI's existing `[video]` section. See the
+[pack format and limits](docs/SCENERY-PACK.md).
 
 ### Windows
 
