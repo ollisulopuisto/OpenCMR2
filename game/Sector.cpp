@@ -299,6 +299,8 @@ BYTE Sector_FreeMeshPartLists(void)
     // ([video] video.animated_scenery).
     extern void AnimObject_ClearTable(void);
     AnimObject_ClearTable();
+    extern void TreeFall_ClearTable(void);
+    TreeFall_ClearTable();
 
     for (i = 0; i < g_sectorCount; i++) {
         pModel = g_sectors[i]->pMesh;

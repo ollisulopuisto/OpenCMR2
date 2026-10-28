@@ -112,6 +112,40 @@ inline bool TreeBreak_ShouldBreak(int speed)
     return speed >= 0xc000;
 }
 
+// OpenCMR2: per-object fall state for broken trees. A smashed tree falls
+// over slowly instead of vanishing: `angle` grows from 0 to 0x10000 (90 deg)
+// as the tree tips to the ground. Keyed by StageObject pointer like the
+// animation table. [video] video.tree_break gates the whole system.
+struct TreeFallState {
+    struct StageObject *pObject;  // key: the stage object this state belongs to
+    int angle;       // current fall angle in 16.16 degrees, 0..0x10000
+    int angularVel;  // degrees per frame, grows as the tree falls
+    int active;      // 1 once falling has started
+};
+
+// Table of per-object fall state, defined in Game.cpp.
+extern struct TreeFallState *g_treeFallStates;
+extern unsigned int g_treeFallStateCount;
+void TreeFall_ClearTable(void);
+
+// Advances a tree's fall by one frame: accelerates the angle, clamps at 90
+// degrees. Returns the current angle (0 = upright, 0x10000 = fully fallen).
+inline int TreeFall_Advance(int *angle, int *angularVel)
+{
+    if (*angularVel < 0x200)
+        *angularVel += 0x10;
+    *angle += *angularVel;
+    if (*angle > 0x10000)
+        *angle = 0x10000;
+    return *angle;
+}
+
+// Whether a fallen tree should still be drawn (angle < 90 deg).
+inline bool TreeFall_ShouldDraw(int angle)
+{
+    return angle < 0x10000;
+}
+
 // OpenCMR2: dirt on the camera lens. A level of 0 is a clean lens; 255 is
 // completely obscured. Impacts and off-road driving add dirt, each frame
 // decays it. Saved nowhere: a fresh stage starts clean.

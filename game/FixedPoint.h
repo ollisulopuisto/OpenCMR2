@@ -90,6 +90,7 @@ int FixMatrix_InverseRotateVector(FixVector *pOut, FixVector *pV, FixMatrix *pM)
 FixMatrix *FixMatrix_Multiply(FixMatrix *pOut, FixMatrix *pA, FixMatrix *pB);
 void FixMatrix_Identity(FixMatrix *pOut);
 void FixMatrix_RotationZ(FixMatrix *pOut, short angle);
+void FixMatrix_RotateAboutRight(FixMatrix *pOut, unsigned short angle);
 void FixMatrix_TransformAboutPivot(FixVector *pOut, FixVector *pIn, FixVector *pPivot, FixMatrix *pM);
 void FixMatrix_Invert(FixMatrix *pOut, FixMatrix *pIn);
 void FixMatrix_TransformPoint(FixVector *pOut, FixVector *pIn, FixMatrix *pM);

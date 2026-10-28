@@ -14694,6 +14694,9 @@ int Collision_TestCarAgainstSectorObjects(Car *pCar)
                 if (Sys_GetOption("video.tree_break", 1) != 0 &&
                     TreeBreak_ShouldBreak(pCar->speed)) {
                     pObject->flags |= STAGE_OBJECT_BROKEN;
+                    // OpenCMR2: start the fall animation for the broken tree.
+                    extern int TreeFall_Index(StageObject *);
+                    TreeFall_Index((StageObject *)pObject);
                     continue;
                 }
                 result = 0;

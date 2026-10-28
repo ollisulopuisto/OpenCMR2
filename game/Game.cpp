@@ -2415,6 +2415,40 @@ void AnimObject_ClearTable(void)
     g_animStateCapacity = 0;
 }
 
+// OpenCMR2: per-object fall state for broken trees, keyed by StageObject
+// pointer. Allocated lazily and cleared when the stage is unloaded.
+struct TreeFallState *g_treeFallStates = NULL;
+unsigned int g_treeFallStateCount = 0;
+unsigned int g_treeFallStateCapacity = 0;
+
+int TreeFall_Index(StageObject *pObject)
+{
+    for (unsigned int i = 0; i < g_treeFallStateCount; i++)
+        if (g_treeFallStates[i].pObject == pObject)
+            return (int)i;
+    if (g_treeFallStateCount >= g_treeFallStateCapacity) {
+        unsigned int cap = g_treeFallStateCapacity ? g_treeFallStateCapacity * 2 : 256;
+        struct TreeFallState *p = (struct TreeFallState *)realloc(g_treeFallStates, cap * sizeof(struct TreeFallState));
+        if (p == NULL)
+            return -1;
+        g_treeFallStates = p;
+        g_treeFallStateCapacity = cap;
+    }
+    g_treeFallStates[g_treeFallStateCount].pObject = pObject;
+    g_treeFallStates[g_treeFallStateCount].angle = 0;
+    g_treeFallStates[g_treeFallStateCount].angularVel = 0;
+    g_treeFallStates[g_treeFallStateCount].active = 0;
+    return (int)g_treeFallStateCount++;
+}
+
+void TreeFall_ClearTable(void)
+{
+    free(g_treeFallStates);
+    g_treeFallStates = NULL;
+    g_treeFallStateCount = 0;
+    g_treeFallStateCapacity = 0;
+}
+
 // Draws the static stage objects of the culled sectors. Objects whose mesh is
 // flagged for the deferred pass (mesh flag 2) get their world matrix and view
 // depth updated and are queued; the rest are drawn right away.
@@ -2442,10 +2476,30 @@ void Game_DrawStaticStageObjects(void)
     for (i = 0; i < (unsigned int)g_sectorCullEnabled; i++) {
         pObject = (StageObjectDraw *)g_sectors[g_visibleSectorIndices[i]]->pObjects;
         while (pObject != NULL) {
-            if (pObject->field_0x14 != 0 &&
-                // OpenCMR2: a smashed tree is no longer drawn
-                // ([video] video.tree_break).
-                !(pObject->field_0x10 & STAGE_OBJECT_BROKEN)) {
+            if (pObject->field_0x14 != 0) {
+                // OpenCMR2: a smashed tree still draws (falling over slowly) but
+                // no longer collides ([video] video.tree_break). Broken trees
+                // are excluded from the collision pass in StageObjects.cpp.
+                bool broken = (pObject->field_0x10 & STAGE_OBJECT_BROKEN) != 0;
+                if (broken && Sys_GetOption("video.tree_break", 1) != 0) {
+                    // Advance the fall animation: tip the tree over slowly.
+                    int ix = TreeFall_Index((StageObject *)pObject);
+                    if (ix >= 0) {
+                        struct TreeFallState *fs = &g_treeFallStates[ix];
+                        if (!fs->active) {
+                            fs->active = 1;
+                            fs->angle = 0;
+                            fs->angularVel = 0x100;
+                        }
+                        TreeFall_Advance(&fs->angle, &fs->angularVel);
+                        // Tip the tree forward around its right axis by the
+                        // fall angle. Work on a copy so the stored matrix is
+                        // not permanently changed.
+                        GfxMatrix m = *(GfxMatrix *)pObject->matrix;
+                        FixMatrix_RotateAboutRight((FixMatrix *)&m, (unsigned short)(fs->angle >> 4));
+                        *(GfxMatrix *)pObject->matrix = m;
+                    }
+                }
                 // OpenCMR2: an animated scenery object swaps its texture for
                 // the current frame of its cycle ([video] video.animated_scenery).
                 int animatedTexture = -1;
