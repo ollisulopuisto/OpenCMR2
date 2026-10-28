@@ -29,6 +29,8 @@ class BinaryTests(unittest.TestCase):
         self.profile.mkdir()
         (self.profile / 'opencmr2.ini').write_text('[video]\ndriver_name_overrides=0\n')
         (self.profile / 'progress.pps').write_bytes(b'valuable profile')
+        (self.profile / 'Configuration').mkdir()
+        (self.profile / 'Configuration/Controller.rcf').write_bytes(b'saved controls sentinel')
         (self.profile / 'pps').mkdir()
         (self.profile / 'pps/progress.pps').write_bytes(b'valuable profile')
         for file in ['Game/Bigfiles/common.bfl', 'FrontEnd/common.bfl', 'Sounds/surface.bfl', 'CountrySpecific/Europe/englishtext.bfl', 'SetupRep/640/common.bfl']:
@@ -39,6 +41,7 @@ class BinaryTests(unittest.TestCase):
         self.env.pop('OPENCMR2_DATA', None)
 
     def tearDown(self):
+        self.assertEqual((self.profile / 'Configuration/Controller.rcf').read_bytes(), b'saved controls sentinel')
         self.assertEqual((self.profile / 'progress.pps').read_bytes(), b'valuable profile')
         self.assertEqual((self.profile / 'opencmr2.ini').read_text(), '[video]\ndriver_name_overrides=0\n')
         self.tmp.cleanup()
@@ -55,6 +58,28 @@ p=argparse.ArgumentParser();p.add_argument('--input-dir');p.add_argument('--cach
 (out/'sub.cin').write_text('replacement car')
 print(('OPENCMR2_CARS=' if a.cars else 'OPENCMR2_PACK=')+str(out))
 '''))
+
+    @unittest.skipIf(OVERLAY, 'main entry covered by binary tests')
+    def test_controls_help_and_invalid_bindings(self):
+        r = subprocess.run([str(self.exe), '--help-controls'], capture_output=True, text=True, env=self.env)
+        self.assertEqual(r.returncode, 0)
+        self.assertIn('--bind-key', r.stdout)
+        self.assertFalse((self.profile / 'opencmr2.log').exists())
+        for values in [('--bind-key', 'left=Escape'), ('--bind-key', 'left=A', '--bind-key', 'right=A'), ('--bind-key',)]:
+            r = self.run_binary(*values)
+            self.assertNotEqual(r.returncode, 0)
+        self.assertFalse((self.profile / 'opencmr2.log').exists())
+        r = self.run_binary('--bind-key', 'left=A', '--bind-key', '2:brake=Keypad 2')
+        self.assertEqual(r.returncode, 0, r.stderr)
+
+    @unittest.skipIf(OVERLAY, 'main entry covered by binary tests')
+    def test_missing_car_folder_before_scenery_preparation(self):
+        self.helper(fail=True)
+        r = self.run_binary('--trees', 'shell', '--cars', '205-finland-1986')
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn('--mods-dir', r.stderr)
+        self.assertNotIn('helper exited', r.stderr)
+        self.assertFalse((self.profile / 'enhancements').exists())
 
     @unittest.skipIf(OVERLAY, 'main entry covered by binary tests')
     def test_help_no_profile(self):

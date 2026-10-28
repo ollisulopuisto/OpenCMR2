@@ -567,11 +567,23 @@ void FrontendControls_UpdateBindingCapture(Menu *pMenu)
     Menu_SetFlags(pMenu, 0, 0, 0, 0);
     pDevice = CInput::GetAvailableDeviceRecord(CONTROLS_SEL);
     key = CInput::GetFirstPressedKey();
+    if (g_unk0x0082a7e0 == -1 && key == INPUT_KEY_ESCAPE) {
+        // Cancel capture without binding Escape (menu/back must remain usable).
+        g_controlsBindingCaptureState = 0;
+        Input_ClearKeyPressQueue();
+        Menu_SetFlags(pMenu, 1, 1, 1, 1);
+        CInput::UpdateAllAvailableDevices();
+        Input_TranslatePedalsToMenuKeys();
+        return;
+    }
     if (g_unk0x0082a7e0 != -1) {
         g_unk0x0082a7e0 = key;
-    } else if (key != -1 && FrontendControls_IsSelectedAxisBound(pMenu) == 0) {
+    } else if (key != -1 && pMenu->cursor >= 0 && pMenu->cursor < 9 && FrontendControls_IsSelectedAxisBound(pMenu) == 0) {
         done = TRUE;
-        Input_GetLastKeyName(g_controlsCopy[CONTROLS_SEL].keyNames[pMenu->cursor], 20);
+        // The held key is authoritative. A press/release between polls may
+        // have left a different last event in the queue.
+        snprintf(g_controlsCopy[CONTROLS_SEL].keyNames[pMenu->cursor], 20, "%s", Input_GetKeyName(key));
+        Input_ClearKeyPressQueue();
         CInput::SetIndexedByteBinding(g_controlsCopy[CONTROLS_SEL].field_0x13e, pMenu->cursor, key);
         if (pDevice->field_0x0 != 1)
             CInput::SetIndexedWordBinding(&g_controlsCopy[CONTROLS_SEL].field_0x128, pMenu->cursor, 0);
@@ -891,26 +903,18 @@ void FrontendControls_BeginCalibration(Menu *pMenu, int param)
 // FUNCTION: CMR2 0x004fcc50
 void FrontendControls_ClearDuplicateBinding(ControllerData *p, int index)
 {
-    unsigned short *pButton;
-    char *pName;
-    int i;
-
-    i = 0;
-    pName = p->keyNames[0];
-    pButton = &p->field_0x128;
-    do {
-        if (i != index) {
-            if (*pButton == (&p->field_0x128)[index])
-                *pButton = 0;
-            if (p->field_0x13e[i] == p->field_0x13e[index]) {
-                p->field_0x13e[i] = 0;
-                *pName = 0;
-            }
+    // Nine keyboard slots, but ten button/axis entries (the tenth is back).
+    // Never treat the first byte of keyNames as a tenth DIK binding.
+    if (index < 0 || index >= 10) return;
+    for (int i = 0; i < 10; i++) {
+        if (i == index) continue;
+        if ((&p->field_0x128)[index] != 0 && (&p->field_0x128)[i] == (&p->field_0x128)[index])
+            (&p->field_0x128)[i] = 0;
+        if (index < 9 && i < 9 && p->field_0x13e[index] != 0 && p->field_0x13e[i] == p->field_0x13e[index]) {
+            p->field_0x13e[i] = 0;
+            p->keyNames[i][0] = 0;
         }
-        i++;
-        pButton++;
-        pName += 20;
-    } while (i < 10);
+    }
 }
 
 // Current position of axis `index` of the selected device.

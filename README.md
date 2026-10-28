@@ -49,6 +49,35 @@ as it is made.
 * Fullscreen on the desktop resolution or a resizable window, switched with
   Alt+Enter
 * Keyboard, mouse and gamepads through SDL3, and on-screen controls on Android
+
+### Keyboard remapping
+
+Use the existing **Options > Controls** screen: choose a keyboard, select the
+control, release the confirm key, then press its new key. Escape cancels capture
+without changing the binding. Assigning a key clears its previous action in the
+same configuration. Accept the controls edits through the normal menu save flow;
+these remain in the existing `Configuration/Controller.rcf`, with no format or
+profile migration. Menu arrows, Enter, Escape and text entry are unchanged.
+
+For temporary bindings, the binary also accepts repeated `--bind-key` options:
+
+```sh
+./build/macos/src/opencmr2 --data "/path/to/owned/game-data" \
+  --bind-key left=A --bind-key right=D --bind-key accelerate=W --bind-key brake=S
+./build/macos/src/opencmr2 --help-controls
+```
+
+This is an example, not a new default. Actions are `left`, `right`, `accelerate`,
+`brake`, `handbrake`, `gear-up`, `gear-down`, `camera`, and `look-back`. Keys use
+SDL physical scancode names such as `W`, `Space`, `Up`, or `"Left Shift"`.
+`none` unbinds an action. Prefix an action with `2:` to select the second local
+keyboard configuration, for example `--bind-key "2:brake=Keypad 2"`. Escape is
+reserved. Explicit duplicate keys on one keyboard are rejected; swaps work.
+Unspecified actions keep saved keys, except a key reassigned to another action
+is cleared there for this launch. Temporary overrides take priority over in-game
+edits until restart, but are never serialized to the controls file. Omit them on
+the next launch to return to your saved bindings. In-game edits still save normally.
+
 * Bink intro and country videos with a built-in decoder
 * Multiplayer over LAN and the internet using UDP instead of DirectPlay
 * Folder dialog on first launch to locate the game installation

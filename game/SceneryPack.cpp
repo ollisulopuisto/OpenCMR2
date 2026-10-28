@@ -1,4 +1,5 @@
 #include "SceneryPack.h"
+#include "ScenerySHA256.h"
 #include "SceneryPackFormat.h"
 #include "ScenerySourceFit.h"
 #include "Graphics.h"
@@ -19,13 +20,17 @@
 using namespace SceneryFormat;
 namespace {
 std::map<GenericFile*,std::string> archives;
+std::map<const Texture*,std::string> sourceIdentities;
+struct Identity {std::string archive,source,hash;};
+std::vector<Identity> identities;
+std::set<std::string> unmatched;
 struct PackTexture { GfxTexture *surface=nullptr; int width=0,height=0; };
 std::vector<GfxTexture*> ownedTextures;
 uint64_t animationTime=0;
 struct Part { std::vector<GfxVertex> vertices; PackTexture *texture=nullptr; };
 struct Asset { std::map<const Mesh*,std::vector<Part>> fitted; int sourceWidth=0,sourceHeight=0; SceneryFormat::Entry entry; std::string failure; std::set<std::string> loggedFailures; bool attempted=false,ready=false; std::vector<Part> parts; std::vector<PackTexture*> frames; };
 std::vector<Asset> assets;
-bool loaded=false;
+bool loaded=false,identityContract=false;
 bool treeLogged=false,spectatorLogged=false;
 std::string root;
 std::map<std::string,PackTexture> textures;
@@ -69,7 +74,16 @@ void Init(){
         if(duplicate){Sys_Log("scenery pack: duplicate mapping rejected %s/%s",e.archive.c_str(),e.source.c_str());assets.clear();return;}
         if(assets.size()>=2048)return;Asset a;a.entry=e;assets.push_back(std::move(a));
     }}
-    Sys_Log("scenery pack: %u mappings",(unsigned)assets.size());
+    if(Read(root+"source-identities.tsv",text)) {
+        identityContract=true;
+        std::istringstream rows(text);
+        while(std::getline(rows,line)) {auto p=Split(line,'\t');
+            if(p.size()!=3||p[0].find('/')==p[0].npos||p[2].size()!=64||identities.size()>=2048)continue;
+            if(p[2].find_first_not_of("0123456789abcdef")!=p[2].npos)continue;
+            auto slash=p[0].find('/');identities.push_back({p[0].substr(0,slash),Stem(p[0].substr(slash+1)),p[2]});
+        }
+    }
+    Sys_Log("scenery pack: %u mappings, %u verified-byte identity routes",(unsigned)assets.size(),(unsigned)identities.size());
 }
 bool Reject(Asset &a,const char *reason){a.failure=reason;return false;}
 void LogRejection(Asset &a){
@@ -132,8 +146,16 @@ void SceneryPack_LogStatus(){
     while(std::getline(input,line)){SceneryFormat::Entry entry;if(ParseEntry(line,entry))count++;}
     Sys_Log("options: scenery manifest=%u parsed mappings; NOT active yet, resources checked lazily at stage draw",count);
 }
+void SceneryPack_RegisterSource(Texture *texture,const void *bytes,unsigned size){
+    if(!texture)return;
+    sourceIdentities.erase(texture); // allocator may reuse a released texture address
+    if(!bytes||size<1||size>16*1024*1024||!Sys_GetOption("video.scenery_overrides",1))return;
+    Init();std::string stem=Stem(texture->name);bool candidate=false;
+    for(auto &a:assets)if(a.entry.source==stem){candidate=true;break;}
+    if(candidate)sourceIdentities[texture]=SceneryIdentity::SHA256(bytes,size);
+}
 void SceneryPack_RegisterArchive(GenericFile *file,const char *path){if(file&&path)archives[file]=Leaf(path);}
-void SceneryPack_Clear(){assets.clear();archives.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;}
+void SceneryPack_Clear(){assets.clear();archives.clear();sourceIdentities.clear();identities.clear();unmatched.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;identityContract=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;}
 void SceneryPack_Advance(int step){if(step>0)animationTime+=(unsigned)step;}
 bool SceneryPack_Draw(StageObject *object,const float *billboard){
     if(!object||!object->pMesh||!billboard||Sys_GetOption("video.scenery_overrides",1)==0)return false;
@@ -143,10 +165,23 @@ bool SceneryPack_Draw(StageObject *object,const float *billboard){
     int texture=mesh->pTriangles[0].textures[0];if(texture<0||(unsigned)texture>=CGraphics::m_textureCount)return false;
     for(int i=1;i<mesh->triangleCount;i++)if(mesh->pTriangles[i].textures[0]!=texture)return false;
     Texture *source=CGraphics::GetTextureBuffer()[texture];if(!source)return false;
-    auto archive=archives.find((GenericFile*)source->pArchive);if(archive==archives.end())return false;
-    Init();Asset *asset=nullptr;
-    for(auto &a:assets)if(a.entry.archive==archive->second&&a.entry.source==Stem(source->name)){asset=&a;break;}
-    if(!asset)return false;
+    auto archive=archives.find((GenericFile*)source->pArchive);
+    Init();Asset *asset=nullptr;std::string stem=Stem(source->name);
+    auto identity=sourceIdentities.find(source);
+    // Source-index archives are preparation containers, not necessarily the
+    // runtime stage archive. Loose textures have no pArchive at all. Route
+    // these only by exact original DDS bytes, never by an ambiguous filename.
+    if(identity!=sourceIdentities.end())for(auto &id:identities)if(id.source==stem&&id.hash==identity->second)
+        for(auto &a:assets)if(a.entry.archive==id.archive&&a.entry.source==stem){asset=&a;break;}
+    // Legacy packs retain their strict archive+stem contract, but new packs
+    // with identity records never bypass a failing byte check.
+    if(!identityContract&&archive!=archives.end())
+        for(auto &a:assets)if(a.entry.archive==archive->second&&a.entry.source==stem){asset=&a;break;}
+    if(!asset){
+        for(auto &a:assets)if(a.entry.source==stem&&unmatched.insert(stem).second)
+            Sys_Log("options: scenery source unmatched %s runtime archive=%s; source bytes unverified or pack lacks matching identity; keeping original",stem.c_str(),archive==archives.end()?"loose/unregistered":archive->second.c_str());
+        return false;
+    }
     if(asset->entry.kind=="tree"&&Sys_GetOption("video.tree_overrides",1)==0)return false;
     if(asset->entry.kind=="spectator"&&Sys_GetOption("video.spectator_overrides",1)==0)return false;
     if(!Prepare(*asset)){

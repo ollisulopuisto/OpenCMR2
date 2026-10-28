@@ -57,6 +57,17 @@ class Tests(unittest.TestCase):
         self.write_index()
         self.before = {p.name: p.read_bytes() for p in self.input.iterdir()}
 
+    def test_source_identity_records(self):
+        r = subprocess.run([sys.executable, str(self.script), '--input-dir', str(self.input), '--output-dir', str(self.output)], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        lines = (self.output / 'source-identities.tsv').read_text().splitlines()
+        self.assertEqual(len(lines), 2)
+        for line in lines:
+            key, size, digest = line.split('\t')
+            self.assertEqual(int(size), len(self.raw))
+            self.assertEqual(digest, hashlib.sha256(self.raw).hexdigest())
+            self.assertIn(self.index[key]['category'], ['individual-tree', 'spectator'])
+
     def tearDown(self):
         self.tmp.cleanup()
 

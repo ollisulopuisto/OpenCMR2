@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "Texture.h"
+#include "SceneryPack.h"
 #include "Graphics.h"
 
 // GLOBAL: CMR2 0x00520c98
@@ -27,22 +28,25 @@ Texture* CTexture::FindLoadTexture(GenericFile* pFile, char* textureName, bool *
     char name[64];
     void *pData;
     Texture *pTexture;
+    DWORD sourceSize=0;
 
     if (didLoadTexture != NULL)
         *didLoadTexture = false;
     if (pFile != NULL && pFile->didFileLoad && !param5) {
         Texture_GetPathStem(name, textureName);
         sprintf(name + strlen(name), g_ddsSuffix);
-        pData = CGenericFileLoader::FindFileInArchive(pFile, name, pSize);
+        pData = CGenericFileLoader::FindFileInArchive(pFile, name, &sourceSize);
         if (pData == NULL) {
             sprintf(name + strlen(name) - 4, g_tgaSuffix);
-            pData = CGenericFileLoader::FindFileInArchive(pFile, name, pSize);
+            pData = CGenericFileLoader::FindFileInArchive(pFile, name, &sourceSize);
         }
         if (pData != NULL) {
             if (didLoadTexture != NULL)
                 *didLoadTexture = true;
             pTexture = CGraphics::CreateTextureFromImageData(textureName, pData, flag);
+            if(pSize)*pSize=sourceSize;
             pTexture->pArchive = pFile;
+            SceneryPack_RegisterSource(pTexture,pData,sourceSize);
             return pTexture;
         }
     }

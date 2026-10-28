@@ -1,3 +1,4 @@
+#include <SDL3/SDL_timer.h>
 #include "port/types.h"
 #include <string>
 #include <vector>
@@ -9,6 +10,8 @@
 #include "Graphics.h"
 #undef private
 #include "SceneryPack.h"
+#include "ScenerySHA256.h"
+#include <filesystem>
 #include "SceneryPackFormat.h"
 #include <fstream>
 #include <sstream>
@@ -45,12 +48,41 @@ struct Capture: GfxExecutor {
 GfxExecutor *Gfx_CreateGpuExecutor(){return new Capture;}
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line%d: %s\n",__LINE__,#x);return 1;}}while(0)
 int main(int argc,char **argv){if(argc<2)return 0;base=argv[1];legacy=argc>2&&!strcmp(argv[2],"legacy");separate=argc>2&&!strcmp(argv[2],"separate");CHECK(Gfx_SetVideoMode(640,480,FALSE));
+ bool identityMode=argc>2&&!strcmp(argv[2],"identity");
+ std::filesystem::path temporary;
+ if(identityMode){
+   CHECK(SceneryIdentity::SHA256("",0)=="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+   CHECK(SceneryIdentity::SHA256("abc",3)=="ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+   CHECK(SceneryIdentity::SHA256("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",56)=="248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1");
+   std::string multi(1000,'a');CHECK(SceneryIdentity::SHA256(multi.data(),multi.size())=="41edece42d63e8d9bf515a9ba6932e1c20cbc9f5a5d134645adb5db1b9737ea3");
+   temporary=std::filesystem::temp_directory_path()/("cmr-identity-"+std::to_string(SDL_GetTicksNS()));
+   std::filesystem::copy(base,temporary,std::filesystem::copy_options::recursive);base=temporary.string();
+   std::ofstream ids(temporary/"source-identities.tsv");ids<<"frahit.bfl/tre_md1.dds\t3\t"<<SceneryIdentity::SHA256("abc",3)<<"\nfrahit.bfl/spc_mn9a.dds\t3\t"<<SceneryIdentity::SHA256("def",3)<<"\n";ids.close();
+ }
  D3DTextureManager manager={};CGraphics::m_pTextureManager=&manager;CGraphics::m_textureCount=1;
  Texture source={};source.width=source.height=256;strcpy(source.name,"C:\\textures\\TRE_MD1.TGA");GenericFile archive={};source.pArchive=&archive;manager.textureBuffer[0]=&source;
  MeshTriangle triangle={};MeshVertexF verts[3]={};verts[1].y=2;verts[2].x=1;verts[0].textureCoordinates[0][1]=1;verts[2].textureCoordinates[0][0]=1;verts[2].textureCoordinates[0][1]=1;Mesh mesh={};mesh.flags=2;mesh.pTriangles=&triangle;mesh.triangleCount=1;mesh.pVertexData=(DWORD*)verts;mesh.field_0x10=3;
  StageObject object={};object.pMesh=&mesh;object.matrix.right.x=object.matrix.up.y=object.matrix.forward.z=65536;object.matrix.position.x=3*65536;
  GfxMatrix billboard={};billboard._11=billboard._22=billboard._33=billboard._44=1;billboard._41=99;
  CHECK(!SceneryPack_Draw(&object,(float*)&billboard));SceneryPack_RegisterArchive(&archive,"DATA/FRAHIT.BFL");
+ if(identityMode){
+   // Actual stage archive is not the recipe's source container.
+   SceneryPack_RegisterArchive(&archive,"DATA/FRA01HI.BFL");
+   CHECK(!SceneryPack_Draw(&object,(float*)&billboard));
+   SceneryPack_RegisterSource(&source,"bad",3);CHECK(!SceneryPack_Draw(&object,(float*)&billboard));
+   SceneryPack_RegisterSource(&source,"abc",3);CHECK(SceneryPack_Draw(&object,(float*)&billboard));
+   // Loose texture, no runtime archive; identity still reaches the animation.
+   source.pArchive=nullptr;strcpy(source.name,"spc_mn9a.dds");SceneryPack_RegisterSource(&source,"def",3);
+   CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);auto firstFrame=bound;
+   for(int i=0;i<5;i++)SceneryPack_Advance(65536);
+   CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(bound!=firstFrame);
+   SceneryPack_RegisterSource(&source,"xyz",3);CHECK(!SceneryPack_Draw(&object,(float*)&billboard));
+   CHECK(logs.find("spectator sidecar active")!=std::string::npos);
+   SceneryPack_Clear();SceneryPack_RegisterArchive(&archive,"DATA/FRAHIT.BFL");source.pArchive=&archive;
+   CHECK(!SceneryPack_Draw(&object,(float*)&billboard)); // new pack must not bypass missing identity
+   Gfx_Shutdown();std::filesystem::remove_all(temporary);puts("exact-byte scenery routing: stage archives, loose textures, animation frames, modified bytes and reset pass");return 0;
+ }
+
  if(legacy){CHECK(!SceneryPack_Draw(&object,(float*)&billboard));
  CHECK(logs.find("frahit.bfl/tre_md1")!=std::string::npos&&logs.find("source-canvas-1 header")!=std::string::npos);
  auto logged=logs;CHECK(!SceneryPack_Draw(&object,(float*)&billboard));CHECK(logs==logged);strcpy(source.name,"spc_mn9a.dds");CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(draws==1);SceneryPack_Clear();Gfx_Shutdown();puts("headerless legacy tree rejected; spectator preserved: pass");return 0;}

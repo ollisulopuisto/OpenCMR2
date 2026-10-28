@@ -1,3 +1,4 @@
+#include "SceneryPack.h"
 #include "DustPlume.h"
 #include "WorldDust.h"
 static WorldDust::Pool worldDust;
@@ -6054,6 +6055,7 @@ Texture *CGraphics::LoadDDSThenTGATexture(char *name, unsigned int flags)
         }
     }
     sprintf(pTexture->name, name);
+    SceneryPack_RegisterSource(pTexture,pData,CGenericFileLoader::GetGenericFileSize());
     pTexture->flags |= flags;
     if ((pTexture->flags & 0x20) && (g_pGraphics->field913_0x3bc & 0x10))
         return LoadTGABumpMap((BYTE *)pData, pTexture);

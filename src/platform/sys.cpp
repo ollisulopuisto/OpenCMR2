@@ -1,3 +1,4 @@
+#include "platform/key_remapping.h"
 // System services on SDL3: see port/sys.h.
 
 #include "platform/platform.h"
@@ -685,8 +686,14 @@ bool PrepareEnhancementPack(bool cars=false){
 
 // ---- platform lifecycle ------------------------------------------------------
 
+static KeyRemappingOptions s_keyRemapping;
+extern "C" void Sys_ApplyGameplayKeys(int keyboard, unsigned char *keys) { s_keyRemapping.Apply(keyboard,keys); }
+
 bool Platform_Init(int argc, char **argv)
 {
+    s_keyRemapping=KeyRemappingOptions{};
+    for(int i=1;i<argc;i++){std::string error;if(s_keyRemapping.Consume(i,argc,argv,error)&&!error.empty()){fprintf(stderr,"%s\n",error.c_str());return false;}}
+    {std::string error;if(!s_keyRemapping.Validate(error)){fprintf(stderr,"%s\n",error.c_str());return false;}}
     s_enhancements=EnhancementOptions{};s_carDir.clear();
     s_dataDir.clear();
     s_sceneryDir.clear();
@@ -737,7 +744,9 @@ bool Platform_Init(int argc, char **argv)
     std::string dataDir;
     for (int i = 1; i < argc; i++) {
         std::string error;
-        if(s_enhancements.Consume(i,argc,argv,error)){
+        if(s_keyRemapping.Consume(i,argc,argv,error)) {
+            if(!error.empty())return false;
+        } else if(s_enhancements.Consume(i,argc,argv,error)){
             if(!error.empty()){fprintf(stderr,"%s\n",error.c_str());Platform_Shutdown();return false;}
         } else if (strcmp(argv[i], "--data") == 0 && i + 1 < argc) {
             dataDir = argv[++i];
@@ -797,9 +806,9 @@ bool Platform_Init(int argc, char **argv)
     if(s_enhancements.installDependencies&&!s_enhancements.NeedsPack()){
         fprintf(stderr,"--install-enhancement-deps is only meaningful with --trees shell/crossed or --spectators animated.\n");Platform_Shutdown();return false;
     }
+    if(!s_enhancements.cars.empty()&&s_enhancements.cars!="original"&&s_enhancements.modsDir.empty()){fprintf(stderr,"--cars needs --mods-dir PATH to the folder containing the original car ZIPs; see --help-enhancements. Nothing downloaded.\n");Platform_Shutdown();return false;}
     if(s_enhancements.NeedsPack()&&!PrepareEnhancementPack()) {Platform_Shutdown();return false;}
     if(!s_enhancements.cars.empty()&&s_enhancements.cars!="original"){
-        if(s_enhancements.modsDir.empty()){fprintf(stderr,"--cars needs --mods-dir\n");Platform_Shutdown();return false;}
         if(!PrepareEnhancementPack(true)){Platform_Shutdown();return false;}
     }
     if(!s_carDir.empty())Sys_Log("options: car overlay read-only=%s; replacement slots, native compatibility/physics unverified",s_carDir.c_str());
