@@ -10,6 +10,7 @@
 #include "Graphics.h"
 #undef private
 #include "SceneryPack.h"
+#include "CrowdSelection.h"
 #include "ScenerySHA256.h"
 #include <filesystem>
 #include <chrono>
@@ -48,7 +49,13 @@ struct Capture: GfxExecutor {
 };
 GfxExecutor *Gfx_CreateGpuExecutor(){return new Capture;}
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line%d: %s\n",__LINE__,#x);return 1;}}while(0)
-int main(int argc,char **argv){if(argc<2)return 0;base=argv[1];legacy=argc>2&&!strcmp(argv[2],"legacy");separate=argc>2&&!strcmp(argv[2],"separate");CHECK(Gfx_SetVideoMode(640,480,FALSE));
+int main(int argc,char **argv){
+ unsigned selected=0;for(int x=-1000;x<1000;x++){
+  auto a=CrowdSelection::Articulate(x*65536,1234567);
+  CHECK(a==CrowdSelection::Articulate(x*65536,1234567));selected+=a;
+ }
+ CHECK(selected>1150&&selected<1450);
+if(argc<2)return 0;base=argv[1];legacy=argc>2&&!strcmp(argv[2],"legacy");separate=argc>2&&!strcmp(argv[2],"separate");CHECK(Gfx_SetVideoMode(640,480,FALSE));
  bool identityMode=argc>2&&!strcmp(argv[2],"identity");
  std::filesystem::path temporary;
  if(identityMode){

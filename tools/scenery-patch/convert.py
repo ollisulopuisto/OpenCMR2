@@ -157,6 +157,149 @@ FOREGROUND_LIMBS = {'spc_mn15a': {'angles': [0, 8, 16, 8],
             'pivot': [28, 19],
             'plate': [],
             'polygon': [[25, 17], [29, 12], [39, 6], [48, 4], [50, 9], [39, 11], [32, 20]]}}
+# Explicit source-space masks. One person per group, not one whole-atlas warp.
+EXPANDED_LIMBS = {'spc_mn11a': {'angles': [0, -7, -14, -7],
+               'donor': [-7, 0],
+               'pivot': [41, 59],
+               'polygon': [[39, 57],
+                           [44, 58],
+                           [43, 64],
+                           [39, 69],
+                           [38, 75],
+                           [34, 77],
+                           [29, 74],
+                           [32, 68],
+                           [37, 64]]},
+ 'spc_mn13a': {'angles': [0, 7, 14, 7],
+               'donor': [0, -10],
+               'pivot': [31, 42],
+               'polygon': [[7, 38],
+                           [14, 39],
+                           [23, 40],
+                           [33, 40],
+                           [34, 44],
+                           [28, 46],
+                           [16, 44],
+                           [7, 42]]},
+ 'spc_mn7a': {'angles': [0, -9, -18, -9],
+              'donor': [-2, -10],
+              'pivot': [43, 47],
+              'polygon': [[39, 45],
+                          [46, 45],
+                          [46, 50],
+                          [40, 56],
+                          [32, 60],
+                          [27, 61],
+                          [25, 58],
+                          [30, 55],
+                          [37, 51]]},
+ 'spe_06': {'angles': [0, -7, -14, -7],
+            'donor': [-8, 0],
+            'pivot': [96, 21],
+            'polygon': [[87, 8],
+                        [90, 6],
+                        [94, 9],
+                        [96, 16],
+                        [99, 20],
+                        [96, 24],
+                        [92, 20],
+                        [90, 13]]},
+ 'spe_07': {'angles': [0, 8, 16, 8],
+            'donor': [0, 10],
+            'pivot': [76, 19],
+            'polygon': [[72, 17],
+                        [74, 11],
+                        [84, 8],
+                        [94, 7],
+                        [95, 11],
+                        [87, 13],
+                        [79, 17],
+                        [77, 21]]},
+ 'spe_08': {'angles': [0, -8, -16, -8],
+            'donor': [0, -9],
+            'pivot': [59, 49],
+            'polygon': [[39, 46],
+                        [44, 47],
+                        [51, 47],
+                        [59, 47],
+                        [61, 50],
+                        [55, 53],
+                        [46, 52],
+                        [39, 50]]},
+ 'spe_09': {'angles': [0, -8, -16, -8],
+            'donor': [0, 10],
+            'pivot': [117, 39],
+            'polygon': [[101, 33],
+                        [105, 30],
+                        [111, 33],
+                        [117, 35],
+                        [120, 39],
+                        [117, 42],
+                        [111, 38],
+                        [105, 38]]}}
+FINLAND_LIMBS = {'spc_ma02': {'angles': [0, -7, -14, -7],
+              'pivot': [115, 43],
+              'polygon': [[113, 41],
+                          [118, 43],
+                          [119, 54],
+                          [118, 66],
+                          [116, 78],
+                          [111, 77],
+                          [112, 67],
+                          [113, 55]]},
+ 'spc_ma05': {'angles': [0, 7, 14, 7],
+              'pivot': [13, 42],
+              'polygon': [[11, 40],
+                          [16, 41],
+                          [16, 49],
+                          [15, 58],
+                          [15, 64],
+                          [11, 66],
+                          [8, 63],
+                          [9, 55],
+                          [10, 47]]},
+ 'spc_ma07': {'angles': [0, 7, 14, 7],
+              'pivot': [12, 43],
+              'polygon': [[8, 41],
+                          [15, 41],
+                          [15, 51],
+                          [16, 61],
+                          [15, 71],
+                          [10, 72],
+                          [8, 66],
+                          [8, 55]]},
+ 'spc_ma08': {'angles': [0, -7, -14, -7],
+              'pivot': [116, 44],
+              'polygon': [[114, 42],
+                          [119, 43],
+                          [120, 51],
+                          [119, 61],
+                          [117, 68],
+                          [113, 67],
+                          [114, 59],
+                          [114, 50]]},
+ 'spc_ma11': {'angles': [0, 7, 14, 7],
+              'pivot': [11, 47],
+              'polygon': [[9, 47],
+                          [13, 45],
+                          [18, 48],
+                          [23, 49],
+                          [25, 52],
+                          [21, 55],
+                          [15, 53],
+                          [10, 51]]},
+ 'spc_ma12': {'angles': [0, -7, -14, -7],
+              'pivot': [120, 37],
+              'polygon': [[117, 35],
+                          [122, 36],
+                          [124, 43],
+                          [124, 49],
+                          [120, 53],
+                          [116, 51],
+                          [118, 46],
+                          [117, 41]]}}
+FOREGROUND_LIMBS.update(FINLAND_LIMBS)
+FOREGROUND_LIMBS.update(EXPANDED_LIMBS)
 def foreground_limb_poses(src,name):
  original_size=src.size
  if src.size!=(128,128):src=src.resize((128,128),Image.Resampling.NEAREST)
@@ -165,6 +308,16 @@ def foreground_limb_poses(src,name):
   r=FOREGROUND_LIMBS[name];mask=Image.new('L',src.size);ImageDraw.Draw(mask).polygon([tuple(p) for p in r['polygon']],fill=255)
   arm=src.copy();arm.putalpha(Image.composite(src.getchannel('A'),Image.new('L',src.size),mask))
   base=src.copy();base.putalpha(Image.composite(Image.new('L',src.size),src.getchannel('A'),mask))
+  if name in EXPANDED_LIMBS:
+   dx,dy=r['donor']
+   for y in range(128):
+    for x in range(128):
+     if mask.getpixel((x,y)) and 0<=x+dx<128 and 0<=y+dy<128:
+      px=src.getpixel((x+dx,y+dy))
+      if px[3] and not mask.getpixel((x+dx,y+dy)):base.putpixel((x,y),px)
+   if name=='spe_07':
+    base=src.copy();base.putalpha(Image.composite(Image.new('L',src.size),src.getchannel('A'),mask))
+    ImageDraw.Draw(base).polygon([(87,9),(90,7),(94,8),(96,11),(95,14),(91,13)],fill=src.getpixel((93,14)))
   if name=='spe_05':
    # Continue the occluded purple-shirt neighbour behind the moving arm.
    for y in range(38,64):
@@ -184,7 +337,7 @@ def foreground_limb_poses(src,name):
 def spectator(a,rel):
  p=root/rel;p.mkdir(parents=True,exist_ok=True);src=Image.open(a['path']).convert('RGBA');frames=[]
  name=Path(a.get('texture','')).stem
- if a.get('archive') in ('frahit.bfl','fralot.bfl') and (name in FOREGROUND_LIMBS or name=='spc_mn9a'):
+ if a.get('archive') in ('frahit.bfl','fralot.bfl','finhit.bfl','finlot.bfl') and (name in FOREGROUND_LIMBS or name=='spc_mn9a'):
   for i,pose in enumerate(foreground_limb_poses(src,name)):
    path=p/f'frame-{i:02}.tga';pose.save(path,compression=None);frames.append(str(rel/path.name))
   return frames

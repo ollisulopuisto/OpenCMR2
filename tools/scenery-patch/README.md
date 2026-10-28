@@ -264,7 +264,7 @@ placement; changing near/far source variants does not remove limb motion.
 These foreground groups match the user's supplied screenshots, but native
 motion and clean-plate appearance still need checking in game. The low-source
 poses retain the original low-detail pixels; enlarging them invents no detail.
-Other38atlas files remain the limited upper-body sway route.
+After the expanded France recipes below,24atlas files retain the limited upper-body sway route.
 
 The requested25%-33%visible-person target remains open. A provisional decoded
 France01whole-stage audit counts290person-placements; these recipes cover22
@@ -272,6 +272,21 @@ moving placements (7.6%), not33%. Finland10currently has no authored limbs.
 Whole-stage placement counts do not prove the current camera's visible ratio.
 More group segmentation and per-view people-weighted diagnostics are needed.
 No coverage percentage is inferred from the count of atlas files.
+
+### Expanded France articulated coverage
+
+Explicit source-space arm masks now also cover `spe_06`, `spe_07`, `spe_08`,
+`spe_09`, `spc_mn7a`, `spc_mn11a`, and `spc_mn13a`, with their matching low-detail
+sources. Each moves one person, not the whole atlas. Original placements,
+collision, feet and lower-body pixels stay fixed. Stable placement phases keep
+nearby groups from moving in lockstep.
+
+In the held decoded France stage1 (Ballon), these and the earlier recipes cover
+73 articulated person-placements out of 290 people, about25.2% across the whole
+stage. This is not a per-camera visible/occlusion measurement or native visual
+acceptance. No broader stage claim follows from regional texture availability.
+Finland still has no articulated limb recipes. The roughly-one-in-three-visible
+people target remains open. The previous22/290 count describes PR40 alone.
 
 ### Export only observed missing source evidence
 
@@ -291,3 +306,20 @@ python3 tools/scenery-patch/export-evidence.py \
 
 Review `manifest.json` for missing names and archive parse failures. Do not
 publish the resulting ZIP or add it to Git. It contains original game artwork.
+
+### Finland articulated pairs
+
+Six Finland pair atlases (`spc_ma02/05/07/08/11/12`) now have explicit forearm
+masks and four poses, with both high/low source variants. Feet and lower30%
+remain fixed. Most poses are modest sleeve/hand gestures, not cheering or
+whole-body stretching. Original source bytes stay hash-gated.
+
+A stable placement hash selects65%of these pair cards for motion; the rest
+hold pose0. One moving person per selected pair targets about32.5%of people in
+large samples, not50%. Selection is identical for high/low variants, independent
+of frame order, and does not consume physics RNG. In the held Finland stage10
+(Tampere) placements,89out of302people are selected, about29.5%whole-stage.
+This does not prove the current camera's visible ratio or native appearance.
+Uncovered Finland crowd-strip and single-person atlases keep their earlier
+limited sway route. The roughly-one-in-three-visible target still needs native
+checks and per-view diagnostics.
