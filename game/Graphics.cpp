@@ -5052,6 +5052,14 @@ float Graphics_GetFrameRate(void)
     return g_frameRate;
 }
 
+// OpenCMR2: whether the in-game debug overlay (FPS and draw stats) is shown:
+// the original graphics debug flag (bit 2 of field913_0x3bc) or [video]
+// video.debug_draw.
+bool Graphics_DebugDrawWanted(void)
+{
+    return (g_pGraphics->field913_0x3bc & 4) != 0 || Sys_GetOption("video.debug_draw", 0) != 0;
+}
+
 // FUNCTION: CMR2 0x004b23b0
 void Graphics_SetPlaybackRate(float value)
 {

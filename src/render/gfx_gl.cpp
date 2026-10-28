@@ -216,7 +216,9 @@ struct Executor : GfxExecutor {
     std::unordered_map<uint32_t, GLuint> samplers;
     bool bcSupported = false;
     float maxAnisotropy = 0.0f;     // 0: no anisotropic filtering
-    int anisotropy = 1, smoothScaling = 1;
+    // OpenCMR2: video.anisotropy defaults to 8 (the original sampled without
+    // anisotropy; 1 restores it). video.smooth_scaling as before.
+    int anisotropy = 8, smoothScaling = 1;
     int swapInterval = -2;          // as last set
     int presentWidth = 0, presentHeight = 0;
     // The back buffer read of the last presented frame (the lens flare test),
@@ -359,7 +361,7 @@ struct Executor : GfxExecutor {
             Sys_Log("gfx: OpenGL 3.3 is needed");
             return false;
         }
-        anisotropy = Platform_GetSettingInt("video.anisotropy", 1);
+        anisotropy = Platform_GetSettingInt("video.anisotropy", 8);
         smoothScaling = Platform_GetSettingInt("video.smooth_scaling", 1);
         bcSupported = HasExtension("GL_EXT_texture_compression_s3tc");
         if (anisotropy > 1 &&
@@ -435,6 +437,22 @@ struct Executor : GfxExecutor {
     void SetFullscreen(bool fullscreen) override
     {
         Gfx_SetWindowMode(window, fullscreen, backWidth, backHeight);
+    }
+
+    // OpenCMR2: the cached samplers bake the old level in and their cache key
+    // does not carry it: drop them (and forget the bindings) so the next
+    // draws recreate them. The context is current: this runs from the menu.
+    void SetAnisotropy(int level) override
+    {
+        anisotropy = level < 1 ? 1 : level;
+        if (maxAnisotropy <= 1.0f && anisotropy > 1 &&
+            (HasExtension("GL_EXT_texture_filter_anisotropic") || HasExtension("GL_ARB_texture_filter_anisotropic")))
+            gl.GetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
+        for (auto &s : samplers)
+            gl.DeleteSamplers(1, &s.second);
+        samplers.clear();
+        for (GLuint &s : bound.samplers)
+            s = ~0u;
     }
 
     // ---- textures ----

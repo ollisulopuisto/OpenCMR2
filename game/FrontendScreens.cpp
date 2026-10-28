@@ -17,6 +17,7 @@
 #include "Sprite.h"
 #include "RegKey.h"
 #include "FixedPoint.h"
+#include "GraphicsOptions.h"
 #include <stdlib.h>
 #include <stddef.h>
 #include "FrontendDraw.h"
@@ -698,6 +699,94 @@ void FrontendMenu_DrawAdvancedGraphicsOptions(Menu *pMenu)
                 strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(0x1b3 - j));
             }
             break;
+        case 0xb:
+            // OpenCMR2: draw distance, as "< N% >" of the original far plane.
+            sprintf(CFrontend::m_stringDest, "%s  < %d%% >",
+                    pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id),
+                    DrawDistance_IndexToPercent(pItem->max));
+            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
+                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+            break;
+        case 0xc:
+            // OpenCMR2: the debug HUD (FPS and draw stats), Off/On as the
+            // other toggles draw theirs.
+            strcpy(CFrontend::m_stringDest, pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
+            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
+                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+            for (j = 0; j < pItem->min; j++) {
+                x += (int)(g_pGraphics->resX * 10) / 640 +
+                     Font_GetTextWidth(1, (BYTE *)CFrontend::m_stringDest);
+                strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(j == 0 ? 0x133 : 0x134));
+                Font_DrawText(1, CFrontend::m_stringDest, x,
+                              (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1],
+                              (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
+            }
+            break;
+        case 0xd: {
+            // OpenCMR2: texture filtering (anisotropy), the level chosen
+            // highlighted among the steps offered.
+            static const char *const filteringTexts[ANISOTROPY_LEVEL_COUNT] = { "Off", "2x", "4x", "8x", "16x" };
+            strcpy(CFrontend::m_stringDest, pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
+            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
+                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+            for (j = 0; j < pItem->min; j++) {
+                if (pItem->max == j)
+                    pColour = pSelColour;
+                else
+                    pColour = pUnselColour;
+                x += (int)(g_pGraphics->resX * 10) / 640 +
+                     Font_GetTextWidth(1, (BYTE *)CFrontend::m_stringDest);
+                strcpy(CFrontend::m_stringDest, filteringTexts[j]);
+                Font_DrawText(1, CFrontend::m_stringDest, x,
+                              (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+            }
+            break;
+        }
+        case 0xf: {
+            // OpenCMR2: breakable trees, Off/On.
+            strcpy(CFrontend::m_stringDest, pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
+            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
+                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+            for (j = 0; j < pItem->min; j++) {
+                x += (int)(g_pGraphics->resX * 10) / 640 +
+                     Font_GetTextWidth(1, (BYTE *)CFrontend::m_stringDest);
+                strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(j == 0 ? 0x133 : 0x134));
+                Font_DrawText(1, CFrontend::m_stringDest, x,
+                              (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1],
+                              (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
+            }
+            break;
+        }
+        case 0x10: {
+            // OpenCMR2: camera effects, Off/On.
+            strcpy(CFrontend::m_stringDest, pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
+            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
+                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+            for (j = 0; j < pItem->min; j++) {
+                x += (int)(g_pGraphics->resX * 10) / 640 +
+                     Font_GetTextWidth(1, (BYTE *)CFrontend::m_stringDest);
+                strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(j == 0 ? 0x133 : 0x134));
+                Font_DrawText(1, CFrontend::m_stringDest, x,
+                              (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1],
+                              (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
+            }
+            break;
+        }
+        case 0x11: {
+            // OpenCMR2: animated scenery, Off/On.
+            strcpy(CFrontend::m_stringDest, pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
+            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
+                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+            for (j = 0; j < pItem->min; j++) {
+                x += (int)(g_pGraphics->resX * 10) / 640 +
+                     Font_GetTextWidth(1, (BYTE *)CFrontend::m_stringDest);
+                strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(j == 0 ? 0x133 : 0x134));
+                Font_DrawText(1, CFrontend::m_stringDest, x,
+                              (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1],
+                              (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
+            }
+            break;
+        }
         case 4:
             strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(0x1d2));
             Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
@@ -3832,6 +3921,17 @@ void FrontendMenu_EnterAdvancedGraphicsOptions(Menu *pMenu, int param)
         Menu_GetItem(pMenu, 9)->max = 1;
     else
         Menu_GetItem(pMenu, 9)->max = 0;
+    // OpenCMR2: initialise the new rows from the settings, before the preview
+    // mode's early return below.
+    Menu_GetItem(pMenu, 0xb)->max = DrawDistance_PercentToIndex(Sys_GetOption("video.draw_distance", 100));
+    Menu_GetItem(pMenu, 0xc)->max = Sys_GetOption("video.debug_draw", 0) != 0 ? 1 : 0;
+    Menu_GetItem(pMenu, 0xd)->max = Anisotropy_LevelToIndex(Sys_GetOption("video.anisotropy", 8));
+    // OpenCMR2: breakable trees default on; off restores solid scenery.
+    Menu_GetItem(pMenu, 0xf)->max = Sys_GetOption("video.tree_break", 1) != 0 ? 1 : 0;
+    // OpenCMR2: camera effects on by default; off restores the original look.
+    Menu_GetItem(pMenu, 0x10)->max = Sys_GetOption("video.camera_effects", 1) != 0 ? 1 : 0;
+    // OpenCMR2: animated scenery off by default to preserve original look.
+    Menu_GetItem(pMenu, 0x11)->max = Sys_GetOption("video.animated_scenery", 0) != 0 ? 1 : 0;
     if (CGameInfo::GetPreviewMode() != 0) {
         Menu_GetItem(pMenu, 10)->max = 1;
         return;
@@ -3874,6 +3974,19 @@ void FrontendMenu_ApplyAdvancedGraphicsOptions(Menu *pMenu, int param)
             CGameInfo::SetPreviewMode(2);
         break;
     }
+    // OpenCMR2: save the new juice settings; the filtering level also goes
+    // straight to the renderer, so it takes effect without a restart.
+    Sys_SetOption("video.draw_distance", DrawDistance_IndexToPercent(Menu_GetItem(pMenu, 0xb)->max));
+    Sys_SetOption("video.debug_draw", Menu_GetItem(pMenu, 0xc)->max);
+    int anisotropy = Anisotropy_IndexToLevel(Menu_GetItem(pMenu, 0xd)->max);
+    Sys_SetOption("video.anisotropy", anisotropy);
+    Gfx_SetAnisotropy(anisotropy);
+    // OpenCMR2: breakable trees on by default; off restores solid scenery.
+    Sys_SetOption("video.tree_break", Menu_GetItem(pMenu, 0xf)->max);
+    // OpenCMR2: camera effects on/off.
+    Sys_SetOption("video.camera_effects", Menu_GetItem(pMenu, 0x10)->max);
+    // OpenCMR2: animated scenery on/off.
+    Sys_SetOption("video.animated_scenery", Menu_GetItem(pMenu, 0x11)->max);
 }
 
 // FUNCTION: CMR2 0x004f1e40

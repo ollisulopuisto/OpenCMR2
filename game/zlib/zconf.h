@@ -210,9 +210,10 @@
 #   define FAR
 #endif
 
-#if !defined(MACOS) && !defined(TARGET_OS_MAC)
+// PORT (OpenCMR2): on macOS TARGET_OS_MAC is defined, which skipped this
+// typedef and left Byte undefined; define it unconditionally like every other
+// platform.
 typedef unsigned char  Byte;  /* 8 bits */
-#endif
 typedef unsigned int   uInt;  /* 16 bits or more */
 typedef unsigned long  uLong; /* 32 bits or more */
 

@@ -78,6 +78,29 @@ target_link_libraries(frontend_language_test PRIVATE opencmr2_platform)
 add_test(NAME frontend_language COMMAND frontend_language_test)
 set_tests_properties(frontend_language PROPERTIES TIMEOUT 30)
 
+add_executable(graphics_options_test graphics_options.cpp)
+target_include_directories(graphics_options_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
+add_test(NAME graphics_options COMMAND graphics_options_test)
+
+add_executable(tree_break_test tree_break.cpp)
+target_include_directories(tree_break_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src)
+add_test(NAME tree_break COMMAND tree_break_test)
+
+add_executable(camera_effects_test camera_effects.cpp)
+target_include_directories(camera_effects_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src)
+add_test(NAME camera_effects COMMAND camera_effects_test)
+
+add_executable(animated_scenery_test animated_scenery.cpp)
+target_include_directories(animated_scenery_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src)
+add_test(NAME animated_scenery COMMAND animated_scenery_test)
+
+add_executable(render_stats_test render_stats.cpp
+    ${PROJECT_SOURCE_DIR}/src/render/gfx_core.cpp
+    ${PROJECT_SOURCE_DIR}/src/diagnostics/observer.cpp)
+target_include_directories(render_stats_test PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/game)
+target_link_libraries(render_stats_test PRIVATE SDL3::SDL3)
+add_test(NAME render_stats COMMAND render_stats_test)
+
 add_executable(country_flags_test country_flags.cpp)
 target_link_libraries(country_flags_test PRIVATE opencmr2_platform)
 add_test(NAME country_flags COMMAND country_flags_test ${CMAKE_CURRENT_SOURCE_DIR}/reference/menu-flags.txt)

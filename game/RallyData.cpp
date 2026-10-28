@@ -45,6 +45,7 @@ SaveBlock g_saveBlock;
 // the original that overlaps the last time of the second split record.
 #define g_finishStageRecordMessage ((int *)(g_stageSplitBlock + 0x8c))
 #include "FixedPoint.h"
+#include "GraphicsOptions.h"
 #include <stdlib.h>
 #include "StageTiming.h"
 #include "StageUI.h"
@@ -4644,7 +4645,7 @@ void RallyData_RunChallengeLoadingScreen(int param1, char param2)
             CGraphics::ClearZBuffer();
             Game_PrepareScene(RallyData_GetChallengeRenderState(),
                               g_unk0x00536be4, rect, 0);
-            if ((g_pGraphics->field913_0x3bc & 4) != 0) {
+            if (Graphics_DebugDrawWanted()) {
                 colour[0] = 0xff;
                 colour[1] = 0xff;
                 colour[2] = 0xff;
@@ -5986,6 +5987,8 @@ int Game_PrepareScene(SceneNode *pRoot, SceneNode *pCamera, void *pRect, int par
 int Game_DrawSceneViewport(struct SceneNode *pRoot, struct SceneNode *pCamera, void *pRect, int bit, BYTE flag);
 void Graphics_PresentFrameAndResetCounters(void);
 
+void CameraEffects_DrawOverlays(short *pRect);
+
 // Sets up the projection, clears the targets and draws the challenge scene.
 // FUNCTION: CMR2 0x00411070
 void RallyData_DrawProjectedChallengeScene(int param1, int param2)
@@ -6003,7 +6006,64 @@ void RallyData_DrawProjectedChallengeScene(int param1, int param2)
         Menu_CallCallback2(StageObject_GetInRaceActionMenu());
     Game_PrepareScene(g_unk0x00536be0, g_unk0x00536be4, rect, 0);
     Game_DrawSceneViewport(g_unk0x00536be0, g_unk0x00536be4, rect, 0, 1);
+    // OpenCMR2: camera effects — dirt on the lens and a sun lens flare,
+    // drawn over the finished frame ([video] video.camera_effects).
+    if (Sys_GetOption("video.camera_effects", 1) != 0)
+        CameraEffects_DrawOverlays(rect);
     Graphics_PresentFrameAndResetCounters();
+}
+
+// OpenCMR2: per-view dirt-on-the-lens level (0 = clean, 255 = obscured).
+// Accumulates on impacts, decays each frame; stages start clean.
+unsigned int g_lensDirt[8];
+
+// Draws the dirt overlay (dark tint, alpha from dirt level) and the sun lens
+// flare (additive bright sprite at screen centre, scaled by sun visibility)
+// over the finished frame.
+static void CameraEffects_DrawOverlays(short *pRect)
+{
+    extern short g_sunVisibility;
+    int resX = pRect[2];
+    int resY = pRect[3];
+
+    // ---- dirt on the lens -------------------------------------------------
+    for (int view = 0; view < 8; view++) {
+        if (g_lensDirt[view] == 0)
+            continue;
+        BYTE colour[4] = { 0x20, 0x18, 0x10, (BYTE)g_lensDirt[view] };
+        short rect[4] = { 0, 0, (short)resX, (short)resY };
+        Sprite_FillRect(&g_pGraphics->field309_0x150, rect, colour, 1);
+        // Decay each frame so dirt clears after a few seconds.
+        g_lensDirt[view] = LensDirt_Decay(g_lensDirt[view], 4);
+    }
+
+    // ---- lens flare -------------------------------------------------------
+    if (g_sunVisibility < 10)
+        return;
+    int brightness = Flare_Brightness(g_sunVisibility);
+    if (brightness == 0)
+        return;
+    // Additive sun sprite at screen centre.
+    Gfx_SetAlphaBlend(TRUE);
+    Gfx_SetSrcBlend(GFX_BLEND_ONE);
+    Gfx_SetDestBlend(GFX_BLEND_ONE);
+    Gfx_SetDepthWrite(FALSE);
+    GfxTLVertex v[4];
+    int cx = resX / 2, cy = resY / 2;
+    int size = resX / 6;
+    for (int i = 0; i < 4; i++) {
+        v[i].sz = 0;
+        v[i].rhw = 1.0f;
+        v[i].color = GFX_RGBA(0xff, 0xff, 0xe0, (BYTE)brightness);
+        v[i].specular = 0;
+    }
+    v[0].sx = cx - size; v[0].sy = cy - size; v[0].tu = 0; v[0].tv = 0;
+    v[1].sx = cx + size; v[1].sy = cy - size; v[1].tu = 1; v[1].tv = 0;
+    v[2].sx = cx - size; v[2].sy = cy + size; v[2].tu = 0; v[2].tv = 1;
+    v[3].sx = cx + size; v[3].sy = cy + size; v[3].tu = 1; v[3].tv = 1;
+    Gfx_DrawPrimitiveTL(GFX_TRIANGLESTRIP, v, 4);
+    Gfx_SetDepthWrite(TRUE);
+    Gfx_SetAlphaBlend(FALSE);
 }
 
 
@@ -6227,7 +6287,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
     }
     Graphics_SetShadowGeometryState(!CGameInfo::IsRecordFlagSet(0xf));
     View_SetPlayerProjection(param2);
-    if ((g_pGraphics->field913_0x3bc & 4) != 0) {
+    if (Graphics_DebugDrawWanted()) {
         BYTE colour[4];
 
         colour[0] = 0xff;
@@ -6269,6 +6329,11 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
                 g_pGraphics->maxDrawDistance >> 16,
                 (int)g_pGraphics->field917_0x3c0 + 1);
         Font_DrawText(1, CFrontend::m_stringDest, 0, 0x69, (int *)colour, 9);
+        // OpenCMR2: renderer draw cost for tuning video.draw_distance / fog.
+        sprintf(CFrontend::m_stringDest, "Draw calls: %u", Gfx_GetFrameDrawCalls());
+        Font_DrawText(1, CFrontend::m_stringDest, 0, 0x78, (int *)colour, 9);
+        sprintf(CFrontend::m_stringDest, "Vertices: %u", Gfx_GetFrameVertices());
+        Font_DrawText(1, CFrontend::m_stringDest, 0, 0x87, (int *)colour, 9);
     }
     CarDamage_UpdateOrderedCarsOffRoadState(pOrder, (short)orderCount, g_viewScreenRect, maskedView);
     if (CGameInfo::GetGameModeOptionBit19() != 0) {

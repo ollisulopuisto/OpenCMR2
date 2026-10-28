@@ -1,6 +1,7 @@
 #include "port/sys.h"
 #include "FloatToInt.h"
 #include "FixedPoint.h"
+#include "GraphicsOptions.h"
 #include "MovingObject.h"
 #include "Graphics.h"
 #include "GameInfo.h"
@@ -8,6 +9,7 @@
 #include "CarParts.h"
 #include "StageTiming.h"
 #include "main.h"
+#include <stdlib.h>
 
 // GLOBAL: CMR2 0x0072d67c
 int g_fixMatrixMultiplyCount;
@@ -726,6 +728,13 @@ static int View_GetFovScale(void)
     return scale;
 }
 
+// OpenCMR2: the user's draw distance as a percent of the stage's far plane
+// ([video] video.draw_distance), clamped to a sane range.
+static int View_GetDrawDistancePercent(void)
+{
+    return View_ClampDrawDistancePercent(Sys_GetOption("video.draw_distance", 100));
+}
+
 // PORT: the original moved the far plane in one frame whenever a route node
 // changed the view distance, and a strip of the stage appeared or vanished on
 // the horizon. The far plane drawn now follows that distance, closing half the
@@ -768,7 +777,9 @@ void View_SetPlayerProjection(unsigned int player)
         (int)FTOI(__int64, X87S_MUL(X87S_MUL((16.0 / 9.0), (X87S_DIV((double)g_pGraphics->resY, (double)g_pGraphics->resX))), CGraphics::m_65536))));
     int fovY = FixMul(0x2147a, FixMul(zoom, View_GetFovScale()));
     // PORT: the far plane eases to the view distance (View_GetShownFarPlane).
-    int farPlane = View_GetShownFarPlane(i);
+    // OpenCMR2: the user's draw distance scales the far plane
+    // ([video] video.draw_distance).
+    int farPlane = (int)((long long)View_GetShownFarPlane(i) * View_GetDrawDistancePercent() / 100);
 
     if (Race_IsMultiplayerRecordMode10() == 0 && RallyData_IsHeadToHeadRaceMode()) {
         if (CGameInfo::IsSplitBarEnabled())
@@ -945,6 +956,31 @@ void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef)
     FixMatrix_SetPosition(&pos, pM);
     if (g_playerCameraMode[index] == 4)
         FixMatrix_RotateAboutRight(pM, (unsigned short)g_chaseCameraPitch[2 + pObj->view]);
+
+    // OpenCMR2: human-operator camera shake — random jitter on the chase
+    // camera position, scaled by car speed and impact strength
+    // ([video] video.camera_effects). The crash can still stop the car, but
+    // the camera keeps moving like a handheld operator.
+    if (Sys_GetOption("video.camera_effects", 1) != 0) {
+        extern BYTE g_viewObjectCarIndices[16];
+        int carIx = g_viewObjectCarIndices[pObj->index];
+        Car *pCar = Car_Get(carIx);
+        int amp = Shake_Amplitude(pCar->speed, pCar->shakeLevel);
+        if (amp > 0) {
+            FixVector jitter;
+            jitter.x = (rand() & 0xffff) - 0x8000;
+            jitter.y = (rand() & 0xffff) - 0x8000;
+            jitter.z = (rand() & 0xffff) - 0x8000;
+            int len = FixVecLength(&jitter);
+            if (len > 0) {
+                FixVecScaleRecip(&jitter, &jitter, len);
+                FixVecScale(&jitter, &jitter, amp);
+                pObj->matrix.position.x += jitter.x;
+                pObj->matrix.position.y += jitter.y;
+                pObj->matrix.position.z += jitter.z;
+            }
+        }
+    }
 
     pObj->carLift = 0;
     pObj->nearPlane = 0x10000;

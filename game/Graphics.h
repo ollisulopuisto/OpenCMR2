@@ -1379,6 +1379,10 @@ private:
     // GLOBAL: CMR2 0x00520b78
     static D3DTextureManager* m_pTextureManager;
 
+    // OpenCMR2: expose the texture buffer so Game.cpp can bind an animated
+    // frame for immediate-draw stage objects.
+    static Texture **GetTextureBuffer(void) { return m_pTextureManager->textureBuffer; }
+
     // GLOBAL: CMR2 0x00520b7c
     static BOOL m_unk0x00520b7c;
 
@@ -1505,6 +1509,10 @@ void NetRace_PackCarState(struct Car *car);
 void Mesh_Rebuild(Mesh *pMesh);
 int Graphics_CopyIntoFreeTextureSlot(void *pSource, int param2);
 void Graphics_CreateSharedWriteOnlyVertexBuffer(void);
+// OpenCMR2: whether the in-game debug overlay (FPS and draw stats) is shown:
+// the original graphics debug flag (bit 2 of field913_0x3bc) or [video]
+// video.debug_draw.
+bool Graphics_DebugDrawWanted(void);
 RenderTexture *Graphics_AllocateCubeMapTextureSlot(void);
 SceneNode *SceneNode_CreateRoot(void);
 void Graphics_SetTextureFactorAlpha(BYTE *pColour);

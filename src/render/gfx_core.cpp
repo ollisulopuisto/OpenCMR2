@@ -29,6 +29,18 @@ std::vector<std::pair<int, int>> s_modes;
 uint32_t s_presentedFrames = 1;     // frames presented (vertex buffer ages)
 uint32_t s_record = 1;              // recordings run (presented or flushed)
 
+// OpenCMR2: statistics of the frame currently being recorded, snapshotted to
+// the "last frame" counters at each present/flush so the debug overlay can
+// report the previous frame's draw cost.
+uint32_t s_frameDrawCalls = 0;
+uint32_t s_frameVertices = 0;
+uint32_t s_frameIndices = 0;
+uint32_t s_frameTriangles = 0;
+uint32_t s_lastDrawCalls = 0;
+uint32_t s_lastVertices = 0;
+uint32_t s_lastIndices = 0;
+uint32_t s_lastTriangles = 0;
+
 // Frames a vertex buffer stays out of locks before draws refer to it.
 const uint32_t kStaticAfterFrames = 4;
 
@@ -168,6 +180,12 @@ void RecordDraw(int primitive, bool transformed, const void *vertices, DWORD ver
         cmd.indexCount = 0;
     }
     cmd.state = RecordState();
+    // OpenCMR2: frame statistics for the debug overlay (previous frame at
+    // draw time, snapshotted at present/flush).
+    s_frameDrawCalls++;
+    s_frameVertices += vertexCount;
+    s_frameIndices += indexCount;
+    s_frameTriangles += (indices ? indexCount : vertexCount) / 3;
     s_frame.commands.push_back(cmd);
 }
 
@@ -374,6 +392,12 @@ extern "C" void Gfx_SetFullscreen(BOOL fullscreen)
         s_executor->SetFullscreen(fullscreen != 0);
 }
 
+extern "C" void Gfx_SetAnisotropy(int level)
+{
+    if (s_executor != NULL)
+        s_executor->SetAnisotropy(level);
+}
+
 extern "C" void Gfx_Shutdown(void)
 {
     while (!s_textures.empty())
@@ -435,6 +459,15 @@ static void Present(BOOL vsync, bool stretch)
     if (s_executor != NULL)
         s_executor->Execute(s_frame, s_textures, s_readback, true, vsync != 0, stretch);
     s_frame.Reset();
+    // OpenCMR2: snapshot this frame's stats for the debug overlay, then reset.
+    s_lastDrawCalls = s_frameDrawCalls;
+    s_lastVertices = s_frameVertices;
+    s_lastIndices = s_frameIndices;
+    s_lastTriangles = s_frameTriangles;
+    s_frameDrawCalls = 0;
+    s_frameVertices = 0;
+    s_frameIndices = 0;
+    s_frameTriangles = 0;
     s_record++;
     s_presentedFrames++;
     s_stateDirty = true;
@@ -447,12 +480,27 @@ static void Present(BOOL vsync, bool stretch)
 extern "C" void Gfx_Present(BOOL vsync) { Present(vsync, false); }
 extern "C" void Gfx_PresentStretched(BOOL vsync) { Present(vsync, true); }
 
+// OpenCMR2: statistics of the frame last presented, for the debug overlay.
+extern "C" uint32_t Gfx_GetFrameDrawCalls(void) { return s_lastDrawCalls; }
+extern "C" uint32_t Gfx_GetFrameVertices(void) { return s_lastVertices; }
+extern "C" uint32_t Gfx_GetFrameIndices(void) { return s_lastIndices; }
+extern "C" uint32_t Gfx_GetFrameTriangles(void) { return s_lastTriangles; }
+
 // Runs what is recorded so far without ending the frame.
 static void Flush(void)
 {
     if (s_executor != NULL)
         s_executor->Execute(s_frame, s_textures, s_readback, false, false);
     s_frame.Reset();
+    // OpenCMR2: snapshot this frame's stats for the debug overlay, then reset.
+    s_lastDrawCalls = s_frameDrawCalls;
+    s_lastVertices = s_frameVertices;
+    s_lastIndices = s_frameIndices;
+    s_lastTriangles = s_frameTriangles;
+    s_frameDrawCalls = 0;
+    s_frameVertices = 0;
+    s_frameIndices = 0;
+    s_frameTriangles = 0;
     s_record++;
     s_stateDirty = true;
     if (s_target != NULL)

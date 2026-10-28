@@ -6,6 +6,7 @@ short Car_GetOrderCount(void);
 #include "port/disk.h"
 #include "port/disk_layouts.h"
 #include "port/replay_disk.h"
+#include "port/sys.h"
 #include "ReplayStream.h"
 #include "AINetwork.h"
 #include "FinRecord.h"
@@ -15,6 +16,7 @@ short Car_GetOrderCount(void);
 #include <string.h>
 #include <stddef.h>
 #include "RallyData.h"
+#include "GraphicsOptions.h"
 #include "SceneNode.h"
 #include "Frontend.h"
 #include "InstallInfo.h"
@@ -14671,6 +14673,10 @@ int Collision_TestCarAgainstSectorObjects(Car *pCar)
             pEntry = ppEntries != NULL ? *ppEntries : NULL;
             for (i = 0; i < count; i++, pEntry++) {
                 pObject = pEntry->pObject;
+                // OpenCMR2: a smashed tree no longer collides ([video]
+                // video.tree_break).
+                if ((pObject->flags & STAGE_OBJECT_BROKEN) != 0)
+                    continue;
                 if (moving == 0)
                     position = pObject->position;
                 else
@@ -14681,6 +14687,15 @@ int Collision_TestCarAgainstSectorObjects(Car *pCar)
                 result = Collision_DoSpheresOverlap(pCar->collisionRadius, pEntry->pBounds->radius, (int *)&pCar->position, (int *)&position);
                 if (result == 0)
                     continue;
+                // OpenCMR2: a hard hit smashes a breakable tree instead of
+                // bouncing the car off it ([video] video.tree_break). The
+                // crash can still stop the car on a gentle tap or a solid
+                // object; above the speed threshold the tree gives way.
+                if (Sys_GetOption("video.tree_break", 1) != 0 &&
+                    TreeBreak_ShouldBreak(pCar->speed)) {
+                    pObject->flags |= STAGE_OBJECT_BROKEN;
+                    continue;
+                }
                 result = 0;
                 if (moving == 1 && RallyData_IsElementFlagSet(&pEntry, pCar->index) == 0)
                     continue;

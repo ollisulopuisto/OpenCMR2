@@ -16,6 +16,7 @@
 #include "InstallInfo.h"
 #include "Frontend.h"
 #include "Graphics.h"
+#include "GraphicsOptions.h"
 #include "StageTiming.h"
 #include "GenericFileLoader.h"
 #include "FileBuffer.h"
@@ -4070,6 +4071,10 @@ void Race_PlayScrapeAndShakeCar(int view, int strength, int listener)
                 shake = 8;
             if (shake > Car_Get(view)->shakeLevel)
                 Car_Get(view)->shakeLevel = (BYTE)shake;
+            // OpenCMR2: dirt on the lens from a hard hit
+            // ([video] video.camera_effects).
+            if (Sys_GetOption("video.camera_effects", 1) != 0)
+                g_lensDirt[view] = LensDirt_Accumulate(g_lensDirt[view], shake * 20);
         }
     }
 }

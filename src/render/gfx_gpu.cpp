@@ -172,13 +172,13 @@ SDL_PropertiesID DeviceProperties()
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_DEBUGMODE_BOOLEAN,
                            Platform_GetSettingInt("video.gpu_debug", 0) != 0);
     // SDL asks Vulkan for these features by default. The renderer does not
-    // use them (anisotropy only when video.anisotropy is set, see Sampler),
-    // and many Android GPUs lack some, for which SDL would refuse the device.
+    // use the first three, and many Android GPUs lack some, for which SDL
+    // would refuse the device. Anisotropy is a required Vulkan feature and
+    // the renderer now uses it by default (video.anisotropy), so it stays on.
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_FEATURE_CLIP_DISTANCE_BOOLEAN, false);
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_FEATURE_DEPTH_CLAMPING_BOOLEAN, false);
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_FEATURE_INDIRECT_DRAW_FIRST_INSTANCE_BOOLEAN, false);
-    SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_FEATURE_ANISOTROPY_BOOLEAN,
-                           Platform_GetSettingInt("video.anisotropy", 1) > 1);
+    SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_FEATURE_ANISOTROPY_BOOLEAN, true);
     return props;
 }
 
@@ -200,7 +200,9 @@ struct Executor : GfxExecutor {
     std::unordered_map<uint32_t, SDL_GPUSampler *> samplers;
     bool bcSupported = true;
     bool presentModeVsync = true;
-    int anisotropy = 1, smoothScaling = 1;    // video.anisotropy, video.smooth_scaling
+    // OpenCMR2: video.anisotropy defaults to 8 (the original sampled without
+    // anisotropy; 1 restores it). video.smooth_scaling as before.
+    int anisotropy = 8, smoothScaling = 1;
     Uint32 presentWidth = 0, presentHeight = 0; // the window's pixels, as last logged
     // The back buffer read of the last presented frame (the lens flare test):
     // it runs with that frame, and CollectReadback waits for it only when the
@@ -289,7 +291,7 @@ struct Executor : GfxExecutor {
             Sys_Log("gfx: no window");
             return false;
         }
-        anisotropy = Platform_GetSettingInt("video.anisotropy", 1);
+        anisotropy = Platform_GetSettingInt("video.anisotropy", 8);
         smoothScaling = Platform_GetSettingInt("video.smooth_scaling", 1);
         SDL_PropertiesID props = DeviceProperties();
         device = SDL_CreateGPUDeviceWithProperties(props);
@@ -385,6 +387,13 @@ struct Executor : GfxExecutor {
     void SetFullscreen(bool fullscreen) override
     {
         Gfx_SetWindowMode(window, fullscreen, backWidth, backHeight);
+    }
+
+    // OpenCMR2: the sampler cache's key carries the level, so the next draws
+    // simply create their samplers at the new one.
+    void SetAnisotropy(int level) override
+    {
+        anisotropy = level < 1 ? 1 : level;
     }
 
     // ---- textures ----

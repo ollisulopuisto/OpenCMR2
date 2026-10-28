@@ -226,6 +226,10 @@ const char *Gfx_GetRendererName(void);
 BOOL Gfx_SetVideoMode(int width, int height, BOOL fullscreen);
 /* Switches the window between fullscreen and windowed, keeping the mode. */
 void Gfx_SetFullscreen(BOOL fullscreen);
+/* OpenCMR2: the anisotropic filtering level (1: off, as the original sampled;
+    the higher, the sharper textures seen at a slant). Takes effect at once,
+    without recreating the device. [video] video.anisotropy */
+void Gfx_SetAnisotropy(int level);
 void Gfx_Shutdown(void);
 
 /* Resolutions to offer, smallest first. */
@@ -242,6 +246,14 @@ void Gfx_EndScene(void);
 void Gfx_Present(BOOL vsync);
 /* Movie presentation: stretch the back buffer to the entire drawable area. */
 void Gfx_PresentStretched(BOOL vsync);
+
+/* OpenCMR2: statistics of the frame last presented (draw calls, vertices,
+   indices and triangles), for the in-game debug overlay. [video]
+   video.debug_draw enables it. */
+DWORD Gfx_GetFrameDrawCalls(void);
+DWORD Gfx_GetFrameVertices(void);
+DWORD Gfx_GetFrameIndices(void);
+DWORD Gfx_GetFrameTriangles(void);
 
 enum GfxClearFlags {
     GFX_CLEAR_TARGET = 1,

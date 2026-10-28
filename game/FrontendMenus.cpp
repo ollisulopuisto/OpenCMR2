@@ -15,6 +15,7 @@
 #include "main.h"
 #include "Game.h"
 #include "RallyData.h"
+#include "GraphicsOptions.h"
 
 extern BYTE g_profilePlayersRemaining;
 extern int g_screenPaletteIds[23];
@@ -2546,6 +2547,27 @@ void FrontendMenu_BuildAdvancedGraphicsOptions(void)
     Menu_AddItemType3(&g_menu0x0081cd78, 0, 0x1b8, 3, 0, 0, 0, 0, 8);
     Menu_AddItemType3(&g_menu0x0081cd78, 0, 0x1b7, 2, 0, 0, 0, 0, 9);
     Menu_AddItemType3(&g_menu0x0081cd78, 0, 0x1b6, 2, 0, 0, 0, 0, 0xa);
+    // OpenCMR2: user draw distance (percent of the far plane), the debug HUD
+    // (FPS plus draw stats) and texture filtering (anisotropy). Plain
+    // opencmr2.ini settings, not save-game bits.
+    Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, DRAW_DISTANCE_COUNT, 0, 0, 0, 0, 0xb);
+    Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0xc);
+    Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, ANISOTROPY_LEVEL_COUNT, 0, 0, 0, 0, 0xd);
+    // OpenCMR2: breakable trees — a hard hit smashes a tree, a gentle tap
+    // still stops the car ([video] video.tree_break).
+    Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0xf);
+    // OpenCMR2: camera effects — dirt on the lens, sun lens flare and
+    // human-operator camera shake ([video] video.camera_effects).
+    Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x10);
+    Menu_GetItem(&g_menu0x0081cd78, 0xb)->text = (char *)"Draw Distance";
+    Menu_GetItem(&g_menu0x0081cd78, 0xc)->text = (char *)"Debug HUD";
+    Menu_GetItem(&g_menu0x0081cd78, 0xd)->text = (char *)"Texture Filtering";
+    Menu_GetItem(&g_menu0x0081cd78, 0xf)->text = (char *)"Breakable Trees";
+    Menu_GetItem(&g_menu0x0081cd78, 0x10)->text = (char *)"Camera Effects";
+    // OpenCMR2: animated scenery — crowds and trees with a subtle idle cycle
+    // ([video] video.animated_scenery).
+    Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x11);
+    Menu_GetItem(&g_menu0x0081cd78, 0x11)->text = (char *)"Animated Scenery";
     Menu_AddItemType1(&g_menu0x0081cd78, 0, 0x67, (MenuItemAction)FrontendMenu_ApplyAdvancedGraphicsOptions, 0xe);
     Menu_SetCallbacks(&g_menu0x0081cd78, FrontendMenu_EnterAdvancedGraphicsOptions, (MenuCallback)FrontendMenu_UpdateAdvancedGraphicsOptions, (MenuCallback)FrontendMenu_DrawAdvancedGraphicsOptions, NULL);
     Menu_ValidateCursor(&g_menu0x0081cd78, 0);

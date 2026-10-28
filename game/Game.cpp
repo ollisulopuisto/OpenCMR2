@@ -10,6 +10,7 @@
 #include "InstallInfo.h"
 #include "NetworkLeaderboards.h"
 #include "Graphics.h"
+#include "GraphicsOptions.h"
 #include "Input.h"
 #include "FileBuffer.h"
 #include "Mesh.h"
@@ -299,7 +300,7 @@ void Game_DrawBootCameraAndFPS(CallbackStateMachine *p1, BYTE p2)
     CGraphics::ClearZBuffer();
     FrontendMenu_DrawActiveMenu();
     Game_PrepareScene(g_splashSceneRoot, g_splashCamera, rect, 0);
-    if ((g_pGraphics->field913_0x3bc & 4) != 0) {
+    if (Graphics_DebugDrawWanted()) {
         sprintf(CFrontend::m_stringDest, g_strFpsFormat0x00516e14, Graphics_GetFrameRate());
         Font_DrawText(0, CFrontend::m_stringDest, 0, 0, g_fpsTextColours, 9);
     }
@@ -391,7 +392,7 @@ void Game_DrawLogoAndLoadingSprites(CallbackStateMachine *p1, BYTE p2)
     }
 
     Game_PrepareScene(g_splashSceneRoot, g_splashCamera, &screen, 0);
-    if (g_pGraphics->field913_0x3bc & 4) {
+    if (Graphics_DebugDrawWanted()) {
         sprintf(CFrontend::m_stringDest, g_strFpsFormat0x00516e14, Graphics_GetFrameRate());
         Font_DrawText(0, CFrontend::m_stringDest, 0, 0, (int *)colour, 9);
     }
@@ -591,7 +592,7 @@ void Game_DrawBootTextureScreen(CallbackStateMachine *p1, BYTE p2)
 
     Game_PrepareScene(g_splashSceneRoot, g_splashCamera, &screenRect, 0);
 
-    if ((g_pGraphics->field913_0x3bc & 4) != 0) {
+    if (Graphics_DebugDrawWanted()) {
         sprintf(CFrontend::m_stringDest, g_strFpsFormat0x00516e14, Graphics_GetFrameRate());
         Font_DrawText(0, CFrontend::m_stringDest, 0, 0, (int *)colour, 9);
     }
@@ -909,7 +910,7 @@ void Game_DrawMovieFrameAndCredits(CallbackStateMachine *p1, BYTE p2)
         Sprite_Queue(&src, &dst, CFrontend::m_unk0x00817ebc, 1, 0, centre, NULL, white, 8);
     }
     Game_PrepareScene(g_splashSceneRoot, g_splashCamera, &viewport, 0);
-    if ((g_pGraphics->field913_0x3bc & 4) != 0) {
+    if (Graphics_DebugDrawWanted()) {
         sprintf(CFrontend::m_stringDest, g_strFpsFormat0x00516e14, Graphics_GetFrameRate());
         Font_DrawText(0, CFrontend::m_stringDest, 0, 0, (int *)white, 9);
     }
@@ -2250,6 +2251,10 @@ extern SceneNode *g_unk0x0059be6c;
 // sorts them by view depth (farthest first) and, for each one, binds its
 // texture, sets its world matrix and marks the mesh for the culling test of
 // the next frame before drawing it.
+// OpenCMR2: animated scenery texture resolution (defined below).
+static int AnimState_GetBaseTexture(StageObject *pObject);
+static int AnimObject_Texture(StageObject *pObject, int baseTexture);
+
 // FUNCTION: CMR2 0x0049cc50
 void Game_DrawDeferredObjects(void)
 {
@@ -2271,7 +2276,16 @@ void Game_DrawDeferredObjects(void)
             qsort(sorted, CGame::m_deferredDrawCount, sizeof(sorted[0]), Game_CompareDeferredDistance);
         for (i = 0; i < (unsigned int)CGame::m_deferredDrawCount; i++) {
             pObject = sorted[i].pObject;
-            Frontend_SetObjectField118(CGraphics::m_pTextureManager->textureBuffer[pObject->pMesh->pTriangles->textures[0]], 0);
+            int texture = pObject->pMesh->pTriangles->textures[0];
+            // OpenCMR2: an animated scenery object draws its current frame
+            // ([video] video.animated_scenery) instead of the base texture.
+            if (Sys_GetOption("video.animated_scenery", 0) != 0 &&
+                (pObject->field_0x10 & STAGE_OBJECT_ANIMATED) != 0) {
+                int baseTexture = AnimState_GetBaseTexture((StageObject *)pObject);
+                if (baseTexture >= 0)
+                    texture = AnimObject_Texture((StageObject *)pObject, baseTexture);
+            }
+            Frontend_SetObjectField118(CGraphics::GetTextureBuffer()[texture], 0);
             Gfx_SetTransform(GFX_TRANSFORM_WORLD, (GfxMatrix *)pObject->matrix);
             pObject->pMesh->flags |= 8;
             Graphics_DrawMeshLOD(pObject->pMesh, 1, 0, 0);
@@ -2314,6 +2328,93 @@ GfxMatrix g_unk0x00597cc0;
 
 void Graphics_DrawMeshLOD(Mesh *pMesh, int useParts, int clampTexture, int markTextures);
 
+// Index of a stage object in the animation table (defined below).
+static int AnimObject_Index(StageObject *pObject);
+
+// OpenCMR2: animated scenery idle cycles. Per-object animation state lives in
+// the global table g_animStates (the draw path reinterprets the same bytes as
+// a world matrix, so the state cannot share the object's unused tail).
+//   baseTexture (int), [4] frame, [5] frameCount, [6] timer, [7] initialized.
+static int AnimState_GetBaseTexture(StageObject *pObject)
+{
+    int v;
+    __builtin_memcpy(&v, &g_animStates[AnimObject_Index(pObject)].baseTexture, 4);
+    return v;
+}
+
+static void AnimState_SetBaseTexture(StageObject *pObject, int v)
+{
+    __builtin_memcpy(&g_animStates[AnimObject_Index(pObject)].baseTexture, &v, 4);
+}
+
+static void AnimObject_Init(StageObject *pObject, int baseTexture)
+{
+    AnimState_SetBaseTexture(pObject, baseTexture);
+    g_animStates[AnimObject_Index(pObject)].frame = 0;        // frame
+    g_animStates[AnimObject_Index(pObject)].frameCount = 4;   // frameCount
+    g_animStates[AnimObject_Index(pObject)].timer = 5;        // timer
+    g_animStates[AnimObject_Index(pObject)].initialized = 1; // initialized
+}
+
+// Advances the animation clock and returns the current frame (0..frameCount-1).
+static int AnimObject_Update(StageObject *pObject)
+{
+    AnimState *pState = &g_animStates[AnimObject_Index(pObject)];
+    int frame = pState->frame;
+    int timer = pState->timer;
+    frame = AnimFrame_Advance(frame, pState->frameCount, &timer);
+    pState->frame = (BYTE)frame;
+    pState->timer = (BYTE)timer;
+    return frame;
+}
+
+// Returns the animated texture index (base + current frame) for an object.
+static int AnimObject_Texture(StageObject *pObject, int baseTexture)
+{
+    AnimState *pState = &g_animStates[AnimObject_Index(pObject)];
+    if (!pState->initialized)
+        AnimObject_Init(pObject, baseTexture);
+    AnimObject_Update(pObject);
+    return AnimTexture_Index(baseTexture, pState->frame);
+}
+
+// OpenCMR2: per-object animation state, keyed by the StageObject pointer.
+// Allocated lazily as stages are loaded (one slot per object) and cleared when
+// the stage is unloaded, so a fresh stage starts its objects still.
+struct AnimState *g_animStates = NULL;
+unsigned int g_animStateCount = 0;
+unsigned int g_animStateCapacity = 0;
+
+static int AnimObject_Index(StageObject *pObject)
+{
+    for (unsigned int i = 0; i < g_animStateCount; i++)
+        if (g_animStates[i].pObject == pObject)
+            return (int)i;
+    if (g_animStateCount >= g_animStateCapacity) {
+        unsigned int cap = g_animStateCapacity ? g_animStateCapacity * 2 : 256;
+        struct AnimState *p = (struct AnimState *)realloc(g_animStates, cap * sizeof(struct AnimState));
+        if (p == NULL)
+            return -1;
+        g_animStates = p;
+        g_animStateCapacity = cap;
+    }
+    g_animStates[g_animStateCount].pObject = pObject;
+    g_animStates[g_animStateCount].baseTexture = 0;
+    g_animStates[g_animStateCount].frame = 0;
+    g_animStates[g_animStateCount].frameCount = 0;
+    g_animStates[g_animStateCount].timer = 0;
+    g_animStates[g_animStateCount].initialized = 0;
+    return (int)g_animStateCount++;
+}
+
+void AnimObject_ClearTable(void)
+{
+    free(g_animStates);
+    g_animStates = NULL;
+    g_animStateCount = 0;
+    g_animStateCapacity = 0;
+}
+
 // Draws the static stage objects of the culled sectors. Objects whose mesh is
 // flagged for the deferred pass (mesh flag 2) get their world matrix and view
 // depth updated and are queued; the rest are drawn right away.
@@ -2324,10 +2425,43 @@ void Game_DrawStaticStageObjects(void)
     unsigned int i;
     FixVector delta;
 
+    // OpenCMR2: advance the idle animation of every visible animated object
+    // ([video] video.animated_scenery) before drawing, so the cycle advances
+    // once per frame regardless of which pass draws it.
+    if (Sys_GetOption("video.animated_scenery", 0) != 0) {
+        for (i = 0; i < (unsigned int)g_sectorCullEnabled; i++) {
+            pObject = (StageObjectDraw *)g_sectors[g_visibleSectorIndices[i]]->pObjects;
+            while (pObject != NULL) {
+                if ((pObject->field_0x10 & STAGE_OBJECT_ANIMATED) != 0)
+                    AnimObject_Update((StageObject *)pObject);
+                pObject = pObject->pNext;
+            }
+        }
+    }
+
     for (i = 0; i < (unsigned int)g_sectorCullEnabled; i++) {
         pObject = (StageObjectDraw *)g_sectors[g_visibleSectorIndices[i]]->pObjects;
         while (pObject != NULL) {
-            if (pObject->field_0x14 != 0) {
+            if (pObject->field_0x14 != 0 &&
+                // OpenCMR2: a smashed tree is no longer drawn
+                // ([video] video.tree_break).
+                !(pObject->field_0x10 & STAGE_OBJECT_BROKEN)) {
+                // OpenCMR2: an animated scenery object swaps its texture for
+                // the current frame of its cycle ([video] video.animated_scenery).
+                int animatedTexture = -1;
+                int savedPartTexture = -1;
+                if (Sys_GetOption("video.animated_scenery", 0) != 0 &&
+                    (pObject->field_0x10 & STAGE_OBJECT_ANIMATED) != 0) {
+                    animatedTexture = AnimObject_Texture((StageObject *)pObject,
+                        AnimState_GetBaseTexture((StageObject *)pObject));
+                }
+                // Immediate-draw path: Graphics_DrawMeshLOD re-applies each part's
+                // own texture, so temporarily swap part 0's texture for the frame.
+                if (animatedTexture >= 0 && pObject->pMesh->partCount > 0 &&
+                    pObject->pMesh->pParts != NULL) {
+                    savedPartTexture = pObject->pMesh->pParts[0]->texture;
+                    pObject->pMesh->pParts[0]->texture = animatedTexture;
+                }
                 if ((pObject->pMesh->flags & 2) != 0) {
                     *(GfxMatrix *)pObject->matrix = g_unk0x00597cc0;
                     if (pObject->scaleX != 0x10000 || pObject->scaleY != 0x10000 ||
@@ -2358,6 +2492,10 @@ void Game_DrawStaticStageObjects(void)
                     CGame::QueuePrimaryDrawObject(pObject);
                 } else {
                     Graphics_DrawMeshLOD(pObject->pMesh, 1, 0, 0);
+                    // Restore the part texture swapped for the animated frame.
+                    if (savedPartTexture >= 0 && pObject->pMesh->partCount > 0 &&
+                        pObject->pMesh->pParts != NULL)
+                        pObject->pMesh->pParts[0]->texture = savedPartTexture;
                 }
             }
             pObject = pObject->pNext;

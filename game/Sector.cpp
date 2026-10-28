@@ -294,6 +294,12 @@ BYTE Sector_FreeMeshPartLists(void)
     Mesh *pModel;
     MeshPart **ppPart;
 
+    // OpenCMR2: a fresh stage starts its animated scenery objects still, so
+    // drop the per-object animation table as the stage is unloaded
+    // ([video] video.animated_scenery).
+    extern void AnimObject_ClearTable(void);
+    AnimObject_ClearTable();
+
     for (i = 0; i < g_sectorCount; i++) {
         pModel = g_sectors[i]->pMesh;
         if (pModel != NULL) {
