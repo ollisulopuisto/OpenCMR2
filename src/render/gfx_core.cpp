@@ -414,19 +414,45 @@ extern "C" void Gfx_SetBloom(BOOL enabled, int intensity)
         s_executor->SetBloom(enabled != 0, intensity);
 }
 
-extern "C" BOOL Gfx_DrawDustVolume(const GfxDustLobe *lobes,int count)
+static std::vector<GfxDustLobe> s_pendingDust;
+static bool DustVolumeStateSupported()
 {
-    if (!lobes || count<=0 || !s_executor || s_target || !s_executor->SupportsDustVolume()) return 0;
-    if(s_state.viewport.x || s_state.viewport.y || s_state.viewport.width!=(DWORD)s_width ||
-       s_state.viewport.height!=(DWORD)s_height || s_state.projection._34==0)return 0;
+    if (!s_executor || s_target || !s_executor->SupportsDustVolume()) return false;
+    const int screenW=s_state.screenW>0?s_state.screenW:s_width;
+    const int screenH=s_state.screenH>0?s_state.screenH:s_height;
+    if(s_state.viewport.x || s_state.viewport.y || s_state.viewport.width!=(DWORD)screenW ||
+       s_state.viewport.height!=(DWORD)screenH || s_state.projection._34==0)return false;
     float inverse[16];GfxMatrix vp;
     for(int r=0;r<4;r++)for(int c=0;c<4;c++){(&vp._11)[r*4+c]=0;for(int k=0;k<4;k++)(&vp._11)[r*4+c]+=(&s_state.view._11)[r*4+k]*(&s_state.projection._11)[k*4+c];}
-    if(!DustVolume_Inverse(vp,inverse)||!DustVolume_Inverse(s_state.view,inverse))return 0;
+    return DustVolume_Inverse(vp,inverse)&&DustVolume_Inverse(s_state.view,inverse);
+}
+extern "C" void Gfx_FlushDustVolume(void)
+{
+    if(s_pendingDust.empty())return;
+    if(!DustVolumeStateSupported()){
+        Sys_Log("options: dust volume late-state rejected; check world pass viewport/projection");
+        s_pendingDust.clear();return;
+    }
     GfxCommand command={};command.type=GFX_CMD_DUST_VOLUME;
-    command.dustCount=std::min(count,32);command.state=RecordState();
+    command.dustCount=(int)s_pendingDust.size();command.state=RecordState();
     command.dustOffset=(unsigned)s_frame.dustLobes.size();
-    s_frame.dustLobes.insert(s_frame.dustLobes.end(),lobes,lobes+command.dustCount);
-    s_frame.commands.push_back(command);return 1;
+    s_frame.dustLobes.insert(s_frame.dustLobes.end(),s_pendingDust.begin(),s_pendingDust.end());
+    s_frame.commands.push_back(command);s_pendingDust.clear();
+}
+
+extern "C" BOOL Gfx_DrawDustVolume(const GfxDustLobe *lobes,int count)
+{
+    if (!lobes || count<=0)return 0;
+    if (!DustVolumeStateSupported()){
+        static bool logged=false;
+        if(!logged){Sys_Log("options: dust volume unavailable; wheel sheet fallback (viewport=%u,%u,%u,%u virtual=%dx%d render=%dx%d perspective=%d)",
+            s_state.viewport.x,s_state.viewport.y,s_state.viewport.width,s_state.viewport.height,
+            s_state.screenW,s_state.screenH,s_width,s_height,s_state.projection._34!=0);logged=true;}
+        return 0;
+    }
+    // Particle collection happens before world drawing. Copy only the lobes;
+    // camera/projection and command position belong to the completed world pass.
+    s_pendingDust.assign(lobes,lobes+std::min(count,32));return 1;
 }
 
 extern "C" void Gfx_SetParticles(int type, int intensity)
@@ -536,6 +562,7 @@ extern "C" void Gfx_EndScene(void)
 
 static void Present(BOOL vsync, bool stretch)
 {
+    s_pendingDust.clear(); // never leak an unflushed view into a later frame
     if (FILE *trace = TraceFile())
         fprintf(trace, "F %u\n", s_traceFrame++);
     if (Diagnostics::observer)

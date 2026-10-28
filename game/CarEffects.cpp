@@ -1479,7 +1479,7 @@ BYTE g_wheelDustColours[10][4] = {
 // kind (plain, dust, debris) and the wheel side, its velocity follows the
 // wheel with a random lift, its colour is random earth or the given colour.
 // FUNCTION: CMR2 0x0045dc00
-void CarEffects_EmitWheelDustParticle(int car, int wheel, FixVector *pPos, FixVector *pVel, int unused, int side, FixVector *pA,
+void CarEffects_EmitWheelDustParticle(int car, int wheel, FixVector *pPos, FixVector *pVel, int dryWheelDust, int side, FixVector *pA,
                   FixVector *pB, short *pC, int surfaced, int light, int debris, BYTE *pColour)
 {
     FixVector velocity;
@@ -1532,8 +1532,8 @@ void CarEffects_EmitWheelDustParticle(int car, int wheel, FixVector *pPos, FixVe
         ((BYTE *)&debris)[2] = pColour[2];
     }
     ((BYTE *)&debris)[3] = 0xff;
-    Particle_Spawn(light, pPos, &velocity, pPos->y, 0, (BYTE *)&debris, g_trailLevel[car][wheel], &car,
-                   Car_Get(car)->pBodyNode->viewMask);
+    Particle_SpawnTagged(light, pPos, &velocity, pPos->y, 0, (BYTE *)&debris, g_trailLevel[car][wheel], &car,
+                   Car_Get(car)->pBodyNode->viewMask, dryWheelDust != 0);
 }
 
 // Wheel dust, gravel and water of a car: the surface under each wheel and the
@@ -1753,6 +1753,8 @@ void CarEffect_UpdateWheelSurfaceParticles(int car)
             side = 0x10000;
         if (wheel != 3 && wheel != 2)
             side = FixMul(side, 0x3333);
+        const bool dryWheelDust = DustPlume_Surface(dirt, gravel, water, snow, ice) &&
+            Sys_GetOption("video.dust_plume", 1) != 0;
         for (k = count; k > 0; k--) {
             position.x = g_trailPos[car][wheel].x - pCar->position.x;
             position.y = g_trailPos[car][wheel].y - pCar->position.y;
@@ -1772,12 +1774,12 @@ void CarEffect_UpdateWheelSurfaceParticles(int car)
             n = (0x100 - shade) / 128 + 1;
             if (dark != 0 && n > 0) {
                 for (spin = n; spin != 0; spin--)
-                    CarEffects_EmitWheelDustParticle(car, wheel, &position, &velocity, 0, side, &pCar->groundAxis[1],
+                    CarEffects_EmitWheelDustParticle(car, wheel, &position, &velocity, dryWheelDust, side, &pCar->groundAxis[1],
                                  &pCar->groundDir[1], &pCar->cornerTriangle[wheel], 1, 0, 0, colour);
             }
             if (light != 0 && n > 0) {
                 for (; n != 0; n--)
-                    CarEffects_EmitWheelDustParticle(car, wheel, &position, &velocity, 0, side, &pCar->groundAxis[1],
+                    CarEffects_EmitWheelDustParticle(car, wheel, &position, &velocity, dryWheelDust, side, &pCar->groundAxis[1],
                                  &pCar->groundDir[1], &pCar->cornerTriangle[wheel], 1, 1, 0, colour);
             }
         }

@@ -5584,7 +5584,9 @@ void Particle_DrawAll(SceneNode *pCamera, BYTE view)
             if (DRAW_PARTICLE.active == 0 || (DRAW_PARTICLE.field0x55 & mask) == 0)
                 continue;
             pType = DRAW_PARTICLE.pType;
-            if(volumeQueued && pType==&g_particleTypes[DUST_PLUME_TYPE])continue;
+            // Only dry wheel smoke explicitly tagged at emission is replaced.
+            // Snow, water, debris and other uses of these templates stay intact.
+            if(volumeQueued && (pType==&g_particleTypes[DUST_PLUME_TYPE] || DRAW_PARTICLE.dryWheelDust))continue;
             if (pType->draw != 0) {
                 pType->draw(&DRAW_PARTICLE, pType, pCamera);
                 continue;
@@ -5653,6 +5655,14 @@ void Particle_DrawAll(SceneNode *pCamera, BYTE view)
 void Particle_Spawn(int typeIndex, FixVector *pSource, FixVector *pPosition,
                     int field0x48, FixMatrix *attachmentMatrix, BYTE *pColour,
                     BYTE field0x54, void *callbackParam, BYTE field0x55)
+{
+    Particle_SpawnTagged(typeIndex,pSource,pPosition,field0x48,attachmentMatrix,pColour,
+                         field0x54,callbackParam,field0x55,false);
+}
+
+void Particle_SpawnTagged(int typeIndex, FixVector *pSource, FixVector *pPosition,
+                    int field0x48, FixMatrix *attachmentMatrix, BYTE *pColour,
+                    BYTE field0x54, void *callbackParam, BYTE field0x55, bool dryWheelDust)
 {
     ParticleType *pType = NULL;
     bool hasBasis;
@@ -5771,6 +5781,7 @@ void Particle_Spawn(int typeIndex, FixVector *pSource, FixVector *pPosition,
     pParticle = &g_particles[selected];
 
 particleFound:
+    pParticle->dryWheelDust = dryWheelDust;
 
     randomX = -0x8000 - (int)FTOI(__int64, X87S_MUL(X87S_MUL(X87S_FILD(float, random()), g_oneOverRandMax), g_minus65536));
     randomY = -0x8000 - (int)FTOI(__int64, X87S_MUL(X87S_MUL(X87S_FILD(float, random()), g_oneOverRandMax), g_minus65536));

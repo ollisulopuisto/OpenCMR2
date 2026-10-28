@@ -18,6 +18,18 @@ int main(){Particle pool[400]={};ParticleType types[33]={};g_particles=pool;g_pa
  for(auto &p:pool)if(p.active){p.size=65536;p.type0x53=80;p.texture=type.texture;}
  g_billboardsEnabled=0;g_billboardsRequested=0;
  Particle_DrawAll(nullptr,0);CHECK(volumeCalls==1&&g_billboardsRequested==0);
- available=false;Particle_DrawAll(nullptr,0);CHECK(volumeCalls==2&&g_billboardsRequested==1);
- Particle_ClearActiveFlags();available=true;Particle_DrawAll(nullptr,0);CHECK(volumeCalls==2);
+ // An original dry wheel sheet is replaced only when explicitly tagged.
+ Particle extra={};extra.active=1;extra.field0x55=1;extra.pType=&types[0x12];
+ extra.texture=type.texture;extra.size=65536;extra.type0x53=80;extra.dryWheelDust=true;
+ pool[399]=extra;Particle_DrawAll(nullptr,0);CHECK(volumeCalls==2&&g_billboardsRequested==0);
+ pool[399].dryWheelDust=false;Particle_DrawAll(nullptr,0);CHECK(volumeCalls==3&&g_billboardsRequested==1);
+ pool[399].active=0;g_billboardsRequested=0;
+ available=false;Particle_DrawAll(nullptr,0);CHECK(volumeCalls==4&&g_billboardsRequested==1);
+ Particle_ClearActiveFlags();available=true;Particle_DrawAll(nullptr,0);CHECK(volumeCalls==4);
+ // Recycling an explicitly tagged particle through the original API clears the tag.
+ types[0x12].flags=1;types[0x12].lifetime=65536;g_nextParticle=0;
+ Particle_SpawnTagged(0x12,&point,&velocity,0,nullptr,colour,0,nullptr,1,true);
+ CHECK(pool[0].dryWheelDust);pool[0].active=0;g_nextParticle=0;
+ Particle_Spawn(0x12,&point,&velocity,0,nullptr,colour,0,nullptr,1);
+ CHECK(!pool[0].dryWheelDust);
  g_particles=nullptr;g_particleTypes=nullptr;g_particleCount=g_particleTypeCount=0;puts("volume replaces sheets; unsupported fallback and stage clear: pass");}

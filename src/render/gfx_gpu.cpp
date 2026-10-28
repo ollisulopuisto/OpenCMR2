@@ -1189,8 +1189,9 @@ struct Executor : GfxExecutor {
         if (!SupportsDustVolume() || command.dustCount<=0) return;
         // First prototype supports one full-screen perspective viewport only.
         // Split-screen/cubemap/orthographic paths keep ordinary wheel effects.
-        if (state.viewport.x || state.viewport.y || state.viewport.width!=(DWORD)backWidth ||
-            state.viewport.height!=(DWORD)backHeight || state.projection._34==0) return;
+        GfxViewport dustViewport=ToTarget(state.viewport,state.screenW,state.screenH,true,backWidth,backHeight);
+        if (dustViewport.x || dustViewport.y || dustViewport.width!=(DWORD)backWidth ||
+            dustViewport.height!=(DWORD)backHeight || state.projection._34==0) return;
         int volumeWidth=std::max(1,backWidth/2),volumeHeight=std::max(1,backHeight/2);
         struct Uniforms {float inverse[16],camera[4],target[4],centres[32][4],colours[32][4];} u={};
         GfxMatrix vp;Multiply(state.view,state.projection,&vp._11);
@@ -1211,7 +1212,7 @@ struct Executor : GfxExecutor {
         SDL_GPUBlitInfo blit={};blit.source.texture=dustCompositeTarget;blit.source.w=backWidth;blit.source.h=backHeight;
         blit.destination.texture=backColor;blit.destination.w=backWidth;blit.destination.h=backHeight;
         blit.load_op=SDL_GPU_LOADOP_DONT_CARE;blit.filter=SDL_GPU_FILTER_NEAREST;SDL_BlitGPUTexture(cmd,&blit);
-        if(!dustVolumeLogged){Sys_Log("options: world dust volume encoded; camera-facing plume sheets suppressed, max32 terrain-anchored clouds");dustVolumeLogged=true;}
+        if(!dustVolumeLogged){Sys_Log("options: world dust volume encoded after world depth, before HUD; dry wheel sheets suppressed, max32 terrain-anchored clouds");dustVolumeLogged=true;}
     }
 
     // Billboard particle pipeline: position+colour+size vertices, alpha
