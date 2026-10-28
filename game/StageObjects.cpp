@@ -14673,10 +14673,6 @@ int Collision_TestCarAgainstSectorObjects(Car *pCar)
             pEntry = ppEntries != NULL ? *ppEntries : NULL;
             for (i = 0; i < count; i++, pEntry++) {
                 pObject = pEntry->pObject;
-                // OpenCMR2: a smashed tree no longer collides ([video]
-                // video.tree_break).
-                if ((pObject->flags & STAGE_OBJECT_BROKEN) != 0)
-                    continue;
                 if (moving == 0)
                     position = pObject->position;
                 else
@@ -14687,23 +14683,10 @@ int Collision_TestCarAgainstSectorObjects(Car *pCar)
                 result = Collision_DoSpheresOverlap(pCar->collisionRadius, pEntry->pBounds->radius, (int *)&pCar->position, (int *)&position);
                 if (result == 0)
                     continue;
-                // OpenCMR2: a hard hit smashes a breakable tree instead of
-                // bouncing the car off it ([video] video.tree_break). The
-                // crash can still stop the car on a gentle tap or a solid
-                // object; above the speed threshold the tree gives way.
-                if (Sys_GetOption("video.tree_break", 1) != 0 &&
-                    TreeBreak_ShouldBreak(pCar->speed)) {
-                    pObject->flags |= STAGE_OBJECT_BROKEN;
-                    // OpenCMR2: start the fall animation for the broken tree.
-                    extern int TreeFall_Index(StageObject *);
-                    TreeFall_Index((StageObject *)pObject);
-                    // OpenCMR2: smashing through a tree still costs the car
-                    // speed — breaking wood takes energy, so the car slows but
-                    // keeps going instead of noclipping through for free.
-                    FixVecScale(&pCar->velocity, &pCar->velocity, 0x4000);
-                    pCar->speed = FixVecLength(&pCar->velocity);
-                    continue;
-                }
+                // Broad bounds only select a collision candidate. No runtime
+                // record currently supplies a verified breakable-tree contract:
+                // video.tree_break must not bypass the original detailed test
+                // or turn a sign, building or near miss into a broken tree.
                 result = 0;
                 if (moving == 1 && RallyData_IsElementFlagSet(&pEntry, pCar->index) == 0)
                     continue;
