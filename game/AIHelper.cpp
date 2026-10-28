@@ -1,26 +1,51 @@
 #include "AIHelper.h"
 #include "GameInfo.h"
 #include "RallyData.h"
+#include "DriverNamePatch.h"
+#include "port/sys.h"
 
 // GLOBAL: CMR2 0x005166b4
-// Names only, transcribed from the supplied real-driver patch static table.
-// Its executable was not run; performance and car data are unchanged.
 char g_aiNames[15][20] = {
-    "t. makinen",
-    "c. mcrae",
-    "r. burns",
-    "d. auriol",
-    "c. sainz",
-    "j. kankkunen",
-    "m. gronholm",
-    "f. loix",
-    "f. delecour",
-    "h. rovanpera",
-    "t. radstrom",
-    "t. gardemeister",
-    "p. liatti",
-    "p. solberg",
-    "b. thiry"};
+    "mcrae",
+    "erikson",
+    "dugas",
+    "baca",
+    "tizot",
+    "aikita",
+    "huber",
+    "ingauld",
+    "jonsson",
+    "truman",
+    "jones",
+    "kastis",
+    "candido",
+    "cooper",
+    "utzman"};
+
+namespace {
+char customNames[15][20];
+bool namesChecked=false, namesAvailable=false;
+char (*NameTable())[20] {
+    if (!namesChecked) {
+        namesChecked=true;
+        if (Sys_GetOption("video.driver_name_overrides",1)!=0) {
+            SysFile *file=Sys_OpenFile("driver-names.tsv",SYS_FILE_READ);
+            if (file) {
+                DWORD size=Sys_GetFileSize(file);
+                std::string content;
+                if(size<=1024) {
+                    content.resize(size);
+                    if(Sys_ReadFile(file,content.data(),size)==size)
+                        namesAvailable=DriverNamePatch::Parse(content,customNames);
+                }
+                Sys_CloseFile(file);
+                if(!namesAvailable) Sys_Log("driver names: invalid sidecar; keeping original names");
+            }
+        }
+    }
+    return namesAvailable ? customNames : g_aiNames;
+}
+}
 
 // FUNCTION: CMR2 0x00407f80
 int CAIHelper::ResolveNameIndex(int id)
@@ -50,10 +75,10 @@ char *CAIHelper::GetNameForID(int id)
         {
             if (CGameInfo::GetConfiguredGameMode() != 7)
             {
-                if (id < 0 || id > 15)
+                if (id < 0 || id >= 15)
                     id = 0;
 
-                return g_aiNames[id];
+                return NameTable()[id];
             }
         }
     }
@@ -62,5 +87,7 @@ char *CAIHelper::GetNameForID(int id)
     // in cl and the difference in eax, matching the original.
     int offset = id - RallyDataState();
 
-    return g_aiNames[CAIHelper::ResolveNameIndex(offset)];
+    int index=CAIHelper::ResolveNameIndex(offset);
+    if(index<0 || index>=15) index=0;
+    return NameTable()[index];
 }
