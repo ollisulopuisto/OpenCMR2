@@ -11,6 +11,7 @@
 #include "FileBuffer.h"
 #include "port/disk_layouts.h"
 #include "port/sys.h"
+#include "GraphicsOptions.h"
 
 int g_sectorsPerRow;
 Sector *g_sectors[14096];
@@ -233,6 +234,13 @@ void *Sector_RelocateStageMeshFile(BYTE *pData, SceneNode *parent, GenericFile *
             pObjects[i].pNext = DISK_RECORD(pFile, DISK_StageObject_pNext, pObjects, StageObject, objectCount);
             g_stageObjects[g_unk0x0067f228 + i] = &pObjects[i];
         }
+        // OpenCMR2: flag all stage objects as animated so idle scenery
+        // (crowds, trees, water) cycles through its bitmap frames when
+        // [video] video.animated_scenery is on. Objects with a single
+        // texture are unaffected (frame 0 wraps to 0); objects with
+        // consecutive animation frames will cycle.
+        for (i = 0; i < objectCount; i++)
+            pObjects[i].flags |= STAGE_OBJECT_ANIMATED;
         g_unk0x0067f228 += objectCount;
     }
 
