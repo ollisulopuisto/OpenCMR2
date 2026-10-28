@@ -90,4 +90,8 @@ void Font_DrawText(BYTE index, char *text, short x, short y, int *pColour, unsig
 void Font_SetBlendMode(int mode);
 int Font_Unused(char *unused1, int unused2);
 
+// Render-only scaled, clipped single-line diagnostics. Does not alter global font scale.
+void Font_DrawTextScaled(BYTE index, const char *text, int x, int y, int pixelHeight,
+                         int maxWidth, const BYTE *colour);
+
 #endif
