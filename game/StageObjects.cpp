@@ -14700,7 +14700,7 @@ int Collision_TestCarAgainstSectorObjects(Car *pCar)
                     // OpenCMR2: smashing through a tree still costs the car
                     // speed — breaking wood takes energy, so the car slows but
                     // keeps going instead of noclipping through for free.
-                    FixVecScale(&pCar->velocity, &pCar->velocity, 0xc000);
+                    FixVecScale(&pCar->velocity, &pCar->velocity, 0x4000);
                     pCar->speed = FixVecLength(&pCar->velocity);
                     continue;
                 }

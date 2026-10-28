@@ -203,7 +203,8 @@ struct Executor : GfxExecutor {
     SDL_GPUGraphicsPipeline *bloomBlurPipeline = nullptr;  // directional blur pass
     SDL_GPUGraphicsPipeline *bloomCompositePipeline = nullptr;  // scene + bloom additive
     SDL_GPUGraphicsPipeline *particlePipeline = nullptr;  // particle billboard pass
-    SDL_GPUTexture *shadowMap = nullptr;   // directional light shadow map (depth)
+    SDL_GPUTexture *shadowMap = nullptr;   // directional light shadow map (color: depth in R channel)
+    SDL_GPUTexture *shadowDepth = nullptr; // depth buffer for the shadow pass
     SDL_GPUGraphicsPipeline *shadowPipeline = nullptr;  // depth-only shadow pass
     int backWidth = 0, backHeight = 0;
     SDL_GPUTextureFormat colorFormat = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM;
@@ -306,6 +307,7 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUGraphicsPipeline(device, shadowPipeline);
         SDL_ReleaseGPUBuffer(device, particleVB);
         SDL_ReleaseGPUTexture(device, shadowMap);
+        SDL_ReleaseGPUTexture(device, shadowDepth);
         SDL_ReleaseWindowFromGPUDevice(device, window);
         SDL_DestroyGPUDevice(device);
     }
@@ -452,6 +454,10 @@ struct Executor : GfxExecutor {
             SDL_ReleaseGPUTexture(device, motionBlurTemp);
             SDL_ReleaseGPUTexture(device, bloomBuf1);
             SDL_ReleaseGPUTexture(device, bloomBuf2);
+            SDL_ReleaseGPUTexture(device, shadowMap);
+            SDL_ReleaseGPUTexture(device, shadowDepth);
+            shadowMap = NULL;
+            shadowDepth = NULL;
             backColor = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, width, height, 1, 1,
                                       SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
             backDepth = CreateTexture(SDL_GPU_TEXTURETYPE_2D, depthFormat, width, height, 1, 1,
@@ -569,6 +575,14 @@ struct Executor : GfxExecutor {
     {
         shadowType = type < 0 ? 0 : type > 1 ? 1 : type;
         shadowBias = bias < 0 ? 0.0f : bias > 100 ? 100.0f : bias / 10000.0f;
+        // Create shadow map textures lazily (Metal can't sample D24_UNORM_S8_UINT,
+        // so shadowMap is a color texture holding depth in its R channel).
+        if (shadowType != 0 && shadowMap == NULL) {
+            shadowMap = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, 1024, 1024,
+                                      1, 1, SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
+            shadowDepth = CreateTexture(SDL_GPU_TEXTURETYPE_2D, depthFormat, 1024, 1024,
+                                        1, 1, SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET);
+        }
     }
 
     // ---- textures ----
@@ -1048,15 +1062,15 @@ struct Executor : GfxExecutor {
     }
 
     // Depth-only shadow map pipeline: transforms by lightViewProj * world,
-    // writes depth only, no colour output.
+    // writes depth to shadowDepth and depth value to shadowMap's R channel.
     SDL_GPUGraphicsPipeline *ShadowPipeline()
     {
         if (shadowPipeline != nullptr)
             return shadowPipeline;
         SDL_GPUColorTargetDescription color = {};
         color.format = colorFormat;
-        color.blend_state.enable_color_write_mask = true;
-        color.blend_state.color_write_mask = 0;   // no colour output
+        color.blend_state.enable_blend = false;
+        color.blend_state.color_write_mask = 0xf;   // write depth to shadowMap's R channel
         SDL_GPUGraphicsPipelineCreateInfo info = {};
         info.vertex_shader = vsShadow;
         info.fragment_shader = fsShadow;
@@ -1661,11 +1675,12 @@ struct Executor : GfxExecutor {
         // samples it.
         if (shadowType != 0 && shadowMap != NULL) {
             SDL_GPUColorTargetInfo color = {};
-            color.texture = white2D;
-            color.load_op = SDL_GPU_LOADOP_DONT_CARE;
-            color.store_op = SDL_GPU_STOREOP_DONT_CARE;
+            color.texture = shadowMap;
+            color.load_op = SDL_GPU_LOADOP_CLEAR;
+            color.store_op = SDL_GPU_STOREOP_STORE;
+            color.clear_color = { 1.0f, 1.0f, 1.0f, 1.0f };
             SDL_GPUDepthStencilTargetInfo depth = {};
-            depth.texture = shadowMap;
+            depth.texture = shadowDepth;
             depth.load_op = SDL_GPU_LOADOP_CLEAR;
             depth.store_op = SDL_GPU_STOREOP_STORE;
             depth.clear_depth = 1.0f;
