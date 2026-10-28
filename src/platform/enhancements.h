@@ -11,9 +11,10 @@ struct EnhancementOptions {
         std::string key=argv[i];
         if(key=="--prepare-only"){prepareOnly=true;return true;}
         if(key=="--install-enhancement-deps"){installDependencies=true;return true;}
-        if(key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect")return false;
+        if(key!="--tree-wind"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect")return false;
         if(i+1>=argc){error="Missing value for "+key;return true;}
         std::string value=argv[++i];
+        if(key=="--tree-wind"){if(value!="on"&&value!="off")error="--tree-wind expects on or off";else overrides["video.tree_wind"]=value=="on";}
         if(key=="--trees") {if(value!="original"&&value!="shell"&&value!="crossed")error="--trees expects original, shell or crossed";else trees=value;}
         if(key=="--spectators"){if(value!="original"&&value!="animated")error="--spectators expects original or animated";else spectators=value;}
         if(key=="--driver-names"){if(value!="original"&&value!="real"&&value!="sidecar")error="--driver-names expects original, real or sidecar";else names=value;}
@@ -30,6 +31,7 @@ struct EnhancementOptions {
         return true;
     }
     void Apply(){
+        if(!trees.empty()&&!overrides.count("video.tree_wind"))overrides["video.tree_wind"]=trees!="original";
         // A generated pack contains both kinds; activate only requested kinds.
         if(NeedsPack()&&trees.empty())overrides["video.tree_overrides"]=0;
         if(NeedsPack()&&spectators.empty())overrides["video.spectator_overrides"]=0;
@@ -49,8 +51,10 @@ inline const char *EnhancementHelp(){return
 "                              Prepare/cache selected experimental tree mode\n"
 "                              Only3high-source mappings; shell is tiered;\n"
 "                              crossed is fixed cutouts, not full3Dtrees\n"
+"  --tree-wind on|off          2D foliage sway, fixed bases; default on with trees\n"
+"                              Hash-verified individual tree cards only\n"
 "  --spectators original|animated\n"
-"                             12-frame sprite upper-body sway, not3Dpeople\n"
+"                             Four forearm poses on one France atlas;47others subtle sway\n"
 "  --driver-names original|real|sidecar\n"
 "                              Real=15extracted display names, no save edits\n"
 "                              Sidecar=existing validated driver-names.tsv\n"

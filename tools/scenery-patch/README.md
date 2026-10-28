@@ -194,3 +194,37 @@ and source grass specks; the separate stem samples original opaque pixels.
 Fir1 keeps original alpha. These masks are explicit modifications, not exact
 alpha preservation. Textures are still4x interpolation, not restored detail.
 No low variants or rejected fr1 are added. Recipe metadata records the mode.
+
+
+### Actual motion coverage and diagnostics
+
+`--spectators animated` now brings the original manually articulated forearm
+demo into the production frame generator for the exact hash-verified
+`frahit.bfl/spc_mn9a.dds` atlas: four poses, fixed lower body, repaired clean
+plate, stable instance phases. This is 2D articulated texture motion, not
+3D people or a generic skeleton. The other47atlases retain the earlier
+subtle upper-body warp; their arms are not separately animated. An offline
+demo or generated frames do not establish native gameplay success.
+
+The debug panel scales with resolution (minimum14px). Its Crowd line shows
+actual drawn simulation tick, frame index and observed frame changes for one
+representative instance. The early runtime log reports selected frame assets
+and bound-frame-change count. A successful first draw alone is not animation
+acceptance. Paused simulation holds the pose; extra views do not advance time.
+
+`--trees shell|crossed` still replaces only three authored source textures.
+Other trees remain original; cropped-atlas cards remain fail-closed for3D
+replacement. `--tree-wind on|off` adds subtle wind to hash-verified individual
+2D tree cards, default on with a selected tree mode. It preserves original
+UVs and fixes the lowest vertices, moving only the top by at most1.5%of card
+height. This is not a3Dupgrade. Forest strips, composite meshes, shadow masks,
+unverified sources and non-billboard objects are excluded. No mesh/collision
+records or saved settings change. Runtime logs name active wind sources and
+uncovered original tree sources. The Tree line reports cumulative successful
+replacement draws, wind draws and distinct uncovered original sources, not
+an exact count of all visible trees or frame-rate claim.
+
+New recipes create a new private cache automatically; old caches are untouched.
+Native Mac motion, tree appearance, label fit and performance remain separate
+acceptance checks. The small wind deformation currently copies at most192
+vertices per selected card draw; no native cost estimate is claimed.

@@ -6353,7 +6353,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         BYTE colour[4] = {240, 246, 255, 255};
         unsigned long long tick=0;unsigned frame=0,changes=0;
         bool spectator=SceneryPack_GetAnimationStatus(&tick,&frame,&changes);
-        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,spectator?3:2);
+        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,spectator?4:3);
         short panel[4] = {(short)layout.x,(short)layout.y,(short)layout.width,(short)layout.height};
         Sprite_FillRect(NULL, panel, background, 1);
         char text[96];
@@ -6365,6 +6365,10 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             snprintf(text,sizeof(text),"Crowd tick %llu | frame %u | changes %u",tick,frame,changes);
             Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+2*layout.line,layout.font,layout.width-2*layout.pad,colour);
         }
+        unsigned treeDraws=0,windDraws=0,originalTrees=0;
+        SceneryPack_GetTreeStatus(&treeDraws,&windDraws,&originalTrees);
+        snprintf(text,sizeof(text),"Tree draws %u | wind %u | original %u",treeDraws,windDraws,originalTrees);
+        Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?3:2)*layout.line,layout.font,layout.width-2*layout.pad,colour);
     }
     CarDamage_UpdateOrderedCarsOffRoadState(pOrder, (short)orderCount, g_viewScreenRect, maskedView);
     if (CGameInfo::GetGameModeOptionBit19() != 0) {

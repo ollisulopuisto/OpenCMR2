@@ -12,4 +12,5 @@ void SceneryPack_Advance(int step16_16);
 void SceneryPack_LogStatus();
 // Last actual spectator frame draw, not a promise that a mapping is active.
 bool SceneryPack_GetAnimationStatus(unsigned long long *tick,unsigned *frame,unsigned *changes);
+void SceneryPack_GetTreeStatus(unsigned *replacements,unsigned *wind,unsigned *originalSources);
 #endif

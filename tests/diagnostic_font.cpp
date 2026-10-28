@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
     if(g_spriteCount1!=count) ++fail;
     FILE *layoutOut=argc>2?fopen(argv[2],"w"):nullptr;
     for(auto size:{std::pair<int,int>{1280,960},{2940,1912}}){
-        auto l=DebugOverlayLayout::For(size.first,size.second,3);
+        auto l=DebugOverlayLayout::For(size.first,size.second,4);
         if(l.font<14||l.font>32||l.width>size.first||l.height>size.second/5)++fail;
         g_spriteCount1=0;Font_DrawTextScaled(0,"Crowd tick 125 | frame 8 | changes 24",l.x+l.pad,l.y+l.pad,l.font,l.width-2*l.pad,white);
         if(layoutOut)fprintf(layoutOut,"panel %d %d %d %d %d %d %d\n",size.first,size.second,l.x,l.y,l.width,l.height,l.font);

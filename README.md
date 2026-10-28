@@ -480,3 +480,10 @@ the Bink decoder (LGPL-2.1) and RadialGamePad (GPL-3.0).
 OpenCMR2 is an unofficial project, not affiliated with or endorsed by
 Codemasters or Electronic Arts. Colin McRae Rally 2.0 is a trademark of its
 respective owners.
+
+
+The spectator option currently articulates the raised forearm on one verified
+France atlas using the original demo recipe, not all crowd limbs. Other atlases
+retain subtle cutout sway. `--tree-wind off` disables the new base-fixed2Dwind
+(default on with a selected tree mode). Wind does not turn cards into3Dtrees.
+See the preparation guide for exact coverage and the runtime draw counters.
