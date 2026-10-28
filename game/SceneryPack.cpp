@@ -282,7 +282,7 @@ bool SceneryPack_Draw(StageObject *object,const float *billboard){
     if(!(mesh->flags&2)||!mesh->pTriangles||mesh->triangleCount<1||mesh->triangleCount>64||!mesh->pVertexData||mesh->field_0x10<3||mesh->field_0x10>64)return false;
     int index=mesh->pTriangles[0].textures[0];if(index<0||(unsigned)index>=CGraphics::m_textureCount)return false;
     for(int i=1;i<mesh->triangleCount;i++)if(mesh->pTriangles[i].textures[0]!=index)return false;
-    auto source=CGraphics::GetTextureBuffer()[index];if(!source)return false;
+    auto source=CGraphics::GetTextureBuffer()[index];if(!source||!source->pSurface)return false;
     Init();auto stem=Stem(source->name);auto wind=windIdentities.find(stem);
     if(wind==windIdentities.end()){
         if(stem.compare(0,4,"tre_")==0&&treeOriginalLogged.insert(stem).second)Sys_Log("options: tree original %s: not covered by verified replacement/wind routes",stem.c_str());

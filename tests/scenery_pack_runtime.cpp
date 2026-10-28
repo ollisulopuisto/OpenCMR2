@@ -12,6 +12,7 @@
 #include "SceneryPack.h"
 #include "ScenerySHA256.h"
 #include <filesystem>
+#include <chrono>
 #include "SceneryPackFormat.h"
 #include <fstream>
 #include <sstream>
@@ -55,7 +56,7 @@ int main(int argc,char **argv){if(argc<2)return 0;base=argv[1];legacy=argc>2&&!s
    CHECK(SceneryIdentity::SHA256("abc",3)=="ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
    CHECK(SceneryIdentity::SHA256("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",56)=="248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1");
    std::string multi(1000,'a');CHECK(SceneryIdentity::SHA256(multi.data(),multi.size())=="41edece42d63e8d9bf515a9ba6932e1c20cbc9f5a5d134645adb5db1b9737ea3");
-   temporary=std::filesystem::temp_directory_path()/("cmr-identity-"+std::to_string(SDL_GetTicksNS()));
+   temporary=std::filesystem::temp_directory_path()/("cmr-identity-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
    std::filesystem::copy(base,temporary,std::filesystem::copy_options::recursive);base=temporary.string();
    std::ofstream wind(temporary/"tree-wind-identities.tsv");wind<<"frahit.bfl/tre_unknown.dds\t3\t"<<SceneryIdentity::SHA256("ghi",3)<<"\n";wind.close();
    std::ofstream ids(temporary/"source-identities.tsv");ids<<"frahit.bfl/tre_md1.dds\t3\t"<<SceneryIdentity::SHA256("abc",3)<<"\nfrahit.bfl/spc_mn9a.dds\t3\t"<<SceneryIdentity::SHA256("def",3)<<"\n";ids.close();
