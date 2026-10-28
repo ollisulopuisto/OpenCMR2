@@ -79,6 +79,8 @@ struct LightUniform {
 
 struct VertexUniforms {
     float worldView[16];
+    float world[16];          // model-to-world, for shadow mapping
+    float lightViewProj[16];  // light's view * projection, for shadow mapping
     float projection[16];
     float textureMatrix[2][16];
     float materialDiffuse[4], materialAmbient[4], materialSpecular[4], materialEmissive[4];
@@ -220,6 +222,14 @@ struct Executor : GfxExecutor {
     // OpenCMR2: video.anisotropy defaults to 8 (the original sampled without
     // anisotropy; 1 restores it). video.smooth_scaling as before.
     int anisotropy = 8, smoothScaling = 1;
+    // OpenCMR2: directional shadows. type 0=off, 1=on; bias in depth units.
+    int shadowType = 0;
+    float shadowBias = 0.0005f;
+    // The sun's view and projection matrices for shadow mapping, rebuilt when
+    // the stage changes.
+    GfxMatrix lightView;
+    GfxMatrix lightProj;
+    float lightViewProj[16];  // lightProj * lightView, for shadow mapping
     int swapInterval = -2;          // as last set
     int presentWidth = 0, presentHeight = 0;
     // The back buffer read of the last presented frame (the lens flare test),
@@ -432,12 +442,50 @@ struct Executor : GfxExecutor {
         SDL_SetWindowResizable(window, true);
         SetFullscreen(fullscreen);
         SDL_ShowWindow(window);
+        BuildLightMatrices();
         return true;
     }
 
     void SetFullscreen(bool fullscreen) override
     {
         Gfx_SetWindowMode(window, fullscreen, backWidth, backHeight);
+    }
+
+    // Builds the sun's view and projection matrices for shadow mapping: a
+    // directional light from the upper right, looking at the origin, with an
+    // orthographic projection covering the stage.
+    void BuildLightMatrices()
+    {
+        const float dir[3] = { 0.35f, -0.8f, -0.55f };
+        float len = sqrtf(dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]);
+        float lx = dir[0] / len, ly = dir[1] / len, lz = dir[2] / len;
+        const float dist = 200.0f;
+        float ex = -lx * dist, ey = -ly * dist, ez = -lz * dist;
+        float fx = lx, fy = ly, fz = lz;
+        float ux = 0.0f, uy = 1.0f, uz = 0.0f;
+        if (fabsf(fy) > 0.99f) { ux = 0.0f; uy = 0.0f; uz = 1.0f; }
+        float sx = fy * uz - fz * uy, sy = fz * ux - fx * uz, sz = fx * uy - fy * ux;
+        float sl = sqrtf(sx * sx + sy * sy + sz * sz);
+        sx /= sl; sy /= sl; sz /= sl;
+        float u2x = sy * fz - sz * fy, u2y = sz * fx - sx * fz, u2z = sx * fy - sy * fx;
+        memset(&lightView, 0, sizeof(lightView));
+        lightView._11 = sx; lightView._12 = u2x; lightView._13 = -fx; lightView._14 = 0.0f;
+        lightView._21 = sy; lightView._22 = u2y; lightView._23 = -fy; lightView._24 = 0.0f;
+        lightView._31 = sz; lightView._32 = u2z; lightView._33 = -fz; lightView._34 = 0.0f;
+        lightView._41 = -sx * ex - sy * ey - sz * ez;
+        lightView._42 = -u2x * ex - u2y * ey - u2z * ez;
+        lightView._43 = fx * ex + fy * ey + fz * ez;
+        lightView._44 = 1.0f;
+        float l = -150.0f, r = 150.0f, b = -150.0f, t = 150.0f, n = 1.0f, f = 500.0f;
+        memset(&lightProj, 0, sizeof(lightProj));
+        lightProj._11 = 2.0f / (r - l);
+        lightProj._22 = 2.0f / (t - b);
+        lightProj._33 = 1.0f / (f - n);
+        lightProj._41 = (l + r) / (l - r);
+        lightProj._42 = (t + b) / (b - t);
+        lightProj._43 = n / (n - f);
+        lightProj._44 = 1.0f;
+        Multiply(lightProj, lightView, lightViewProj);
     }
 
     // OpenCMR2: the cached samplers bake the old level in and their cache key
@@ -803,6 +851,8 @@ struct Executor : GfxExecutor {
     {
         memset(&u, 0, sizeof(u));
         Multiply(s.world, s.view, u.worldView);
+        memcpy(u.world, &s.world, sizeof(u.world));
+        memcpy(u.lightViewProj, lightViewProj, sizeof(u.lightViewProj));
         memcpy(u.projection, &s.projection, sizeof(u.projection));
         memcpy(u.textureMatrix[0], &s.texture[0], 64);
         memcpy(u.textureMatrix[1], &s.texture[1], 64);
