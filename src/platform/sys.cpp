@@ -1,4 +1,6 @@
 #include "platform/key_remapping.h"
+#include "CarDisplayNames.h"
+#include <fstream>
 // System services on SDL3: see port/sys.h.
 
 #include "platform/platform.h"
@@ -32,6 +34,7 @@ std::string s_dataDir;     // game data, read only (ends with '/')
 std::string s_sceneryDir; // optional read-only scenery root, independent of saves
 EnhancementOptions s_enhancements;
 std::string s_carDir;
+CarDisplayNames::Names s_carNames;
 std::string s_userDir;     // saves, settings, logs (ends with '/')
 std::string s_commandLine;
 std::map<std::string, std::string> s_settings;  // "section.key" -> value
@@ -677,7 +680,13 @@ bool PrepareEnhancementPack(bool cars=false){
         std::string value=text.substr(pos+marker.size());value=value.substr(0,value.find_first_of("\r\n"));
         std::error_code ec;auto selected=fs::canonical(value,ec);if(ec)continue;
         auto parent=fs::canonical(cache,ec);if(ec||selected.parent_path()!=parent||(!cars&&!fs::is_regular_file(selected/"manifest.tsv")))continue;
-        if(cars)s_carDir=WithSlash(selected.u8string());else s_sceneryDir=WithSlash(selected.u8string());return true;
+        if(cars){
+            s_carDir=WithSlash(selected.u8string());
+            std::ifstream names(selected/"car-names.tsv",std::ios::binary);
+            std::string labels;
+            if(fs::file_size(selected/"car-names.tsv",ec)<=4096&&!ec)labels.assign(std::istreambuf_iterator<char>(names),{});
+            if(!CarDisplayNames::Parse(labels,s_carNames))Sys_Log("options: car names=original (missing/invalid overlay labels)");
+        }else s_sceneryDir=WithSlash(selected.u8string());return true;
     }
     fprintf(stderr,"Scenery preparation failed. Requires Python3.10+ with Pillow/numpy or uv. No dependencies are downloaded unless --install-enhancement-deps is supplied. Existing packs/saves/originals were not replaced.\n");return false;
 #endif
@@ -694,7 +703,7 @@ bool Platform_Init(int argc, char **argv)
     s_keyRemapping=KeyRemappingOptions{};
     for(int i=1;i<argc;i++){std::string error;if(s_keyRemapping.Consume(i,argc,argv,error)&&!error.empty()){fprintf(stderr,"%s\n",error.c_str());return false;}}
     {std::string error;if(!s_keyRemapping.Validate(error)){fprintf(stderr,"%s\n",error.c_str());return false;}}
-    s_enhancements=EnhancementOptions{};s_carDir.clear();
+    s_enhancements=EnhancementOptions{};s_carDir.clear();s_carNames={};
     s_dataDir.clear();
     s_sceneryDir.clear();
     s_commandLine.clear();
@@ -811,7 +820,11 @@ bool Platform_Init(int argc, char **argv)
     if(!s_enhancements.cars.empty()&&s_enhancements.cars!="original"){
         if(!PrepareEnhancementPack(true)){Platform_Shutdown();return false;}
     }
-    if(!s_carDir.empty())Sys_Log("options: car overlay read-only=%s; replacement slots, native compatibility/physics unverified",s_carDir.c_str());
+    if(!s_carDir.empty()){
+        Sys_Log("options: car overlay read-only=%s; replacement slots, native compatibility/physics unverified",s_carDir.c_str());
+        int labels=0;for(const auto &name:s_carNames)if(!name[0].empty())++labels;
+        Sys_Log("options: car names=%s; %d validated overlay labels; display only, slots/saves unchanged",Sys_GetOption("video.skin_car_names",1)?"skin":"original",labels);
+    }
     Sys_Log("game data: %s", s_dataDir.c_str());
     Sys_Log("user directory: %s", s_userDir.c_str());
     if(!s_sceneryDir.empty())Sys_Log("scenery directory: %s (read-only assets; save/settings roots unchanged)",s_sceneryDir.c_str());
@@ -1346,4 +1359,11 @@ extern "C" BOOL Sys_SetOption(const char *name, int value)
         return FALSE;
     }
     return TRUE;
+}
+
+const char *Sys_GetCarDisplayName(int archiveSlot, BOOL brief)
+{
+    if(archiveSlot<0||archiveSlot>=22||s_carDir.empty()||!Sys_GetOption("video.skin_car_names",1))return nullptr;
+    const auto &name=s_carNames[archiveSlot][brief?1:0];
+    return name.empty()?nullptr:name.c_str();
 }

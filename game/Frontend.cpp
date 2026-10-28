@@ -1,4 +1,6 @@
 #include "Frontend.h"
+#include "CarDisplayNames.h"
+#include "port/sys.h"
 #include "FloatToInt.h"
 #include "Game.h"
 #include "FileBuffer.h"
@@ -559,6 +561,9 @@ char *CFrontend::GetTextString(int index)
 {
     if (index >= m_textCount || index < 0)
         return m_strInvalidTextString;
+    bool brief=false;
+    int slot=CarDisplayNames::TextSlot(index,m_textCount,CGame::GetFrontendResourceMode(),brief);
+    if(const char *name=Sys_GetCarDisplayName(slot,brief))return const_cast<char *>(name);
     return m_textStrings[m_textFirstId + index];
 }
 
