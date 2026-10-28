@@ -93,6 +93,20 @@ class Tests(unittest.TestCase):
         for pose in poses:self.assertEqual(pose.crop((0,70,128,128)).tobytes(),im.crop((0,70,128,128)).tobytes())
         self.assertEqual(poses[1].tobytes(),poses[3].tobytes())
 
+    def test_foreground_limbs_high_low_and_fixed_feet(self):
+        for size in (64,128):
+            for name,r in patcher.FOREGROUND_LIMBS.items():
+                im=Image.new('RGBA',(128,128),(0,0,0,0));d=ImageDraw.Draw(im)
+                d.rectangle((0,65,127,127),fill=(20,30,60,255))
+                d.polygon([tuple(p) for p in r['polygon']],fill=(220,180,140,255))
+                source=im.resize((size,size),Image.Resampling.NEAREST)
+                poses=patcher.foreground_limb_poses(source,name)
+                self.assertEqual(len(poses),4)
+                self.assertEqual(poses[0].size,(size*2,size*2))
+                self.assertNotEqual(poses[0].tobytes(),poses[2].tobytes())
+                for pose in poses:
+                    self.assertEqual(pose.crop((0,int(size*1.4),size*2,size*2)).tobytes(),poses[0].crop((0,int(size*1.4),size*2,size*2)).tobytes())
+
     def test_full_output_and_feet(self):
         self.run_patch()
         rows = self.output.joinpath('manifest.tsv').read_text().splitlines()

@@ -249,3 +249,26 @@ New recipes create a new private cache automatically; old caches are untouched.
 Native Mac motion, tree appearance, label fit and performance remain separate
 acceptance checks. The small wind deformation currently copies at most192
 vertices per selected card draw; no native cost estimate is claimed.
+
+
+### Foreground limb coverage expansion
+
+The authored limb route now covers France `spe_05`, `spe_10`, `spc_mn1a`,
+`spc_mn15a`, and original-demo `spc_mn9a`, in both high and low source archives.
+That is10atlas files, not10people or33%of a stage. Each contains one moving
+person: one of four in `spe_05`/`spe_10`, and one of two in the three pairs.
+Masks, pivots and clean-plate repairs are explicit source-coordinate recipes.
+The bottom30%is identical across poses. Instance phase stays staggered by
+placement; changing near/far source variants does not remove limb motion.
+
+These foreground groups match the user's supplied screenshots, but native
+motion and clean-plate appearance still need checking in game. The low-source
+poses retain the original low-detail pixels; enlarging them invents no detail.
+Other38atlas files remain the limited upper-body sway route.
+
+The requested25%-33%visible-person target remains open. A provisional decoded
+France01whole-stage audit counts290person-placements; these recipes cover22
+moving placements (7.6%), not33%. Finland10currently has no authored limbs.
+Whole-stage placement counts do not prove the current camera's visible ratio.
+More group segmentation and per-view people-weighted diagnostics are needed.
+No coverage percentage is inferred from the count of atlas files.

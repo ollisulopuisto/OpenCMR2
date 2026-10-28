@@ -56,7 +56,7 @@ inline const char *EnhancementHelp(){return
 "  --tree-wind on|off          2D foliage sway, fixed bases; default on with trees\n"
 "                              Hash-verified individual tree cards only\n"
 "  --spectators original|animated\n"
-"                             Four forearm poses on one France atlas;47others subtle sway\n"
+"                             Four limb poses on10France atlases;38others subtle sway\n"
 "  --driver-names original|real|sidecar\n"
 "                              Real=15extracted display names, no save edits\n"
 "                              Sidecar=existing validated driver-names.tsv\n"
