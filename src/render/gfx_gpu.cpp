@@ -200,6 +200,10 @@ struct Executor : GfxExecutor {
     SDL_GPUGraphicsPipeline *spatialAAPipeline = nullptr;
     SDL_GPUTexture *spatialAATarget = nullptr;
     bool spatialAA = false;
+    bool metalFXSpatial = false;
+    bool metalFXLogged = false;
+    using MetalFXBlit = bool (*)(SDL_GPUCommandBuffer *, const SDL_GPUBlitInfo *);
+    MetalFXBlit metalFXBlit = nullptr;
     SDL_GPUTexture *backColor = nullptr, *backDepth = nullptr;
     SDL_GPUTexture *backdrop = nullptr;    // the copy of backColor the distance fade reads
     SDL_GPUTexture *motionBlurPrevious = nullptr;  // the previous frame, for motion blur
@@ -412,6 +416,7 @@ struct Executor : GfxExecutor {
         anisotropy = Platform_GetSettingInt("video.anisotropy", 8);
         smoothScaling = Platform_GetSettingInt("video.smooth_scaling", 1);
         spatialAA = Platform_GetSettingInt("video.spatial_aa", 0) == 1;
+        metalFXSpatial = Platform_GetSettingInt("video.metalfx_spatial", 0) == 1;
         SDL_PropertiesID props = DeviceProperties();
         device = SDL_CreateGPUDeviceWithProperties(props);
         SDL_DestroyProperties(props);
@@ -426,6 +431,12 @@ struct Executor : GfxExecutor {
             return false;
         }
         Sys_Log("gfx: SDL_GPU driver %s", SDL_GetGPUDeviceDriver(device));
+        // Function pointer supplied only by our pinned SDL Metal backend extension.
+        // No application code accesses native handles or casts opaque SDL structs.
+        metalFXBlit = reinterpret_cast<MetalFXBlit>(SDL_GetPointerProperty(
+            SDL_GetGPUDeviceProperties(device), "OpenCMR2.MetalFXSpatialBlit", nullptr));
+        if (metalFXSpatial && metalFXBlit == nullptr)
+            Sys_Log("gfx: MetalFX extension unavailable; using ordinary scaling");
         if (!SDL_GPUTextureSupportsFormat(device, depthFormat, SDL_GPU_TEXTURETYPE_2D,
                                           SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET))
             depthFormat = SDL_GPU_TEXTUREFORMAT_D32_FLOAT;
@@ -2329,7 +2340,17 @@ struct Executor : GfxExecutor {
             blit.load_op = SDL_GPU_LOADOP_CLEAR;
             blit.clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
             blit.filter = smoothScaling ? SDL_GPU_FILTER_LINEAR : SDL_GPU_FILTER_NEAREST;
-            SDL_BlitGPUTexture(cmd, &blit);
+            bool scaled = false;
+            if (metalFXSpatial && metalFXBlit != nullptr && !stretch &&
+                filmGrain == 0 && chromaticAberration == 0)
+                scaled = metalFXBlit(cmd, &blit);
+            if (!scaled)
+                SDL_BlitGPUTexture(cmd, &blit);
+            if (metalFXSpatial && !metalFXLogged) {
+                Sys_Log("gfx: MetalFX spatial %s (%dx%d -> %dx%d); no FPS claim",
+                    scaled ? "encoded" : "fallback", backWidth, backHeight, rect.width, rect.height);
+                metalFXLogged = true;
+            }
         }
 
         if (reading)

@@ -27,6 +27,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# OpenCMR2's maintained extension is confined to the pinned vendored Metal backend.
+option(OPENCMR2_METALFX "Build the optional SDL MetalFX spatial extension on macOS" ${APPLE})
+if(APPLE AND OPENCMR2_METALFX)
+    set(OPENCMR2_VENDORED_SDL ON)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+endif()
+
 # Semantics the decompiled code relies on:
 #  - signed overflow wraps (16.16 fixed point overflows on purpose);
 #  - type punning through casts (the code was written against MSVC6);
@@ -67,8 +74,25 @@ if(NOT TARGET SDL3::SDL3)
     FetchContent_Declare(SDL3
         GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
         GIT_TAG release-3.4.18
-        GIT_SHALLOW TRUE)
-    FetchContent_MakeAvailable(SDL3)
+        GIT_SHALLOW TRUE
+        PATCH_COMMAND ${CMAKE_COMMAND} -E echo "Pinned SDL source ready")
+    if(APPLE AND OPENCMR2_METALFX)
+        if(POLICY CMP0169)
+            cmake_policy(SET CMP0169 OLD)
+        endif()
+        FetchContent_GetProperties(SDL3)
+        if(NOT sdl3_POPULATED)
+            FetchContent_Populate(SDL3)
+            execute_process(COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_SOURCE_DIR}/cmake/metalfx/patch_sdl.py ${sdl3_SOURCE_DIR}
+                COMMAND_ERROR_IS_FATAL ANY)
+            add_subdirectory(${sdl3_SOURCE_DIR} ${sdl3_BINARY_DIR} EXCLUDE_FROM_ALL)
+        endif()
+        find_library(OPENCMR2_METALFX_FRAMEWORK MetalFX REQUIRED)
+        target_link_libraries(SDL3-shared PRIVATE ${OPENCMR2_METALFX_FRAMEWORK})
+    else()
+        FetchContent_MakeAvailable(SDL3)
+    endif()
 endif()
 
 add_subdirectory(src)
