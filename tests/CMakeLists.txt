@@ -241,3 +241,7 @@ if(Python3_Interpreter_FOUND)
     add_test(NAME metalfx_cmake_safety COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/metalfx_cmake.py)
 endif()
+# CPU temporal foundation. Does not enable temporal rendering in the game.
+add_executable(temporal_history_test temporal_history.cpp)
+target_include_directories(temporal_history_test PRIVATE ${PROJECT_SOURCE_DIR}/src)
+add_test(NAME temporal_history COMMAND temporal_history_test)
