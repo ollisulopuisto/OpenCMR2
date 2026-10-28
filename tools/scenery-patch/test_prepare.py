@@ -91,7 +91,7 @@ class PrepareTests(unittest.TestCase):
             raw = ('asset ' + alias).encode()
             with zipfile.ZipFile(archive, 'w') as z:
                 z.writestr('folder/205a1.bfl', raw)
-            idx[alias] = {'archive': archive.name, 'sha256': hashlib.sha256(archive.read_bytes()).hexdigest(),
+            idx[alias] = {'slot': '205', 'display_name': 'Peugeot 205 T16 EVO Dakar 1987', 'short_name': '205 T16 Dakar 1987', 'archive': archive.name, 'sha256': hashlib.sha256(archive.read_bytes()).hexdigest(),
                           'files': [{'target': 'Game/Cars/205a1.bfl', 'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}]}
         helper = self.root / 'helper'
         helper.mkdir()
@@ -121,6 +121,7 @@ class PrepareTests(unittest.TestCase):
         with patch.object(p, 'HERE', helper):
             a = p.prepare_cars(mods, self.cache, 'one')
             self.assertEqual(a, p.prepare_cars(mods, self.cache, 'one'))
+            self.assertEqual((a/'car-names.tsv').read_text(), 'OPENCMR2-CAR-NAMES-1\n205\tPeugeot 205 T16 EVO Dakar 1987\t205 T16 Dakar 1987\n')
             with self.assertRaisesRegex(ValueError, 'Conflicting'):
                 p.prepare_cars(mods, self.cache, 'one,two')
             (a / '205a1.bfl').write_bytes(b'edit')

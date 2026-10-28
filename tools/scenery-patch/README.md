@@ -64,6 +64,25 @@ without generating or changing a sidecar or player progress. `original` forces
 the original table for this launch; `sidecar` selects the existing validated
 `driver-names.tsv` route. No flags preserve the existing settings/sidecars.
 
+### Skin-aware car labels
+
+Selected owned overlays contain a hash-checked `car-names.tsv`, derived from
+car/rally facts in their ZIP readmes, not inferred from alias names. The binary
+uses those labels only for the exact selected archive slots in the frontend
+and stage text tables, including selection lists, lobby and results labels.
+It does not rename other variants in the same family (Fabia replaces FA1,
+not the original Focus). Short labels are used where the game requests its
+abbreviated car names. Limits are 39/23 printable ASCII characters; labels
+remain consistent across languages rather than inventing translations.
+
+`--car-names original` restores original labels for this launch without
+removing the skins; `--car-names skin` is the default with a selected overlay.
+No overlay means no label changes. Invalid/missing label metadata falls back
+to original text. Other localized text tables reuse numeric IDs and are
+explicitly excluded. Saves, unlocks and underlying slot IDs are unchanged.
+New metadata creates a new versioned cache; old caches remain untouched.
+Native Mac label fit/appearance remains unverified.
+
 ### Local car alternatives
 
 Use `--cars ALIAS[,ALIAS] --mods-dir "/path/to/owned/downloaded-zips"` in the

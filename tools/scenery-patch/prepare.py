@@ -115,8 +115,10 @@ def prepare_cars(mods, cache, choices):
         raise ValueError('Unknown/duplicate car alternative; see --help-enhancements')
     targets = {}
     payloads = {}
+    labels = []
     for name in selected:
         rec = index[name]
+        labels.append((rec['slot'], rec['display_name'], rec['short_name']))
         archive = mods / rec['archive']
         if not archive.is_file():
             raise ValueError('Missing owned ZIP ' + rec['archive'] + '; --mods-dir must contain original ZIP filenames, see --help-enhancements. Nothing downloaded.')
@@ -142,6 +144,7 @@ def prepare_cars(mods, cache, choices):
                     raise ValueError('Car member hash mismatch: ' + target)
                 targets[key] = name
                 payloads[target] = raw
+    payloads['car-names.tsv'] = ('OPENCMR2-CAR-NAMES-1\n' + ''.join('\t'.join(row) + '\n' for row in sorted(labels))).encode('ascii')
     # Complete files stay together, only selected archive slots are published.
     key = hashlib.sha256((json.dumps(index, sort_keys=True) + ','.join(sorted(selected))).encode()).hexdigest()[:16]
     cache.mkdir(parents=True, exist_ok=True)
