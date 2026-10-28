@@ -30,7 +30,7 @@ struct Pool {
    // term and no global random stream: alternate billows break a smooth tube.
    float variety=.5f+.5f*std::sin(c.x*4.13f+c.z*7.71f);
    float radius=(1.5f+std::fmin(t,8.f)*1.25f)*(.8f+.5f*variety);
-   l.centreRadius[0]=c.x;l.centreRadius[1]=c.y+radius*(.38f+.18f*variety);l.centreRadius[2]=c.z;l.centreRadius[3]=radius;
+   l.centreRadius[0]=c.x;l.centreRadius[1]=c.y+radius*(.48f+.18f*variety);l.centreRadius[2]=c.z;l.centreRadius[3]=radius;
    l.colourDensity[0]=c.r;l.colourDensity[1]=c.g;l.colourDensity[2]=c.b;
    l.colourDensity[3]=c.strength*(.7f+.6f*variety)*std::fmin(1.f,t*3.f)*std::fmax(0.f,1.f-t/12.f);
   }return n;

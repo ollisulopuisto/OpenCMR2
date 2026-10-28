@@ -346,3 +346,8 @@ target_link_libraries(dust_volume_recording_test PRIVATE SDL3::SDL3)
 add_test(NAME dust_volume_recording COMMAND dust_volume_recording_test)
 
 add_test(NAME scenery_separate_root COMMAND scenery_pack_runtime_test ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/scenery-pack separate)
+add_executable(scenery_source_fit_test scenery_source_fit.cpp)
+target_include_directories(scenery_source_fit_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src)
+add_test(NAME scenery_source_fit COMMAND scenery_source_fit_test)
+
+add_test(NAME scenery_legacy_fallback COMMAND scenery_pack_runtime_test ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/scenery-pack legacy)

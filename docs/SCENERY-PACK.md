@@ -105,3 +105,34 @@ you normally omit it, keep omitting it. No save migration is needed. The log
 labels the separate asset root read-only; actual spectator-active diagnostics
 still require a successful draw, not just a manifest read. Native Mac use
 remains unverified.
+## Source-fitted tree transition
+
+Tree OBJ sidecars now require the first line:
+
+```
+# opencmr2-source-canvas-1 WIDTH HEIGHT
+```
+
+WIDTH/HEIGHT must match the original texture canvas. Geometry uses a full
+source-canvas height of1: sourceU=.5+x*HEIGHT/WIDTH, sourceV=1-y. Depth is
+scaled by the original card's height along its validated normal. The loader
+solves an affine sourceUV-to-originalXYZ fit and applies the stage placement
+basis once. This replaces the old global height scaling, not an extra scale.
+
+Only finite planar full-canvas original cards with UV extents near0..1 qualify.
+Cropped atlas variants, non-planar cards, invalid geometry, canvas mismatch
+and legacy/headerless assets fall back to the original object. Fits and failed
+fits are cached per mesh for the stage lifetime. Spectator animation is
+unchanged and does not need this header.
+
+The runtime safety/fit change alone is not a working new-tree installation.
+The previous64-tree public patcher recipe emitted headerless ring assets,
+which this loader deliberately rejects. Do not add a header to those old assets:
+their geometry/UV contract differs and they must be regenerated. Their
+spectators still load. Three private experimental candidates (md1/md4/fir1)
+use the new contract; fr1 and cropped variants remain original. The migrated
+source-only patcher generates those3 high-source mappings with4x interpolation,
+not private restored RGB. Low variants are unverified and
+remain original. Native Mac appearance/performance remain pending. Private
+restored texture RGB is not reproducible from this source-only patcher
+without its private restoration inputs. No derived artwork is included in Git.
