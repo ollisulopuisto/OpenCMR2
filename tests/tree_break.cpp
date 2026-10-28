@@ -28,8 +28,9 @@ int main(void)
 
     // Speed threshold: below = no break (car stops), at/above = break (tree smashed).
     Check(TreeBreak_ShouldBreak(0) == false, "stopped car does not break");
-    Check(TreeBreak_ShouldBreak(0x1ffff) == false, "gentle tap does not break");
-    Check(TreeBreak_ShouldBreak(0x20000) == true, "at threshold breaks");
+    Check(TreeBreak_ShouldBreak(0xbfff) == false, "gentle tap does not break");
+    Check(TreeBreak_ShouldBreak(0xc000) == true, "at threshold breaks");
+    Check(TreeBreak_ShouldBreak(0x1ffff) == true, "above current threshold breaks");
     Check(TreeBreak_ShouldBreak(0x7fff0000) == true, "high speed breaks");
 
     if (failures == 0) {
