@@ -21,7 +21,10 @@ scale comparisons, not a new measured native gameplay guarantee. The pool
 holds128 anchors, overwriting oldest slots when full; at most32 are sampled
 across the active pool per draw. Fixed position-derived variation changes
 billow size/height/density without consuming the game's random stream.
-World-fixed noise erodes the broad, ground-hugging bodies. This is visual
+World-fixed noise erodes the broad, ground-hugging bodies. Denser integration
+and taller ellipsoids produce an opaque core with an uneven billowing edge.
+Two noise scales and height add art-directed internal shading; this is not
+physical lighting. This is visual
 volume, not fluid simulation, lighting/scattering or terrain collision.
 Ground height is captured at emission, not continuously sampled across slopes.
 
@@ -54,7 +57,8 @@ read-only camera sampling, sheet replacement/fallback and stage clear. A real
 renderer-recorder test covers32-lobe snapshot ownership and unsupported,
 split, orthographic and singular-camera rejection. Software-GPU tests compile
 and render the production fragment shaders, checking orbit/translation,
-determinism, opaque depth rejection, neutral composite and alpha preservation.
+determinism, opaque depth rejection, neutral composite and alpha preservation. With a pool fixture, the road-view
+check requires a core below20% light transmission and unchanged anchor input.
 
 Reproduce the optional moving-camera synthetic road proof with:
 
@@ -64,7 +68,9 @@ python tests/dust_volume_shader.py --pool-fixture /tmp/dust-pool.json --output /
 ```
 
 The scene uses actual C++ pool output, a curved road, a checker ground plane
-and a4.2 x1.8 x1.5 world-unit white box as a car-size cue. It is not gameplay.
+and a4.2 x1.8 x1.5 world-unit white box beside the far main billow as a car-size
+cue. The optional output also includes close road-level camera views. It is
+not gameplay.
 Dependencies: moderngl, numpy, Pillow, glslangValidator, spirv-cross and EGL.
 
 Correctness evidence is separate from appearance acceptance. Uneven WRC-like

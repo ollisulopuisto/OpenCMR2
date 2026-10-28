@@ -43,16 +43,21 @@ void main() {
         float density=0.;vec3 tint=vec3(0.);
         for(int i=0;i<count;++i){
             vec3 q=(p-centres[i].xyz)/max(centres[i].w,.001);
-            q.y*=1.6; // broad terrain-hugging body, not a camera-facing disc
+            q.y*=1.2; // broad terrain-hugging body, not a camera-facing disc
             float radial=dot(q,q);
             if(radial>=1.)continue; // cheap broad-phase before either noise lookup
             // Stable world noise perturbs the boundary, not only its opacity.
             // Two scales keep billowing lobes rather than smooth camera discs.
-            float billow=noise(p*.31+centres[i].xyz*.07);
-            float fall=max(0.,1.-radial-billow*.65);
+            // Coarse fixed world lobes carve a ragged billowing silhouette.
+            // Radial edge stays bounded; density varies at two world scales.
+            float billow=noise(p*.55+centres[i].xyz*.07);
+            float fall=max(0.,1.-radial-(1.-billow)*.7);
             float detail=noise(p*1.7);
-            float d=fall*fall*colours[i].w*(.3+.7*billow)*(.35+.65*detail);
-            density+=d;tint+=colours[i].rgb*d;
+            float d=fall*colours[i].w*3.8*(.25+.75*billow)*(.35+.65*detail);
+            // Cheap art-directed internal lighting, fixed in world space. This
+            // is not scattering/shadow simulation, but avoids flat ochre fill.
+            float shade=.42+.43*billow+.25*detail+.14*clamp(q.y+.3,0.,1.);
+            density+=d;tint+=colours[i].rgb*d*shade;
         }
         if(density>0.){
             // Soft fade at actual opaque terrain depth, not a hard card edge.

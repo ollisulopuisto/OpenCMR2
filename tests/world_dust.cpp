@@ -17,6 +17,7 @@ WorldDust::Pool pool;pool.Emit(10,2,20,.6,.4,.2);GfxDustLobe before[32]={},after
  CHECK(pool.Sample(before,32)==1);for(int i=0;i<150;i++)pool.Step(.04f);
  CHECK(pool.Sample(after,32)==1);CHECK(after[0].centreRadius[0]==10&&after[0].centreRadius[2]==20);
  CHECK(after[0].centreRadius[3]>=6.5);CHECK(after[0].centreRadius[1]-after[0].centreRadius[3]<2);
+ CHECK(pool.Sample(nullptr,32)==0&&pool.Sample(after,0)==0);
  GfxDustLobe copy[32]={};pool.Sample(copy,32);CHECK(!memcmp(copy,after,sizeof after));
  // Sampling for any camera/reflection cannot advance or rebase the world.
  for(int i=0;i<20;i++){pool.Sample(copy,32);CHECK(!memcmp(copy,after,sizeof after));}
