@@ -29,6 +29,30 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # OpenCMR2's maintained extension is confined to the pinned vendored Metal backend.
 option(OPENCMR2_METALFX "Build the optional SDL MetalFX spatial extension on macOS" ${APPLE})
+# The standalone probe is diagnostic, not a prerequisite for the game. A
+# broken/missing Objective-C++ toolchain must not break ordinary configuration.
+option(OPENCMR2_METALFX_PROBE "Compile the standalone Objective-C++ MetalFX probe" OFF)
+if(APPLE AND (OPENCMR2_METALFX OR OPENCMR2_METALFX_PROBE))
+    find_library(OPENCMR2_METALFX_FRAMEWORK MetalFX)
+    if(NOT OPENCMR2_METALFX_FRAMEWORK)
+        message(WARNING "MetalFX SDK unavailable: building ordinary SDL rendering without MetalFX")
+        set(OPENCMR2_METALFX OFF)
+        set(OPENCMR2_METALFX_PROBE OFF)
+    endif()
+endif()
+if(APPLE AND OPENCMR2_METALFX_PROBE)
+    # Enable at the common parent of all consumers, before adding subprojects.
+    # Respect explicit OBJCXX/toolchain selections; otherwise let CMake probe
+    # a usable compiler before enabling this optional language.
+    include(CheckLanguage)
+    check_language(OBJCXX)
+    if(CMAKE_OBJCXX_COMPILER)
+        enable_language(OBJCXX)
+    else()
+        message(WARNING "Objective-C++ unavailable: standalone MetalFX probe skipped; game unaffected")
+        set(OPENCMR2_METALFX_PROBE OFF)
+    endif()
+endif()
 if(APPLE AND OPENCMR2_METALFX)
     set(OPENCMR2_VENDORED_SDL ON)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
@@ -88,8 +112,9 @@ if(NOT TARGET SDL3::SDL3)
                 COMMAND_ERROR_IS_FATAL ANY)
             add_subdirectory(${sdl3_SOURCE_DIR} ${sdl3_BINARY_DIR} EXCLUDE_FROM_ALL)
         endif()
-        find_library(OPENCMR2_METALFX_FRAMEWORK MetalFX REQUIRED)
-        target_link_libraries(SDL3-shared PRIVATE ${OPENCMR2_METALFX_FRAMEWORK})
+        # SDK symbols exist only on macOS13+. Weak-link to preserve ordinary
+        # rendering on the project's older deployment targets; @available guards use.
+        target_link_options(SDL3-shared PRIVATE "SHELL:-weak_framework MetalFX")
     else()
         FetchContent_MakeAvailable(SDL3)
     endif()

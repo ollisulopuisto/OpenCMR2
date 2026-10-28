@@ -226,19 +226,12 @@ if(OPENCMR2_SHADER_PIXEL_TESTS)
         ${CMAKE_CURRENT_SOURCE_DIR}/spatial_aa_shader.py)
 endif()
 
-# Compile the standalone MetalFX probe on existing Mac CI. This does not add
-# MetalFX to the game or execute a GPU probe on hosted runners.
-if(APPLE AND NOT ANDROID)
-    enable_language(OBJCXX)
-    find_library(OPENCMR2_METALFX_FRAMEWORK MetalFX)
-    if(OPENCMR2_METALFX_FRAMEWORK)
-        add_executable(metalfx_spatial_probe ../tools/metalfx/spatial_probe.mm)
-        target_compile_options(metalfx_spatial_probe PRIVATE -fobjc-arc)
-        target_link_libraries(metalfx_spatial_probe PRIVATE
-            "-framework Foundation" "-framework Metal" ${OPENCMR2_METALFX_FRAMEWORK})
-    else()
-        message(WARNING "MetalFX SDK unavailable: native spatial probe is NOT compiled")
-    endif()
+# Optional diagnostic only. OBJCXX is enabled in the top-level directory.
+if(APPLE AND NOT ANDROID AND OPENCMR2_METALFX_PROBE)
+    add_executable(metalfx_spatial_probe ../tools/metalfx/spatial_probe.mm)
+    target_compile_options(metalfx_spatial_probe PRIVATE -fobjc-arc)
+    target_link_libraries(metalfx_spatial_probe PRIVATE "-framework Foundation" "-framework Metal")
+    target_link_options(metalfx_spatial_probe PRIVATE "SHELL:-weak_framework MetalFX")
 endif()
 
 if(Python3_Interpreter_FOUND)
@@ -249,6 +242,8 @@ endif()
 if(Python3_Interpreter_FOUND)
     add_test(NAME shadow_wiring COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/shadow_wiring.py)
+    add_test(NAME metalfx_cmake_safety COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/metalfx_cmake.py)
 endif()
 # CPU temporal foundation. Does not enable temporal rendering in the game.
 add_executable(temporal_history_test temporal_history.cpp)
