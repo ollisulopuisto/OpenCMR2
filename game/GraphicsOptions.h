@@ -109,7 +109,7 @@ inline int Anisotropy_IndexToLevel(int index)
 // through. Tunable constant: roughly full driving speed.
 inline bool TreeBreak_ShouldBreak(int speed)
 {
-    return speed >= 0xc000;
+    return speed >= 0x20000;
 }
 
 // OpenCMR2: per-object fall state for broken trees. A smashed tree falls
