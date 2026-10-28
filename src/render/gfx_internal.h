@@ -105,6 +105,7 @@ enum GfxCommandType {
     GFX_CMD_DRAW,
     GFX_CMD_CLEAR,
     GFX_CMD_TARGET,
+    GFX_CMD_DUST_VOLUME,
     GFX_CMD_BACKDROP            // copy the back buffer for the distance fade
 };
 
@@ -120,6 +121,8 @@ struct GfxCommand {
     uint32_t firstIndex;        // into the frame's indices, or ~0 for none
     uint32_t indexCount;
     uint32_t state;             // index into the frame's states
+    unsigned dustOffset = 0;
+    int dustCount = 0;
     // clear
     DWORD clearFlags;
     DWORD clearColor;
@@ -131,6 +134,7 @@ struct GfxCommand {
 };
 
 struct GfxFrame {
+    std::vector<GfxDustLobe> dustLobes;
     std::vector<uint8_t> vertices;
     std::vector<uint16_t> indices;
     std::vector<GfxDrawState> states;
@@ -138,6 +142,7 @@ struct GfxFrame {
     std::vector<GfxVertexBuffer *> buffers;     // drawn from, each once
     void Reset()
     {
+        dustLobes.clear();
         vertices.clear();
         indices.clear();
         states.clear();
@@ -173,6 +178,7 @@ struct GfxExecutor {
     // OpenCMR2: particles (rain/snow). `type` 0=off, 1=rain, 2=snow;
     // `intensity` (0..255) scales the emission rate.
     virtual void SetParticles(int, int) {}
+    virtual bool SupportsDustVolume() {return false;}
     // OpenCMR2: directional shadows. `type` 0=off, 1=on; `bias` (0..100)
     // is the depth bias in hundredths of a depth unit.
     virtual void SetShadows(int, int) {}

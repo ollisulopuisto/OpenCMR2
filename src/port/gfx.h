@@ -23,6 +23,10 @@ extern "C" {
 
 typedef struct GfxTexture GfxTexture;
 typedef struct GfxVertexBuffer GfxVertexBuffer;
+/* Experimental terrain-relative dust. Caller keeps original effects as fallback. */
+typedef struct GfxDustLobe { float centreRadius[4]; float colourDensity[4]; } GfxDustLobe;
+BOOL Gfx_DrawDustVolume(const GfxDustLobe *lobes,int count);
+
 
 /* Row-vector matrix, Direct3D layout: v' = v * M, translation in _41.._43. */
 typedef struct GfxMatrix {
