@@ -195,6 +195,11 @@ struct Executor : GfxExecutor {
     SDL_GPUShader *vsShadow = nullptr, *fsShadow = nullptr;
     SDL_GPUShader *fsLensGrime = nullptr;
     SDL_GPUShader *fsDoF = nullptr, *fsGodRays = nullptr, *fsColorGrading = nullptr;
+    // OpenCMR2: optional single-frame AA, with an independent non-aliasing target.
+    SDL_GPUShader *fsSpatialAA = nullptr;
+    SDL_GPUGraphicsPipeline *spatialAAPipeline = nullptr;
+    SDL_GPUTexture *spatialAATarget = nullptr;
+    bool spatialAA = false;
     SDL_GPUTexture *backColor = nullptr, *backDepth = nullptr;
     SDL_GPUTexture *backdrop = nullptr;    // the copy of backColor the distance fade reads
     SDL_GPUTexture *motionBlurPrevious = nullptr;  // the previous frame, for motion blur
@@ -300,6 +305,7 @@ struct Executor : GfxExecutor {
             SDL_ReleaseGPUGraphicsPipeline(device, p.second);
         for (auto &s : samplers)
             SDL_ReleaseGPUSampler(device, s.second);
+        SDL_ReleaseGPUTexture(device, spatialAATarget);
         SDL_ReleaseGPUTexture(device, backColor);
         SDL_ReleaseGPUTexture(device, backDepth);
         SDL_ReleaseGPUTexture(device, backdrop);
@@ -332,6 +338,8 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUShader(device, fsDoF);
         SDL_ReleaseGPUShader(device, fsGodRays);
         SDL_ReleaseGPUShader(device, fsColorGrading);
+        SDL_ReleaseGPUShader(device, fsSpatialAA);
+        SDL_ReleaseGPUGraphicsPipeline(device, spatialAAPipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, motionBlurPipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, bloomBrightPassPipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, bloomBlurPipeline);
@@ -402,6 +410,7 @@ struct Executor : GfxExecutor {
         }
         anisotropy = Platform_GetSettingInt("video.anisotropy", 8);
         smoothScaling = Platform_GetSettingInt("video.smooth_scaling", 1);
+        spatialAA = Platform_GetSettingInt("video.spatial_aa", 0) == 1;
         SDL_PropertiesID props = DeviceProperties();
         device = SDL_CreateGPUDeviceWithProperties(props);
         SDL_DestroyProperties(props);
@@ -488,6 +497,8 @@ struct Executor : GfxExecutor {
             return false;
         if (backColor == NULL || backWidth != width || backHeight != height) {
             SDL_WaitForGPUIdle(device);
+            SDL_ReleaseGPUTexture(device, spatialAATarget);
+            spatialAATarget = nullptr;
             SDL_ReleaseGPUTexture(device, backColor);
             SDL_ReleaseGPUTexture(device, backDepth);
             SDL_ReleaseGPUTexture(device, backdrop);
@@ -1085,9 +1096,9 @@ struct Executor : GfxExecutor {
     // Runs one full-screen quad pass: clears the target, binds the pipeline,
     // pushes one fragment uniform buffer slot and up to 7 sampler bindings,
     // draws three vertices, ends the pass.
-    void PostProcessPass(SDL_GPUCommandBuffer *cmd, SDL_GPUGraphicsPipeline *pipeline,
+    bool PostProcessPass(SDL_GPUCommandBuffer *cmd, SDL_GPUGraphicsPipeline *pipeline,
                          SDL_GPUTexture *target, const SDL_GPUTextureSamplerBinding *bindings,
-                         int numBindings, const void *uniformData, uint32_t uniformSize)
+                         int numBindings, const void *uniformData, uint32_t uniformSize, bool depthless = false)
     {
         SDL_GPUColorTargetInfo color = {};
         color.texture = target;
@@ -1097,9 +1108,9 @@ struct Executor : GfxExecutor {
         SDL_GPUDepthStencilTargetInfo depth = {};
         depth.load_op = SDL_GPU_LOADOP_DONT_CARE;
         depth.store_op = SDL_GPU_STOREOP_DONT_CARE;
-        SDL_GPURenderPass *pass = SDL_BeginGPURenderPass(cmd, &color, 1, &depth);
+        SDL_GPURenderPass *pass = SDL_BeginGPURenderPass(cmd, &color, 1, depthless ? nullptr : &depth);
         if (pass == NULL)
-            return;
+            return false;
         SDL_BindGPUGraphicsPipeline(pass, pipeline);
         SDL_GPUViewport vp = { 0.0f, 0.0f, (float)backWidth, (float)backHeight, 0.0f, 1.0f };
         SDL_Rect scissor = { 0, 0, backWidth, backHeight };
@@ -1110,6 +1121,7 @@ struct Executor : GfxExecutor {
         SDL_BindGPUFragmentSamplers(pass, 0, bindings, numBindings);
         SDL_DrawGPUPrimitives(pass, 3, 1, 0, 0);
         SDL_EndGPURenderPass(pass);
+        return true;
     }
 
     // Billboard particle pipeline: position+colour+size vertices, alpha
@@ -2121,6 +2133,36 @@ struct Executor : GfxExecutor {
         // OpenCMR2: bloom (bright-pass extract, separable blur, additive
         // composite) followed by motion blur (previous-frame blend).
         SDL_GPUTexture *presentSource = backColor;
+        // OpenCMR2: AA is not an upscaler or a temporal reconstruction method.
+        // This includes the HUD. Failure falls back to the original scene.
+        if (spatialAA) {
+            if (fsSpatialAA == nullptr)
+                fsSpatialAA = Shader(SHADER_CODE(spatial_aa_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
+            if (spatialAAPipeline == nullptr && fsSpatialAA != nullptr)
+                spatialAAPipeline = PostProcessPipeline(vsMotionBlur, fsSpatialAA);
+            if (spatialAATarget == nullptr && spatialAAPipeline != nullptr)
+                spatialAATarget = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat,
+                    backWidth, backHeight, 1, 1,
+                    SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
+            if (spatialAATarget != nullptr && spatialAAPipeline != nullptr) {
+                GfxStageState stage;
+                stage.minFilter = stage.magFilter = GFX_FILTER_LINEAR;
+                stage.address = GFX_ADDRESS_CLAMP;
+                SDL_GPUTextureSamplerBinding binding = { backColor, Sampler(stage) };
+                float uniforms[4] = { 1.0f / backWidth, 1.0f / backHeight, 0.0f, 0.0f };
+                if (binding.sampler != nullptr &&
+                    PostProcessPass(cmd, spatialAAPipeline, spatialAATarget, &binding, 1,
+                                    uniforms, sizeof(uniforms), true))
+                    presentSource = spatialAATarget;
+                else
+                    spatialAA = false;
+            } else {
+                spatialAA = false;
+            }
+            if (!spatialAA)
+                Sys_Log("gfx: spatial AA unavailable; retaining original output");
+        }
+        SDL_GPUTexture *sceneSource = presentSource;
 
         if (bloomEnabled && bloomIntensity > 0 && backColor != NULL && bloomBuf1 != NULL &&
             bloomBuf2 != NULL) {
@@ -2128,7 +2170,7 @@ struct Executor : GfxExecutor {
             {
                 float uniforms[2] = { 0.75f, 0.3f };   // threshold, softness
                 SDL_GPUTextureSamplerBinding bindings[2] = {
-                    { backColor, Sampler(GfxStageState()) },
+                    { sceneSource, Sampler(GfxStageState()) },
                     { white2D, Sampler(GfxStageState()) },
                 };
                 PostProcessPass(cmd, BloomBrightPassPipeline(), bloomBuf1, bindings, 2,
@@ -2156,7 +2198,7 @@ struct Executor : GfxExecutor {
             {
                 float intensity = bloomIntensity / 255.0f;
                 SDL_GPUTextureSamplerBinding bindings[2] = {
-                    { backColor, Sampler(GfxStageState()) },
+                    { sceneSource, Sampler(GfxStageState()) },
                     { bloomBuf1, Sampler(GfxStageState()) },
                 };
                 PostProcessPass(cmd, BloomCompositePipeline(), motionBlurTemp, bindings, 2,
