@@ -16,7 +16,7 @@
 #include "MeshVertex.h"
 #include "port/sys.h"
 #include "render/gfx_internal.h"
-static bool legacy=false;static std::string base; static unsigned draws; static GfxMatrix world;static GfxTexture *bound;static std::vector<GfxVertex> captured;
+static bool separate=false,legacy=false;static std::string base; static unsigned draws; static GfxMatrix world;static GfxTexture *bound;static std::vector<GfxVertex> captured;
 D3DTextureManager* CGraphics::m_pTextureManager=nullptr;
 unsigned int CGraphics::m_textureCount=0;
 struct SysFile { FILE *file; };
@@ -24,6 +24,8 @@ extern "C" SysFile *Sys_OpenFile(const char *p,int){FILE *f=fopen(p,"rb");
  if(f&&legacy&&std::string(p).find("tree.obj")!=std::string::npos){
   FILE *copy=tmpfile();char line[256];fgets(line,sizeof line,f);int ch;while((ch=fgetc(f))!=EOF)fputc(ch,copy);fclose(f);rewind(copy);f=copy;
  }return f?new SysFile{f}:nullptr;}
+extern "C" BOOL Sys_HasSceneryDirectory(){return separate;}
+extern "C" SysFile *Sys_OpenSceneryFile(const char*p){return Sys_OpenFile((base+"/"+p).c_str(),SYS_FILE_READ);}
 extern "C" void Sys_CloseFile(SysFile *f){fclose(f->file);delete f;}
 extern "C" DWORD Sys_GetFileSize(SysFile *f){fseek(f->file,0,SEEK_END);long n=ftell(f->file);rewind(f->file);return n;}
 extern "C" DWORD Sys_ReadFile(SysFile *f,void *b,DWORD n){return fread(b,1,n,f->file);}
@@ -41,7 +43,7 @@ struct Capture: GfxExecutor {
 };
 GfxExecutor *Gfx_CreateGpuExecutor(){return new Capture;}
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line%d: %s\n",__LINE__,#x);return 1;}}while(0)
-int main(int argc,char **argv){if(argc<2)return 0;base=argv[1];legacy=argc>2;CHECK(Gfx_SetVideoMode(640,480,FALSE));
+int main(int argc,char **argv){if(argc<2)return 0;base=argv[1];legacy=argc>2&&!strcmp(argv[2],"legacy");separate=argc>2&&!strcmp(argv[2],"separate");CHECK(Gfx_SetVideoMode(640,480,FALSE));
  D3DTextureManager manager={};CGraphics::m_pTextureManager=&manager;CGraphics::m_textureCount=1;
  Texture source={};source.width=source.height=256;strcpy(source.name,"C:\\textures\\TRE_MD1.TGA");GenericFile archive={};source.pArchive=&archive;manager.textureBuffer[0]=&source;
  MeshTriangle triangle={};MeshVertexF verts[3]={};verts[1].y=2;verts[2].x=1;verts[0].textureCoordinates[0][1]=1;verts[2].textureCoordinates[0][0]=1;verts[2].textureCoordinates[0][1]=1;Mesh mesh={};mesh.flags=2;mesh.pTriangles=&triangle;mesh.triangleCount=1;mesh.pVertexData=(DWORD*)verts;mesh.field_0x10=3;

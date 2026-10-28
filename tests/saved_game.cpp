@@ -2,6 +2,7 @@
 // synthetic assets. Byte checks use original disk offsets independently of
 // the new structs, so mutually wrong reader/writer layouts cannot pass.
 #include "port/types.h"
+#include "port/sys.h"
 #include "SavedGame.h"
 #include "GameInfo.h"
 #include "InstallInfo.h"
@@ -68,7 +69,7 @@ static unsigned Word(const std::vector<BYTE> &bytes, size_t offset)
 int main()
 {
     const fs::path root = fs::temp_directory_path() / ("opencmr2-save-" + std::to_string(SDL_GetPerformanceCounter()));
-    const fs::path data = root / "Data", user = root / "user";
+    const fs::path data = root / "Data", user = root / "user", scenery=root/"separate scenery";
     for (const char *path : {"Game/Bigfiles/common.bfl", "FrontEnd/common.bfl", "FrontEnd/Res640.bfl",
                              "FrontEnd/Res640C.bfl", "Sounds/surface.bfl",
                              "CountrySpecific/Europe/EnglishText.bfl", "SetupRep/640/common.bfl"})
@@ -79,10 +80,21 @@ int main()
     SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "dummy");
     std::string dataPath = data.u8string(), userPath = user.u8string();
     char program[] = "saved_game", dataFlag[] = "--data", userFlag[] = "--user-dir";
-    char *args[] = {program, dataFlag, dataPath.data(), userFlag, userPath.data()};
-    Check(Platform_Init(5, args), "initialise platform");
+    std::string sceneryPath=scenery.u8string();char sceneryFlag[]="--scenery-dir";
+    Write(scenery/"manifest.tsv","external",8);Write(scenery/"pps"/"old.pps","not-save",8);
+    Write(user/"pps"/"old.pps","old-data",8);Write(user/"driver-names.tsv","names",5);
+    char *args[] = {program, dataFlag, dataPath.data(), userFlag, userPath.data(),sceneryFlag,sceneryPath.data()};
+    Check(Platform_Init(7, args), "initialise platform");
     Check(CInstallInfo::LoadInstallPathsFromRegistry() != 0, "initialise paths");
 
+    Check(Sys_HasSceneryDirectory(),"explicit scenery root active");
+    char buf[1024];Check(Sys_ResolvePath("pps/old.pps",FALSE,buf,sizeof buf)&&fs::path(buf)==user/"pps"/"old.pps","profile reads stay in original user root");
+    Check(Sys_ResolvePath("pps/new.pps",TRUE,buf,sizeof buf)&&fs::path(buf)==user/"pps"/"new.pps","profile writes stay in original user root");
+    Check(Sys_ResolvePath("driver-names.tsv",FALSE,buf,sizeof buf)&&fs::path(buf)==user/"driver-names.tsv","name sidecar root unchanged");
+    SysFile *external=Sys_OpenSceneryFile("manifest.tsv");Check(external!=nullptr,"read separate scenery manifest");char bytes[9]={};Check(Sys_ReadFile(external,bytes,8)==8&&!strcmp(bytes,"external"),"read correct asset bytes");Sys_CloseFile(external);
+    Check(!Sys_OpenSceneryFile("../pps/old.pps")&&!Sys_OpenSceneryFile("/manifest.tsv")&&!Sys_OpenSceneryFile("C:manifest.tsv"),"reject escaping paths");
+    Check(!Sys_FileExists("manifest.tsv"),"ordinary game reads never search scenery root");
+    Check(Platform_GetSettingInt("install.menu_shortcut",1)==0,"existing settings unchanged");
     for (int players = 1; players <= 4; players++) {
         GameInfo_SetConfiguredGameMode(1);
         GameInfo_SetConfiguredDifficulty(2);

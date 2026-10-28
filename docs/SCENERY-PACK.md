@@ -77,6 +77,34 @@ manifest. The original built-in names remain the fallback. See
 [the driver-name patch instructions](../tools/driver-name-patch/README.md).
 No original executable or archive is patched in place.
 
+## Keep the same driver profiles while using a separate pack
+
+`--user-dir` selects settings, logs and save writes, not only assets. Player
+profiles/progress use `pps/*.pps`; race saves use `gamesave/*.rcs`. Switching
+the user directory can make a different profile set appear. Do not copy or
+replace saves just to enable scenery.
+
+Use `--scenery-dir /absolute/path/to/scenery-pack` to read ONLY scenery from
+that folder while keeping the same existing launch/profile selection. The
+folder itself contains `manifest.tsv`. This switch is per-launch, does not
+persist configuration, create/move the pack or change save/settings/name roots.
+Ordinary game reads/writes never search this asset root. A missing explicit
+pack falls back to originals, not a pack from another profile. Existing
+scenery-overrides opt-out is still respected. Without the switch, the old
+relative `scenery_pack` behavior is unchanged.
+
+Example only, after verifying the selected profile has the desired progress
+and this asset folder exists:
+
+```
+./build/macos/src/opencmr2 --data /path/to/owned-game --scenery-dir /path/to/private/scenery-pack
+```
+
+Leave an existing `--user-dir` unchanged if that is the profile you use. If
+you normally omit it, keep omitting it. No save migration is needed. The log
+labels the separate asset root read-only; actual spectator-active diagnostics
+still require a successful draw, not just a manifest read. Native Mac use
+remains unverified.
 ## Source-fitted tree transition
 
 Tree OBJ sidecars now require the first line:

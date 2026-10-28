@@ -27,6 +27,7 @@ namespace {
 
 SDL_Window *s_window;
 std::string s_dataDir;     // game data, read only (ends with '/')
+std::string s_sceneryDir; // optional read-only scenery root, independent of saves
 std::string s_userDir;     // saves, settings, logs (ends with '/')
 std::string s_commandLine;
 std::map<std::string, std::string> s_settings;  // "section.key" -> value
@@ -627,6 +628,7 @@ void UpdateMenuShortcut(const std::string &settingsFile)
 bool Platform_Init(int argc, char **argv)
 {
     s_dataDir.clear();
+    s_sceneryDir.clear();
     s_commandLine.clear();
     s_settings.clear();
     s_dirCache.clear();
@@ -675,6 +677,8 @@ bool Platform_Init(int argc, char **argv)
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--data") == 0 && i + 1 < argc) {
             dataDir = argv[++i];
+        } else if (strcmp(argv[i], "--scenery-dir") == 0 && i + 1 < argc) {
+            s_sceneryDir = WithSlash(argv[++i]);
         } else if (strcmp(argv[i], "--user-dir") == 0 && i + 1 < argc) {
             ++i;
         } else {
@@ -724,6 +728,7 @@ bool Platform_Init(int argc, char **argv)
     }
     Sys_Log("game data: %s", s_dataDir.c_str());
     Sys_Log("user directory: %s", s_userDir.c_str());
+    if(!s_sceneryDir.empty())Sys_Log("scenery directory: %s (read-only assets; save/settings roots unchanged)",s_sceneryDir.c_str());
     // Only for the player's own settings: tools and tests use --user-dir.
     const char *headless = SDL_getenv("OPENCMR2_HEADLESS");
     if (userDir.empty() && (headless == NULL || *headless == '0'))
@@ -1121,6 +1126,22 @@ extern "C" SysFile *Sys_OpenFile(const char *path, int mode)
     SysFile *file = new SysFile;
     file->f = f;
     return file;
+}
+
+extern "C" BOOL Sys_HasSceneryDirectory(void){return !s_sceneryDir.empty();}
+extern "C" SysFile *Sys_OpenSceneryFile(const char *relative)
+{
+    if(s_sceneryDir.empty()||!relative||!*relative)return nullptr;
+    std::string path(relative);
+    // Scenery assets must stay under the explicit root. Never route saves here.
+    if(path[0]=='/'||path.find('\\')!=path.npos||path.find(':')!=path.npos)return nullptr;
+    size_t at=0;
+    while(at<path.size()){size_t end=path.find('/',at);std::string part=path.substr(at,end==path.npos?end:end-at);
+        if(part.empty()||part=="."||part=="..")return nullptr;if(end==path.npos)break;at=end+1;}
+    if(path.back()=='/')return nullptr;
+    std::string host=FindUnder(s_sceneryDir,SplitGamePath(relative));
+    FILE *f=host.empty()?nullptr:OpenHostFile(host.c_str(), "rb");
+    return f?new SysFile{f}:nullptr;
 }
 
 extern "C" void Sys_CloseFile(SysFile *file)

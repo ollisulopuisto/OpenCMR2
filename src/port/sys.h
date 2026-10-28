@@ -111,6 +111,9 @@ enum SysSeekOrigin {
 };
 
 SysFile *Sys_OpenFile(const char *path, int mode);
+// Explicit --scenery-dir is read-only and never affects save/settings roots.
+BOOL Sys_HasSceneryDirectory(void);
+SysFile *Sys_OpenSceneryFile(const char *relative);
 // Game path of the last file Sys_OpenFile could not open for reading.
 const char *Sys_GetLastMissingFile(void);
 void Sys_CloseFile(SysFile *file);
