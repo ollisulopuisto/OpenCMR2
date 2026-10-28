@@ -310,13 +310,24 @@ struct WindscreenWiper {
 // Table of per-view wiper state.
 extern struct WindscreenWiper g_windscreenWipers[8];
 
+// OpenCMR2: frames remaining in a manually-triggered wiper sweep. When > 0,
+// the wiper sweeps once and then stops (unlike the always-on setting).
+extern int g_windscreenWiperManualFrames;
+
 // Returns the wiper sweep position (0.0 = left edge, 1.0 = right edge) for
 // the given view, advancing the phase by one tick.
 inline float WindscreenWiper_Sweep(int view)
 {
     struct WindscreenWiper *w = &g_windscreenWipers[view];
-    if (!w->active)
+    if (!w->active && g_windscreenWiperManualFrames <= 0)
         return -1.0f; // wipers off: no sweep
+    if (g_windscreenWiperManualFrames > 0) {
+        // Manual sweep triggered by the action button: sweep once, then stop.
+        w->active = 1;
+        g_windscreenWiperManualFrames--;
+        if (g_windscreenWiperManualFrames == 0)
+            w->active = 0;
+    }
     w->phase++;
     if (w->phase >= WIPER_SWEEP_TIME) {
         w->phase = 0;
@@ -325,6 +336,7 @@ inline float WindscreenWiper_Sweep(int view)
     float t = (float)w->phase / (float)(WIPER_SWEEP_TIME - 1);
     return w->dir ? t : 1.0f - t;
 }
+
 
 // Clears dirt under the wiper sweep at the given position (0..1 across screen).
 inline void WindscreenWiper_ClearDirt(int view, float pos)
@@ -340,6 +352,16 @@ inline void WindscreenWiper_ClearDirt(int view, float pos)
     unsigned int clear = (*level > 128) ? 15 : (*level > 64) ? 10 : 5;
     *level = *level < clear ? 0 : *level - clear;
 }
+
+// OpenCMR2: windscreen wiper action button. `video.windscreen_wiper_key`
+// holds a DIK key code; pressing it triggers one wiper sweep that clears dirt
+// in its path. Defaults to INPUT_KEY_F3 (0x3D), which the original game does
+// not use for driving.
+#define WINDSREEN_WIPER_KEY_DEFAULT 0x3D  // DIK_F3
+
+// Returns 1 when the wiper key was just pressed this frame (edge trigger),
+// 0 otherwise. Defined in RallyData.cpp.
+int WindscreenWiperKeyPressed(void);
 
 // OpenCMR2: motion blur between frames. `video.motion_blur` is 0 (off) to
 // MOTION_BLUR_MAX; the mix factor is how much of the previous frame to blend

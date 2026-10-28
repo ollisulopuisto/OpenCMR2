@@ -4671,6 +4671,13 @@ void Race_UpdateFrameEffects(int param_1)
             g_windscreenDirt[0] = WindscreenDirt_Accumulate(g_windscreenDirt[0], amount);
         }
     }
+    // OpenCMR2: windscreen wiper action button — pressing the key triggers a
+    // single sweep that clears dirt in its path.
+    if (Sys_GetOption("video.windscreen_dirt", 40) != 0 && WindscreenWiperKeyPressed()) {
+        g_windscreenWipers[0].active = 1;
+        g_windscreenWipers[0].phase = 0;
+        g_windscreenWipers[0].dir = 0;
+    }
     if ((BYTE)RallyData_IsChampionshipFinalStage()) {
         StageObject_UpdateDebris(param_1);
     }

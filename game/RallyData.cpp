@@ -6024,6 +6024,24 @@ unsigned int g_windscreenDirt[8];
 // OpenCMR2: per-view windscreen wiper state.
 struct WindscreenWiper g_windscreenWipers[8];
 
+// OpenCMR2: last-read state of the wiper action key, for edge detection.
+int g_windscreenWiperKeyPrevState = 0;
+
+// OpenCMR2: frames remaining in a manually-triggered wiper sweep. When > 0,
+// the wiper sweeps once and then stops (unlike the always-on setting).
+int g_windscreenWiperManualFrames = 0;
+
+// Returns 1 when the wiper key was just pressed this frame (edge trigger),
+// 0 otherwise. Resets the edge after reading.
+int WindscreenWiperKeyPressed(void)
+{
+    int key = Sys_GetOption("video.windscreen_wiper_key", WINDSREEN_WIPER_KEY_DEFAULT);
+    int down = Input_IsKeyDown(key) != 0 ? 1 : 0;
+    int pressed = down && !g_windscreenWiperKeyPrevState;
+    g_windscreenWiperKeyPrevState = down;
+    return pressed;
+}
+
 // Draws the dirt overlay (dark tint, alpha from dirt level) and the sun lens
 // flare (additive bright sprite at screen centre, scaled by sun visibility)
 // over the finished frame.
