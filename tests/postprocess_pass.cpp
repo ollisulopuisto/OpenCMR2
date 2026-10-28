@@ -1,8 +1,9 @@
 #include "render/postprocess_pass.h"
 #include <cstdio>
 static int calls=0,fail=0;
+static SDL_GPULoadOp expectedLoad=SDL_GPU_LOADOP_CLEAR;
 extern "C" SDL_GPURenderPass *SDL_BeginGPURenderPass(SDL_GPUCommandBuffer*,const SDL_GPUColorTargetInfo *c,Uint32 n,const SDL_GPUDepthStencilTargetInfo *d){
- ++calls;if(d || n!=1 || !c || !c->texture || c->load_op!=SDL_GPU_LOADOP_CLEAR || c->store_op!=SDL_GPU_STOREOP_STORE)++fail;
+ ++calls;if(d || n!=1 || !c || !c->texture || c->load_op!=expectedLoad || c->store_op!=SDL_GPU_STOREOP_STORE)++fail;
  return reinterpret_cast<SDL_GPURenderPass*>(0x10);
 }
 int main(){
@@ -17,5 +18,8 @@ int main(){
  b.texture=nullptr;if(Gfx_BeginPostProcessPass(cmd,pipe,target,&b,1))++fail;
  b.texture=source;b.sampler=nullptr;if(Gfx_BeginPostProcessPass(cmd,pipe,target,&b,1))++fail;
  if(calls!=1)++fail;
+ expectedLoad=SDL_GPU_LOADOP_LOAD;
+ if(!Gfx_BeginColourOnlyPass(cmd,target,SDL_GPU_LOADOP_LOAD)||calls!=2)++fail;
+ if(Gfx_BeginColourOnlyPass(cmd,nullptr,SDL_GPU_LOADOP_LOAD)||calls!=2)++fail;
  printf("postprocess pass: %s, no dummy depth, failed resources rejected\n",fail?"FAIL":"pass");return fail?1:0;
 }
