@@ -1,3 +1,5 @@
+#include "SceneryPack.h"
+#include "SceneryPackFormat.h"
 #include <stddef.h>
 #include "FloatToInt.h"
 #include <windows.h>
@@ -5417,8 +5419,10 @@ void Race_UpdatePlayerViewAndDrivenCars(BYTE param1, int param2)
                 Diagnostics::observer->ControlsReady();
             Car_UpdateAndRenderAll();
         }
-        if (player != 0)
+        if (player != 0) {
+            SceneryPack_Advance(SceneryFormat::Step(Car_Get(0)->simulationRateHz)); // 25Hz authored units, not render frames
             StageObjects_Update();
+        }
         for (g_raceUpdatePlayer = 0; g_raceUpdatePlayer < Car_GetOrderCount(); g_raceUpdatePlayer++) {
             if (Car_Get(g_raceUpdatePlayer)->simulationStepsRemaining > 0)
                 NetRace_UpdatePlayerFlashTimer((BYTE)g_raceUpdatePlayer, 0);

@@ -1,0 +1,4 @@
+newmtl crown
+map_Kd f0.tga
+newmtl trunk
+map_Kd f1.tga

@@ -1,0 +1,3 @@
+kind	source_archive	source_texture	asset	frames	ticks
+tree	frahit.bfl	tre_md1.dds	tree.obj		1
+spectator	frahit.bfl	spc_mn9a.dds	f0.tga	f0.tga,f1.tga	5

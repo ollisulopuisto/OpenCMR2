@@ -1,3 +1,4 @@
+#include "SceneryPack.h"
 #include "port/sys.h"
 #include "RaceCallbackStorage.h"
 #include "FloatToInt.h"
@@ -2276,6 +2277,10 @@ void Game_DrawDeferredObjects(void)
             qsort(sorted, CGame::m_deferredDrawCount, sizeof(sorted[0]), Game_CompareDeferredDistance);
         for (i = 0; i < (unsigned int)CGame::m_deferredDrawCount; i++) {
             pObject = sorted[i].pObject;
+            if (SceneryPack_Draw((StageObject *)pObject,pObject->matrix)) {
+                pObject->pMesh->flags |= 8; // preserve next-frame visibility bookkeeping
+                continue;
+            }
             int texture = pObject->pMesh->pTriangles->textures[0];
             // OpenCMR2: an animated scenery object draws its current frame
             // ([video] video.animated_scenery) instead of the base texture.
