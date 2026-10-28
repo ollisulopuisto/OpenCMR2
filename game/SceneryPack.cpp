@@ -151,6 +151,7 @@ bool SceneryPack_Draw(StageObject *object,const float *billboard){
         if(!spectatorLogged){Sys_Log("options: spectator sidecar active (first successful override draw)");spectatorLogged=true;}
         State(*(const GfxMatrix*)billboard);Gfx_SetTexture(0,t->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,vertices.data(),vertices.size());Gfx_PopState();return true;
     }
+    if(source->width!=asset->sourceWidth||source->height!=asset->sourceHeight)return false;
     auto fitted=asset->fitted.find(mesh);
     if(fitted==asset->fitted.end()){
         ScenerySourceFit::Fit fit;
@@ -159,7 +160,11 @@ bool SceneryPack_Draw(StageObject *object,const float *billboard){
         for(auto &part:parts)for(auto &q:part.vertices){float xyz[3];
             float u=.5f+q.x*asset->sourceHeight/asset->sourceWidth;
             float sv=1.f-q.y;
-            fit.Map(u,sv,q.z,xyz);q.x=xyz[0];q.y=xyz[1];q.z=xyz[2];
+            fit.Map(u,sv,q.z,xyz);
+            if(!std::isfinite(xyz[0])||!std::isfinite(xyz[1])||!std::isfinite(xyz[2])){
+                asset->fitted.emplace(mesh,std::vector<Part>{});return false;
+            }
+            q.x=xyz[0];q.y=xyz[1];q.z=xyz[2];
         }
         fitted=asset->fitted.emplace(mesh,std::move(parts)).first;
     }

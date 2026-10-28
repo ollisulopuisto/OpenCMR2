@@ -37,12 +37,12 @@ inline bool Build(const MeshVertexF *verts,int count,Fit &out){
   float u=verts[i].textureCoordinates[0][0],v=verts[i].textureCoordinates[0][1],p[3];f.Map(u,v,0,p);
   float xyz[]={verts[i].x,verts[i].y,verts[i].z};
   if(!std::isfinite(u)||!std::isfinite(v))return false;
-  for(int k=0;k<3;k++)if(!std::isfinite(p[k])||std::abs(p[k]-xyz[k])>f.height*.001f)return false;
+  for(int k=0;k<3;k++)if(!std::isfinite(xyz[k])||!std::isfinite(p[k])||std::abs(p[k]-xyz[k])>f.height*.001f)return false;
   f.u0=(f.u0<u?f.u0:u);f.u1=(f.u1>u?f.u1:u);f.v0=(f.v0<v?f.v0:v);f.v1=(f.v1>v?f.v1:v);
  }
  // Cropped atlas cards need authored per-crop geometry. Do not distort an
  // entire tree into that subrectangle or reuse a neighbour's silhouette.
- if(f.u0>.02f||f.u1<.98f||f.v0>.02f||f.v1<.98f)return false;
+ if(f.u0>.02f||f.u0<-.02f||f.u1<.98f||f.u1>1.02f||f.v0>.02f||f.v0<-.02f||f.v1<.98f||f.v1>1.02f)return false;
  out=f;return true;
 }
 }

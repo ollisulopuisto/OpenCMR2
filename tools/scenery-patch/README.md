@@ -1,5 +1,10 @@
 # Local scenery asset patcher
 
+Compatibility: the tree recipe below is the old ring/headerless format. The
+source-fitted loader rejects these trees and keeps originals; generated
+spectators still work. A migrated tree recipe is pending. Do not add the new
+source-canvas header to old geometry or present this as the updated tree pack.
+
 This is a procedural source patch, not an xdelta/bsdiff binary delta. It needs
 original game files and cannot generate the artwork without them. GitHub gets
 only this code and a filename/hash/dimension/classification index. Complete

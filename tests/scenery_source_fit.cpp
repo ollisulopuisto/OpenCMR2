@@ -11,5 +11,7 @@ int main(){
  for(auto &q:v)q.textureCoordinates[0][0]=.5f+.5f*q.textureCoordinates[0][0];CHECK(!ScenerySourceFit::Build(v,4,f));
  for(int i=0;i<4;i++)v[i].textureCoordinates[0][0]=uv[i][0];v[3].z=1;CHECK(!ScenerySourceFit::Build(v,4,f));v[3].z=0;
  v[2].textureCoordinates[0][0]=std::numeric_limits<float>::quiet_NaN();CHECK(!ScenerySourceFit::Build(v,4,f));
+ v[2].textureCoordinates[0][0]=uv[2][0];v[3].z=std::numeric_limits<float>::quiet_NaN();CHECK(!ScenerySourceFit::Build(v,4,f));v[3].z=0;
+ v[2].textureCoordinates[0][0]=2;CHECK(!ScenerySourceFit::Build(v,4,f));
  puts("full/flipped source fit; cropped/nonplanar/nonfinite fallback: pass");
 }
