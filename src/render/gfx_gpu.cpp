@@ -2196,6 +2196,8 @@ struct Executor : GfxExecutor {
 
         if (bloomEnabled && bloomIntensity > 0 && backColor != NULL && bloomBuf1 != NULL &&
             bloomBuf2 != NULL) {
+            // Chain only complete passes. Failed resources retain sceneSource.
+            bool bloomOK = true;
             // Bright pass: extract pixels brighter than a threshold -> bloomBuf1.
             {
                 float uniforms[2] = { 0.75f, 0.3f };   // threshold, softness
@@ -2203,17 +2205,17 @@ struct Executor : GfxExecutor {
                     { sceneSource, Sampler(GfxStageState()) },
                     { white2D, Sampler(GfxStageState()) },
                 };
-                PostProcessPass(cmd, BloomBrightPassPipeline(), bloomBuf1, bindings, 2,
+                bloomOK = PostProcessPass(cmd, BloomBrightPassPipeline(), bloomBuf1, bindings, 2,
                                 uniforms, sizeof(uniforms));
             }
             // Separable blur: horizontal then vertical, two ping-pong iterations.
-            for (int iteration = 0; iteration < 2; iteration++) {
+            for (int iteration = 0; bloomOK && iteration < 2; iteration++) {
                 float hUniforms[4] = { 1.0f, 0.0f, 1.0f, 0.0f };   // direction (1,0), offsetScale, samples
                 SDL_GPUTextureSamplerBinding hBindings[2] = {
                     { bloomBuf1, Sampler(GfxStageState()) },
                     { white2D, Sampler(GfxStageState()) },
                 };
-                PostProcessPass(cmd, BloomBlurPipeline(), bloomBuf2, hBindings, 2,
+                bloomOK = PostProcessPass(cmd, BloomBlurPipeline(), bloomBuf2, hBindings, 2,
                                 hUniforms, sizeof(hUniforms));
 
                 float vUniforms[4] = { 0.0f, 1.0f, 1.0f, 0.0f };   // direction (0,1)
@@ -2221,7 +2223,7 @@ struct Executor : GfxExecutor {
                     { bloomBuf2, Sampler(GfxStageState()) },
                     { white2D, Sampler(GfxStageState()) },
                 };
-                PostProcessPass(cmd, BloomBlurPipeline(), bloomBuf1, vBindings, 2,
+                bloomOK = bloomOK && PostProcessPass(cmd, BloomBlurPipeline(), bloomBuf1, vBindings, 2,
                                 vUniforms, sizeof(vUniforms));
             }
             // Composite: scene + blurred bright pixels -> motionBlurTemp.
@@ -2231,7 +2233,7 @@ struct Executor : GfxExecutor {
                     { sceneSource, Sampler(GfxStageState()) },
                     { bloomBuf1, Sampler(GfxStageState()) },
                 };
-                if (PostProcessPass(cmd, BloomCompositePipeline(), motionBlurTemp, bindings, 2,
+                if (bloomOK && PostProcessPass(cmd, BloomCompositePipeline(), motionBlurTemp, bindings, 2,
                                     &intensity, sizeof(intensity)))
                     presentSource = motionBlurTemp;
             }
@@ -2249,18 +2251,16 @@ struct Executor : GfxExecutor {
                 { motionBlurPrevious, Sampler(GfxStageState()) },
             };
             if (PostProcessPass(cmd, MotionBlurPipeline(), output, bindings, 2, &mix, sizeof(mix))) {
-            {
                 SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(cmd);
                 if (copy != nullptr) {
-                SDL_GPUTextureLocation src = {}, dst = {};
-                src.texture = output;
-                dst.texture = motionBlurPrevious;
-                SDL_CopyGPUTextureToTexture(copy, &src, &dst, backWidth, backHeight, 1, false);
-                SDL_EndGPUCopyPass(copy);
+                    SDL_GPUTextureLocation src = {}, dst = {};
+                    src.texture = output;
+                    dst.texture = motionBlurPrevious;
+                    SDL_CopyGPUTextureToTexture(copy, &src, &dst, backWidth, backHeight, 1, false);
+                    SDL_EndGPUCopyPass(copy);
+                    motionBlurHasPrevious = true;
                 }
-            }
-            motionBlurHasPrevious = true;
-            presentSource = output;
+                presentSource = output;
             }
         } else if (!bloomEnabled) {
             motionBlurHasPrevious = false;
