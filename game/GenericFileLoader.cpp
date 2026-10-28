@@ -1,3 +1,4 @@
+#include "SceneryPack.h"
 #include "GenericFileLoader.h"
 #include "FileBuffer.h"
 #include <string.h>
@@ -22,6 +23,7 @@ bool CGenericFileLoader::ReadIntoFileRecord(char *fileName, GenericFile *param_2
     if (param_2->buffer != NULL)
     {
         param_2->fileSize = GetGenericFileSize();
+        SceneryPack_RegisterArchive(param_2, fileName);
         return true;
     }
 

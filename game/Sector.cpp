@@ -1,3 +1,4 @@
+#include "SceneryPack.h"
 #include <stdlib.h>
 #include "FloatToInt.h"
 #include <stddef.h>
@@ -307,6 +308,7 @@ BYTE Sector_FreeMeshPartLists(void)
     // ([video] video.animated_scenery).
     extern void AnimObject_ClearTable(void);
     AnimObject_ClearTable();
+    SceneryPack_Clear();
     extern void TreeFall_ClearTable(void);
     TreeFall_ClearTable();
 

@@ -1098,7 +1098,9 @@ extern Graphics *g_pGraphics;
 // GLOBAL: CMR2 0x00511578
 // IID_IDirect3D7
 
+struct StageObject;
 class CGraphics {
+    friend bool SceneryPack_Draw(StageObject *, const float *);
 public:
     static bool InitializeDirectX(void);
     static void SetDefaults(void);

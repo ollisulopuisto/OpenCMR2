@@ -3,22 +3,24 @@
 #include "RallyData.h"
 
 // GLOBAL: CMR2 0x005166b4
+// Names only, transcribed from the supplied real-driver patch static table.
+// Its executable was not run; performance and car data are unchanged.
 char g_aiNames[15][20] = {
-    "mcrae",
-    "erikson",
-    "dugas",
-    "baca",
-    "tizot",
-    "aikita",
-    "huber",
-    "ingauld",
-    "jonsson",
-    "truman",
-    "jones",
-    "kastis",
-    "candido",
-    "cooper",
-    "utzman"};
+    "t. makinen",
+    "c. mcrae",
+    "r. burns",
+    "d. auriol",
+    "c. sainz",
+    "j. kankkunen",
+    "m. gronholm",
+    "f. loix",
+    "f. delecour",
+    "h. rovanpera",
+    "t. radstrom",
+    "t. gardemeister",
+    "p. liatti",
+    "p. solberg",
+    "b. thiry"};
 
 // FUNCTION: CMR2 0x00407f80
 int CAIHelper::ResolveNameIndex(int id)

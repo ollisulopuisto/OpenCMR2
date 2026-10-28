@@ -1,0 +1,74 @@
+# Reversible scenery packs
+
+The external pack loader is visual-only. Original archives, mesh pointers,
+collision records, placements and physics stay in place. No private game art
+is included in the source repository. Install the separately supplied pack as
+`scenery-pack/` under the game data directory, next to the original data folders.
+`[video] video.scenery_pack` can select a different root;
+`video.scenery_overrides=0` disables the loader. Both settings use the engine's
+existing `section.key` convention. Missing mappings or invalid assets keep the
+original rendering. Only single-source deferred cutout meshes qualify.
+
+## Format
+
+UTF-8 `manifest.tsv` has six columns:
+`kind source_archive source_texture asset frames ticks`, separated by tabs.
+`kind` is `tree` or `spectator`; archive is the exact lower-case archive leaf
+including `.bfl`; source texture is its original leaf (DDS/TGA extension is
+ignored to match the native loader's renamed paths). Archive identity comes
+from the real archive load, not from the texture's guessed region.
+
+Paths are relative to the pack root, slash-separated, without `..`, drive
+letters or absolute roots. Duplicate source mappings reject the manifest.
+Trees use triangulated OBJ with positive `v/vt/vn` indices, explicit `usemtl`,
+a relative `mtllib`, and separate `newmtl` / `map_Kd` material textures.
+Geometry is local X-right, Y-up, Z-depth. Original full cutout height is 1,
+base is Y0, width is original image aspect ratio and X is centered. Transparent
+source margins are part of that anchor. Runtime scales by original mesh height
+and original placement basis, never by the camera's billboard basis.
+
+OBJ UVs are standard bottom-up and may exceed 1. The loader flips V once for
+its top-origin texture storage, then uses hardware repeat sampling. TGAs must
+be uncompressed type2 32-bit BGRA, descriptor8 (bottom-origin, eight alpha bits),
+no colour map or offset. The loader normalizes rows once. Point sampling and
+alpha>=128 match the asset recipe; no alpha closing or extra aspect scaling.
+Spectators keep original billboard geometry/UVs and whole atlases. `frames` is
+an explicit comma-separated sequence of relative TGAs, not inferred adjacent
+texture IDs. All frame sizes must agree; 64 frames maximum.
+
+## Time and lifetime
+
+`ticks` is positive authored 25Hz time units per frame, not render frames.
+The race player simulation-step gate advances time by 25/player-rate units;
+a 50Hz simulation contributes half a unit per step. Render, reflection and
+repeated draw passes only sample. Stable placement-derived phase decorrelates
+crowds without touching game RNG. At the default25Hz and ticks5, each frame
+lasts0.2seconds. Pause inherits the race loop's step suppression. Replay seeking
+does not rewind ambient crowd phase; it is not recorded in replay streams.
+Stage unload destroys external textures/meshes and resets phase/mappings.
+Textures are owned separately from the original 2048-slot texture table.
+
+## Limits and acceptance
+
+The supplied production pack covers64 individual-tree texture occurrences and
+48 spectator atlas occurrences from the available France/Finland packs. It
+leaves76 forest strips and6 shadow masks unchanged. The available archives are
+not the full game's asset set. Tree depth is inferred, not recovered geometry.
+Sparse branches, repeats and gaps need visual review. Spectators sway their
+upper bodies; this is not authored limb animation or new3D models.
+
+Source-level tests cover parsing, invalid paths/faces, explicit frames,
+fixed tree versus billboard transforms, repeated draw sampling, rate conversion,
+original mesh preservation, and clear/reload. Production-pack load checks do not
+prove native gameplay matching, terrain placement, fog, broken-tree fall,
+shadows, replay appearance or M2Air performance. Those remain native gates.
+
+## Driver names
+
+`game/AIHelper.cpp` changes only the15x20-byte `g_aiNames` table. Slot order is
+transcribed from the user's supplied real-driver patch executable's static
+name table at file offset0x1166b4, corresponding to source address0x005166b4.
+SHA256 of that reference executable:
+`87c235b054853480559b2d7902a6a5c0021c22838b44ef2beeaefe8a46c458e3`.
+It was inspected as data, not executed. Performance/car/AI configuration is not
+imported. Names retain the reference ASCII spellings and initial formatting.
