@@ -23,5 +23,10 @@ int main(){
        DustPlume_Surface(false,false,false,true,false) ||
        DustPlume_Surface(false,false,false,false,true) ||
        DustPlume_Surface(false,false,false,false,false)) ++fail;
+    float r=.12f,g=.20f,b=.01f;DustPlume_SoilTint(r,g,b);
+    if(r<=g || b!=.01f)++fail;
+    r=.5f;g=1.f;b=.2f;DustPlume_SoilTint(r,g,b);if(r>1.f||g>=r)++fail;
+    r=.6f;g=.4f;b=.2f;DustPlume_SoilTint(r,g,b);
+    if(r!=.6f||g!=.4f||b!=.2f)++fail;
     puts(fail?"FAIL dust plume":"dust plume: bounded growth, drift decay, lift and fade pass");return fail?1:0;
 }
