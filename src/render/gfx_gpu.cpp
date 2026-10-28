@@ -451,7 +451,7 @@ struct Executor : GfxExecutor {
 
         vs3d = Shader(SHADER_CODE(fixed3d_vert), SDL_GPU_SHADERSTAGE_VERTEX, 0, 1);
         vsTL = Shader(SHADER_CODE(fixedtl_vert), SDL_GPU_SHADERSTAGE_VERTEX, 0, 1);
-        fs = Shader(SHADER_CODE(fixed_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 7, 1);
+        fs = Shader(SHADER_CODE(fixed_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 8, 1);
         vsClear = Shader(SHADER_CODE(clear_vert), SDL_GPU_SHADERSTAGE_VERTEX, 0, 1);
         fsClear = Shader(SHADER_CODE(clear_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 0, 1);
         vsMotionBlur = Shader(SHADER_CODE(motionblur_vert), SDL_GPU_SHADERSTAGE_VERTEX, 0, 0);
@@ -598,12 +598,12 @@ struct Executor : GfxExecutor {
         float u2x = sy * fz - sz * fy, u2y = sz * fx - sx * fz, u2z = sx * fy - sy * fx;
         // Row-major D3D view matrix.
         memset(&lightView, 0, sizeof(lightView));
-        lightView._11 = sx; lightView._12 = u2x; lightView._13 = -fx; lightView._14 = 0.0f;
-        lightView._21 = sy; lightView._22 = u2y; lightView._23 = -fy; lightView._24 = 0.0f;
-        lightView._31 = sz; lightView._32 = u2z; lightView._33 = -fz; lightView._34 = 0.0f;
+        lightView._11 = sx; lightView._12 = u2x; lightView._13 = fx; lightView._14 = 0.0f;
+        lightView._21 = sy; lightView._22 = u2y; lightView._23 = fy; lightView._24 = 0.0f;
+        lightView._31 = sz; lightView._32 = u2z; lightView._33 = fz; lightView._34 = 0.0f;
         lightView._41 = -sx * ex - sy * ey - sz * ez;
         lightView._42 = -u2x * ex - u2y * ey - u2z * ez;
-        lightView._43 = fx * ex + fy * ey + fz * ez;
+        lightView._43 = -fx * ex - fy * ey - fz * ez;
         lightView._44 = 1.0f;
         // Orthographic projection covering the stage, D3D row-major.
         float l = -150.0f, r = 150.0f, b = -150.0f, t = 150.0f, n = 1.0f, f = 500.0f;
@@ -615,8 +615,8 @@ struct Executor : GfxExecutor {
         lightProj._42 = (t + b) / (b - t);
         lightProj._43 = n / (n - f);
         lightProj._44 = 1.0f;
-        // lightViewProj = lightProj * lightView, row-major.
-        Multiply(lightProj, lightView, lightViewProj);
+        // Row-vector world -> view -> projection, uploaded transposed to GLSL.
+        Multiply(lightView, lightProj, lightViewProj);
     }
 
     // OpenCMR2: the sampler cache's key carries the level, so the next draws
@@ -655,11 +655,15 @@ struct Executor : GfxExecutor {
     void SetShadows(int type, int bias) override
     {
         shadowType = type < 0 ? 0 : type > 1 ? 1 : type;
-        shadowBias = bias < 0 ? 0.0f : bias > 100 ? 100.0f : bias / 10000.0f;
+        shadowBias = std::max(0, std::min(bias, 100)) / 10000.0f;
         // Create shadow map textures lazily (Metal can't sample D24_UNORM_S8_UINT,
         // so shadowMap is a color texture holding depth in its R channel).
-        if (shadowType != 0 && shadowMap == NULL) {
-            shadowMap = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, 1024, 1024,
+        if (shadowType != 0 && (shadowMap == NULL || shadowDepth == NULL) &&
+            SDL_GPUTextureSupportsFormat(device, SDL_GPU_TEXTUREFORMAT_R32_FLOAT, SDL_GPU_TEXTURETYPE_2D,
+                SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER)) {
+            SDL_ReleaseGPUTexture(device, shadowMap);
+            SDL_ReleaseGPUTexture(device, shadowDepth);
+            shadowMap = CreateTexture(SDL_GPU_TEXTURETYPE_2D, SDL_GPU_TEXTUREFORMAT_R32_FLOAT, 1024, 1024,
                                       1, 1, SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
             shadowDepth = CreateTexture(SDL_GPU_TEXTURETYPE_2D, depthFormat, 1024, 1024,
                                         1, 1, SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET);
@@ -1196,16 +1200,19 @@ struct Executor : GfxExecutor {
         if (shadowPipeline != nullptr)
             return shadowPipeline;
         SDL_GPUColorTargetDescription color = {};
-        color.format = colorFormat;
+        color.format = SDL_GPU_TEXTUREFORMAT_R32_FLOAT;
         color.blend_state.enable_blend = false;
         color.blend_state.color_write_mask = 0xf;   // write depth to shadowMap's R channel
         SDL_GPUGraphicsPipelineCreateInfo info = {};
         info.vertex_shader = vsShadow;
         info.fragment_shader = fsShadow;
-        info.vertex_input_state.vertex_buffer_descriptions = nullptr;
-        info.vertex_input_state.num_vertex_buffers = 0;
-        info.vertex_input_state.vertex_attributes = nullptr;
-        info.vertex_input_state.num_vertex_attributes = 0;
+        SDL_GPUVertexBufferDescription vb = {};
+        vb.slot = 0; vb.pitch = sizeof(GfxVertex); vb.input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
+        SDL_GPUVertexAttribute position = { 0, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3, 0 };
+        info.vertex_input_state.vertex_buffer_descriptions = &vb;
+        info.vertex_input_state.num_vertex_buffers = 1;
+        info.vertex_input_state.vertex_attributes = &position;
+        info.vertex_input_state.num_vertex_attributes = 1;
         info.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
         info.rasterizer_state.fill_mode = SDL_GPU_FILLMODE_FILL;
         info.rasterizer_state.cull_mode = SDL_GPU_CULLMODE_NONE;
@@ -1686,7 +1693,7 @@ struct Executor : GfxExecutor {
             u.distanceFade[2] = 1.0f;
         }
         u.shadowParams[0] = shadowBias;
-        u.shadowParams[1] = shadowType != 0 ? 1.0f : 0.0f;
+        u.shadowParams[1] = shadowType != 0 && shadowMap && shadowDepth && shadowPipeline && fade ? 1.0f : 0.0f;
     }
 
     // The stages' textures (2D and cube for each), then the backdrop.
@@ -1717,9 +1724,8 @@ struct Executor : GfxExecutor {
         }
         bindings[4] = { backdrop, Sampler(GfxStageState()) };
         // Directional light shadow map, bound for the fixed-function shaders.
-        bindings[7] = { shadowMap != NULL ? shadowMap : white2D, Sampler(GfxStageState()) };
-        // Back buffer depth, used by depth-of-field and god rays passes.
-        bindings[8] = { backDepth, Sampler(GfxStageState()) };
+        GfxStageState shadowSampler; shadowSampler.address = GFX_ADDRESS_CLAMP;
+        bindings[7] = { shadowMap != NULL ? shadowMap : white2D, Sampler(shadowSampler) };
     }
 
     // What a render pass has bound: each draw sets only what differs from the
@@ -1729,7 +1735,7 @@ struct Executor : GfxExecutor {
         bool viewportSet = false, texturesSet = false, indicesSet = false;
         SDL_GPUViewport viewport = {};
         SDL_Rect scissor = {};
-        SDL_GPUTextureSamplerBinding textures[9] = {};
+        SDL_GPUTextureSamplerBinding textures[8] = {};
         SDL_GPUBuffer *vertices = nullptr;
     };
 
@@ -1930,7 +1936,9 @@ struct Executor : GfxExecutor {
         // OpenCMR2: directional shadow map — render every shadow caster from
         // the sun's point of view into shadowMap depth, before the normal pass
         // samples it.
-        if (shadowType != 0 && shadowMap != NULL) {
+        if (shadowType != 0 && (shadowMap == NULL || shadowDepth == NULL))
+            SetShadows(shadowType, (int)(shadowBias * 10000));
+        if (shadowType != 0 && shadowMap != NULL && shadowDepth != NULL && ShadowPipeline() != NULL) {
             SDL_GPUColorTargetInfo color = {};
             color.texture = shadowMap;
             color.load_op = SDL_GPU_LOADOP_CLEAR;
@@ -1951,11 +1959,16 @@ struct Executor : GfxExecutor {
                     SDL_SetGPUViewport(spass, &svp);
                     SDL_SetGPUScissor(spass, &sscissor);
                     const GfxDrawState *svUniformState = NULL;
+                    GfxTexture *shadowTarget = NULL;
                     for (size_t si = 0; si < frame.commands.size(); si++) {
                         const GfxCommand &sc = frame.commands[si];
-                        if (sc.type != GFX_CMD_DRAW)
-                            continue;
+                        if (sc.type == GFX_CMD_TARGET) { shadowTarget = sc.target; continue; }
+                        if (sc.type != GFX_CMD_DRAW || sc.transformed || shadowTarget != NULL ||
+                            sc.primitive != GFX_TRIANGLELIST) continue;
                         const GfxDrawState &ss = frame.states[sc.state];
+                        // Until coverage-aware shadow materials exist, avoid solid tree/billboard
+                        // rectangles and transparent effects. Original game shadows remain.
+                        if (!ss.depthTest || !ss.depthWrite || ss.alphaBlend || ss.alphaTest) continue;
                         if (svUniformState == NULL || memcmp(&ss.world, &svUniformState->world, sizeof(ss.world)) != 0) {
                             VertexUniforms vu;
                             memset(&vu, 0, sizeof(vu));
@@ -1965,8 +1978,13 @@ struct Executor : GfxExecutor {
                             svUniformState = &ss;
                         }
                         SDL_GPUBuffer *vertices = sc.buffer != NULL ? ((GpuVertexBuffer *)sc.buffer->gpu)->buffer : vertexBuffer;
+                        if (vertices == NULL) continue;
+                        SDL_GPUBufferBinding vb = { vertices, 0 };
+                        SDL_BindGPUVertexBuffers(spass, 0, &vb, 1);
                         uint32_t firstVertex = sc.firstVertexByte / sizeof(GfxVertex);
                         if (sc.firstIndex != ~0u) {
+                            SDL_GPUBufferBinding ib = { indexBuffer, 0 };
+                            SDL_BindGPUIndexBuffer(spass, &ib, SDL_GPU_INDEXELEMENTSIZE_16BIT);
                             SDL_DrawGPUIndexedPrimitives(spass, sc.indexCount, 1, sc.firstIndex, (Sint32)firstVertex, 0);
                         } else {
                             SDL_DrawGPUPrimitives(spass, sc.vertexCount, 1, firstVertex, 0);
@@ -2073,10 +2091,10 @@ struct Executor : GfxExecutor {
                 fragmentUniforms = fu;
                 fragmentUniformsSet = true;
             }
-            SDL_GPUTextureSamplerBinding textures[9];
+            SDL_GPUTextureSamplerBinding textures[8];
             TextureBindings(s, textures);
             if (!bound.texturesSet || memcmp(textures, bound.textures, sizeof(textures)) != 0) {
-                SDL_BindGPUFragmentSamplers(pass, 0, textures, 9);
+                SDL_BindGPUFragmentSamplers(pass, 0, textures, 8);
                 memcpy(bound.textures, textures, sizeof(textures));
                 bound.texturesSet = true;
             }

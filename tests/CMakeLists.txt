@@ -220,6 +220,8 @@ if(OPENCMR2_SHADER_PIXEL_TESTS)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
     add_test(NAME post_effects_pixels COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/post_effects_shader.py)
+    add_test(NAME shadow_pixels COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/shadow_shader.py)
     add_test(NAME spatial_aa_pixels COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/spatial_aa_shader.py)
 endif()
@@ -238,6 +240,8 @@ if(Python3_Interpreter_FOUND)
 endif()
 
 if(Python3_Interpreter_FOUND)
+    add_test(NAME shadow_wiring COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/shadow_wiring.py)
     add_test(NAME metalfx_cmake_safety COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/metalfx_cmake.py)
 endif()
