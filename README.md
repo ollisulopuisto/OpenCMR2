@@ -366,7 +366,8 @@ not the MetalFX build above.
 The binary verifies originals, prepares/reuses private versioned assets, and
 starts the game. `--trees shell` selects the experimental tiered shell instead
 of fixed crossed cutouts. Only3high-source tree mappings are generated; people
-have12-frame sprite upper-body sway, not3Dmodels. Neither tree mode has native
+have four forearm poses on one verified atlas and limited sway on the other47,
+not3Dmodels. Neither tree mode has native
 visual acceptance. `original` disables that kind for this launch, and selections
 are not written to settings. No `--user-dir` switch is needed: driver progress
 and saves stay in the current/default profile.
@@ -485,3 +486,10 @@ the Bink decoder (LGPL-2.1) and RadialGamePad (GPL-3.0).
 OpenCMR2 is an unofficial project, not affiliated with or endorsed by
 Codemasters or Electronic Arts. Colin McRae Rally 2.0 is a trademark of its
 respective owners.
+
+
+The spectator option currently articulates the raised forearm on one verified
+France atlas using the original demo recipe, not all crowd limbs. Other atlases
+retain subtle cutout sway. `--tree-wind off` disables the new base-fixed2Dwind
+(default on with a selected tree mode). Wind does not turn cards into3Dtrees.
+See the preparation guide for exact coverage and the runtime draw counters.

@@ -38,7 +38,8 @@ textures and stage-specific archives. Filenames alone never authorize a new-pack
 replacement. Old packs without identity records keep their strict archive-based
 matching; regenerate using this revision into a new cache for corrected routing.
 An active draw marker proves the override was submitted, not native appearance or
-frame-time acceptance. Animated spectators remain subtle sprite upper-body sway.
+frame-time acceptance. One spectator atlas has articulated forearm poses; the
+other47 retain subtle sprite upper-body sway.
 
 Generated cache is under `enhancements/` in the already-selected user profile;
 this does NOT change the user/profile root. It never moves or overwrites an old
@@ -137,8 +138,9 @@ cross-projection rather than repeated stripes; trunk samples opaque source
 stem pixels.4x premultiplied interpolation is NOT generated new detail. The
 private restored-detail candidate is a separate pack and is not bundled here.
 
-All48 spectator atlases still have12frames each, manifest and coverage.
-People have upper-body sway and2x nearest upscale, not new3Dmodels or arm
+One verified France spectator atlas has four articulated forearm frames;
+the other47 retain12frames each of upper-body sway and2xnearest upscale.
+These are not new3Dmodels or generic arm
 animation. Atlas layout/feet stay fixed. `ticks=5` is interpreted by the
 engine loader, not render FPS. Missing/legacy tree assets never disable
 working spectators.
@@ -213,3 +215,37 @@ and source grass specks; the separate stem samples original opaque pixels.
 Fir1 keeps original alpha. These masks are explicit modifications, not exact
 alpha preservation. Textures are still4x interpolation, not restored detail.
 No low variants or rejected fr1 are added. Recipe metadata records the mode.
+
+
+### Actual motion coverage and diagnostics
+
+`--spectators animated` now brings the original manually articulated forearm
+demo into the production frame generator for the exact hash-verified
+`frahit.bfl/spc_mn9a.dds` atlas: four poses, fixed lower body, repaired clean
+plate, stable instance phases. This is 2D articulated texture motion, not
+3D people or a generic skeleton. The other47atlases retain the earlier
+subtle upper-body warp; their arms are not separately animated. An offline
+demo or generated frames do not establish native gameplay success.
+
+The debug panel scales with resolution (minimum14px). Its Crowd line shows
+actual drawn simulation tick, frame index and observed frame changes for one
+representative instance. The early runtime log reports selected frame assets
+and bound-frame-change count. A successful first draw alone is not animation
+acceptance. Paused simulation holds the pose; extra views do not advance time.
+
+`--trees shell|crossed` still replaces only three authored source textures.
+Other trees remain original; cropped-atlas cards remain fail-closed for3D
+replacement. `--tree-wind on|off` adds subtle wind to hash-verified individual
+2D tree cards, default on with a selected tree mode. It preserves original
+UVs and fixes the lowest vertices, moving only the top by at most1.5%of card
+height. This is not a3Dupgrade. Forest strips, composite meshes, shadow masks,
+unverified sources and non-billboard objects are excluded. No mesh/collision
+records or saved settings change. Runtime logs name active wind sources and
+uncovered original tree sources. The Tree line reports cumulative successful
+replacement draws, wind draws and distinct uncovered original sources, not
+an exact count of all visible trees or frame-rate claim.
+
+New recipes create a new private cache automatically; old caches are untouched.
+Native Mac motion, tree appearance, label fit and performance remain separate
+acceptance checks. The small wind deformation currently copies at most192
+vertices per selected card draw; no native cost estimate is claimed.

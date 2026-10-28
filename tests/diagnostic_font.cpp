@@ -1,8 +1,11 @@
 #include "port/types.h"
 #include "Font.h"
+#include "DebugOverlayLayout.h"
 #include "Sprite.h"
 #include <cstdio>
 #include <cstring>
+#include <utility>
+#include <initializer_list>
 int main(int argc, char **argv) {
     FontSlot *saved=g_fonts; unsigned savedCount=g_fontCount;
     FontHeader header={}; header.glyphCount=1; header.lineHeight=40;header.spaceWidth=12;header.charSpacing=4;
@@ -39,6 +42,18 @@ int main(int argc, char **argv) {
     Font_DrawTextScaled(1,"bad slot",0,0,10,30,white);
     Font_DrawTextScaled(0,"zero height",0,0,0,30,white);
     if(g_spriteCount1!=count) ++fail;
+    FILE *layoutOut=argc>2?fopen(argv[2],"w"):nullptr;
+    for(auto size:{std::pair<int,int>{1280,960},{2940,1912}}){
+        auto l=DebugOverlayLayout::For(size.first,size.second,4);
+        if(l.font<14||l.font>32||l.width>size.first||l.height>size.second/5)++fail;
+        g_spriteCount1=0;Font_DrawTextScaled(0,"Crowd tick 125 | frame 8 | changes 24",l.x+l.pad,l.y+l.pad,l.font,l.width-2*l.pad,white);
+        if(layoutOut)fprintf(layoutOut,"panel %d %d %d %d %d %d %d\n",size.first,size.second,l.x,l.y,l.width,l.height,l.font);
+        for(unsigned i=0;i<g_spriteCount1;i++){const auto &r=g_spriteLayer1[i].dst;if(r.h!=l.font||r.x+r.w>l.x+l.width-l.pad)++fail;
+         if(layoutOut)fprintf(layoutOut,"glyph %d %d %d %d\n",r.x,r.y,r.w,r.h);
+        }
+    }
+
+    if(layoutOut)fclose(layoutOut);
     g_fonts=saved;g_fontCount=savedCount;
     printf("diagnostic font: %s, bounded10px glyphs and width clip\n",fail?"FAIL":"pass");return fail?1:0;
 }

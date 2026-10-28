@@ -12,6 +12,7 @@
 #include "SceneryPack.h"
 #include "ScenerySHA256.h"
 #include <filesystem>
+#include <chrono>
 #include "SceneryPackFormat.h"
 #include <fstream>
 #include <sstream>
@@ -19,7 +20,7 @@
 #include "MeshVertex.h"
 #include "port/sys.h"
 #include "render/gfx_internal.h"
-static bool separate=false,legacy=false;static std::string base; static unsigned draws; static GfxMatrix world;static GfxTexture *bound;static std::vector<GfxVertex> captured;
+static bool separate=false,legacy=false,windEnabled=true;static std::string base; static unsigned draws; static GfxMatrix world;static GfxTexture *bound;static std::vector<GfxVertex> captured;
 D3DTextureManager* CGraphics::m_pTextureManager=nullptr;
 unsigned int CGraphics::m_textureCount=0;
 struct SysFile { FILE *file; };
@@ -32,7 +33,7 @@ extern "C" SysFile *Sys_OpenSceneryFile(const char*p){return Sys_OpenFile((base+
 extern "C" void Sys_CloseFile(SysFile *f){fclose(f->file);delete f;}
 extern "C" DWORD Sys_GetFileSize(SysFile *f){fseek(f->file,0,SEEK_END);long n=ftell(f->file);rewind(f->file);return n;}
 extern "C" DWORD Sys_ReadFile(SysFile *f,void *b,DWORD n){return fread(b,1,n,f->file);}
-extern "C" int Sys_GetOption(const char*,int f){return f;}
+extern "C" int Sys_GetOption(const char *key,int f){return !strcmp(key,"video.tree_wind")?int(windEnabled):f;}
 extern "C" const char *Sys_GetOptionText(const char*,const char*){return base.c_str();}
 static std::string logs;
 extern "C" void Sys_Log(const char*fmt,...){char b[2048];va_list ap;va_start(ap,fmt);vsnprintf(b,sizeof b,fmt,ap);va_end(ap);logs+=std::string(b)+"\n";}
@@ -55,13 +56,14 @@ int main(int argc,char **argv){if(argc<2)return 0;base=argv[1];legacy=argc>2&&!s
    CHECK(SceneryIdentity::SHA256("abc",3)=="ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
    CHECK(SceneryIdentity::SHA256("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",56)=="248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1");
    std::string multi(1000,'a');CHECK(SceneryIdentity::SHA256(multi.data(),multi.size())=="41edece42d63e8d9bf515a9ba6932e1c20cbc9f5a5d134645adb5db1b9737ea3");
-   temporary=std::filesystem::temp_directory_path()/("cmr-identity-"+std::to_string(SDL_GetTicksNS()));
+   temporary=std::filesystem::temp_directory_path()/("cmr-identity-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
    std::filesystem::copy(base,temporary,std::filesystem::copy_options::recursive);base=temporary.string();
+   std::ofstream wind(temporary/"tree-wind-identities.tsv");wind<<"frahit.bfl/tre_unknown.dds\t3\t"<<SceneryIdentity::SHA256("ghi",3)<<"\n";wind.close();
    std::ofstream ids(temporary/"source-identities.tsv");ids<<"frahit.bfl/tre_md1.dds\t3\t"<<SceneryIdentity::SHA256("abc",3)<<"\nfrahit.bfl/spc_mn9a.dds\t3\t"<<SceneryIdentity::SHA256("def",3)<<"\n";ids.close();
  }
  D3DTextureManager manager={};CGraphics::m_pTextureManager=&manager;CGraphics::m_textureCount=1;
  Texture source={};source.width=source.height=256;strcpy(source.name,"C:\\textures\\TRE_MD1.TGA");GenericFile archive={};source.pArchive=&archive;manager.textureBuffer[0]=&source;
- MeshTriangle triangle={};MeshVertexF verts[3]={};verts[1].y=2;verts[2].x=1;verts[0].textureCoordinates[0][1]=1;verts[2].textureCoordinates[0][0]=1;verts[2].textureCoordinates[0][1]=1;Mesh mesh={};mesh.flags=2;mesh.pTriangles=&triangle;mesh.triangleCount=1;mesh.pVertexData=(DWORD*)verts;mesh.field_0x10=3;
+ MeshTriangle triangle={};triangle.vertexIndex[1]=1;triangle.vertexIndex[2]=2;MeshVertexF verts[3]={};verts[1].y=2;verts[2].x=1;verts[0].textureCoordinates[0][1]=1;verts[2].textureCoordinates[0][0]=1;verts[2].textureCoordinates[0][1]=1;Mesh mesh={};mesh.flags=2;mesh.pTriangles=&triangle;mesh.triangleCount=1;mesh.pVertexData=(DWORD*)verts;mesh.field_0x10=3;
  StageObject object={};object.pMesh=&mesh;object.matrix.right.x=object.matrix.up.y=object.matrix.forward.z=65536;object.matrix.position.x=3*65536;
  GfxMatrix billboard={};billboard._11=billboard._22=billboard._33=billboard._44=1;billboard._41=99;
  CHECK(!SceneryPack_Draw(&object,(float*)&billboard));SceneryPack_RegisterArchive(&archive,"DATA/FRAHIT.BFL");
@@ -76,6 +78,23 @@ int main(int argc,char **argv){if(argc<2)return 0;base=argv[1];legacy=argc>2&&!s
    CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);auto firstFrame=bound;
    for(int i=0;i<5;i++)SceneryPack_Advance(65536);
    CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(bound!=firstFrame);
+   unsigned long long tick=0;unsigned frame=0,changes=0;CHECK(SceneryPack_GetAnimationStatus(&tick,&frame,&changes));CHECK(tick==5&&changes>0);
+   for(int i=0;i<25;i++)SceneryPack_Advance(65536);
+   CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(SceneryPack_GetAnimationStatus(&tick,&frame,&changes)&&tick==30&&changes>1);
+   CHECK(logs.find("bound-frame-changes=")!=std::string::npos);
+   strcpy(source.name,"tre_unknown.dds");source.pSurface=bound;SceneryPack_RegisterSource(&source,"ghi",3);
+   CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);auto beforeWind=captured;auto originalX=verts[1].x;
+   for(int i=0;i<20;i++)SceneryPack_Advance(65536);
+   CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);
+   CHECK(captured[0].x==beforeWind[0].x&&captured[2].x==beforeWind[2].x); // fixed base
+   CHECK(captured[1].x!=beforeWind[1].x&&verts[1].x==originalX); // moving top, immutable source
+   CHECK(logs.find("tree wind active")!=std::string::npos);
+   if(argc>3){std::ofstream evidence(argv[3]);for(auto &v:beforeWind)evidence<<"before "<<v.x<<" "<<v.y<<" "<<v.z<<"\n";for(auto &v:captured)evidence<<"after "<<v.x<<" "<<v.y<<" "<<v.z<<"\n";}
+
+   windEnabled=false;CHECK(!SceneryPack_Draw(&object,(float*)&billboard));windEnabled=true;
+   SceneryPack_RegisterSource(&source,"bad",3);CHECK(!SceneryPack_Draw(&object,(float*)&billboard));
+   unsigned td=0,wd=0,og=0;SceneryPack_GetTreeStatus(&td,&wd,&og);CHECK(wd==2&&td==1);
+   strcpy(source.name,"spc_mn9a.dds");
    SceneryPack_RegisterSource(&source,"xyz",3);CHECK(!SceneryPack_Draw(&object,(float*)&billboard));
    CHECK(logs.find("spectator sidecar active")!=std::string::npos);
    SceneryPack_Clear();SceneryPack_RegisterArchive(&archive,"DATA/FRAHIT.BFL");source.pArchive=&archive;

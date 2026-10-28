@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 from pathlib import Path
-from PIL import Image
+from PIL import Image,ImageDraw
 import numpy as np,math,json
 
 
@@ -116,8 +116,29 @@ def crossed_tree(a,rel):
  metadata=json.loads((p/'recipe.json').read_text());metadata.update(method='4x premultiplied interpolation, no new detail; fixed source-projection cutouts',crown_pixels=[w*4,h*4],geometry='four fixed intersecting cutout planes, not full3D',triangles=len(faces)+(len(stem) if broad else 0),alpha_changes='broadleaf lower central stem and bottom6% removed from canopy; separate original stem' if broad else 'original source alpha interpolated')
  (p/'recipe.json').write_text(json.dumps(metadata,indent=2)+'\n');(p/'crown.tga').unlink();return asset
 
+def articulated_spectator(src):
+ # Exact manually authored demo recipe, only for hash-verified spc_mn9a.
+ # This is four forearm poses on a 2D atlas, not a general skeleton.
+ mask=Image.new('L',src.size);ImageDraw.Draw(mask).polygon([(64,13),(69,8),(96,4),(98,11),(75,16),(70,20)],fill=255)
+ arm=src.copy();arm.putalpha(Image.composite(src.getchannel('A'),Image.new('L',src.size),mask))
+ base=src.copy();base.putalpha(Image.composite(Image.new('L',src.size),src.getchannel('A'),mask))
+ d=ImageDraw.Draw(base)
+ d.polygon([(87,11),(88,8),(93,7),(98,8),(101,11),(101,14),(97,16),(92,15)],fill=(74,64,54,255))
+ d.polygon([(89,11),(93,10),(99,11),(99,14),(94,16),(90,14)],fill=(129,111,94,255))
+ d.polygon([(86,14),(86,11),(89,10),(91,12),(89,15)],fill=(58,50,43,255))
+ poses=[]
+ for angle in [0,10,20,10]:
+  im=base.copy();im.alpha_composite(arm.rotate(angle,resample=Image.Resampling.BICUBIC,center=(68,14)));poses.append(im)
+ return poses
+
 def spectator(a,rel):
- p=root/rel;p.mkdir(parents=True,exist_ok=True);src=Image.open(a['path']).convert('RGBA');src=src.resize((src.width*2,src.height*2),Image.Resampling.NEAREST);ar=np.array(src);h,w=ar.shape[:2];frames=[]
+ p=root/rel;p.mkdir(parents=True,exist_ok=True);src=Image.open(a['path']).convert('RGBA');frames=[]
+ import hashlib
+ if hashlib.sha256(Path(a['path']).read_bytes()).hexdigest()=='42dc26428fcd9da58332e6b9b7189c2b5d4dbdcb689911b14da96e52a5e52aba':
+  for i,pose in enumerate(articulated_spectator(src)):
+   path=p/f'frame-{i:02}.tga';pose.resize((src.width*2,src.height*2),Image.Resampling.NEAREST).save(path,compression=None);frames.append(str(rel/path.name))
+  return frames
+ src=src.resize((src.width*2,src.height*2),Image.Resampling.NEAREST);ar=np.array(src);h,w=ar.shape[:2]
  # Subtle upper-body sway: original cutout remapped, lower 30% and feet fixed. No invented limbs.
  yy,xx=np.mgrid[:h,:w]
  for i in range(12):
@@ -196,7 +217,7 @@ def main():
  destination=root
  with tempfile.TemporaryDirectory(prefix='.cmr2-patch-',dir=root.parent) as staging:
   root=Path(staging)/'pack';root.mkdir()
-  rows=['kind\tsource_archive\tsource_texture\tasset\tframes\tticks'];coverage=[];identities=[]
+  rows=['kind\tsource_archive\tsource_texture\tasset\tframes\tticks'];coverage=[];identities=[];wind_identities=[]
   with tempfile.TemporaryDirectory(prefix='cmr2-source-') as tmp:
    for key,rec in index.items():
     archive,leaf=key.split('/');a={**rec,'archive':archive,'texture':leaf};rel=Path(Path(archive).stem)/Path(leaf).stem
@@ -204,10 +225,12 @@ def main():
     if rec.get('category')=='individual-tree' and (archive,Path(leaf).stem) in TREE_CANDIDATES:
      asset=(crossed_tree if args.tree_geometry=='crossed' else tree)(a,Path('trees')/rel);rows.append('\t'.join(['tree',archive,leaf,asset,'','1']));status='source-fitted-interpolated'
     elif rec.get('category')=='spectator':
-     frames=spectator(a,Path('spectators')/rel);rows.append('\t'.join(['spectator',archive,leaf,frames[0],','.join(frames),'5']));status='converted'
+     frames=spectator(a,Path('spectators')/rel);rows.append('\t'.join(['spectator',archive,leaf,frames[0],','.join(frames),'6' if len(frames)==4 else '5']));status='articulated-forearm' if len(frames)==4 else 'upper-body-sway'
     else:status='retained-original'
+    if rec.get('category')=='individual-tree':wind_identities.append('\t'.join([key,str(len(data[key])),rec['sha256']]))
     if status!='retained-original':identities.append('\t'.join([key,str(len(data[key])),rec['sha256']]))
     coverage.append({k:v for k,v in a.items() if k!='path'}|{'status':status})
+  (root/'tree-wind-identities.tsv').write_text('\n'.join(wind_identities)+'\n')
   (root/'source-identities.tsv').write_text('\n'.join(identities)+'\n')
   (root/'manifest.tsv').write_text('\n'.join(rows)+'\n',encoding='utf-8')
   (root/'coverage.json').write_text(json.dumps(coverage,indent=2)+'\n',encoding='utf-8')

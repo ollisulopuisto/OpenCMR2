@@ -23,10 +23,17 @@ std::map<GenericFile*,std::string> archives;
 std::map<const Texture*,std::string> sourceIdentities;
 struct Identity {std::string archive,source,hash;};
 std::vector<Identity> identities;
+std::map<std::string,std::set<std::string>> windIdentities;
+std::set<std::string> windLogged,treeOriginalLogged;
 std::set<std::string> unmatched;
 struct PackTexture { GfxTexture *surface=nullptr; int width=0,height=0; };
 std::vector<GfxTexture*> ownedTextures;
 uint64_t animationTime=0;
+const StageObject *diagnosticObject=nullptr;
+bool diagnosticArticulated=false;
+unsigned diagnosticFrame=0,diagnosticChanges=0;uint64_t diagnosticTime=0;
+unsigned loggedSecond=0,treeReplacementDraws=0,treeWindDraws=0;
+
 struct Part { std::vector<GfxVertex> vertices; PackTexture *texture=nullptr; };
 struct Asset { std::map<const Mesh*,std::vector<Part>> fitted; int sourceWidth=0,sourceHeight=0; SceneryFormat::Entry entry; std::string failure; std::set<std::string> loggedFailures; bool attempted=false,ready=false; std::vector<Part> parts; std::vector<PackTexture*> frames; };
 std::vector<Asset> assets;
@@ -81,6 +88,12 @@ void Init(){
             if(p.size()!=3||p[0].find('/')==p[0].npos||p[2].size()!=64||identities.size()>=2048)continue;
             if(p[2].find_first_not_of("0123456789abcdef")!=p[2].npos)continue;
             auto slash=p[0].find('/');identities.push_back({p[0].substr(0,slash),Stem(p[0].substr(slash+1)),p[2]});
+        }
+    }
+    if(Read(root+"tree-wind-identities.tsv",text)){
+        std::istringstream rows(text);while(std::getline(rows,line)){auto p=Split(line,'\t');
+            if(p.size()!=3||p[2].size()!=64||p[2].find_first_not_of("0123456789abcdef")!=p[2].npos)continue;
+            auto slash=p[0].find('/');if(slash!=p[0].npos)windIdentities[Stem(p[0].substr(slash+1))].insert(p[2]);
         }
     }
     Sys_Log("scenery pack: %u mappings, %u verified-byte identity routes",(unsigned)assets.size(),(unsigned)identities.size());
@@ -152,19 +165,20 @@ void SceneryPack_RegisterSource(Texture *texture,const void *bytes,unsigned size
     if(!bytes||size<1||size>16*1024*1024||!Sys_GetOption("video.scenery_overrides",1))return;
     Init();std::string stem=Stem(texture->name);bool candidate=false;
     for(auto &a:assets)if(a.entry.source==stem){candidate=true;break;}
+    if(windIdentities.count(stem))candidate=true;
     if(candidate)sourceIdentities[texture]=SceneryIdentity::SHA256(bytes,size);
 }
 void SceneryPack_RegisterArchive(GenericFile *file,const char *path){if(file&&path)archives[file]=Leaf(path);}
-void SceneryPack_Clear(){assets.clear();archives.clear();sourceIdentities.clear();identities.clear();unmatched.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;identityContract=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;}
+void SceneryPack_Clear(){assets.clear();windIdentities.clear();windLogged.clear();treeOriginalLogged.clear();archives.clear();sourceIdentities.clear();identities.clear();unmatched.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;identityContract=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;diagnosticObject=nullptr;diagnosticArticulated=false;diagnosticFrame=diagnosticChanges=loggedSecond=treeReplacementDraws=treeWindDraws=0;diagnosticTime=0;}
 void SceneryPack_Advance(int step){if(step>0)animationTime+=(unsigned)step;}
-bool SceneryPack_Draw(StageObject *object,const float *billboard){
+static bool DrawReplacement(StageObject *object,const float *billboard,unsigned textureCount,Texture **textureBuffer){
     if(!object||!object->pMesh||!billboard||Sys_GetOption("video.scenery_overrides",1)==0)return false;
     Mesh *mesh=object->pMesh;
     // Only replace single-source cutouts, never a composite stage mesh.
     if(!(mesh->flags&2)||!mesh->pTriangles||mesh->triangleCount<1||!mesh->pVertexData||mesh->field_0x10<1)return false;
-    int texture=mesh->pTriangles[0].textures[0];if(texture<0||(unsigned)texture>=CGraphics::m_textureCount)return false;
+    int texture=mesh->pTriangles[0].textures[0];if(texture<0||(unsigned)texture>=textureCount)return false;
     for(int i=1;i<mesh->triangleCount;i++)if(mesh->pTriangles[i].textures[0]!=texture)return false;
-    Texture *source=CGraphics::GetTextureBuffer()[texture];if(!source)return false;
+    Texture *source=textureBuffer[texture];if(!source)return false;
     auto archive=archives.find((GenericFile*)source->pArchive);
     Init();Asset *asset=nullptr;std::string stem=Stem(source->name);
     auto identity=sourceIdentities.find(source);
@@ -202,7 +216,18 @@ bool SceneryPack_Draw(StageObject *object,const float *billboard){
             unsigned ix=mesh->pTriangles[i].vertexIndex[j];if(ix>=(unsigned)mesh->field_0x10)return false;
             auto &p=v[ix];vertices.push_back({p.x,p.y,p.z,p.nx,p.ny,p.nz,p.diffuseColour,p.specularColour,p.textureCoordinates[0][0],p.textureCoordinates[0][1],0,0});}
         if(!spectatorLogged){Sys_Log("options: spectator sidecar active (first successful override draw)");spectatorLogged=true;}
-        State(*(const GfxMatrix*)billboard);Gfx_SetTexture(0,t->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,vertices.data(),vertices.size());Gfx_PopState();return true;
+        State(*(const GfxMatrix*)billboard);Gfx_SetTexture(0,t->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,vertices.data(),vertices.size());Gfx_PopState();
+        if(!diagnosticObject||(asset->frames.size()==4&&!diagnosticArticulated)){diagnosticObject=object;diagnosticFrame=frame;diagnosticChanges=0;diagnosticArticulated=asset->frames.size()==4;}
+        if(diagnosticObject==object){
+            if(diagnosticFrame!=frame)++diagnosticChanges;
+            diagnosticFrame=frame;diagnosticTime=animationTime;
+            unsigned second=(unsigned)(animationTime/(25ull*65536));
+            if(second!=loggedSecond&&second<=5){
+                Sys_Log("options: spectator animation tick=%llu frame=%u/%u bound-frame-changes=%u texture=%s",(unsigned long long)(animationTime/65536),frame,(unsigned)asset->frames.size(),diagnosticChanges,asset->entry.frames[frame].c_str());
+                loggedSecond=second;
+            }
+        }
+        return true;
     }
     if(source->width!=asset->sourceWidth||source->height!=asset->sourceHeight){
         Reject(*asset,"source texture dimensions differ from tree header");LogRejection(*asset);return false;
@@ -226,6 +251,7 @@ bool SceneryPack_Draw(StageObject *object,const float *billboard){
         fitted=asset->fitted.emplace(mesh,std::move(parts)).first;
     }
     if(fitted->second.empty())return false;
+    ++treeReplacementDraws;
     // Apply placement basis exactly once. Source-fit positions are already in
     // original mesh units, not normalized geometry multiplied by height again.
     const FixMatrix &f=object->matrix;
@@ -239,4 +265,50 @@ bool SceneryPack_Draw(StageObject *object,const float *billboard){
         Gfx_SetTexture(0,p.texture->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,p.vertices.data(),p.vertices.size());
     }
     Gfx_PopState();return true;
+}
+
+bool SceneryPack_GetAnimationStatus(unsigned long long *tick,unsigned *frame,unsigned *changes){
+    if(!diagnosticObject)return false;
+    if(tick)*tick=(unsigned long long)(diagnosticTime/65536);
+    if(frame)*frame=diagnosticFrame;
+    if(changes)*changes=diagnosticChanges;
+    return true;
+}
+
+bool SceneryPack_Draw(StageObject *object,const float *billboard){
+    if(DrawReplacement(object,billboard,CGraphics::m_textureCount,CGraphics::GetTextureBuffer()))return true;
+    if(!object||!object->pMesh||!billboard||!Sys_GetOption("video.scenery_overrides",1))return false;
+    auto mesh=object->pMesh;
+    if(!(mesh->flags&2)||!mesh->pTriangles||mesh->triangleCount<1||mesh->triangleCount>64||!mesh->pVertexData||mesh->field_0x10<3||mesh->field_0x10>64)return false;
+    int index=mesh->pTriangles[0].textures[0];if(index<0||(unsigned)index>=CGraphics::m_textureCount)return false;
+    for(int i=1;i<mesh->triangleCount;i++)if(mesh->pTriangles[i].textures[0]!=index)return false;
+    auto source=CGraphics::GetTextureBuffer()[index];if(!source||!source->pSurface)return false;
+    Init();auto stem=Stem(source->name);auto wind=windIdentities.find(stem);
+    if(wind==windIdentities.end()){
+        if(stem.compare(0,4,"tre_")==0&&treeOriginalLogged.insert(stem).second)Sys_Log("options: tree original %s: not covered by verified replacement/wind routes",stem.c_str());
+        return false;
+    }
+    auto id=sourceIdentities.find(source);
+    if(!Sys_GetOption("video.tree_wind",0)||id==sourceIdentities.end()||!wind->second.count(id->second))return false;
+    auto vertices=(MeshVertexF*)mesh->pVertexData;float bottom=vertices[0].y,top=bottom;
+    for(int i=0;i<mesh->field_0x10;i++){bottom=std::min(bottom,vertices[i].y);top=std::max(top,vertices[i].y);}
+    float height=top-bottom;if(!std::isfinite(height)||height<=0)return false;
+    float phase=((unsigned)object->position.x^(unsigned)object->position.z)%6283*.001f;
+    float sway=std::sin(float(animationTime/65536.0/25.0)*1.2f+phase)*height*.015f;
+    std::vector<GfxVertex> out;
+    for(int i=0;i<mesh->triangleCount;i++)for(int j=0;j<3;j++){
+        unsigned ix=mesh->pTriangles[i].vertexIndex[j];if(ix>=(unsigned)mesh->field_0x10)return false;
+        auto &v=vertices[ix];float weight=(v.y-bottom)/height;weight*=weight;
+        out.push_back({v.x+sway*weight,v.y,v.z,v.nx,v.ny,v.nz,v.diffuseColour,v.specularColour,v.textureCoordinates[0][0],v.textureCoordinates[0][1],0,0});
+    }
+    State(*(const GfxMatrix*)billboard);Gfx_SetTexture(0,source->pSurface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,out.data(),out.size());Gfx_PopState();
+    ++treeWindDraws;
+    if(windLogged.insert(stem).second)Sys_Log("options: tree wind active %s (original2Dcard, fixed base; NOT3Dreplacement)",stem.c_str());
+    return true;
+}
+
+void SceneryPack_GetTreeStatus(unsigned *replacements,unsigned *wind,unsigned *originalSources){
+ if(replacements)*replacements=treeReplacementDraws;
+ if(wind)*wind=treeWindDraws;
+ if(originalSources)*originalSources=(unsigned)treeOriginalLogged.size();
 }

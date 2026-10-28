@@ -24,6 +24,8 @@ int main(){
  std::string effectArgs[]={"test","--effect","dust_volume=off"};char *ef[]={effectArgs[0].data(),effectArgs[1].data(),effectArgs[2].data()};
  error.clear();i=1;CHECK(e.Consume(i,3,ef,error)&&error.empty()&&e.overrides["video.dust_volume"]==0);
  effectArgs[2]="unknown=on";ef[2]=effectArgs[2].data();i=1;CHECK(e.Consume(i,3,ef,error)&&!error.empty());
+ std::string windArgs[]={"test","--tree-wind","off"};char *wv[]={windArgs[0].data(),windArgs[1].data(),windArgs[2].data()};
+ error.clear();i=1;CHECK(e.Consume(i,3,wv,error)&&error.empty());e.Apply();CHECK(e.overrides["video.tree_wind"]==0);
  auto root=fs::temp_directory_path()/(std::string("cmr-enhancements-")+std::to_string(SDL_GetPerformanceCounter()));
  auto game=root/"owned game",user=root/"profile";
  write(game/"Game/Bigfiles/common.bfl","base");write(game/"FrontEnd/common.bfl","front");write(game/"Sounds/surface.bfl","sound");

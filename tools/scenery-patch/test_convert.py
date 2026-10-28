@@ -82,6 +82,17 @@ class Tests(unittest.TestCase):
         self.assertEqual(current, {str(p.relative_to(self.input)): p.read_bytes() for p in self.input.rglob('*') if p.is_file()})
         return run
 
+    def test_articulated_demo_fixed_feet_and_distinct_arm(self):
+        # Synthetic artwork only. Exercise exact authored mask/rotation/plate route.
+        im=Image.new('RGBA',(128,128),(0,0,0,0));d=ImageDraw.Draw(im)
+        d.rectangle((78,15,104,127),fill=(10,30,90,255))
+        d.polygon([(64,13),(69,8),(96,4),(98,11),(75,16),(70,20)],fill=(220,180,140,255))
+        poses=patcher.articulated_spectator(im)
+        self.assertEqual(len(poses),4)
+        self.assertNotEqual(poses[0].tobytes(),poses[2].tobytes())
+        for pose in poses:self.assertEqual(pose.crop((0,70,128,128)).tobytes(),im.crop((0,70,128,128)).tobytes())
+        self.assertEqual(poses[1].tobytes(),poses[3].tobytes())
+
     def test_full_output_and_feet(self):
         self.run_patch()
         rows = self.output.joinpath('manifest.tsv').read_text().splitlines()
