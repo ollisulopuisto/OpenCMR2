@@ -6345,52 +6345,17 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
     Graphics_SetShadowGeometryState(!CGameInfo::IsRecordFlagSet(0xf));
     View_SetPlayerProjection(param2);
     if (Graphics_DebugDrawWanted()) {
-        BYTE colour[4];
-
-        colour[0] = 0xff;
-        colour[1] = 0;
-        colour[2] = 0;
-        colour[3] = 0xff;
-        sprintf(CFrontend::m_stringDest, g_strFpsFormat0x00516e14, Graphics_GetFrameRate());
-        Font_DrawText(1, CFrontend::m_stringDest, 0, 0, (int *)colour, 9);
-        sprintf(CFrontend::m_stringDest, g_strScenePolygons0x00516dfc, CGame::GetDrawnMeshTriangleCount());
-        Font_DrawText(1, CFrontend::m_stringDest, 0, 0xf, (int *)colour, 9);
-        sprintf(CFrontend::m_stringDest, g_strOtherPolygons0x00516de4, CGame::GetDrawnOverlayTriangleCount());
-        Font_DrawText(1, CFrontend::m_stringDest, 0, 0x1e, (int *)colour, 9);
-        sprintf(CFrontend::m_stringDest, g_strTotalPolygons0x00516dcc,
-                CGame::GetDrawnOverlayTriangleCount() + CGame::GetDrawnMeshTriangleCount());
-        Font_DrawText(1, CFrontend::m_stringDest, 0, 0x2d, (int *)colour, 9);
-        vramKB = CGraphics::GetTextureMemoryKilobytes();
-        vramMB = X87S_MUL(X87S_FILD(float, CGraphics::GetTextureMemoryKilobytes()), g_kilobytesToMegabytes);
-        resX = g_pGraphics->resX;
-        resY = g_pGraphics->resY;
-        resZ = g_pGraphics->depth;
-        pixels = resX * resY * resZ;
-        buffersMB = X87S_MUL(X87S_MUL(X87S_MUL((float)resX, X87S_LOAD(resY)), X87S_LOAD(resZ)), g_frameBufferBytesToMegabytes);
-        sprintf(CFrontend::m_stringDest, g_strVramUsed0x00516d88, vramKB, (double)vramMB,
-                pixels / 8 / 1024 * 3, (double)buffersMB);
-        Font_DrawText(1, CFrontend::m_stringDest, 0, 0x3c, (int *)colour, 9);
-        sprintf(CFrontend::m_stringDest, g_strVbMemUsed0x00516d68, CGraphics::GetSharedVertexMemoryKilobytes(),
-                (double)(X87S_MUL(X87S_FILD(float, CGraphics::GetSharedVertexMemoryKilobytes()), g_kilobytesToMegabytes)));
-        Font_DrawText(1, CFrontend::m_stringDest, 0, 0x4b, (int *)colour, 9);
-        if (CGraphics::GetSelectedRenderDeviceSurfaceCaps() == 2)
-            sprintf(CFrontend::m_stringDest, g_strHardwareTl0x00516d54);
-        else
-            sprintf(CFrontend::m_stringDest, g_strSoftwareTl0x00516d40);
-        Font_DrawText(1, CFrontend::m_stringDest, 0, 0x5a, (int *)colour, 9);
-        sprintf(CFrontend::m_stringDest, g_strDrawDistance0x00516ce8,
-                (Render_GetDetailDistanceScale() > g_pGraphics->maxDrawDistance
-                     ? g_pGraphics->maxDrawDistance
-                     : Render_GetDetailDistanceScale()) >> 16,
-                g_pGraphics->baseDrawDistance >> 16,
-                g_pGraphics->maxDrawDistance >> 16,
-                (int)g_pGraphics->field917_0x3c0 + 1);
-        Font_DrawText(1, CFrontend::m_stringDest, 0, 0x69, (int *)colour, 9);
-        // OpenCMR2: renderer draw cost for tuning video.draw_distance / fog.
-        sprintf(CFrontend::m_stringDest, "Draw calls: %u", Gfx_GetFrameDrawCalls());
-        Font_DrawText(1, CFrontend::m_stringDest, 0, 0x78, (int *)colour, 9);
-        sprintf(CFrontend::m_stringDest, "Vertices: %u", Gfx_GetFrameVertices());
-        Font_DrawText(1, CFrontend::m_stringDest, 0, 0x87, (int *)colour, 9);
+        // Compact single-view diagnostics: left edge, away from central pace
+        // notes and the right-hand race timer. Real glyph height controls scale.
+        BYTE background[4] = {12, 16, 22, 220};
+        BYTE colour[4] = {240, 246, 255, 255};
+        short panel[4] = {6, 6, 224, 34};
+        Sprite_FillRect(NULL, panel, background, 1);
+        char text[96];
+        snprintf(text, sizeof(text), "FPS %.1f | draws %u", Graphics_GetFrameRate(), Gfx_GetFrameDrawCalls());
+        Font_DrawTextScaled(1, text, 12, 11, 10, 212, colour);
+        snprintf(text, sizeof(text), "Triangles %u | vertices %u", Gfx_GetFrameTriangles(), Gfx_GetFrameVertices());
+        Font_DrawTextScaled(1, text, 12, 25, 10, 212, colour);
     }
     CarDamage_UpdateOrderedCarsOffRoadState(pOrder, (short)orderCount, g_viewScreenRect, maskedView);
     if (CGameInfo::GetGameModeOptionBit19() != 0) {

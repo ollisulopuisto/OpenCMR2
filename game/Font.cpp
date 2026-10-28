@@ -383,3 +383,35 @@ int Font_Unused(char *unused1, int unused2)
 {
     return 0;
 }
+
+void Font_DrawTextScaled(BYTE index, const char *text, int x, int y, int pixelHeight,
+                         int maxWidth, const BYTE *colour)
+{
+    if (!g_fonts || index >= g_fontCount || !g_fonts[index].loaded || !text ||
+        pixelHeight <= 0 || maxWidth <= 0) return;
+    FontSlot &font = g_fonts[index];
+    int sourceHeight = font.pHeader->lineHeight;
+    for (unsigned i = 0; i < font.pHeader->glyphCount; ++i)
+        if (font.pGlyphs[i].height > sourceHeight) sourceHeight = font.pGlyphs[i].height;
+    if (sourceHeight <= 0) return;
+    double scale = (double)pixelHeight / sourceHeight, pen = 0;
+    for (const unsigned char *p = (const unsigned char *)text; *p; ++p) {
+        if (*p == '\n' || *p == '^') break;
+        if (*p == ' ') { pen += font.pHeader->spaceWidth * scale; continue; }
+        int glyph = font.pCharMap[*p];
+        if (glyph < 0 || (unsigned)glyph >= font.pHeader->glyphCount) continue;
+        FontGlyph &g = font.pGlyphs[glyph];
+        int left = (int)(pen + 0.5), width = (int)(g.width * scale + 0.5);
+        int height = (int)(g.height * scale + 0.5);
+        if (left + width > maxWidth) break;
+        if (width > 0 && height > 0) {
+            SpriteRect dst = {(short)(x+left), (short)y, (short)width, (short)height};
+            int centre[3] = {dst.x+width/2, y+height/2, 0};
+            Sprite_Queue((SpriteRect *)&g, &dst, font.pTexture, 1, 0, centre, NULL, (BYTE *)colour, 8);
+        }
+        int advance = font.pHeader->charSpacing;
+        for (int k=0; k<g.kernCount; ++k)
+            if (g.pKern[k].ch == p[1]) { advance += g.pKern[k].offset; break; }
+        pen += (g.width + advance) * scale;
+    }
+}
