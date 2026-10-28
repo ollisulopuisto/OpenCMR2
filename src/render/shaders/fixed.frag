@@ -239,8 +239,8 @@ void main()
         vec4 l = inLightPosition;
         if (l.w > 0.0) {
             l /= l.w;
-            l.xy = l.xy * 0.5 + 0.5;
-            l.z = l.z * 0.5 + 0.5;
+            // SDL GPU uses D3D depth [0,1] and top-left texture coordinates.
+            l.xy = vec2(l.x * 0.5 + 0.5, 0.5 - l.y * 0.5);
             float bias = shadowParams.x;
             float vis = 1.0;
             if (l.x >= 0.0 && l.x <= 1.0 && l.y >= 0.0 && l.y <= 1.0 && l.z >= 0.0 && l.z <= 1.0) {
@@ -253,7 +253,8 @@ void main()
                 float center = (l.z - bias) <= texture(shadowMap, l.xy).r ? 1.0 : 0.0;
                 vis = (center + pcf) / 5.0;
             }
-            current.rgb *= vis;
+            // Preserve ambient/base detail rather than crushing shadows to black.
+            current.rgb *= mix(0.55, 1.0, vis);
         }
     }
     outColor = current;
