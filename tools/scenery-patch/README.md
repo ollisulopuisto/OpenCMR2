@@ -138,8 +138,9 @@ cross-projection rather than repeated stripes; trunk samples opaque source
 stem pixels.4x premultiplied interpolation is NOT generated new detail. The
 private restored-detail candidate is a separate pack and is not bundled here.
 
-All48 spectator atlases still have12frames each, manifest and coverage.
-People have upper-body sway and2x nearest upscale, not new3Dmodels or arm
+One verified France spectator atlas has four articulated forearm frames;
+the other47 retain12frames each of upper-body sway and2xnearest upscale.
+These are not new3Dmodels or generic arm
 animation. Atlas layout/feet stay fixed. `ticks=5` is interpreted by the
 engine loader, not render FPS. Missing/legacy tree assets never disable
 working spectators.
