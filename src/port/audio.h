@@ -26,12 +26,17 @@ typedef struct AudioStream AudioStream;
 #define AUDIO_PAN_CENTER 0
 #define AUDIO_PAN_RIGHT 10000
 
-/* Opens the output device. channels is 1 or 2. */
+/* Opens the output device. channels is 1, 2, 4, 6 (5.1) or 8 (7.1). */
 BOOL Audio_Init(int sampleRate, int channels);
 void Audio_Shutdown(void);
 /* Holds the output while the game is in the background, as DirectSound
    silenced a window without the focus; the buffers keep their positions. */
 void Audio_SetPaused(BOOL paused);
+/* Sets the output channel count (2, 4, 6 or 8). Must be called before
+   Audio_Init, or the device is recreated on the next Audio_Init. */
+BOOL Audio_SetOutputChannels(int channels);
+/* Returns the current output channel count. */
+int Audio_GetOutputChannels(void);
 
 /* A buffer of 8- or 16-bit PCM. */
 AudioBuffer *Audio_CreateBuffer(DWORD sampleRate, int bits, int channels, DWORD bytes);
@@ -57,6 +62,36 @@ void Audio_SetPlayPosition(AudioBuffer *buffer, DWORD position);
 void Audio_SetVolume(AudioBuffer *buffer, LONG volume);
 void Audio_SetPan(AudioBuffer *buffer, LONG pan);
 void Audio_SetFrequency(AudioBuffer *buffer, DWORD frequency);
+
+/* ---- spatial audio ------------------------------------------------------- */
+
+/* Sets the 3D position (in arbitrary world units) of a sound source. The
+   mixer pans and attenuates the buffer based on the listener's position and
+   orientation (set with Audio_SetListener*). Default position is (0, 0, 0). */
+void Audio_SetPosition(AudioBuffer *buffer, float x, float y, float z);
+/* Gets the 3D position of a sound source. */
+void Audio_GetPosition(AudioBuffer *buffer, float *x, float *y, float *z);
+
+/* Sets the listener (camera) position and orientation. The listener is what
+   all spatial panning is relative to. Default position is (0, 0, 0), facing
+   down +Z with +Y up. */
+void Audio_SetListenerPosition(float x, float y, float z);
+void Audio_SetListenerOrientation(float fx, float fy, float fz,
+                                  float ux, float uy, float uz);
+void Audio_GetListenerPosition(float *x, float *y, float *z);
+void Audio_GetListenerOrientation(float *fx, float *fy, float *fz,
+                                  float *ux, float *uy, float *uz);
+
+/* Distance attenuation for spatial sounds. minDistance is where full volume
+   starts dropping off; maxDistance is where the sound is silent. rolloff
+   controls the curve (1.0 = linear inverse distance). Defaults:
+   minDistance=1.0, maxDistance=100.0, rolloff=1.0. */
+void Audio_SetMinDistance(AudioBuffer *buffer, float distance);
+void Audio_SetMaxDistance(AudioBuffer *buffer, float distance);
+void Audio_SetRolloffFactor(AudioBuffer *buffer, float rolloff);
+void Audio_GetMinDistance(AudioBuffer *buffer, float *distance);
+void Audio_GetMaxDistance(AudioBuffer *buffer, float *distance);
+void Audio_GetRolloffFactor(AudioBuffer *buffer, float *rolloff);
 
 /* Queued float PCM for movie sound. The mixer resamples to its output rate.
    Starts after the first video frame is presented; releasing discards queued
