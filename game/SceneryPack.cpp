@@ -9,6 +9,7 @@
 #include "port/sys.h"
 #include "port/gfx.h"
 #include <map>
+#include <set>
 #ifdef rand
 #undef rand
 #endif
@@ -22,10 +23,10 @@ struct PackTexture { GfxTexture *surface=nullptr; int width=0,height=0; };
 std::vector<GfxTexture*> ownedTextures;
 uint64_t animationTime=0;
 struct Part { std::vector<GfxVertex> vertices; PackTexture *texture=nullptr; };
-struct Asset { std::map<const Mesh*,std::vector<Part>> fitted; int sourceWidth=0,sourceHeight=0; SceneryFormat::Entry entry; bool attempted=false,ready=false; std::vector<Part> parts; std::vector<PackTexture*> frames; };
+struct Asset { std::map<const Mesh*,std::vector<Part>> fitted; int sourceWidth=0,sourceHeight=0; SceneryFormat::Entry entry; std::string failure; std::set<std::string> loggedFailures; bool attempted=false,ready=false; std::vector<Part> parts; std::vector<PackTexture*> frames; };
 std::vector<Asset> assets;
 bool loaded=false;
-bool treeLogged=false,spectatorLogged=false,assetFailureLogged=false;
+bool treeLogged=false,spectatorLogged=false;
 std::string root;
 std::map<std::string,PackTexture> textures;
 bool Read(const std::string &path,std::string &out) {
@@ -70,29 +71,35 @@ void Init(){
     }}
     Sys_Log("scenery pack: %u mappings",(unsigned)assets.size());
 }
+bool Reject(Asset &a,const char *reason){a.failure=reason;return false;}
+void LogRejection(Asset &a){
+    if(!a.loggedFailures.insert(a.failure).second)return;
+    Sys_Log("options: scenery rejected %s/%s asset=%s: %s; keeping original",a.entry.archive.c_str(),
+        a.entry.source.c_str(),a.entry.asset.c_str(),a.failure.c_str());
+}
 bool Prepare(Asset &a){
     if(a.attempted)return a.ready;a.attempted=true;
     if(a.entry.kind=="spectator"){
-        int w=0,h=0;for(auto &path:a.entry.frames){PackTexture *t=Load(path);if(!t)return false;
-            if(w&&(t->width!=w||t->height!=h))return false;w=t->width;h=t->height;a.frames.push_back(t);}
+        int w=0,h=0;for(auto &path:a.entry.frames){PackTexture *t=Load(path);if(!t)return Reject(a,"spectator frame missing, invalid TGA or texture allocation failed");
+            if(w&&(t->width!=w||t->height!=h))return Reject(a,"spectator frame dimensions disagree");w=t->width;h=t->height;a.frames.push_back(t);}
         return a.ready=!a.frames.empty();
     }
-    std::string text;if(!Read(root+a.entry.asset,text))return false;
+    std::string text;if(!Read(root+a.entry.asset,text))return Reject(a,"tree OBJ missing or unreadable");
     // Legacy cylindrical/repeat assets are deliberately rejected: they must
     // be regenerated with the source-canvas contract, not silently distorted.
     { std::istringstream header(text);std::string hash,version;
       if(!(header>>hash>>version>>a.sourceWidth>>a.sourceHeight)||hash!="#"||version!="opencmr2-source-canvas-1"||
-         a.sourceWidth<1||a.sourceHeight<1||a.sourceWidth>4096||a.sourceHeight>4096)return false; }
-    std::vector<Group> groups;if(!ParseOBJ(text,groups))return false;
+         a.sourceWidth<1||a.sourceHeight<1||a.sourceWidth>4096||a.sourceHeight>4096)return Reject(a,"missing/invalid source-canvas-1 header; regenerate pack with current converter into a NEW folder"); }
+    std::vector<Group> groups;if(!ParseOBJ(text,groups))return Reject(a,"tree OBJ geometry invalid");
     std::istringstream obj(text);std::string line,tag,mtl;
     while(std::getline(obj,line)){std::istringstream in(line);in>>tag;if(tag=="mtllib")in>>mtl;}
-    if(!SafePath(mtl)||!Read(root+Dir(a.entry.asset)+mtl,text))return false;
+    if(!SafePath(mtl)||!Read(root+Dir(a.entry.asset)+mtl,text))return Reject(a,"tree material missing, unreadable or unsafe path");
     std::map<std::string,std::string> maps;std::string material;
     std::istringstream input(text);
     while(std::getline(input,line)){std::istringstream in(line);in>>tag;
-        if(tag=="newmtl")in>>material;else if(tag=="map_Kd"){std::string p;in>>p;if(!SafePath(p))return false;maps[material]=Dir(a.entry.asset)+Dir(mtl)+p;}}
-    for(auto &g:groups){auto it=maps.find(g.material);if(it==maps.end())return false;
-        Part p;p.texture=Load(it->second);if(!p.texture)return false;
+        if(tag=="newmtl")in>>material;else if(tag=="map_Kd"){std::string p;in>>p;if(!SafePath(p))return Reject(a,"unsafe material texture path");maps[material]=Dir(a.entry.asset)+Dir(mtl)+p;}}
+    for(auto &g:groups){auto it=maps.find(g.material);if(it==maps.end())return Reject(a,"tree material has no texture mapping");
+        Part p;p.texture=Load(it->second);if(!p.texture)return Reject(a,"tree texture missing, invalid TGA or texture allocation failed");
         for(auto &v:g.vertices)p.vertices.push_back({v.x,v.y,v.z,v.nx,v.ny,v.nz,0xffffffff,0,v.u,v.v,0,0});
         a.parts.push_back(std::move(p));}
     return a.ready=true;
@@ -126,7 +133,7 @@ void SceneryPack_LogStatus(){
     Sys_Log("options: scenery manifest=%u parsed mappings; NOT active yet, resources checked lazily at stage draw",count);
 }
 void SceneryPack_RegisterArchive(GenericFile *file,const char *path){if(file&&path)archives[file]=Leaf(path);}
-void SceneryPack_Clear(){assets.clear();archives.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;treeLogged=false;spectatorLogged=false;assetFailureLogged=false;root.clear();animationTime=0;}
+void SceneryPack_Clear(){assets.clear();archives.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;}
 void SceneryPack_Advance(int step){if(step>0)animationTime+=(unsigned)step;}
 bool SceneryPack_Draw(StageObject *object,const float *billboard){
     if(!object||!object->pMesh||!billboard||Sys_GetOption("video.scenery_overrides",1)==0)return false;
@@ -141,7 +148,7 @@ bool SceneryPack_Draw(StageObject *object,const float *billboard){
     for(auto &a:assets)if(a.entry.archive==archive->second&&a.entry.source==Stem(source->name)){asset=&a;break;}
     if(!asset)return false;
     if(!Prepare(*asset)){
-        if(!assetFailureLogged){Sys_Log("options: scenery asset failed preparation; keeping original for failed mappings");assetFailureLogged=true;}
+        LogRejection(*asset);
         return false;
     }
     auto v=(MeshVertexF*)mesh->pVertexData;
@@ -160,18 +167,22 @@ bool SceneryPack_Draw(StageObject *object,const float *billboard){
         if(!spectatorLogged){Sys_Log("options: spectator sidecar active (first successful override draw)");spectatorLogged=true;}
         State(*(const GfxMatrix*)billboard);Gfx_SetTexture(0,t->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,vertices.data(),vertices.size());Gfx_PopState();return true;
     }
-    if(source->width!=asset->sourceWidth||source->height!=asset->sourceHeight)return false;
+    if(source->width!=asset->sourceWidth||source->height!=asset->sourceHeight){
+        Reject(*asset,"source texture dimensions differ from tree header");LogRejection(*asset);return false;
+    }
     auto fitted=asset->fitted.find(mesh);
     if(fitted==asset->fitted.end()){
         ScenerySourceFit::Fit fit;
-        if(!ScenerySourceFit::Build(v,mesh->field_0x10,fit)){asset->fitted.emplace(mesh,std::vector<Part>{});return false;}
+        if(!ScenerySourceFit::Build(v,mesh->field_0x10,fit)){
+            asset->fitted.emplace(mesh,std::vector<Part>{});Reject(*asset,"source card is cropped, nonplanar or invalid for full-canvas fit");LogRejection(*asset);return false;
+        }
         std::vector<Part> parts=asset->parts;
         for(auto &part:parts)for(auto &q:part.vertices){float xyz[3];
             float u=.5f+q.x*asset->sourceHeight/asset->sourceWidth;
             float sv=1.f-q.y;
             fit.Map(u,sv,q.z,xyz);
             if(!std::isfinite(xyz[0])||!std::isfinite(xyz[1])||!std::isfinite(xyz[2])){
-                asset->fitted.emplace(mesh,std::vector<Part>{});return false;
+                asset->fitted.emplace(mesh,std::vector<Part>{});Reject(*asset,"source-fit produced nonfinite geometry");LogRejection(*asset);return false;
             }
             q.x=xyz[0];q.y=xyz[1];q.z=xyz[2];
         }

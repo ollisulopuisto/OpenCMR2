@@ -31,7 +31,8 @@ extern "C" DWORD Sys_GetFileSize(SysFile *f){fseek(f->file,0,SEEK_END);long n=ft
 extern "C" DWORD Sys_ReadFile(SysFile *f,void *b,DWORD n){return fread(b,1,n,f->file);}
 extern "C" int Sys_GetOption(const char*,int f){return f;}
 extern "C" const char *Sys_GetOptionText(const char*,const char*){return base.c_str();}
-extern "C" void Sys_Log(const char*,...){}
+static std::string logs;
+extern "C" void Sys_Log(const char*fmt,...){char b[2048];va_list ap;va_start(ap,fmt);vsnprintf(b,sizeof b,fmt,ap);va_end(ap);logs+=std::string(b)+"\n";}
 extern "C" void Sys_GetDesktopSize(int *w,int *h){*w=640;*h=480;}
 int Platform_GetSettingInt(const char*,int x){return x;}
 const char *Platform_GetSetting(const char*,const char *x){return x;}
@@ -50,13 +51,15 @@ int main(int argc,char **argv){if(argc<2)return 0;base=argv[1];legacy=argc>2&&!s
  StageObject object={};object.pMesh=&mesh;object.matrix.right.x=object.matrix.up.y=object.matrix.forward.z=65536;object.matrix.position.x=3*65536;
  GfxMatrix billboard={};billboard._11=billboard._22=billboard._33=billboard._44=1;billboard._41=99;
  CHECK(!SceneryPack_Draw(&object,(float*)&billboard));SceneryPack_RegisterArchive(&archive,"DATA/FRAHIT.BFL");
- if(legacy){CHECK(!SceneryPack_Draw(&object,(float*)&billboard));strcpy(source.name,"spc_mn9a.dds");CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(draws==1);SceneryPack_Clear();Gfx_Shutdown();puts("headerless legacy tree rejected; spectator preserved: pass");return 0;}
+ if(legacy){CHECK(!SceneryPack_Draw(&object,(float*)&billboard));
+ CHECK(logs.find("frahit.bfl/tre_md1")!=std::string::npos&&logs.find("source-canvas-1 header")!=std::string::npos);
+ auto logged=logs;CHECK(!SceneryPack_Draw(&object,(float*)&billboard));CHECK(logs==logged);strcpy(source.name,"spc_mn9a.dds");CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(draws==1);SceneryPack_Clear();Gfx_Shutdown();puts("headerless legacy tree rejected; spectator preserved: pass");return 0;}
  CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(draws==2);CHECK(world._41==3&&world._11==1);CHECK(mesh.flags==2&&object.pMesh==&mesh);
- source.width=128;CHECK(!SceneryPack_Draw(&object,(float*)&billboard));source.width=256;
+ source.width=128;CHECK(!SceneryPack_Draw(&object,(float*)&billboard));CHECK(logs.find("dimensions differ")!=std::string::npos);source.width=256;
  CHECK(!captured.empty());CHECK(captured[0].x==.5f&&captured[0].y==0);
  Mesh cropped=mesh;MeshVertexF cropverts[3];memcpy(cropverts,verts,sizeof verts);
  for(auto &v:cropverts)v.textureCoordinates[0][0]=v.textureCoordinates[0][0]*.5f;
- cropped.pVertexData=(DWORD*)cropverts;object.pMesh=&cropped;CHECK(!SceneryPack_Draw(&object,(float*)&billboard));object.pMesh=&mesh;
+ cropped.pVertexData=(DWORD*)cropverts;object.pMesh=&cropped;CHECK(!SceneryPack_Draw(&object,(float*)&billboard));object.pMesh=&mesh;CHECK(logs.find("cropped, nonplanar or invalid")!=std::string::npos);
  strcpy(source.name,"spc_mn9a.dds");draws=0;CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(draws==1&&world._41==99);auto first=bound;
  for(int i=0;i<10;i++)CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(bound==first);
  for(int i=0;i<5;i++)SceneryPack_Advance(65536);CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(bound!=first);
