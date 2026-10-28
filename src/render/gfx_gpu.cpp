@@ -466,8 +466,9 @@ struct Executor : GfxExecutor {
                                       SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
             bloomBuf2 = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, width, height, 1, 1,
                                       SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
-            shadowMap = CreateTexture(SDL_GPU_TEXTURETYPE_2D, SDL_GPU_TEXTUREFORMAT_D24_UNORM_S8_UINT, 1024, 1024,
-                                      1, 1, SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
+            // Shadow map is created lazily when shadows are first enabled,
+            // because D24_UNORM_S8_UINT + sampler is not valid on Metal.
+            shadowMap = NULL;
             backWidth = width;
             backHeight = height;
             if (backColor == NULL || backDepth == NULL || backdrop == NULL ||
@@ -2042,9 +2043,15 @@ GfxExecutor *Gfx_CreateGpuExecutor(void)
 bool Gfx_GpuIsAvailable(void)
 {
     SDL_PropertiesID props = DeviceProperties();
-    // A software Vulkan driver (lavapipe, often installed beside the GPU's
-    // own driver) does not count: an old GPU draws faster on its OpenGL.
+    // Prefer a real Vulkan device (hardware-accelerated only); if none,
+    // fall back to any GPU backend (Metal on macOS, Direct3D 12 on Windows,
+    // etc.) so bloom, motion blur, particles and shadows are available there too.
     SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_VULKAN_REQUIRE_HARDWARE_ACCELERATION_BOOLEAN, true);
+    if (SDL_GPUSupportsProperties(props)) {
+        SDL_DestroyProperties(props);
+        return true;
+    }
+    SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_VULKAN_REQUIRE_HARDWARE_ACCELERATION_BOOLEAN, false);
     bool available = SDL_GPUSupportsProperties(props);
     SDL_DestroyProperties(props);
     return available;
