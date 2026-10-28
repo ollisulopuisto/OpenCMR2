@@ -30,6 +30,11 @@ inline void DustPlume_Step(Particle &p, const FixVector &wind) {
 inline bool DustPlume_Surface(bool dirt, bool gravel, bool water, bool snow, bool ice) {
     return (dirt || gravel) && !water && !snow && !ice;
 }
+// The original tiny wheel particles use some green-dominant country dirt
+// palettes. Do not amplify that grass-like tint into a whole soil cloud.
+inline void DustPlume_SoilTint(float &r,float &g,float &b) {
+    if(g>r){float green=g;r=green*1.12f;if(r>1.f)r=1.f;g=green*.84f;}
+}
 inline bool DustPlume_HasBudget(int active, int clouds, int capacity) {
     return capacity > 64 && clouds < DUST_PLUME_MAX && active < capacity-64;
 }

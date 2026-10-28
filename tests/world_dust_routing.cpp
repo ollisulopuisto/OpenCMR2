@@ -8,8 +8,8 @@ extern void Particle_DrawAll(SceneNode*,BYTE);
 extern void Particle_ClearActiveFlags();
 extern Particle *g_particles;extern ParticleType *g_particleTypes;
 extern int g_particleCount,g_particleTypeCount,g_nextParticle;
-static int volumeCalls;static bool available=true;
-extern "C" BOOL __wrap_Gfx_DrawDustVolume(const GfxDustLobe *lobes,int count){volumeCalls++;return available&&count>0&&lobes[0].centreRadius[0]==10;}
+static int volumeCalls;static bool available=true;static GfxDustLobe last;
+extern "C" BOOL __wrap_Gfx_DrawDustVolume(const GfxDustLobe *lobes,int count){volumeCalls++;if(count)last=lobes[0];return available&&count>0&&lobes[0].centreRadius[0]==10;}
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line%d: %s\n",__LINE__,#x);return 1;}}while(0)
 int main(){Particle pool[400]={};ParticleType types[33]={};g_particles=pool;g_particleTypes=types;g_particleCount=400;g_particleTypeCount=33;g_nextParticle=0;
  auto &type=types[DUST_PLUME_TYPE];type.flags=1;type.lifetime=DUST_PLUME_LIFE<<16;type.texture=reinterpret_cast<Texture*>(1);
@@ -26,6 +26,13 @@ int main(){Particle pool[400]={};ParticleType types[33]={};g_particles=pool;g_pa
  pool[399].active=0;g_billboardsRequested=0;
  available=false;Particle_DrawAll(nullptr,0);CHECK(volumeCalls==4&&g_billboardsRequested==1);
  Particle_ClearActiveFlags();available=true;Particle_DrawAll(nullptr,0);CHECK(volumeCalls==4);
+ // Real integration copies per-step wheel ejection into volume m/s and soil tint.
+ velocity={-0x4000,0,0};BYTE olive[]={32,52,3,255};
+ DustPlume_Emit(&point,&velocity,olive,0,1);DustPlume_AdvanceWorld(25*65536);
+ Particle_DrawAll(nullptr,0);
+ CHECK(last.centreRadius[0]<7&&last.centreRadius[0]>5);
+ CHECK(last.centreRadius[2]==20&&last.colourDensity[0]>last.colourDensity[1]);
+ Particle_ClearActiveFlags();
  // Recycling an explicitly tagged particle through the original API clears the tag.
  types[0x12].flags=1;types[0x12].lifetime=65536;g_nextParticle=0;
  Particle_SpawnTagged(0x12,&point,&velocity,0,nullptr,colour,0,nullptr,1,true);

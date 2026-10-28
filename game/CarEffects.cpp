@@ -1738,8 +1738,8 @@ void CarEffect_UpdateWheelSurfaceParticles(int car)
             Sys_GetOption("video.dust_plume", 1) != 0 &&
             ((phase + (unsigned)wheel + (unsigned)car) % 3 == 0)) {
             FixVector cloudWorld = g_trailPos[car][wheel];
-            FixVector cloudVelocity = {pCar->cornerVelocity[wheel].x/12, 0x800,
-                                       pCar->cornerVelocity[wheel].z/12};
+            FixVector cloudVelocity = {-(pCar->cornerVelocity[wheel].x/4), 0x800,
+                                       -(pCar->cornerVelocity[wheel].z/4)};
             DustPlume_Emit(&cloudWorld, &cloudVelocity, colour, g_trailLevel[car][wheel],
                           (BYTE)pCar->pBodyNode->viewMask);
         }

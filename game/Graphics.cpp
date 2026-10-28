@@ -7017,9 +7017,14 @@ void DustPlume_Update(Particle *p, ParticleType *, SceneNode *)
 
 void DustPlume_Emit(FixVector *world, FixVector *velocity, BYTE *colour, BYTE shade, BYTE viewMask)
 {
-    if(world && colour && viewMask)
-        worldDust.Emit(world->x/65536.f,world->y/65536.f,world->z/65536.f,
-            colour[0]/255.f,colour[1]/255.f,colour[2]/255.f);
+    if(world && colour && viewMask){
+        float r=colour[0]/255.f,g=colour[1]/255.f,b=colour[2]/255.f;
+        DustPlume_SoilTint(r,g,b);
+        // Existing particle velocities are displacement per25Hz reference step.
+        // Copy the birth impulse; never read a later car position or velocity.
+        worldDust.Emit(world->x/65536.f,world->y/65536.f,world->z/65536.f,r,g,b,
+            velocity?velocity->x*25.f/65536.f:0,velocity?velocity->z*25.f/65536.f:0);
+    }
     if (!g_particles || !g_particleTypes || g_particleTypeCount <= DUST_PLUME_TYPE || g_particleCount <= 64 || !viewMask) return;
     int clouds = 0, active = 0;
     for (int i=0; i<g_particleCount; ++i) {
