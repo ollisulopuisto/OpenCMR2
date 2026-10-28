@@ -249,3 +249,8 @@ endif()
 add_executable(temporal_history_test temporal_history.cpp)
 target_include_directories(temporal_history_test PRIVATE ${PROJECT_SOURCE_DIR}/src)
 add_test(NAME temporal_history COMMAND temporal_history_test)
+
+add_executable(diagnostic_font_test diagnostic_font.cpp)
+target_include_directories(diagnostic_font_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
+target_link_libraries(diagnostic_font_test PRIVATE opencmr2_platform)
+add_test(NAME diagnostic_font COMMAND diagnostic_font_test)
