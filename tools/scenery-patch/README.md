@@ -272,3 +272,22 @@ moving placements (7.6%), not33%. Finland10currently has no authored limbs.
 Whole-stage placement counts do not prove the current camera's visible ratio.
 More group segmentation and per-view people-weighted diagnostics are needed.
 No coverage percentage is inferred from the count of atlas files.
+
+### Export only observed missing source evidence
+
+For the debug/font and eight-tree coverage gap, this read-only tool scans an
+owned installation and creates a new private ZIP. It exports only stage font
+slot1 (`general/hel_20pt`, resolved from `Surface_LoadStageFonts`) and the exact
+eight tree names reported by the runtime, with archive/member/hash provenance.
+The archive scan is not proof of which duplicate the runtime selected.
+No game files are changed and nothing is uploaded. Python3 standard library
+only. Output must be new and outside the game-data directory.
+
+```sh
+python3 tools/scenery-patch/export-evidence.py \
+  --data "/Users/dst/Documents/games/CMR2" \
+  --output "$HOME/Desktop/cmr2-observed-scenery-evidence.zip"
+```
+
+Review `manifest.json` for missing names and archive parse failures. Do not
+publish the resulting ZIP or add it to Git. It contains original game artwork.
