@@ -4,6 +4,7 @@
 #include "platform/platform.h"
 #include "port/sys.h"
 #include "render/presentation.h"
+#include "render/postprocess_pass.h"
 #include "render/gfx_internal.h"
 
 #include "shaders_spirv.h"
@@ -1121,17 +1122,9 @@ struct Executor : GfxExecutor {
     // draws three vertices, ends the pass.
     bool PostProcessPass(SDL_GPUCommandBuffer *cmd, SDL_GPUGraphicsPipeline *pipeline,
                          SDL_GPUTexture *target, const SDL_GPUTextureSamplerBinding *bindings,
-                         int numBindings, const void *uniformData, uint32_t uniformSize, bool depthless = false)
+                         int numBindings, const void *uniformData, uint32_t uniformSize)
     {
-        SDL_GPUColorTargetInfo color = {};
-        color.texture = target;
-        color.load_op = SDL_GPU_LOADOP_CLEAR;
-        color.store_op = SDL_GPU_STOREOP_STORE;
-        color.clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
-        SDL_GPUDepthStencilTargetInfo depth = {};
-        depth.load_op = SDL_GPU_LOADOP_DONT_CARE;
-        depth.store_op = SDL_GPU_STOREOP_DONT_CARE;
-        SDL_GPURenderPass *pass = SDL_BeginGPURenderPass(cmd, &color, 1, depthless ? nullptr : &depth);
+        SDL_GPURenderPass *pass = Gfx_BeginPostProcessPass(cmd,pipeline,target,bindings,numBindings);
         if (pass == NULL)
             return false;
         SDL_BindGPUGraphicsPipeline(pass, pipeline);
@@ -2189,7 +2182,7 @@ struct Executor : GfxExecutor {
                 float uniforms[4] = { 1.0f / backWidth, 1.0f / backHeight, 0.0f, 0.0f };
                 if (binding.sampler != nullptr &&
                     PostProcessPass(cmd, spatialAAPipeline, spatialAATarget, &binding, 1,
-                                    uniforms, sizeof(uniforms), true))
+                                    uniforms, sizeof(uniforms)))
                     presentSource = spatialAATarget;
                 else
                     spatialAA = false;
@@ -2238,9 +2231,9 @@ struct Executor : GfxExecutor {
                     { sceneSource, Sampler(GfxStageState()) },
                     { bloomBuf1, Sampler(GfxStageState()) },
                 };
-                PostProcessPass(cmd, BloomCompositePipeline(), motionBlurTemp, bindings, 2,
-                                &intensity, sizeof(intensity));
-                presentSource = motionBlurTemp;
+                if (PostProcessPass(cmd, BloomCompositePipeline(), motionBlurTemp, bindings, 2,
+                                    &intensity, sizeof(intensity)))
+                    presentSource = motionBlurTemp;
             }
             motionBlurHasPrevious = true;
         }
@@ -2255,17 +2248,20 @@ struct Executor : GfxExecutor {
                 { presentSource != NULL ? presentSource : white2D, Sampler(GfxStageState()) },
                 { motionBlurPrevious, Sampler(GfxStageState()) },
             };
-            PostProcessPass(cmd, MotionBlurPipeline(), output, bindings, 2, &mix, sizeof(mix));
+            if (PostProcessPass(cmd, MotionBlurPipeline(), output, bindings, 2, &mix, sizeof(mix))) {
             {
                 SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(cmd);
+                if (copy != nullptr) {
                 SDL_GPUTextureLocation src = {}, dst = {};
                 src.texture = output;
                 dst.texture = motionBlurPrevious;
                 SDL_CopyGPUTextureToTexture(copy, &src, &dst, backWidth, backHeight, 1, false);
                 SDL_EndGPUCopyPass(copy);
+                }
             }
             motionBlurHasPrevious = true;
             presentSource = output;
+            }
         } else if (!bloomEnabled) {
             motionBlurHasPrevious = false;
         }
@@ -2283,7 +2279,7 @@ struct Executor : GfxExecutor {
             };
             SDL_GPUTexture *lensTarget = presentSource == motionBlurTemp ? bloomBuf2 : motionBlurTemp;
             if (PostProcessPass(cmd, LensGrimePipeline(), lensTarget, bindings, 2,
-                                uniforms, sizeof(uniforms), true))
+                                uniforms, sizeof(uniforms)))
                 presentSource = lensTarget;
         }
 
@@ -2303,7 +2299,7 @@ struct Executor : GfxExecutor {
                 { presentSource, linearSampler }, { backDepth, depthSampler }
             };
             if (PostProcessPass(cmd, DofPipeline(), dofBuf1, bindings, 2,
-                                uniforms, sizeof(uniforms), true))
+                                uniforms, sizeof(uniforms)))
                 presentSource = dofBuf1;
         }
         if (godRaysEnabled && sampledDepth && godRaysIntensity > 0 &&
@@ -2313,7 +2309,7 @@ struct Executor : GfxExecutor {
                 { presentSource, linearSampler }, { backDepth, depthSampler }
             };
             if (PostProcessPass(cmd, GodRaysPipeline(), godRaysBuf1, bindings, 2,
-                                uniforms, sizeof(uniforms), true))
+                                uniforms, sizeof(uniforms)))
                 presentSource = godRaysBuf1;
         }
         if ((colorGradingTemperature != 0 || colorGradingTint != 0 ||
@@ -2323,7 +2319,7 @@ struct Executor : GfxExecutor {
                 colorGradingSaturation / 100.0f, colorGradingContrast / 100.0f };
             SDL_GPUTextureSamplerBinding binding = { presentSource, linearSampler };
             if (PostProcessPass(cmd, ColorGradingPipeline(), gradingTarget, &binding, 1,
-                                uniforms, sizeof(uniforms), true))
+                                uniforms, sizeof(uniforms)))
                 presentSource = gradingTarget;
         }
 
