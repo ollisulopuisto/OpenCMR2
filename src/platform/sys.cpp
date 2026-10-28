@@ -329,6 +329,8 @@ const char s_defaultSettings[] =
     "; window_scale = 1\n"
     "; 1 = smooth the picture when it is scaled to the window, 0 = sharp pixels.\n"
     "; smooth_scaling = 1\n"
+    "; Single-frame edge smoothing on SDL_GPU (Metal/Vulkan/D3D12), 0 = original.\n"
+    "; spatial_aa = 0\n"
     "; Anisotropic texture filtering, 2 to 16 (1 = off, as in the original).\n"
     "; anisotropy = 1\n"
     "; 1 = every car with the player's model and textures (at high car detail),\n"
