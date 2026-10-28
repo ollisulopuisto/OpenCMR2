@@ -1,3 +1,4 @@
+#include "SettingsPage.h"
 #include "SavedGame.h"
 #include "port/sys.h"
 #include "ChampionshipDriver.h"
@@ -596,9 +597,9 @@ void FrontendMenu_DrawAdvancedGraphicsOptions(Menu *pMenu)
     rect[1] = 0;
     rect[2] = CFrontend::m_pAr640ATexture->width;
     rect[3] = CFrontend::m_pAr640ATexture->height;
-    y = ((int)(g_pGraphics->resY * 8) / 480 + (int)(g_pGraphics->resY * 38) / 480 +
-         (int)(g_pGraphics->resY * 384) / 480) / 2 -
-        ((int)(g_pGraphics->resY * 36) / 480 * pMenu->itemCount) / 2;
+    const int first = SettingsPage_First(pMenu->cursor);
+    const int end = SettingsPage_End(pMenu->itemCount,pMenu->cursor);
+    y = (int)(g_pGraphics->resY * 90) / 480;
     FrontendDraw_PlayTime();
     FrontendDraw_MenuPath(pMenu, PATH_X(), PATH_Y(), 1, 2, NULL, -1);
     if (pMenu->cursor == 0) {
@@ -615,11 +616,11 @@ void FrontendMenu_DrawAdvancedGraphicsOptions(Menu *pMenu)
     Sprite_FillRect(&g_pGraphics->field309_0x150, g_frontendDrawRect, pLineShadow, 1);
     g_frontendDrawRect[1]++;
     Sprite_FillRect(&g_pGraphics->field309_0x150, g_frontendDrawRect, pLineColour, 1);
-    pItem = pMenu->items;
-    for (i = 0; i < pMenu->itemCount; i++) {
+    pItem = pMenu->items + first;
+    for (i = first; i < end; i++) {
         x = (int)(g_pGraphics->resX * 122) / 640;
         rect[1] = y + (int)(g_pGraphics->resY * 2) / 480 + (int)(g_pGraphics->resY * 18) / 480 +
-                  ((int)(g_pGraphics->resY * 36) / 480 * i -
+                  ((int)(g_pGraphics->resY * 36) / 480 * (i-first) -
                    CFrontend::m_pAr640ATexture->height / 2);
         if (pMenu->cursor == i) {
             pColour = g_colourWhite0x00524968;
@@ -864,18 +865,12 @@ void FrontendMenu_DrawAdvancedGraphicsOptions(Menu *pMenu)
             break;
         }
         case 0x17: {
-            // OpenCMR2: windscreen dirt, 0..100.
-            strcpy(CFrontend::m_stringDest, pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
-            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
-                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
-            for (j = 0; j < pItem->min; j++) {
-                x += (int)(g_pGraphics->resX * 10) / 640 +
-                     Font_GetTextWidth(1, (BYTE *)CFrontend::m_stringDest);
-                strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(j == 0 ? 0x133 : 0x134));
-                Font_DrawText(1, CFrontend::m_stringDest, x,
-                              (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1],
-                              (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
-            }
+            //101numeric positions, not101Off/On labels.
+            sprintf(CFrontend::m_stringDest, "%s  < %d%% >",
+                    pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id),
+                    SettingsPage_ClampPercent(pItem->max));
+            Font_DrawText(1,CFrontend::m_stringDest,x,
+                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1],(int *)pColour,0x11);
             break;
         }
         case 0x18: {
@@ -962,12 +957,17 @@ void FrontendMenu_DrawAdvancedGraphicsOptions(Menu *pMenu)
             pLineColour = g_colourText0x0052496c;
             pLineShadow = g_colourShadowText0x00524978;
         }
-        g_frontendDrawRect[1] = (int)(g_pGraphics->resY * 36) / 480 * (i + 1) + y;
+        g_frontendDrawRect[1] = (int)(g_pGraphics->resY * 36) / 480 * (i-first + 1) + y;
         Sprite_FillRect(&g_pGraphics->field309_0x150, g_frontendDrawRect, pLineShadow, 1);
         g_frontendDrawRect[1]++;
         Sprite_FillRect(&g_pGraphics->field309_0x150, g_frontendDrawRect, pLineColour, 1);
         pItem++;
     }
+    sprintf(CFrontend::m_stringDest,"%d / %d    %d-%d / %d    Up/Down",
+            first/SETTINGS_PAGE_ROWS+1,(pMenu->itemCount+SETTINGS_PAGE_ROWS-1)/SETTINGS_PAGE_ROWS,
+            first+1,end,pMenu->itemCount);
+    Font_DrawText(1,CFrontend::m_stringDest,(int)(g_pGraphics->resX*122)/640,
+                  (int)(g_pGraphics->resY*362)/480,(int *)g_colourText0x0052496c,0x11);
     FrontendDraw_Carousel(FrontendMenu_GetMain(), 0, NULL);
 }
 void *FrontendCredits_GetNameTable(void);
@@ -4079,7 +4079,7 @@ void FrontendMenu_EnterAdvancedGraphicsOptions(Menu *pMenu, int param)
     // OpenCMR2: windscreen wipers on by default.
     Menu_GetItem(pMenu, 0x16)->max = Sys_GetOption("video.windscreen_wipers", 1) != 0 ? 1 : 0;
     // OpenCMR2: windscreen dirt strength default 40.
-    Menu_GetItem(pMenu, 0x17)->max = Sys_GetOption("video.windscreen_dirt", 40);
+    Menu_GetItem(pMenu, 0x17)->max = SettingsPage_ClampPercent(Sys_GetOption("video.windscreen_dirt", 40));
     // OpenCMR2: depth of field off by default.
     Menu_GetItem(pMenu, 0x18)->max = Sys_GetOption("video.depth_of_field", 0) != 0 ? 1 : 0;
     // OpenCMR2: god rays off by default.
