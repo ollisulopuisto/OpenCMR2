@@ -2592,6 +2592,18 @@ void FrontendMenu_BuildAdvancedGraphicsOptions(void)
     // ([video] video.windscreen_dirt).
     Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 101, 0, 0, 0, 0, 0x17);
     Menu_GetItem(&g_menu0x0081cd78, 0x17)->text = (char *)"Windscreen Dirt";
+    // OpenCMR2: depth of field — blur based on distance from focal plane
+    // ([video] video.depth_of_field).
+    Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x18);
+    Menu_GetItem(&g_menu0x0081cd78, 0x18)->text = (char *)"Depth of Field";
+    // OpenCMR2: god rays — volumetric light shafts from the sun
+    // ([video] video.god_rays).
+    Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x19);
+    Menu_GetItem(&g_menu0x0081cd78, 0x19)->text = (char *)"God Rays";
+    // OpenCMR2: color grading — temperature, tint, saturation, contrast
+    // ([video] video.color_grading).
+    Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x1a);
+    Menu_GetItem(&g_menu0x0081cd78, 0x1a)->text = (char *)"Color Grading";
     Menu_AddItemType1(&g_menu0x0081cd78, 0, 0x67, (MenuItemAction)FrontendMenu_ApplyAdvancedGraphicsOptions, 0xe);
     Menu_SetCallbacks(&g_menu0x0081cd78, FrontendMenu_EnterAdvancedGraphicsOptions, (MenuCallback)FrontendMenu_UpdateAdvancedGraphicsOptions, (MenuCallback)FrontendMenu_DrawAdvancedGraphicsOptions, NULL);
     Menu_ValidateCursor(&g_menu0x0081cd78, 0);

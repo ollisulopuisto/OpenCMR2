@@ -848,6 +848,81 @@ void FrontendMenu_DrawAdvancedGraphicsOptions(Menu *pMenu)
             }
             break;
         }
+        case 0x16: {
+            // OpenCMR2: windscreen wipers, Off/On.
+            strcpy(CFrontend::m_stringDest, pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
+            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
+                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+            for (j = 0; j < pItem->min; j++) {
+                x += (int)(g_pGraphics->resX * 10) / 640 +
+                     Font_GetTextWidth(1, (BYTE *)CFrontend::m_stringDest);
+                strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(j == 0 ? 0x133 : 0x134));
+                Font_DrawText(1, CFrontend::m_stringDest, x,
+                              (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1],
+                              (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
+            }
+            break;
+        }
+        case 0x17: {
+            // OpenCMR2: windscreen dirt, 0..100.
+            strcpy(CFrontend::m_stringDest, pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
+            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
+                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+            for (j = 0; j < pItem->min; j++) {
+                x += (int)(g_pGraphics->resX * 10) / 640 +
+                     Font_GetTextWidth(1, (BYTE *)CFrontend::m_stringDest);
+                strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(j == 0 ? 0x133 : 0x134));
+                Font_DrawText(1, CFrontend::m_stringDest, x,
+                              (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1],
+                              (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
+            }
+            break;
+        }
+        case 0x18: {
+            // OpenCMR2: depth of field, Off/On.
+            strcpy(CFrontend::m_stringDest, pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
+            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
+                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+            for (j = 0; j < pItem->min; j++) {
+                x += (int)(g_pGraphics->resX * 10) / 640 +
+                     Font_GetTextWidth(1, (BYTE *)CFrontend::m_stringDest);
+                strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(j == 0 ? 0x133 : 0x134));
+                Font_DrawText(1, CFrontend::m_stringDest, x,
+                              (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1],
+                              (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
+            }
+            break;
+        }
+        case 0x19: {
+            // OpenCMR2: god rays, Off/On.
+            strcpy(CFrontend::m_stringDest, pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
+            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
+                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+            for (j = 0; j < pItem->min; j++) {
+                x += (int)(g_pGraphics->resX * 10) / 640 +
+                     Font_GetTextWidth(1, (BYTE *)CFrontend::m_stringDest);
+                strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(j == 0 ? 0x133 : 0x134));
+                Font_DrawText(1, CFrontend::m_stringDest, x,
+                              (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1],
+                              (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
+            }
+            break;
+        }
+        case 0x1a: {
+            // OpenCMR2: color grading, Off/On.
+            strcpy(CFrontend::m_stringDest, pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
+            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
+                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+            for (j = 0; j < pItem->min; j++) {
+                x += (int)(g_pGraphics->resX * 10) / 640 +
+                     Font_GetTextWidth(1, (BYTE *)CFrontend::m_stringDest);
+                strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(j == 0 ? 0x133 : 0x134));
+                Font_DrawText(1, CFrontend::m_stringDest, x,
+                              (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1],
+                              (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
+            }
+            break;
+        }
         case 4:
             strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(0x1d2));
             Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
@@ -4005,6 +4080,12 @@ void FrontendMenu_EnterAdvancedGraphicsOptions(Menu *pMenu, int param)
     Menu_GetItem(pMenu, 0x16)->max = Sys_GetOption("video.windscreen_wipers", 1) != 0 ? 1 : 0;
     // OpenCMR2: windscreen dirt strength default 40.
     Menu_GetItem(pMenu, 0x17)->max = Sys_GetOption("video.windscreen_dirt", 40);
+    // OpenCMR2: depth of field off by default.
+    Menu_GetItem(pMenu, 0x18)->max = Sys_GetOption("video.depth_of_field", 0) != 0 ? 1 : 0;
+    // OpenCMR2: god rays off by default.
+    Menu_GetItem(pMenu, 0x19)->max = isOpenGL ? 0 : Sys_GetOption("video.god_rays", 0) != 0 ? 1 : 0;
+    // OpenCMR2: color grading off by default.
+    Menu_GetItem(pMenu, 0x1a)->max = isOpenGL ? 0 : Sys_GetOption("video.color_grading", 0) != 0 ? 1 : 0;
     if (CGameInfo::GetPreviewMode() != 0) {
         Menu_GetItem(pMenu, 10)->max = 1;
         return;
@@ -4082,6 +4163,18 @@ void FrontendMenu_ApplyAdvancedGraphicsOptions(Menu *pMenu, int param)
     // OpenCMR2: windscreen dirt strength (0..100).
     int dirt = Menu_GetItem(pMenu, 0x17)->max;
     Sys_SetOption("video.windscreen_dirt", dirt);
+    // OpenCMR2: depth of field on/off.
+    int dof = Menu_GetItem(pMenu, 0x18)->max;
+    Sys_SetOption("video.depth_of_field", dof);
+    Gfx_SetDepthOfField(dof, 50, 50, 30);
+    // OpenCMR2: god rays on/off.
+    int godRays = isOpenGL ? 0 : Menu_GetItem(pMenu, 0x19)->max;
+    Sys_SetOption("video.god_rays", godRays);
+    Gfx_SetGodRays(godRays, 100);
+    // OpenCMR2: color grading on/off.
+    int colorGrading = isOpenGL ? 0 : Menu_GetItem(pMenu, 0x1a)->max;
+    Sys_SetOption("video.color_grading", colorGrading);
+    Gfx_SetColorGrading(0, 0, 100, 100);
 }
 
 // FUNCTION: CMR2 0x004f1e40

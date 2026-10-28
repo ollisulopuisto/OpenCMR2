@@ -194,6 +194,7 @@ struct Executor : GfxExecutor {
     SDL_GPUShader *vsParticle = nullptr, *fsParticle = nullptr;
     SDL_GPUShader *vsShadow = nullptr, *fsShadow = nullptr;
     SDL_GPUShader *fsLensGrime = nullptr;
+    SDL_GPUShader *fsDoF = nullptr, *fsGodRays = nullptr, *fsColorGrading = nullptr;
     SDL_GPUTexture *backColor = nullptr, *backDepth = nullptr;
     SDL_GPUTexture *backdrop = nullptr;    // the copy of backColor the distance fade reads
     SDL_GPUTexture *motionBlurPrevious = nullptr;  // the previous frame, for motion blur
@@ -240,6 +241,24 @@ struct Executor : GfxExecutor {
     float vignette = 0;
     float filmGrain = 0;
     SDL_GPUGraphicsPipeline *lensGrimePipeline = nullptr;
+    SDL_GPUGraphicsPipeline *dofPipeline = nullptr;       // depth of field
+    SDL_GPUGraphicsPipeline *godRaysPipeline = nullptr;   // volumetric light shafts
+    SDL_GPUGraphicsPipeline *colorGradingPipeline = nullptr; // color grading LUT
+    SDL_GPUTexture *dofBuf1 = nullptr, *dofBuf2 = nullptr;  // DoF ping-pong blur buffers
+    SDL_GPUTexture *godRaysBuf1 = nullptr, *godRaysBuf2 = nullptr; // god rays ping-pong buffers
+    // OpenCMR2: depth of field state.
+    bool dofEnabled = false;
+    int dofFocalDistance = 50;   // 0..100, focus plane depth
+    int dofFocalRange = 50;      // 0..100, in-focus band width
+    int dofMaxBlur = 30;         // 0..100, max blur radius
+    // OpenCMR2: god rays state.
+    bool godRaysEnabled = false;
+    int godRaysIntensity = 100;
+    // OpenCMR2: color grading state.
+    float colorGradingTemperature = 0.0f; // -1..1 cool->warm
+    float colorGradingTint = 0.0f;        // -1..1 green->magenta
+    float colorGradingSaturation = 1.0f;  // 0..2 color strength
+    float colorGradingContrast = 1.0f;    // 0..2 contrast around middle gray
     // OpenCMR2: directional shadows. type 0=off, 1=on; bias in depth units.
     int shadowType = 0;
     float shadowBias = 0.0005f;
@@ -288,6 +307,10 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUTexture(device, motionBlurTemp);
         SDL_ReleaseGPUTexture(device, bloomBuf1);
         SDL_ReleaseGPUTexture(device, bloomBuf2);
+        SDL_ReleaseGPUTexture(device, dofBuf1);
+        SDL_ReleaseGPUTexture(device, dofBuf2);
+        SDL_ReleaseGPUTexture(device, godRaysBuf1);
+        SDL_ReleaseGPUTexture(device, godRaysBuf2);
         SDL_ReleaseGPUTexture(device, white2D);
         SDL_ReleaseGPUTexture(device, whiteCube);
         SDL_ReleaseGPUBuffer(device, vertexBuffer);
@@ -306,6 +329,9 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUShader(device, vsParticle);
         SDL_ReleaseGPUShader(device, fsParticle);
         SDL_ReleaseGPUShader(device, fsLensGrime);
+        SDL_ReleaseGPUShader(device, fsDoF);
+        SDL_ReleaseGPUShader(device, fsGodRays);
+        SDL_ReleaseGPUShader(device, fsColorGrading);
         SDL_ReleaseGPUGraphicsPipeline(device, motionBlurPipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, bloomBrightPassPipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, bloomBlurPipeline);
@@ -313,6 +339,9 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUGraphicsPipeline(device, particlePipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, shadowPipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, lensGrimePipeline);
+        SDL_ReleaseGPUGraphicsPipeline(device, dofPipeline);
+        SDL_ReleaseGPUGraphicsPipeline(device, godRaysPipeline);
+        SDL_ReleaseGPUGraphicsPipeline(device, colorGradingPipeline);
         SDL_ReleaseGPUBuffer(device, particleVB);
         SDL_ReleaseGPUTexture(device, shadowMap);
         SDL_ReleaseGPUTexture(device, shadowDepth);
@@ -404,13 +433,16 @@ struct Executor : GfxExecutor {
         fsBlur = Shader(SHADER_CODE(blur_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
         fsComposite = Shader(SHADER_CODE(composite_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1);
         fsLensGrime = Shader(SHADER_CODE(lens_grime_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
+        fsDoF = Shader(SHADER_CODE(dof_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1);
+        fsGodRays = Shader(SHADER_CODE(godRays_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1);
+        fsColorGrading = Shader(SHADER_CODE(colorGrading_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
         vsParticle = Shader(SHADER_CODE(particle_vert), SDL_GPU_SHADERSTAGE_VERTEX, 0, 1);
         fsParticle = Shader(SHADER_CODE(particle_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
         vsShadow = Shader(SHADER_CODE(shadow_vert), SDL_GPU_SHADERSTAGE_VERTEX, 0, 1);
         fsShadow = Shader(SHADER_CODE(shadow_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 0, 1);
         if (!vs3d || !vsTL || !fs || !vsClear || !fsClear || !vsMotionBlur || !fsMotionBlur ||
-            !fsBrightPass || !fsBlur || !fsComposite || !fsLensGrime || !vsParticle || !fsParticle ||
-            !vsShadow || !fsShadow)
+            !fsBrightPass || !fsBlur || !fsComposite || !fsLensGrime || !fsDoF || !fsGodRays ||
+            !fsColorGrading || !vsParticle || !fsParticle || !vsShadow || !fsShadow)
             return false;
 
         white2D = CreateTexture(SDL_GPU_TEXTURETYPE_2D, SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM, 1, 1, 1, 1,
@@ -481,6 +513,14 @@ struct Executor : GfxExecutor {
                                       SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
             bloomBuf2 = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, width, height, 1, 1,
                                       SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
+            dofBuf1 = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, width, height, 1, 1,
+                                    SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
+            dofBuf2 = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, width, height, 1, 1,
+                                    SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
+            godRaysBuf1 = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, width, height, 1, 1,
+                                        SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
+            godRaysBuf2 = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, width, height, 1, 1,
+                                        SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
             // Shadow map is created lazily when shadows are first enabled,
             // because D24_UNORM_S8_UINT + sampler is not valid on Metal.
             shadowMap = NULL;
@@ -488,7 +528,9 @@ struct Executor : GfxExecutor {
             backHeight = height;
             if (backColor == NULL || backDepth == NULL || backdrop == NULL ||
                 motionBlurPrevious == NULL || motionBlurTemp == NULL ||
-                bloomBuf1 == NULL || bloomBuf2 == NULL)
+                bloomBuf1 == NULL || bloomBuf2 == NULL ||
+                dofBuf1 == NULL || dofBuf2 == NULL ||
+                godRaysBuf1 == NULL || godRaysBuf2 == NULL)
                 return false;
         }
         SDL_SetWindowResizable(window, true);
@@ -608,6 +650,36 @@ struct Executor : GfxExecutor {
     void SetFilmGrain(int strength) override
     {
         filmGrain = strength < 0 ? 0 : strength > 100 ? 100 : strength;
+    }
+
+    // OpenCMR2: depth of field. `enabled` turns it on/off, `focalDistance`
+    // (0..100) is where the focus plane sits in depth, `focalRange` (0..100)
+    // is how wide the in-focus band is, `maxBlur` (0..100) is the blur radius.
+    void SetDepthOfField(BOOL enabled, int focalDistance, int focalRange, int maxBlur) override
+    {
+        dofEnabled = enabled != 0;
+        dofFocalDistance = focalDistance < 0 ? 0 : focalDistance > 100 ? 100 : focalDistance;
+        dofFocalRange = focalRange < 0 ? 0 : focalRange > 100 ? 100 : focalRange;
+        dofMaxBlur = maxBlur < 0 ? 0 : maxBlur > 100 ? 100 : maxBlur;
+    }
+
+    // OpenCMR2: god rays / volumetric lighting. `enabled` turns it on/off,
+    // `intensity` (0..255) scales the effect strength.
+    void SetGodRays(BOOL enabled, int intensity) override
+    {
+        godRaysEnabled = enabled != 0;
+        godRaysIntensity = intensity < 0 ? 0 : intensity > 255 ? 255 : intensity;
+    }
+
+    // OpenCMR2: color grading. `temperature` (-100..100) cool->warm,
+    // `tint` (-100..100) green->magenta, `saturation` (0..200) color strength,
+    // `contrast` (0..200) contrast around middle gray.
+    void SetColorGrading(int temperature, int tint, int saturation, int contrast) override
+    {
+        colorGradingTemperature = temperature < -100 ? -100 : temperature > 100 ? 100 : temperature;
+        colorGradingTint = tint < -100 ? -100 : tint > 100 ? 100 : tint;
+        colorGradingSaturation = saturation < 0 ? 0 : saturation > 200 ? 200 : saturation;
+        colorGradingContrast = contrast < 0 ? 0 : contrast > 200 ? 200 : contrast;
     }
 
     // ---- textures ----
@@ -1151,6 +1223,101 @@ struct Executor : GfxExecutor {
         return lensGrimePipeline;
     }
 
+    // Depth of field pipeline: samples scene + depth map, applies blur based
+    // on depth distance from focal plane.
+    SDL_GPUGraphicsPipeline *DofPipeline()
+    {
+        if (dofPipeline != nullptr)
+            return dofPipeline;
+        SDL_GPUColorTargetDescription color = {};
+        color.format = colorFormat;
+        color.blend_state.enable_blend = false;
+        SDL_GPUGraphicsPipelineCreateInfo info = {};
+        info.vertex_shader = vsMotionBlur;
+        info.fragment_shader = fsDoF;
+        info.vertex_input_state.vertex_buffer_descriptions = nullptr;
+        info.vertex_input_state.num_vertex_buffers = 0;
+        info.vertex_input_state.vertex_attributes = nullptr;
+        info.vertex_input_state.num_vertex_attributes = 0;
+        info.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+        info.rasterizer_state.fill_mode = SDL_GPU_FILLMODE_FILL;
+        info.rasterizer_state.cull_mode = SDL_GPU_CULLMODE_NONE;
+        info.depth_stencil_state.enable_depth_test = false;
+        info.depth_stencil_state.enable_depth_write = false;
+        info.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_ALWAYS;
+        info.target_info.color_target_descriptions = &color;
+        info.target_info.num_color_targets = 1;
+        info.target_info.depth_stencil_format = depthFormat;
+        info.target_info.has_depth_stencil_target = true;
+        dofPipeline = SDL_CreateGPUGraphicsPipeline(device, &info);
+        if (dofPipeline == NULL)
+            Sys_Log("gfx: dof pipeline: %s", SDL_GetError());
+        return dofPipeline;
+    }
+
+    // God rays pipeline: ray-marches toward the light source, accumulating
+    // light where not occluded by depth.
+    SDL_GPUGraphicsPipeline *GodRaysPipeline()
+    {
+        if (godRaysPipeline != nullptr)
+            return godRaysPipeline;
+        SDL_GPUColorTargetDescription color = {};
+        color.format = colorFormat;
+        color.blend_state.enable_blend = false;
+        SDL_GPUGraphicsPipelineCreateInfo info = {};
+        info.vertex_shader = vsMotionBlur;
+        info.fragment_shader = fsGodRays;
+        info.vertex_input_state.vertex_buffer_descriptions = nullptr;
+        info.vertex_input_state.num_vertex_buffers = 0;
+        info.vertex_input_state.vertex_attributes = nullptr;
+        info.vertex_input_state.num_vertex_attributes = 0;
+        info.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+        info.rasterizer_state.fill_mode = SDL_GPU_FILLMODE_FILL;
+        info.rasterizer_state.cull_mode = SDL_GPU_CULLMODE_NONE;
+        info.depth_stencil_state.enable_depth_test = false;
+        info.depth_stencil_state.enable_depth_write = false;
+        info.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_ALWAYS;
+        info.target_info.color_target_descriptions = &color;
+        info.target_info.num_color_targets = 1;
+        info.target_info.depth_stencil_format = depthFormat;
+        info.target_info.has_depth_stencil_target = true;
+        godRaysPipeline = SDL_CreateGPUGraphicsPipeline(device, &info);
+        if (godRaysPipeline == NULL)
+            Sys_Log("gfx: god rays pipeline: %s", SDL_GetError());
+        return godRaysPipeline;
+    }
+
+    // Color grading pipeline: applies temperature, tint, saturation, contrast.
+    SDL_GPUGraphicsPipeline *ColorGradingPipeline()
+    {
+        if (colorGradingPipeline != nullptr)
+            return colorGradingPipeline;
+        SDL_GPUColorTargetDescription color = {};
+        color.format = colorFormat;
+        color.blend_state.enable_blend = false;
+        SDL_GPUGraphicsPipelineCreateInfo info = {};
+        info.vertex_shader = vsMotionBlur;
+        info.fragment_shader = fsColorGrading;
+        info.vertex_input_state.vertex_buffer_descriptions = nullptr;
+        info.vertex_input_state.num_vertex_buffers = 0;
+        info.vertex_input_state.vertex_attributes = nullptr;
+        info.vertex_input_state.num_vertex_attributes = 0;
+        info.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+        info.rasterizer_state.fill_mode = SDL_GPU_FILLMODE_FILL;
+        info.rasterizer_state.cull_mode = SDL_GPU_CULLMODE_NONE;
+        info.depth_stencil_state.enable_depth_test = false;
+        info.depth_stencil_state.enable_depth_write = false;
+        info.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_ALWAYS;
+        info.target_info.color_target_descriptions = &color;
+        info.target_info.num_color_targets = 1;
+        info.target_info.depth_stencil_format = depthFormat;
+        info.target_info.has_depth_stencil_target = true;
+        colorGradingPipeline = SDL_CreateGPUGraphicsPipeline(device, &info);
+        if (colorGradingPipeline == NULL)
+            Sys_Log("gfx: color grading pipeline: %s", SDL_GetError());
+        return colorGradingPipeline;
+    }
+
     // ---- particles ----
 
     void EmitParticle(int type, float x, float y, float vx, float vy, float sx, float sy,
@@ -1520,6 +1687,8 @@ struct Executor : GfxExecutor {
         bindings[4] = { backdrop, Sampler(GfxStageState()) };
         // Directional light shadow map, bound for the fixed-function shaders.
         bindings[7] = { shadowMap != NULL ? shadowMap : white2D, Sampler(GfxStageState()) };
+        // Back buffer depth, used by depth-of-field and god rays passes.
+        bindings[8] = { backDepth, Sampler(GfxStageState()) };
     }
 
     // What a render pass has bound: each draw sets only what differs from the
@@ -1529,7 +1698,7 @@ struct Executor : GfxExecutor {
         bool viewportSet = false, texturesSet = false, indicesSet = false;
         SDL_GPUViewport viewport = {};
         SDL_Rect scissor = {};
-        SDL_GPUTextureSamplerBinding textures[8] = {};
+        SDL_GPUTextureSamplerBinding textures[9] = {};
         SDL_GPUBuffer *vertices = nullptr;
     };
 
@@ -1873,10 +2042,10 @@ struct Executor : GfxExecutor {
                 fragmentUniforms = fu;
                 fragmentUniformsSet = true;
             }
-            SDL_GPUTextureSamplerBinding textures[8];
+            SDL_GPUTextureSamplerBinding textures[9];
             TextureBindings(s, textures);
             if (!bound.texturesSet || memcmp(textures, bound.textures, sizeof(textures)) != 0) {
-                SDL_BindGPUFragmentSamplers(pass, 0, textures, 8);
+                SDL_BindGPUFragmentSamplers(pass, 0, textures, 9);
                 memcpy(bound.textures, textures, sizeof(textures));
                 bound.texturesSet = true;
             }
@@ -2034,6 +2203,71 @@ struct Executor : GfxExecutor {
                 { white2D, Sampler(GfxStageState()) },
             };
             PostProcessPass(cmd, LensGrimePipeline(), motionBlurTemp, bindings, 2,
+                            uniforms, sizeof(uniforms));
+            presentSource = motionBlurTemp;
+        }
+
+        // OpenCMR2: depth of field — blur based on depth distance from focal
+        // plane. Needs a depth texture; we use the shadow depth buffer as a
+        // proxy since the game doesn't write a full scene depth buffer we can
+        // easily access.
+        if (dofEnabled && dofFocalRange > 0 && backColor != NULL && dofBuf1 != NULL &&
+            dofBuf2 != NULL && backDepth != NULL) {
+            // Ping-pong blur: two passes for a wider blur kernel.
+            for (int iteration = 0; iteration < 2; iteration++) {
+                SDL_GPUTexture *src = (iteration == 0) ? presentSource : dofBuf2;
+                SDL_GPUTexture *dst = (iteration == 0) ? dofBuf2 : dofBuf1;
+                float uniforms[4] = {
+                    dofFocalDistance / 100.0f,   // focal distance
+                    dofFocalRange / 100.0f,      // focal range
+                    (float)dofMaxBlur / 100.0f * 4.0f, // max blur in pixels
+                    0.0f
+                };
+                SDL_GPUTextureSamplerBinding bindings[2] = {
+                    { src, Sampler(GfxStageState()) },
+                    { backDepth, Sampler(GfxStageState()) },
+                };
+                PostProcessPass(cmd, DofPipeline(), dst, bindings, 2,
+                                uniforms, sizeof(uniforms));
+            }
+            presentSource = dofBuf1;
+        }
+
+        // OpenCMR2: god rays / volumetric lighting — ray-march toward the sun
+        // and accumulate light where not occluded by depth.
+        if (godRaysEnabled && godRaysIntensity > 0 && backColor != NULL &&
+            godRaysBuf1 != NULL && godRaysBuf2 != NULL && backDepth != NULL) {
+            // Ping-pong blur for softer rays.
+            for (int iteration = 0; iteration < 2; iteration++) {
+                SDL_GPUTexture *src = (iteration == 0) ? backColor : godRaysBuf2;
+                SDL_GPUTexture *dst = (iteration == 0) ? godRaysBuf2 : godRaysBuf1;
+                float uniforms[1] = {
+                    godRaysIntensity / 255.0f
+                };
+                SDL_GPUTextureSamplerBinding bindings[2] = {
+                    { src, Sampler(GfxStageState()) },
+                    { backDepth, Sampler(GfxStageState()) },
+                };
+                PostProcessPass(cmd, GodRaysPipeline(), dst, bindings, 2,
+                                uniforms, sizeof(uniforms));
+            }
+            presentSource = godRaysBuf1;
+        }
+
+        // OpenCMR2: color grading — temperature, tint, saturation, contrast.
+        if ((colorGradingTemperature != 0 || colorGradingTint != 0 ||
+             colorGradingSaturation != 1.0f || colorGradingContrast != 1.0f) &&
+            presentSource != NULL) {
+            float uniforms[4] = {
+                colorGradingTemperature / 100.0f,
+                colorGradingTint / 100.0f,
+                colorGradingSaturation / 100.0f,
+                colorGradingContrast / 100.0f
+            };
+            SDL_GPUTextureSamplerBinding bindings[1] = {
+                { presentSource, Sampler(GfxStageState()) },
+            };
+            PostProcessPass(cmd, ColorGradingPipeline(), motionBlurTemp, bindings, 1,
                             uniforms, sizeof(uniforms));
             presentSource = motionBlurTemp;
         }

@@ -252,6 +252,18 @@ void Gfx_SetShadows(int type, int bias);
 void Gfx_SetChromaticAberration(int strength);
 void Gfx_SetVignette(int strength);
 void Gfx_SetFilmGrain(int strength);
+/* OpenCMR2: depth of field. `enabled` turns it on/off, `focalDistance`
+   (0..100) is where the focus plane sits in depth, `focalRange` (0..100)
+   is how wide the in-focus band is, `maxBlur` (0..100) is the blur radius.
+   SDL_GPU only. */
+void Gfx_SetDepthOfField(BOOL enabled, int focalDistance, int focalRange, int maxBlur);
+/* OpenCMR2: god rays / volumetric lighting. `enabled` turns it on/off,
+   `intensity` (0..255) scales the effect strength. SDL_GPU only. */
+void Gfx_SetGodRays(BOOL enabled, int intensity);
+/* OpenCMR2: color grading. `temperature` (-100..100) cool->warm,
+   `tint` (-100..100) green->magenta, `saturation` (0..200) color strength,
+   `contrast` (0..200) contrast around middle gray. SDL_GPU only. */
+void Gfx_SetColorGrading(int temperature, int tint, int saturation, int contrast);
 /* OpenCMR2: whether the OpenGL 3.3 renderer is active (SDL_GPU otherwise).
    Bloom, motion blur, particles and shadows are SDL_GPU-only. */
 int Gfx_IsOpenGL(void);

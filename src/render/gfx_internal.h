@@ -184,6 +184,17 @@ struct GfxExecutor {
     virtual void SetChromaticAberration(int) {}
     virtual void SetVignette(int) {}
     virtual void SetFilmGrain(int) {}
+    // OpenCMR2: depth of field. `enabled` turns it on/off, `focalDistance`
+    // (0..100) is where the focus plane sits in depth, `focalRange` (0..100)
+    // is how wide the in-focus band is, `maxBlur` (0..100) is the blur radius.
+    virtual void SetDepthOfField(BOOL, int, int, int) {}
+    // OpenCMR2: god rays / volumetric lighting. `enabled` turns it on/off,
+    // `intensity` (0..255) scales the effect strength.
+    virtual void SetGodRays(BOOL, int) {}
+    // OpenCMR2: color grading. `temperature` (-100..100) cool->warm,
+    // `tint` (-100..100) green->magenta, `saturation` (0..200) color strength,
+    // `contrast` (0..200) contrast around middle gray.
+    virtual void SetColorGrading(int, int, int, int) {}
     // Runs the recorded commands; with present, shows the back buffer and
     // ends the frame (otherwise the next commands continue it).
     virtual void Execute(GfxFrame &frame, std::vector<GfxTexture *> &textures, GfxReadback &readback, bool present,

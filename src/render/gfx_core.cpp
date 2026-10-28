@@ -440,6 +440,24 @@ extern "C" void Gfx_SetFilmGrain(int strength)
         s_executor->SetFilmGrain(strength);
 }
 
+extern "C" void Gfx_SetDepthOfField(BOOL enabled, int focalDistance, int focalRange, int maxBlur)
+{
+    if (s_executor != NULL)
+        s_executor->SetDepthOfField(enabled != 0, focalDistance, focalRange, maxBlur);
+}
+
+extern "C" void Gfx_SetGodRays(BOOL enabled, int intensity)
+{
+    if (s_executor != NULL)
+        s_executor->SetGodRays(enabled != 0, intensity);
+}
+
+extern "C" void Gfx_SetColorGrading(int temperature, int tint, int saturation, int contrast)
+{
+    if (s_executor != NULL)
+        s_executor->SetColorGrading(temperature, tint, saturation, contrast);
+}
+
 extern "C" int Gfx_IsOpenGL(void)
 {
     return ChooseBackend() == BACKEND_GL;
