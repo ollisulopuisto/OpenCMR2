@@ -60,7 +60,10 @@ unsigned int CMain::Initialize(const char *commandLine)
 	commandLineCopy[sizeof(commandLineCopy) - 1] = 0;
 	Args_Parse(commandLineCopy);
 
-	CreateGameWindow(m_gameName);
+	if (!CreateGameWindow(m_gameName)) {
+		m_exitCode = 1;
+		CGame::SetShouldExit();
+	}
 
 	while (!CGame::m_shouldExit)
 	{

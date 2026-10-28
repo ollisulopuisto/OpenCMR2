@@ -4317,7 +4317,8 @@ void FrontendMenu_ApplyDisplayMode(Menu *pMenu, int param)
     CGameInfo::SetColourDepth(depth);
     CMain::SetGameActiveState(1);
     mode = CGraphics::GetSelectedRenderDeviceIndex();
-    CGraphics::RecreateGraphicsDeviceAndResources(width, height, depth, CGameInfo::GetGraphicsOptionBits5To8(), mode);
+    if (!CGraphics::RecreateGraphicsDeviceAndResources(width, height, depth, CGameInfo::GetGraphicsOptionBits5To8(), mode))
+        return;
     CGameInfo::SetScreenWidth(g_pGraphics->resX);
     CGameInfo::SetScreenHeight(g_pGraphics->resY);
     CGameInfo::SetColourDepth(g_pGraphics->depth);
@@ -5898,8 +5899,9 @@ void FrontendMenu_SelectDisplayDevice(Menu *pMenu, int param)
     CGameInfo::SetGraphicsOptionBits5To8(pMenu->cursor);
     CGraphics::SetSelectedDisplayDriverIndex(pMenu->cursor);
     CMain::SetGameActiveState(1);
-    CGraphics::RecreateGraphicsDeviceAndResources(g_pGraphics->resX, g_pGraphics->resY, g_pGraphics->depth, CGameInfo::GetGraphicsOptionBits5To8(),
-                            CGraphics::GetSelectedRenderDeviceIndex());
+    if (!CGraphics::RecreateGraphicsDeviceAndResources(g_pGraphics->resX, g_pGraphics->resY, g_pGraphics->depth, CGameInfo::GetGraphicsOptionBits5To8(),
+                            CGraphics::GetSelectedRenderDeviceIndex()))
+        return;
     CGameInfo::SetScreenWidth(g_pGraphics->resX);
     CGameInfo::SetScreenHeight(g_pGraphics->resY);
     CGameInfo::SetColourDepth(g_pGraphics->depth);

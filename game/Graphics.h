@@ -1104,7 +1104,7 @@ class CGraphics {
 public:
     static bool InitializeDirectX(void);
     static void SetDefaults(void);
-    static void RecreateGraphicsDeviceAndResources(unsigned int screenWidth, unsigned int screenHeight, unsigned int colourDepth, unsigned int param4, unsigned int param5);
+    static bool RecreateGraphicsDeviceAndResources(unsigned int screenWidth, unsigned int screenHeight, unsigned int colourDepth, unsigned int param4, unsigned int param5);
     static void ReleaseCachedTextureSurfaces(void);
     static BYTE EvictManagedTextureResources(void);
     static BOOL ReleaseDirect3D(void);
