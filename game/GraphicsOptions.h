@@ -107,7 +107,9 @@ inline int Anisotropy_IndexToLevel(int index)
     return Anisotropy_Levels()[index];
 }
 
-// OpenCMR2: runtime-only flag bit in StageObject::flags marking a tree smashed
+// Reserved runtime-only flag. No collision code may set or honor this bit
+// without a verified breakable-tree classification and contact contract.
+// Legacy helper bit in StageObject::flags marking a tree smashed
 // by the car. Bit 28 (0x10000000) is unused by the original's flag masks
 // (0x8000, 0x4000, 0x2001000). Stages reload with fresh trees, so the bit
 // need not be part of the on-disk record semantics.

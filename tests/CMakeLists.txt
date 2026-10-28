@@ -387,3 +387,7 @@ if(NOT APPLE AND NOT MSVC)
  target_link_options(car_display_names_test PRIVATE -Wl,--wrap=Sys_GetCarDisplayName)
  add_test(NAME car_display_names COMMAND car_display_names_test)
 endif()
+
+add_executable(tree_collision_runtime_test tree_collision_runtime.cpp)
+target_link_libraries(tree_collision_runtime_test PRIVATE opencmr2_platform)
+add_test(NAME tree_collision_runtime COMMAND tree_collision_runtime_test)

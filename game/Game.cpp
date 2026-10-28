@@ -2489,29 +2489,9 @@ void Game_DrawStaticStageObjects(void)
         pObject = (StageObjectDraw *)g_sectors[g_visibleSectorIndices[i]]->pObjects;
         while (pObject != NULL) {
             if (pObject->field_0x14 != 0) {
-                // OpenCMR2: a smashed tree still draws (falling over slowly) but
-                // no longer collides ([video] video.tree_break). Broken trees
-                // are excluded from the collision pass in StageObjects.cpp.
-                bool broken = (pObject->field_0x10 & STAGE_OBJECT_BROKEN) != 0;
-                if (broken && Sys_GetOption("video.tree_break", 1) != 0) {
-                    // Advance the fall animation: tip the tree over slowly.
-                    int ix = TreeFall_Index((StageObject *)pObject);
-                    if (ix >= 0) {
-                        struct TreeFallState *fs = &g_treeFallStates[ix];
-                        if (!fs->active) {
-                            fs->active = 1;
-                            fs->angle = 0;
-                            fs->angularVel = 0x100;
-                        }
-                        TreeFall_Advance(&fs->angle, &fs->angularVel);
-                        // Tip the tree forward around its right axis by the
-                        // fall angle. Work on a copy so the stored matrix is
-                        // not permanently changed.
-                        GfxMatrix m = *(GfxMatrix *)pObject->matrix;
-                        FixMatrix_RotateAboutRight((FixMatrix *)&m, (unsigned short)(fs->angle >> 4));
-                        *(GfxMatrix *)pObject->matrix = m;
-                    }
-                }
+                // Tree falling stays inactive until a verified breakable-tree
+                // contract exists. Do not reinterpret reserved flags or cast a
+                // float drawing matrix to fixed point to animate unclassified objects.
                 // OpenCMR2: an animated scenery object swaps its texture for
                 // the current frame of its cycle ([video] video.animated_scenery).
                 int animatedTexture = -1;
