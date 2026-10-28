@@ -1,0 +1,1360 @@
+{
+  "finhit.bfl/spc_ma02.dds": {
+    "sha256": "7b3941d68d776c242fbfebfae50d5b02a9034746889f0af167d5868a23d38c99",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "finhit.bfl/spc_ma05.dds": {
+    "sha256": "393b24858ece69ea99cb9264f4d104fecfdaa0be0a014cb6874582111c74b227",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "finhit.bfl/spc_ma07.dds": {
+    "sha256": "b6d4b9b870723f81598b8b5219cb9329cbe530aef2e04e54e75b2eee6d48b56e",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "finhit.bfl/spc_ma08.dds": {
+    "sha256": "aa1ce00cf1759f8ec8aa034eaaa649c0d774dba436664c4f4d8e20cb8812829f",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "finhit.bfl/spc_ma10.dds": {
+    "sha256": "2431873e69e7d9b96d6994931fcf4fdf448752993d9ac14991f387abcb884535",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "finhit.bfl/spc_ma11.dds": {
+    "sha256": "7f262e81abcf75eb8370b4f29895e6f02bc45564f87290e680f85c73f88f4173",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "finhit.bfl/spc_ma12.dds": {
+    "sha256": "4eb4f3b840578837128d343cd47155b9dad7c7a775164bc886cda425b108e0cc",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "finhit.bfl/spc_sd2.dds": {
+    "sha256": "12174072732d9b78a28b923aa16f0c2ad562e133c33bfd03e5b0b01df533a1f8",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "finhit.bfl/spc_sd3.dds": {
+    "sha256": "7f1cf3ffa7755c681aa0f7eee6b1a2223b504765404a680df8c508be1d326345",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "finhit.bfl/spc_sd4.dds": {
+    "sha256": "e0e157e4e2c6e5e6de4d0307c0edae49c6e4ffc6596f75281ca627d6173e0367",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "finhit.bfl/tresbg1a.dds": {
+    "sha256": "7eb5136e95d6b40954c68bbe099bf673bd907d26bfc59b5aaaca61370caa9458",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresbg1b.dds": {
+    "sha256": "aa34d807deecc01ae994385d2afc173f85e4ad0f795ca5909b5f3192474e7511",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresbg1c.dds": {
+    "sha256": "fb31e49c162d913f422f9de236ae850cd945f39ed33f38e3f71efcfdf221fc9e",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresbg1d.dds": {
+    "sha256": "a9b4a25aeb1963ba76d3cec0ae1621db0f8644783e930933ae670773d2df3260",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresfg1a.dds": {
+    "sha256": "97683ce08e5b5f7a23aa32f3249830899306282b9482e62e197c6efd203692a5",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresfg1b.dds": {
+    "sha256": "be77c6389bfe9b533bd5e9eb86ebf9ff550c4bb76de623772f2a05cae4044e98",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresfg1c.dds": {
+    "sha256": "53c8fd9d44226f9fb00c796844c19d1ef6dd7001f92ab5e6a35b28b1b49ba330",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresfg1d.dds": {
+    "sha256": "c0ad578cfb4c3a802f6f615d3c7f6da053388ba4a6358d277ef38f8da4dea11b",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresh1ba.dds": {
+    "sha256": "4882f572077e56fe00b561b911c8a98e232cdc3c4d07b531b9718e1854535eda",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresh1bb.dds": {
+    "sha256": "194c34758931acbc351c28191fb0d6d83f129be10153c8e851942896ef340a23",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresh1bc.dds": {
+    "sha256": "eedc638071d403ff7b2ec719ab1f399d4b1bcf232517af863af26daa025d5372",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresh1bd.dds": {
+    "sha256": "44df2da75d72e3c6b17a40fe528bf0b411d38d8dfad145f2155e978da1f8ba34",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresh1fa.dds": {
+    "sha256": "e086b69278a5ce8df84093522617b2bf66f5261ae25c7a8c2835f1503dfa204e",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresh1fb.dds": {
+    "sha256": "cf2ed824a8c2318f2092c0aec1a01ce24c55cf974158cb6038d74dd53093c4d9",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresh1fc.dds": {
+    "sha256": "fb9474d406064951850bb2a2aed96bd693bd0d161474bfbd3a198c8c98751d7b",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresh1fd.dds": {
+    "sha256": "868528b82967a0c48e6e87b07c7ce8be2907e03579a66bb0b9d7e0ee98070a39",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresh2ba.dds": {
+    "sha256": "69689fff69f42a88d141699112cb1516711c7aeb2be422ea8f3a517c7ad30369",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresh2bb.dds": {
+    "sha256": "a2f3a85592b5acbfd89628a040e5638f13b9a01895797400576ece61c24302ff",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresh2bc.dds": {
+    "sha256": "62c530f5560d464b27a3f4f8936fd7a6223e77ce0c19804c1c8df8e484cbad79",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresh2bf.dds": {
+    "sha256": "58142e315061d29e9280a1ee4a178dd5f03652f6f41c715a173a4ca558b5946e",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresh2fa.dds": {
+    "sha256": "8084f217245e65b8af80869ab9b7dfffc3a4e6f72121a858ffc48184652c78d7",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresh2fb.dds": {
+    "sha256": "dcafaa535886004802efd97241bff27fdcff1cd39eaee8c37fa4474323b66a87",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresh2fc.dds": {
+    "sha256": "f3556bbe873b8c2c2fd85f741b5de70de2f5d98c8b810053c0fe5dd30aca5ab2",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresh2ff.dds": {
+    "sha256": "defd03858fa8e196f32307801aa51cf884191667a0b7eefd985f6285f4f52c28",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresh3a.dds": {
+    "sha256": "2a1c314b939fd3168c70320fead7dd51b0fabf0d6ecbdd77e546670d3e0e255a",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresh3b.dds": {
+    "sha256": "4d57e1d9fd27679088b8372a6a039b74495df80f1de44eab2db5b4d56ab273b6",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresh3c.dds": {
+    "sha256": "852873cddf04076caab2675eaa698ae26df87ee260facaa784693aa2c338d8ae",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tresh3e.dds": {
+    "sha256": "c63cfbd33981577829114c991969c8faf847946d5ad860897d7f0f4033ebb012",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finhit.bfl/tre_fir1.dds": {
+    "sha256": "8bc478543facd05a3af6ae8c7a0b2027173eec67bc5f44568408ad52163e775b",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_fir2.dds": {
+    "sha256": "cf46d3215499f1f0165a45f6cc4aa0bbb1322f07fbfae6885d34a01bf4cf1330",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_fr1.dds": {
+    "sha256": "1ebea130ecf694bdd5ab4da52e4d33fed2d9e217fd1b4f7eb1df2b6ecbbcbb4f",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_fr2.dds": {
+    "sha256": "ff8f1a174daab44e926fc1c1f313266f39689b1496cf852a29826729c050053f",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_fr3.dds": {
+    "sha256": "ca18f4df8b7a8303d8c313fee87a80630baacfa2db475b28a878c05e4e85c9e6",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_fr4.dds": {
+    "sha256": "e2352157cccfb8386295416b3bb2539013ef6c50f6a778343273246f8bee3c0f",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_fr5.dds": {
+    "sha256": "9bced633e0b229ea89af4989676f5a7353841a73485b2df752edf0134d6654b6",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_fr6.dds": {
+    "sha256": "b3f267e409a87886b739d735af4607cd01eeb76402576bd4982ce5aae11644b7",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_fr7.dds": {
+    "sha256": "41f8c232773a89dc7a8542414b5348dad752abcda014272a94779d77b1088577",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_gr1.dds": {
+    "sha256": "42e53585a863d5a220bdcdacbbfc1f4f4be5ef896109bea4729007f9e810aedf",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_rd1.dds": {
+    "sha256": "0a78a9b8b8cc93a3b51da43d652ccba2b37e3f10104130c2f54ec86f5cc1484c",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_sh1.dds": {
+    "sha256": "269eb82baeb2d32b598faf7942b266c9417e4fe5568acd7e91cd52bb2aed47e8",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "shadow-mask"
+  },
+  "finhit.bfl/tre_sh2.dds": {
+    "sha256": "199135f60a7110856497114cfeb2d998318352d9b098148abdda6c2ba034cff7",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "shadow-mask"
+  },
+  "finhit.bfl/tre_sh3.dds": {
+    "sha256": "bcc02d92ddc2d6e9460fc7204f159ba1a393ed6825c3466a01f9bb025bcbe99c",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "shadow-mask"
+  },
+  "finhit.bfl/tre_sh5.dds": {
+    "sha256": "9e81c8e134e03de05c926da32f4a7118a9d83dd1a5263ef1c60666e2a211fa77",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "shadow-mask"
+  },
+  "finhit.bfl/tre_sh6.dds": {
+    "sha256": "4cd57b988c978ada94efdf41ed6f850a9b18b090ff9e8af69c58391c14d51b0e",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "shadow-mask"
+  },
+  "finhit.bfl/tre_sh7.dds": {
+    "sha256": "0ca10aa279f0e8b6b205d2c15e8d744fc0052fe60d9ed5b5964048f49fcd2bfd",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "shadow-mask"
+  },
+  "finhit.bfl/tre_th1.dds": {
+    "sha256": "b68d836159e48fbb37560d6b8a98c78ae5dcef723904bfadd941e50a4b0ae323",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_th2.dds": {
+    "sha256": "0308bdaaf552c358592bbc6f148f309319d9e0bce901a4d62187846e83e8ec12",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_th3.dds": {
+    "sha256": "9d1302f0e29971428b092dbf9aa300977a5881fadd37cb0eeacc351e7fbd9e93",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_th4.dds": {
+    "sha256": "70b8d8ba4e9bb2563593ab54b18881a478578a53a9d126f0e0a9d4ef6316f416",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_th5.dds": {
+    "sha256": "c2a86b07b38fb7dead1b57552c53c1a8bc87a2cbedda991c9cdc21c1ba2149d3",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_th6.dds": {
+    "sha256": "4cd5a2685ec5bce1a8dd117d249ed2414518203943161071455705fbeedaa1f2",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_wb1.dds": {
+    "sha256": "7cc3d8d40da1eb3ebbba5ac2f4ef7260b1431dc4a6792c0aece2b61159442f91",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_wb2.dds": {
+    "sha256": "d6f7025599cfb47813c3469a6f7f7a174644664c1ac7d6252e175d296a309e5c",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_wb3.dds": {
+    "sha256": "2b4b2203304ed6b51b93ac87c3a0227d8a7bd82da45a877edc518207a57b751d",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_wb4.dds": {
+    "sha256": "8f2aebc7dd79c0852e785c8decdc213ac59c52de2b35d6751ab9b8e547a6a102",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_wb5.dds": {
+    "sha256": "b702cf1addc476873b076a891a4c9eed59d7710282018eebe3fe3292bd2c62b6",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_wb6.dds": {
+    "sha256": "4a5a342d79a73cfcf5d4367e41a5a51ba99bf253a0a873ff1c76cd1d125b58b9",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finhit.bfl/tre_wb7.dds": {
+    "sha256": "30389ef7c245132939809ae000da30c39fe7be34692b394f5343d6a9d706b7ca",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/spc_ma02.dds": {
+    "sha256": "e7383f829ddabdeaf1d707b12349ea4b7807507305ee4209df163c2c7bee98f1",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "finlot.bfl/spc_ma05.dds": {
+    "sha256": "07c096378dc778c45b754ecaf6a834a2a6d3f39de47eafd37c331ff8b03431bc",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "finlot.bfl/spc_ma07.dds": {
+    "sha256": "a23ac0976d4b53577e9636dab16010794a3ae24824e3b8bf5911b677d2938a47",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "finlot.bfl/spc_ma08.dds": {
+    "sha256": "133c83779688ea63ddf1ab48c3625bdcb3452c94641ffaa863ae0b067a872ff7",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "finlot.bfl/spc_ma10.dds": {
+    "sha256": "9a294fe7a948f82d431b958522f3421548ea02186ab36257ba97b34561f4163b",
+    "width": 32,
+    "height": 32,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "finlot.bfl/spc_ma11.dds": {
+    "sha256": "24756aaad5a70cc92fa5c768e04c3a537f13af290bf31ee0f9d7872574647ddd",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "finlot.bfl/spc_ma12.dds": {
+    "sha256": "d4274215f36c3488f67507d344079bb2cf1978d337ddbc59e45744083977854f",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "finlot.bfl/spc_sd2.dds": {
+    "sha256": "9149e950383aaad077b5cddab2f8b5c6520bb4e27c41d14cd635e3c5899e70e7",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "finlot.bfl/spc_sd3.dds": {
+    "sha256": "cb7a74a4d294fa78fe9bbb164d462bf824205cdbadf965984d1eb02d004116a7",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "finlot.bfl/spc_sd4.dds": {
+    "sha256": "f19615609869ed66654eed15235f7032382364e732cda1b3c5d9080e0d2d9500",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "finlot.bfl/tresbg1a.dds": {
+    "sha256": "8207ec156bd0eed6b765524f1755ac55b78bb143cf0073fc07dc13b64a7e0bed",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresbg1b.dds": {
+    "sha256": "c895b2c35caa326b78bd135c0f8ff8a1a507e280036052377f70284d3f30594b",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresbg1c.dds": {
+    "sha256": "7609308db3ee0fdabf1cdaa141d25a38809e65d30517283c0a577b5a734a9da3",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresbg1d.dds": {
+    "sha256": "50df86e5030df4e0f99c50e0a0aa9ee4fa66171296da20f037622f8009909609",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresfg1a.dds": {
+    "sha256": "92dd986b988773490ead6bf1027852f6b984a6ec0a289cc035137b7c9110c961",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresfg1b.dds": {
+    "sha256": "3f94792ef4f79374c3248689f2568dd0b4c6db648025e2d51863925c4ce4a6ff",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresfg1c.dds": {
+    "sha256": "8f1eba984c5aa81946defff0a205200012cb9b29f2ba0559aa528c8a47de30ce",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresfg1d.dds": {
+    "sha256": "bd5a24454c2b1635481554daac20b530bbd8094ab12abf4b987c4ed509b04f66",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresh1ba.dds": {
+    "sha256": "b468c104f2cd1c39e70705df2d8088370a124e53fb2033e8c22ae91110c01a5e",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresh1bb.dds": {
+    "sha256": "c3d7f4f0953298aef73c840ac8e8495aa22d106e6ab39e475df4efc70946e4bb",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresh1bc.dds": {
+    "sha256": "11041a4f409f215724a7c653213ddb7124138d970571eab6cd0fe21496deca7b",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresh1bd.dds": {
+    "sha256": "508a1111f402123ac39ce4f522cfebc40f63b7d5c6bf02d5dcf618140223e408",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresh1fa.dds": {
+    "sha256": "db09d4d6899c0a4f4b7d1f15b028e71aa4640c90a2ef55f6d01595c5362d9525",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresh1fb.dds": {
+    "sha256": "4175bc200b0f956c8f61b26679ea1bec98aff100442f89ef6286c2deb7c89be2",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresh1fc.dds": {
+    "sha256": "31b9e44b0a62db976205699cec7e93f53eeaebaef6925a49f9ddb674f683994a",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresh1fd.dds": {
+    "sha256": "80b6611a0eb839d00c47bbe820cf9071cbb9cff5384111a69cdebf77826fe614",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresh2ba.dds": {
+    "sha256": "6043f3bd69ba369ec234844b2939bf86fd86d8cb0373c72161294d8f3add2cda",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresh2bb.dds": {
+    "sha256": "cc3a09a7c6ace854faed93de552ae858448b284436e98a29587c63908235d419",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresh2bc.dds": {
+    "sha256": "f8032256460ad783b5b3180923667b3abb8e409f4eb657399844acfdee826bc0",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresh2bf.dds": {
+    "sha256": "aee070d4aa40d7b0d1a891f13c6ad4ab1d1e2711c820965382903ad1a0d3b9d3",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresh2fa.dds": {
+    "sha256": "45a7d70ddc278762d7e88f2886edf520c974e227d773e51d58f498848de78387",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresh2fb.dds": {
+    "sha256": "85db80a1e411518312ead24abbdafa6fcbdf5cc465987b6b0333d16b8b3086a3",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresh2fc.dds": {
+    "sha256": "71c9cbbd2af5468e4f252f5f17623af355039a3b20d806c12c90ccae7e87401e",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresh2ff.dds": {
+    "sha256": "16cc348be68f573b4169009efbb67cf2b2020c1eb360b3642c076b5cfe92613c",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresh3a.dds": {
+    "sha256": "21fe7007a547b4e70e1d459f0deca7b971d288667810efcc751f1aad9860a776",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresh3b.dds": {
+    "sha256": "5cd951a6873f70c45590ca3f07229da529bc711d8384336a6ad936472fea32eb",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresh3c.dds": {
+    "sha256": "19cb70b29866ee06d6bc43689ffe9b5ca85fc345d737841403554f6e27fc927e",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tresh3e.dds": {
+    "sha256": "f9c11e85ba59306a0e558ccfbd169d9e84d16aca7e091a035b0375a49945a319",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "finlot.bfl/tre_fir1.dds": {
+    "sha256": "3ac389a7419560576d912f8e1691556b37027ac340ba6d927d2362b2150ae9a2",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_fir2.dds": {
+    "sha256": "58e147f100ed02e4d31170bb3e6384e9d3af9c05b4cb82b18ef3fc52b95b753f",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_fr1.dds": {
+    "sha256": "6cb185466e2e64b4c20cddb303511e07e6784f43796ae7d3d7dd42525e70a6a0",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_fr2.dds": {
+    "sha256": "87d8da206ed4f5320c240c54bbdcb501be869ee4a615f953adbef983a52da9f1",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_fr3.dds": {
+    "sha256": "3e52ed5b05acf5142f345772a6f69fdb6969eddf7b6f87d58318e2b39bf7a87a",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_fr4.dds": {
+    "sha256": "51f4201276b0847b643734487f9ba8f19c332b364ef0ea5a486d2a22711714c8",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_fr5.dds": {
+    "sha256": "d78d383c33e918d22c4241b00e7373c1ae4afbb6443c958c6de88f6f9a22e41a",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_fr6.dds": {
+    "sha256": "2a48c2dc4907dfa9dd1d4ca0789fe1c004d3cd5c8bc937d34d17b1ac6b3af500",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_fr7.dds": {
+    "sha256": "0a17b8d0cc87b6d2afd4db5aec3de339419736bb7d765d83d06067be465b888b",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_gr1.dds": {
+    "sha256": "bd0cdd44b70e05baf4727dda969875a4d21357a9f25335c955c71d6efea87cd4",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_rd1.dds": {
+    "sha256": "ed1aced5bfb3fced1278f4ade8281bad685d1f1ac684d0e3f994391bf73bb2a0",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_th1.dds": {
+    "sha256": "ac1e734a6930cf3fbe016417b588af701d51af7499675c707721a3bb0395de6e",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_th2.dds": {
+    "sha256": "50769fbc94bef8804286d763588b0af7d57762c559441ccb904dc4120614da8a",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_th3.dds": {
+    "sha256": "582329692abf8dc846ac21ba40fa2e8180ea535c6e1cc9fea944d0ce92f0bda9",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_th4.dds": {
+    "sha256": "13f10d71723646ada7ae2fe736659fe5c2ef91de1487b4fef19d053d38a1710b",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_th5.dds": {
+    "sha256": "a67895639c8016f380f0ca8eaa073a718c1f8907e5faecfda45e597dc862e270",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_th6.dds": {
+    "sha256": "07f252b445177ffd7d77939ac1772c83efe48821923849074912918431850255",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_wb1.dds": {
+    "sha256": "7ed5f7fdccbc5495c503f2cc28914f70ec8a51a180a62d6af0e4b6a9f8907705",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_wb2.dds": {
+    "sha256": "9f190cd3dba8e7001cb93ae273dabeb1001c584a34150267081718814b2740f7",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_wb3.dds": {
+    "sha256": "3906320617f9930195b773dbd865d3f50a33cddb5f78fb81172c95579f82367f",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_wb4.dds": {
+    "sha256": "badb00d96abce558394043b1bf87b1ebe51506faf79c35e930ffff932e004d38",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_wb5.dds": {
+    "sha256": "c544b6e37e32d800342296e3ae9ef9d5d44849afaaf023cd0714a2a89a67b26c",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_wb6.dds": {
+    "sha256": "9babdcedeb78a1753e74666f347ace1b83801def82e104daa1e6402f9ee611eb",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "finlot.bfl/tre_wb7.dds": {
+    "sha256": "3a980a133f25778c687dd8b0d49c412e9f852a3175fa2df90631b57411cf461f",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "frahit.bfl/tre_wla.dds": {
+    "sha256": "49f33ce1894e2382703d203b3d1689ec245fda53765f3b4d9463e6bde5dafe80",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "frahit.bfl/tre_w2a.dds": {
+    "sha256": "9885f0a640340f77a67cc16222e949d969188afdc71b37ac0eb9a4460e806784",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "frahit.bfl/tre_w2b.dds": {
+    "sha256": "bccc1770596860071b516a7075ba020b98ad633c0e3c19c5a1fd94e1343c8e44",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "frahit.bfl/tre_w2c.dds": {
+    "sha256": "3435e5c489beb1464d0c9375eccf730cc502dfcf692664362f803a4957b299f1",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "frahit.bfl/tre_w2d.dds": {
+    "sha256": "647b3beab77414e23e46cba79678177d10322c6aef59465d4ac6f64db451db51",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "frahit.bfl/tre_wld.dds": {
+    "sha256": "5890feb2221b26e244c1b46345368ddc67db13685a2a033b86e7beb08dcff9bc",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "frahit.bfl/tre_wlb.dds": {
+    "sha256": "b502eef5143c05c77bf14a0dbafe02b9d63f3152cd266d321bfe1aa20a472a10",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "frahit.bfl/tre_cy3a.dds": {
+    "sha256": "9368ca3bea9fea2f5f374df8ce4f51e9bee42f2bf66032b5f3a082795a32e6ea",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "frahit.bfl/tre_co3a.dds": {
+    "sha256": "5cacc545d39ca0a215187140a013bf2d34c42b4e29aeaa568850d0e7cba363d3",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "frahit.bfl/tre_co4a.dds": {
+    "sha256": "63d11921e2f5bc2db39207f1e59fb6b123f8b210739ea30ba27b866f0856329d",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "frahit.bfl/tre_co5a.dds": {
+    "sha256": "e1088e8dbc7c4999a7ef471f3c7dab72c3b1e88b172ba66247b5f12ac3501e1d",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "frahit.bfl/tre_md1.dds": {
+    "sha256": "155a2ec8ef2be38c2675acc9856206f73c7fb119b2f0ae98f022199a8a2a4a6e",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "frahit.bfl/tre_md2.dds": {
+    "sha256": "ee685c267bf93cc22f6fd5df10d9b8f6919bd1b14f3a42245c4f33b130f76a56",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "frahit.bfl/tre_md4.dds": {
+    "sha256": "1a4291c1eb751ca3c09579f5e09ce3cebe195a91f9fdc69bf5468df0d5299a4a",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "frahit.bfl/tre_sm1.dds": {
+    "sha256": "3a3e71d3f65bbddc77d44d646bbe947c7f91db44183427e646a52b71ac408524",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "frahit.bfl/tre_sm2.dds": {
+    "sha256": "45d31b2770da8596f992f32ece2382a0ceab979afd1ce622dea4d868b58e3f6d",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "frahit.bfl/tre_co6a.dds": {
+    "sha256": "09884707c10d33c1b3c7ceef3e6d859977c716b2114dc475f1f5cd44762738e7",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "frahit.bfl/spe_05.dds": {
+    "sha256": "55ee4ff106ffd10498da76c7a85434a2121a879a263b94d212b7ad882983747d",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "frahit.bfl/spe_06.dds": {
+    "sha256": "cac1991866e62bc3c541fb44f6afd9b52ad9a302b566b97ebc45e734b42adab2",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "frahit.bfl/spe_07.dds": {
+    "sha256": "68f9e4e9a68c5d4cac3d9f424d8cb87971b28893a642b95b1fff52cb1ee81570",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "frahit.bfl/spe_08.dds": {
+    "sha256": "308a6cac2e15966c91083d7da4c7d84e368f0a80577a9be3efbbce2394e66b06",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "frahit.bfl/spe_09.dds": {
+    "sha256": "acc22cec2b10e681a740d213bcb93c03c970617237f1d747f391955130a80c22",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "frahit.bfl/spe_10.dds": {
+    "sha256": "90bbc3b18f55a85a46294d42f538d0357fb36cb1855b3e0343e36fc0114c0a6d",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "frahit.bfl/spc_mn7a.dds": {
+    "sha256": "70c990178f4bb0fdb43fcddeab16cca5d1b586b5a16b4dc347ad379599d02c74",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "frahit.bfl/spc_mn9a.dds": {
+    "sha256": "42dc26428fcd9da58332e6b9b7189c2b5d4dbdcb689911b14da96e52a5e52aba",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "frahit.bfl/spc_mn11a.dds": {
+    "sha256": "a3393e7e0e7bd3593a9b6b410c57d6dba94d14ea6c55600d67789e4fbf05c20e",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "frahit.bfl/spc_mn13a.dds": {
+    "sha256": "29ce91c073e3e98d9acd77a3fbfac13d7b6e30bef4c96a70ae067f612100ad42",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "frahit.bfl/tre_md3.dds": {
+    "sha256": "6c9f23b690ef517af3f7cfadf64f7828ac2f965570dd4af0dbe389da4814b99f",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "frahit.bfl/spc_mn1a.dds": {
+    "sha256": "0e6a3be77d173d0d72b1c05375ce1408bf2a44d8e0b1f5c13099132f4683beb4",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "frahit.bfl/spc_mn3a.dds": {
+    "sha256": "f919448ee5627bdcf0c7970fe23b9b2358470e28139b373b627360afb482cff4",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "frahit.bfl/spc_mn5a.dds": {
+    "sha256": "b78539c0672d40c6cc9d6a18fcee6e7c876798b959ac047c1bac96e5923b5f4f",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "frahit.bfl/spc_mn15a.dds": {
+    "sha256": "e3db3bdf2809d55b0be7b5642e2bd6e1bc3506783662ebd48bb3979d1e7807b3",
+    "width": 128,
+    "height": 128,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "fralot.bfl/tre_wla.dds": {
+    "sha256": "ce5760eb566ed80b8e00ff8efc13012cdf763f013ee8df9088fd0e21609681e7",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "fralot.bfl/tre_w2a.dds": {
+    "sha256": "46ed300a6d5e481b82bef40a2ded199153be7ee063c308d1fda65d8418b77c62",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "fralot.bfl/tre_w2b.dds": {
+    "sha256": "54c0ac3f646a3afaf5c073354c8f67adb5ce9d3109b7e56e4e9de95e0aa460b1",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "fralot.bfl/tre_w2c.dds": {
+    "sha256": "1a89b6e2eb144ce79b2e35fccdae2be53f1717c8e5d1f9091cfa515eac60dc9c",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "fralot.bfl/tre_w2d.dds": {
+    "sha256": "7ba4e4de99789b0bd274607a9dd6c6fb113e51786fae0402de0d93aec32ac3f7",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "fralot.bfl/tre_wld.dds": {
+    "sha256": "bd1a709cc5db3012ddd7e1b7857ccc07d6db92ba7eb41e3a2e3f8d0df99758a4",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "fralot.bfl/tre_wlb.dds": {
+    "sha256": "51e2b3ec063eed34ac1d51113e9aeac58aacb8212f3946ff330d5dfe729fd3ef",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "fralot.bfl/tre_cy3a.dds": {
+    "sha256": "55665d8b2840ba819cfc575d5b05f5c4257686ea9d11f265862c006da5cefd53",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "fralot.bfl/tre_co3a.dds": {
+    "sha256": "37aa7bdde74338c22cd1b8bcd64cebfec016041f8fc26c228e3c1f55102e382c",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "fralot.bfl/tre_co4a.dds": {
+    "sha256": "7eb2a007b972d0cd965a56ec399c807cd4d1e9af38030c4623de39691bf5b978",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "fralot.bfl/tre_co5a.dds": {
+    "sha256": "784ecf478a0060500205654f7eece6dc20adf7cf59780d2d9cbdbe78b9f97e99",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "fralot.bfl/tre_md1.dds": {
+    "sha256": "8e966387b50577449f31bbcabe92b3627b287124ed79817eeca3a8f73af5a6d9",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "fralot.bfl/tre_md2.dds": {
+    "sha256": "db446472ccdd659a428725fb8b736f98385b3d05578be63f8b1518b1c5dd7e35",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "fralot.bfl/tre_md4.dds": {
+    "sha256": "0ebe958fe1780da2691da535fc657ab4170932bdf85860f02f87b909dfa8f994",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "fralot.bfl/tre_sm1.dds": {
+    "sha256": "56aa8a35ffc9f7ed24c656bef0e34f372b5e1af76665a0dfb9be2857c9861500",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "fralot.bfl/tre_sm2.dds": {
+    "sha256": "bf2d8135483139d5a62da750fb02f8e968d3ae0508a9306888206a7333be3258",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-tree"
+  },
+  "fralot.bfl/tre_co6a.dds": {
+    "sha256": "39ddc0a23c69ec0d51839f058312051b22f8e310627407232d174fb4e63b9637",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "fralot.bfl/spe_05.dds": {
+    "sha256": "a61f6aba9c6d38e117bc5622cc80182218aa21dabca4cd69372068973cadc767",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "fralot.bfl/spe_06.dds": {
+    "sha256": "146197493f6097adab0e2a56557cc06f5f2155459eae10094d47f4e08fa43104",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "fralot.bfl/spe_07.dds": {
+    "sha256": "74c68c27b9889cd316f771cd8cf83bc297d090cd2e34698cf514fd9a72a97b43",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "fralot.bfl/spe_08.dds": {
+    "sha256": "a5f6056b73edeba7f2ee2d89d9fa583f8acb94b8b6df4083f89d03856be66d0c",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "fralot.bfl/spe_09.dds": {
+    "sha256": "2fc4ba51f86d1f01d1122f1eb74e5214966fa37a878e50342e046116850acd8d",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "fralot.bfl/spe_10.dds": {
+    "sha256": "9de40e24ade85ad2f0b708f8138f37f5f8d8830694461c63c02087c7bdeabe43",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "fralot.bfl/spc_mn7a.dds": {
+    "sha256": "2e1bf439b3c7abbee57a904420eaedb6a15f172b528cf160a5f287100cd0b4cf",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "fralot.bfl/spc_mn9a.dds": {
+    "sha256": "cfa8fc745469bb6fd614475f0afe6b1754a3cc4335c581c0e151287431d58f85",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "fralot.bfl/spc_mn11a.dds": {
+    "sha256": "0526d1eb1b5fe76a8846894d6775471392803ce4d29c357a4a22509de5477d9e",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "fralot.bfl/spc_mn13a.dds": {
+    "sha256": "3b00e0352214f7a178c2de752dc434119b5e158aa7f3eab71085ee71edcf7b48",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "fralot.bfl/tre_md3.dds": {
+    "sha256": "75e1908044b4a941b5db443aade07cae596303e0ca906fa600a016608daf301a",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "multi-tree-strip"
+  },
+  "fralot.bfl/spc_mn1a.dds": {
+    "sha256": "2d17f5ec84b3b0c6302f30986a200f3e53b4462f07163c72532fc622020146ea",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "fralot.bfl/spc_mn3a.dds": {
+    "sha256": "f002d7e1ed42ef046383db4a8a4552c9dc8fef79c52315cd6ad8a32bd405d089",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "fralot.bfl/spc_mn5a.dds": {
+    "sha256": "6d222cd0692d61d90b6c9aebe264d3c83c25a312055cfdc003713f1d42c24bd2",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  },
+  "fralot.bfl/spc_mn15a.dds": {
+    "sha256": "78aa1cb55af655559d37453e239de373b7d8ad19fbb3bdcad0c6a0a14055864c",
+    "width": 64,
+    "height": 64,
+    "kind": "spectator",
+    "category": "spectator"
+  }
+}
