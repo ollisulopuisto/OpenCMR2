@@ -26,7 +26,10 @@ typedef struct GfxVertexBuffer GfxVertexBuffer;
 /* World-space dust. TRUE accepts a bounded, preflighted volume command;
    caller suppresses cloud sheets, retaining ordinary chips/spray. FALSE uses fallback. */
 typedef struct GfxDustLobe { float centreRadius[4]; float colourDensity[4]; } GfxDustLobe;
+// Copy lobes for this view; true selects volume instead of fallback sheets.
 BOOL Gfx_DrawDustVolume(const GfxDustLobe *lobes,int count);
+// Encode pending world dust after opaque world/depth, before HUD.
+void Gfx_FlushDustVolume(void);
 
 
 /* Row-vector matrix, Direct3D layout: v' = v * M, translation in _41.._43. */

@@ -2853,6 +2853,7 @@ int Game_DrawSceneViewport(SceneNode *pRoot, SceneNode *pCamera, void *pRect, in
         }
         CGraphics::SetCullMode(CGame::GetSectorDrawState());
         FixMatrix_GetPosition(&cameraPosition, &pCamera->world);
+        CGraphics::SetProjection(0, 0, CGraphics::m_farPlaneFixed, 0); // establish camera projection before volume preflight
         Particle_DrawAll(pCamera, (BYTE)bit);
         forward.x = g_unk0x0059be6c->world.forward.x;
         forward.y = 0;
@@ -2932,6 +2933,7 @@ int Game_DrawSceneViewport(SceneNode *pRoot, SceneNode *pCamera, void *pRect, in
         Line2D_Draw();
         Billboard_Draw(pCamera);
         Scene_DrawShadowBatches(bit);
+        Gfx_FlushDustVolume(); // completed world depth/projection, before HUD
     }
     Flare_SampleVisibility(NULL, NULL, 0);
     CGraphics::SetZWriteEnable(0);

@@ -74,9 +74,12 @@ struct Particle {
     Texture *texture;       // 0x60 the type's texture, copied when spawned
     short field0x64;         // effect data: car << 8 | variant
     short field0x66;
+    bool dryWheelDust; // runtime-only tag, never a disk record
 };
 
 void Particle_Spawn(int typeIndex, FixVector *pSource, FixVector *pPosition, int field0x48, FixMatrix *attachmentMatrix,
                     BYTE *pColour, BYTE field0x54, void *callbackParam, BYTE field0x55);
+void Particle_SpawnTagged(int typeIndex, FixVector *pSource, FixVector *pPosition, int field0x48, FixMatrix *attachmentMatrix,
+                    BYTE *pColour, BYTE field0x54, void *callbackParam, BYTE field0x55, bool dryWheelDust);
 
 #endif

@@ -20,3 +20,10 @@ graphics=(root/'game/Graphics.cpp').read_text()
 assert 'Sys_GetOption("video.dust_plume", 1)' in car
 assert 'Sys_GetOption("video.dust_volume",1)' in graphics
 assert 'Sys_SetOption("video.dust_' not in car+graphics
+
+# Binding contract supplements the executable recorder's command-order test.
+game=(root/'game/Game.cpp').read_text()
+view=game[game.index('int Game_DrawSceneViewport(SceneNode *pRoot, SceneNode *pCamera, void *pRect, int bit, BYTE flag)\n{'):game.index('void CGame::SetSectorDrawState(')]
+assert view.index('CGraphics::SetProjection(0, 0, CGraphics::m_farPlaneFixed, 0)') < view.index('Particle_DrawAll(')
+assert view.index('Particle_DrawAll(') < view.index('Game_DrawCulledSectorMeshes(')
+assert view.index('Scene_DrawShadowBatches(bit)') < view.index('Gfx_FlushDustVolume()') < view.index('Flare_SampleVisibility(') < view.index('Sprite_DrawLayer(3)')
