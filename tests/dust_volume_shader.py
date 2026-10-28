@@ -9,17 +9,24 @@ with tempfile.TemporaryDirectory() as tmp:
  spv=str(Path(tmp)/'v.spv');subprocess.run(['glslangValidator','-V',str(root/'dust_volume.frag'),'-o',spv],check=True)
  frag=subprocess.check_output(['spirv-cross',spv,'--version','330','--no-es'],text=True)
 ctx=moderngl.create_standalone_context(require=330,backend='egl');w,h=240,160
+# Emulate SDL GPU's TOP-origin fragment position in bottom-origin EGL. Depth
+# uploads below are flipped too. Previous tests used GL convention on both
+# sides and therefore could not catch a Metal/Vulkan clip-Y mismatch.
+frag=frag.replace('gl_FragCoord.xy', 'vec2(gl_FragCoord.x, '+str(h)+'.0 - gl_FragCoord.y)')
+
 vert='''#version330
 void main(){vec2 p=vec2((gl_VertexID<<1)&2,gl_VertexID&2);gl_Position=vec4(p*2.-1.,0,1);}'''.replace('#version330','#version 330')
 prog=ctx.program(vertex_shader=vert,fragment_shader=frag);prog['DustVolumeUniforms'].binding=0
 pixels=np.zeros((h,w,4),dtype='u1');pixels[:]=[45,70,53,255]
 scene=ctx.texture((w,h),4,pixels.tobytes());scene.use(0)
 out=ctx.texture((w,h),4);fbo=ctx.framebuffer([out]);vao=ctx.vertex_array(prog,[])
-def render(yaw,count=3,depth=1.,density=1.,offset=0.,large=False,clouds=None,trail=False,close=False,transmittance=False):
+def render(yaw,count=3,depth=1.,density=1.,offset=0.,large=False,clouds=None,trail=False,close=False,transmittance=False,pitch=0.):
  eye=np.array([np.sin(yaw)*7,2,np.cos(yaw)*7]);eye[0]+=offset;target=np.array([offset,1,0]);forward=(target-eye);forward/=np.linalg.norm(forward);right=np.cross(forward,[0,1,0]);right/=np.linalg.norm(right);up=np.cross(right,forward)
  view=np.eye(4);view[:3,:3]=[right,up,forward];view[:3,3]=-view[:3,:3]@eye
  if trail:
   eye=np.array([18+offset,5,55.]) if not close else np.array([20+offset*.3,2.5,28.]);target=np.array([4.,3.,16.]);forward=target-eye;forward/=np.linalg.norm(forward);right=np.cross(forward,[0,1,0]);right/=np.linalg.norm(right);up=np.cross(right,forward);view[:3,:3]=[right,up,forward];view[:3,3]=-view[:3,:3]@eye
+ if pitch:
+  eye[1]+=pitch;forward=target-eye;forward/=np.linalg.norm(forward);right=np.cross(forward,[0,1,0]);right/=np.linalg.norm(right);up=np.cross(right,forward);view[:3,:3]=[right,up,forward];view[:3,3]=-view[:3,:3]@eye
  # positiveZ D3D-style projection depth0..1, as game shaders consume
  near,far=.1,150 if trail else 30;proj=np.zeros((4,4));proj[0,0]=1.4*h/w;proj[1,1]=1.4;proj[2,2]=far/(far-near);proj[2,3]=-near*far/(far-near);proj[3,2]=1
  inv=np.linalg.inv(proj@view).astype('f4')
@@ -46,7 +53,7 @@ def render(yaw,count=3,depth=1.,density=1.,offset=0.,large=False,clouds=None,tra
   hit[car]=eye+ray[car]*entry[car,None];valid|=car;background[car,:3]=[210,216,224]
   hc=np.concatenate([hit,np.ones((h,w,1))],axis=-1)@(proj@view).T
   depths[valid]=(hc[:,:,2]/hc[:,:,3])[valid]
- d=ctx.texture((w,h),1,depths.tobytes(),dtype='f4');d.use(0);prog['sceneDepth'].value=0
+ d=ctx.texture((w,h),1,np.flipud(depths).copy().tobytes(),dtype='f4');d.use(0);prog['sceneDepth'].value=0
  fbo.use();vao.render(vertices=3);raw=np.frombuffer(fbo.read(components=4),dtype='u1').reshape(h,w,4).copy();arr=raw.copy();arr[:,:,:3]=np.clip(raw[:,:,:3].astype(float)+background[:,:,:3].astype(float)*raw[:,:,3,None]/255.,0,255);arr[:,:,3]=pixels[:,:,3];ubo.release();d.release();return raw[:,:,3] if transmittance else arr
 assert np.array_equal(render(0,count=0),pixels)
 assert np.array_equal(render(0,density=0),pixels)
@@ -57,6 +64,31 @@ assert np.count_nonzero(render(0,large=True)[:,:,:3]!=pixels[:,:,:3])>np.count_n
 assert np.any(a!=pixels) and np.any(b!=pixels)
 assert np.array_equal(a,render(0)),'same world/camera must render deterministically'
 assert np.array_equal(a[:,:,3],pixels[:,:,3])
+# Camera types share one reconstruction contract. Pitched close chase and
+# far trackside views must stay aligned with projected WORLD cloud centres.
+for yaw,pitch in [(0,0),(.7,3),(-.8,-.5)]:
+ trans=render(yaw,pitch=pitch,transmittance=True)
+ eye=np.array([np.sin(yaw)*7,2.+pitch,np.cos(yaw)*7]);target=np.array([0.,1.,0.]);f=target-eye;f/=np.linalg.norm(f);r=np.cross(f,[0,1,0]);r/=np.linalg.norm(r);u=np.cross(r,f)
+ centre=np.array([0.,1.3,.3]);v=centre-eye;z=np.dot(f,v)
+ px=int((np.dot(r,v)*1.4*h/w/z+1)*w/2);py=int((np.dot(u,v)*1.4/z+1)*h/2)
+ assert 0<=px<w and 0<=py<h and trans[py,px]<250, 'top-origin ray must meet projected cloud centre'
+# Removing only the clip-Y correction must break projection/depth alignment.
+correct=render(.4,pitch=3.,transmittance=True)
+working=prog;working_vao=vao
+broken=ctx.program(vertex_shader=vert,fragment_shader=frag.replace('1.0 - (uv.y * 2.0)', '(uv.y * 2.0) - 1.0'))
+# SPIRV-Cross may choose a vector constructor spelling. Require actual mutation.
+assert '1.0 - (uv.y * 2.0)' in frag, 'update the intentional-regression replacement for emitted GLSL'
+broken['DustVolumeUniforms'].binding=0;prog=broken;vao=ctx.vertex_array(broken,[])
+wrong=render(.4,pitch=3.,transmittance=True)
+if args.output:
+ before=render(.4,pitch=3.)
+prog=working;vao=working_vao
+if args.output:
+ after=render(.4,pitch=3.);contact=Image.new('RGB',(960,320))
+ for i,(array,label) in enumerate([(before,'BEFORE: clip-Y mismatch | pitched camera'),(after,'AFTER: top-origin SDL GPU ray | pitched camera')]):
+  im=Image.fromarray(array).transpose(Image.Transpose.FLIP_TOP_BOTTOM).convert('RGB').resize((480,320));ImageDraw.Draw(im).text((8,8),label,fill='white');contact.paste(im,(480*i,0))
+ contact.save(str(Path(args.output).with_name('dust-top-origin-before-after.png')))
+assert np.count_nonzero(correct!=wrong)>w*h*.02, 'old Y mapping must visibly fail with a pitched camera'
 # Exercise actual depth-aware composite separately, not a CPU substitute.
 with tempfile.TemporaryDirectory() as tmp:
  spv=str(Path(tmp)/'c.spv');subprocess.run(['glslangValidator','-V',str(root/'dust_composite.frag'),'-o',spv],check=True)

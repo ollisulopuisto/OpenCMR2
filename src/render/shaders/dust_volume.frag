@@ -12,7 +12,10 @@ layout(std140,set=3,binding=0) uniform DustVolumeUniforms {
     vec4 colours[32]; // linear-ish tint RGB, opacity multiplier
 };
 vec3 world(vec2 uv,float z) {
-    vec4 p=inverseViewProjection*vec4(uv*2.-1.,z,1.);
+    // SDL GPU fragment/texture coordinates start at the top on Metal,
+    // Vulkan and D3D. Geometry clip Y is positive up. Keep texture sampling
+    // top-origin, but invert Y when constructing the clip-space ray.
+    vec4 p=inverseViewProjection*vec4(uv.x*2.-1.,1.-uv.y*2.,z,1.);
     return p.xyz/p.w;
 }
 // Smooth world-space noise. No frame time or camera basis in density.
