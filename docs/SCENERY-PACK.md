@@ -2,12 +2,19 @@
 
 The external pack loader is visual-only. Original archives, mesh pointers,
 collision records, placements and physics stay in place. No private game art
-is included in the source repository. Install the separately supplied pack as
-`scenery-pack/` under the game data directory, next to the original data folders.
-`[video] video.scenery_pack` can select a different root;
-`video.scenery_overrides=0` disables the loader. Both settings use the engine's
-existing `section.key` convention. Missing mappings or invalid assets keep the
-original rendering. Only single-source deferred cutout meshes qualify.
+is included in the source repository. Generate the pack as `scenery-pack/`
+inside a separate private user directory, outside the original game installation.
+Run `opencmr2 --data ORIGINAL-GAME-DIR --user-dir PRIVATE-USER-DIR` to load it.
+The default relative `scenery-pack` root is searched under that user directory;
+no INI change is needed in a new profile. The private profile has separate saves,
+settings and logs, leaving the existing profile untouched.
+
+`[video] scenery_pack` can select a different RELATIVE folder under the user or
+data directory. Absolute external paths are not supported by `Sys_OpenFile`:
+it resolves game paths under those roots. The internal option name is
+`video.scenery_pack`. `[video] scenery_overrides=0` disables the loader.
+Missing mappings or invalid assets keep the original rendering. Only
+single-source deferred cutout meshes qualify.
 
 ## Format
 
