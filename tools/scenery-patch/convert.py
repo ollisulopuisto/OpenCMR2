@@ -157,6 +157,94 @@ FOREGROUND_LIMBS = {'spc_mn15a': {'angles': [0, 8, 16, 8],
             'pivot': [28, 19],
             'plate': [],
             'polygon': [[25, 17], [29, 12], [39, 6], [48, 4], [50, 9], [39, 11], [32, 20]]}}
+# Explicit source-space masks. One person per group, not one whole-atlas warp.
+EXPANDED_LIMBS = {'spc_mn11a': {'angles': [0, -7, -14, -7],
+               'archive': 'frahit.bfl',
+               'donor': [-7, 0],
+               'pivot': [41, 59],
+               'polygon': [[39, 57],
+                           [44, 58],
+                           [43, 64],
+                           [39, 69],
+                           [38, 75],
+                           [34, 77],
+                           [29, 74],
+                           [32, 68],
+                           [37, 64]]},
+ 'spc_mn13a': {'angles': [0, 7, 14, 7],
+               'archive': 'frahit.bfl',
+               'donor': [0, -10],
+               'pivot': [31, 42],
+               'polygon': [[7, 38],
+                           [14, 39],
+                           [23, 40],
+                           [33, 40],
+                           [34, 44],
+                           [28, 46],
+                           [16, 44],
+                           [7, 42]]},
+ 'spc_mn7a': {'angles': [0, -9, -18, -9],
+              'archive': 'frahit.bfl',
+              'donor': [-2, -10],
+              'pivot': [43, 47],
+              'polygon': [[39, 45],
+                          [46, 45],
+                          [46, 50],
+                          [40, 56],
+                          [32, 60],
+                          [27, 61],
+                          [25, 58],
+                          [30, 55],
+                          [37, 51]]},
+ 'spe_06': {'angles': [0, -7, -14, -7],
+            'archive': 'frahit.bfl',
+            'donor': [-8, 0],
+            'pivot': [96, 21],
+            'polygon': [[87, 8],
+                        [90, 6],
+                        [94, 9],
+                        [96, 16],
+                        [99, 20],
+                        [96, 24],
+                        [92, 20],
+                        [90, 13]]},
+ 'spe_07': {'angles': [0, 8, 16, 8],
+            'archive': 'frahit.bfl',
+            'donor': [0, 10],
+            'pivot': [76, 19],
+            'polygon': [[72, 17],
+                        [74, 11],
+                        [84, 8],
+                        [94, 7],
+                        [95, 11],
+                        [87, 13],
+                        [79, 17],
+                        [77, 21]]},
+ 'spe_08': {'angles': [0, -8, -16, -8],
+            'archive': 'frahit.bfl',
+            'donor': [0, -9],
+            'pivot': [59, 49],
+            'polygon': [[39, 46],
+                        [44, 47],
+                        [51, 47],
+                        [59, 47],
+                        [61, 50],
+                        [55, 53],
+                        [46, 52],
+                        [39, 50]]},
+ 'spe_09': {'angles': [0, -8, -16, -8],
+            'archive': 'frahit.bfl',
+            'donor': [0, 10],
+            'pivot': [117, 39],
+            'polygon': [[101, 33],
+                        [105, 30],
+                        [111, 33],
+                        [117, 35],
+                        [120, 39],
+                        [117, 42],
+                        [111, 38],
+                        [105, 38]]}}
+FOREGROUND_LIMBS.update(EXPANDED_LIMBS)
 def foreground_limb_poses(src,name):
  original_size=src.size
  if src.size!=(128,128):src=src.resize((128,128),Image.Resampling.NEAREST)
@@ -165,6 +253,16 @@ def foreground_limb_poses(src,name):
   r=FOREGROUND_LIMBS[name];mask=Image.new('L',src.size);ImageDraw.Draw(mask).polygon([tuple(p) for p in r['polygon']],fill=255)
   arm=src.copy();arm.putalpha(Image.composite(src.getchannel('A'),Image.new('L',src.size),mask))
   base=src.copy();base.putalpha(Image.composite(Image.new('L',src.size),src.getchannel('A'),mask))
+  if name in EXPANDED_LIMBS:
+   dx,dy=r['donor']
+   for y in range(128):
+    for x in range(128):
+     if mask.getpixel((x,y)) and 0<=x+dx<128 and 0<=y+dy<128:
+      px=src.getpixel((x+dx,y+dy))
+      if px[3] and not mask.getpixel((x+dx,y+dy)):base.putpixel((x,y),px)
+   if name=='spe_07':
+    base=src.copy();base.putalpha(Image.composite(Image.new('L',src.size),src.getchannel('A'),mask))
+    ImageDraw.Draw(base).polygon([(87,9),(90,7),(94,8),(96,11),(95,14),(91,13)],fill=src.getpixel((93,14)))
   if name=='spe_05':
    # Continue the occluded purple-shirt neighbour behind the moving arm.
    for y in range(38,64):

@@ -272,3 +272,18 @@ moving placements (7.6%), not33%. Finland10currently has no authored limbs.
 Whole-stage placement counts do not prove the current camera's visible ratio.
 More group segmentation and per-view people-weighted diagnostics are needed.
 No coverage percentage is inferred from the count of atlas files.
+
+### Expanded France articulated coverage
+
+Explicit source-space arm masks now also cover `spe_06`, `spe_07`, `spe_08`,
+`spe_09`, `spc_mn7a`, `spc_mn11a`, and `spc_mn13a`, with their matching low-detail
+sources. Each moves one person, not the whole atlas. Original placements,
+collision, feet and lower-body pixels stay fixed. Stable placement phases keep
+nearby groups from moving in lockstep.
+
+In the held decoded France stage1 (Ballon), these and the earlier recipes cover
+73 articulated person-placements out of 290 people, about25.2% across the whole
+stage. This is not a per-camera visible/occlusion measurement or native visual
+acceptance. No broader stage claim follows from regional texture availability.
+Finland still has no articulated limb recipes. The roughly-one-in-three-visible
+people target remains open. The previous22/290 count describes PR40 alone.
