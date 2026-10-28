@@ -306,3 +306,20 @@ python3 tools/scenery-patch/export-evidence.py \
 
 Review `manifest.json` for missing names and archive parse failures. Do not
 publish the resulting ZIP or add it to Git. It contains original game artwork.
+
+### Finland articulated pairs
+
+Six Finland pair atlases (`spc_ma02/05/07/08/11/12`) now have explicit forearm
+masks and four poses, with both high/low source variants. Feet and lower30%
+remain fixed. Most poses are modest sleeve/hand gestures, not cheering or
+whole-body stretching. Original source bytes stay hash-gated.
+
+A stable placement hash selects65%of these pair cards for motion; the rest
+hold pose0. One moving person per selected pair targets about32.5%of people in
+large samples, not50%. Selection is identical for high/low variants, independent
+of frame order, and does not consume physics RNG. In the held Finland stage10
+(Tampere) placements,89out of302people are selected, about29.5%whole-stage.
+This does not prove the current camera's visible ratio or native appearance.
+Uncovered Finland crowd-strip and single-person atlases keep their earlier
+limited sway route. The roughly-one-in-three-visible target still needs native
+checks and per-view diagnostics.

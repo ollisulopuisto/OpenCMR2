@@ -107,6 +107,17 @@ class Tests(unittest.TestCase):
                 for pose in poses:
                     self.assertEqual(pose.crop((0,int(size*1.4),size*2,size*2)).tobytes(),poses[0].crop((0,int(size*1.4),size*2,size*2)).tobytes())
 
+    def test_finland_route_uses_authored_frames(self):
+        oldroot=getattr(patcher,'root',None)
+        try:
+            patcher.root=self.base/'authored';patcher.root.mkdir()
+            source=self.base/'person.dds'
+            im=Image.new('RGBA',(128,128));ImageDraw.Draw(im).rectangle((0,0,127,127),fill=(80,120,140,255));im.save(source)
+            for name in patcher.FINLAND_LIMBS:
+                frames=patcher.spectator({'path':str(source),'archive':'finhit.bfl','texture':name+'.dds'},Path(name))
+                self.assertEqual(len(frames),4)
+        finally:patcher.root=oldroot
+
     def test_full_output_and_feet(self):
         self.run_patch()
         rows = self.output.joinpath('manifest.tsv').read_text().splitlines()

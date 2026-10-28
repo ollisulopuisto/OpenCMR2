@@ -1,4 +1,5 @@
 #include "SceneryPack.h"
+#include "CrowdSelection.h"
 #include "ScenerySHA256.h"
 #include "SceneryPackFormat.h"
 #include "ScenerySourceFit.h"
@@ -211,13 +212,19 @@ static bool DrawReplacement(StageObject *object,const float *billboard,unsigned 
         // advance it. Stable placement phase does not consume physics RNG.
         unsigned phase=((unsigned)object->position.x*1664525u)^(unsigned)object->position.z;
         unsigned frame=Frame(animationTime,asset->entry.ticks,(unsigned)asset->frames.size(),phase);
+        // Finland pairs: oneperson in65%ofcards gives aboutone-thirdpeople.
+        // Identity routing above must already have reached an authored4pose
+        // recipe in a supported source archive. Others keep original behavior.
+        bool selected=asset->frames.size()!=4||(asset->entry.archive!="finhit.bfl"&&asset->entry.archive!="finlot.bfl")||
+            CrowdSelection::Articulate(object->position.x,object->position.z);
+        if(!selected)frame=0;
         PackTexture *t=asset->frames[frame];std::vector<GfxVertex> vertices;
         for(int i=0;i<mesh->triangleCount;i++)for(int j=0;j<3;j++){
             unsigned ix=mesh->pTriangles[i].vertexIndex[j];if(ix>=(unsigned)mesh->field_0x10)return false;
             auto &p=v[ix];vertices.push_back({p.x,p.y,p.z,p.nx,p.ny,p.nz,p.diffuseColour,p.specularColour,p.textureCoordinates[0][0],p.textureCoordinates[0][1],0,0});}
         if(!spectatorLogged){Sys_Log("options: spectator sidecar active (first successful override draw)");spectatorLogged=true;}
         State(*(const GfxMatrix*)billboard);Gfx_SetTexture(0,t->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,vertices.data(),vertices.size());Gfx_PopState();
-        if(!diagnosticObject||(asset->frames.size()==4&&!diagnosticArticulated)){diagnosticObject=object;diagnosticFrame=frame;diagnosticChanges=0;diagnosticArticulated=asset->frames.size()==4;}
+        if(selected&&(!diagnosticObject||(asset->frames.size()==4&&!diagnosticArticulated))){diagnosticObject=object;diagnosticFrame=frame;diagnosticChanges=0;diagnosticArticulated=asset->frames.size()==4;}
         if(diagnosticObject==object){
             if(diagnosticFrame!=frame)++diagnosticChanges;
             diagnosticFrame=frame;diagnosticTime=animationTime;
