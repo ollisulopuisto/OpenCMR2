@@ -422,6 +422,11 @@ extern "C" void Gfx_SetShadows(int type, int bias)
         s_executor->SetShadows(type, bias);
 }
 
+extern "C" int Gfx_IsOpenGL(void)
+{
+    return ChooseBackend() == BACKEND_GL;
+}
+
 extern "C" void Gfx_Shutdown(void)
 {
     while (!s_textures.empty())

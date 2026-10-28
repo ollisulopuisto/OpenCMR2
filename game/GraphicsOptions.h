@@ -106,10 +106,10 @@ inline int Anisotropy_IndexToLevel(int index)
 // tree. Pure: no renderer or game state; the caller gates on
 // [video] video.tree_break. Below the threshold the tree is solid and the
 // crash stops the car; at or above it the tree is smashed and the car drives
-// through. Tunable constant.
+// through. Tunable constant: roughly full driving speed.
 inline bool TreeBreak_ShouldBreak(int speed)
 {
-    return speed >= 0x20000;
+    return speed >= 0xc000;
 }
 
 // OpenCMR2: dirt on the camera lens. A level of 0 is a clean lens; 255 is
@@ -142,15 +142,43 @@ extern unsigned int g_lensDirt[8];
 
 // OpenCMR2: human-operator camera shake. Amplitude grows with car speed and
 // impact strength, clamped so the camera never leaves the track. The shake is
-// applied as a per-frame random jitter to the chase-camera position.
+// applied as a smoothed per-frame jitter to the chase-camera position so the
+// camera drifts like a handheld operator instead of jumping randomly.
 // [video] video.camera_effects gates it.
-#define SHAKE_MAX_AMPLITUDE 0x30000
+#define SHAKE_MAX_AMPLITUDE 0x18000
 
 // Shake amplitude (16.16) from speed and impact level (0..100).
 inline int Shake_Amplitude(int speed, int impact)
 {
-    int amp = FixMul(speed, 0x1999) + FixMul(impact, 0x1999);
+    int amp = FixMul(speed, 0x0c00) + FixMul(impact, 0x0c00);
     return amp > SHAKE_MAX_AMPLITUDE ? SHAKE_MAX_AMPLITUDE : amp;
+}
+
+// Smooths a shake direction over several frames so the camera drifts instead
+// of teleporting randomly every frame ("Parkinsons"). `target` is the new
+// random direction; `current` is the smoothed vector carried between frames.
+// Returns the smoothed vector scaled by `amp`.
+inline void Shake_Smooth(FixVector *current, const FixVector *target, int amp, int *frameCounter)
+{
+    (*frameCounter)++;
+    if (*frameCounter >= 8) {
+        *frameCounter = 0;
+        current->x = target->x;
+        current->y = target->y;
+        current->z = target->z;
+    } else {
+        // 75% keep previous, 25% move towards target (component-wise).
+        FixVecScale(current, current, 0xc000);
+        FixVector delta;
+        delta.x = target->x - current->x;
+        delta.y = target->y - current->y;
+        delta.z = target->z - current->z;
+        FixVecScale(&delta, &delta, 0x4000);
+        current->x += delta.x;
+        current->y += delta.y;
+        current->z += delta.z;
+    }
+    FixVecScale(current, current, amp);
 }
 
 // OpenCMR2: lens flare brightness from sun visibility (0..100).

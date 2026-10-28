@@ -245,6 +245,9 @@ void Gfx_SetParticles(int type, int intensity);
 /* OpenCMR2: directional shadows. `type` 0=off, 1=on; `bias` (0..100) is the
    shadow depth bias. Takes effect at once. [video] video.shadows */
 void Gfx_SetShadows(int type, int bias);
+/* OpenCMR2: whether the OpenGL 3.3 renderer is active (SDL_GPU otherwise).
+   Bloom, motion blur, particles and shadows are SDL_GPU-only. */
+int Gfx_IsOpenGL(void);
 void Gfx_Shutdown(void);
 
 /* Resolutions to offer, smallest first. */

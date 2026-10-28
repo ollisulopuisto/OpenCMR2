@@ -3991,16 +3991,16 @@ void FrontendMenu_EnterAdvancedGraphicsOptions(Menu *pMenu, int param)
     Menu_GetItem(pMenu, 0xf)->max = Sys_GetOption("video.tree_break", 1) != 0 ? 1 : 0;
     // OpenCMR2: camera effects on by default; off restores the original look.
     Menu_GetItem(pMenu, 0x10)->max = Sys_GetOption("video.camera_effects", 1) != 0 ? 1 : 0;
-    // OpenCMR2: animated scenery off by default to preserve original look.
-    Menu_GetItem(pMenu, 0x11)->max = Sys_GetOption("video.animated_scenery", 0) != 0 ? 1 : 0;
-    // OpenCMR2: motion blur on by default.
-    Menu_GetItem(pMenu, 0x12)->max = Sys_GetOption("video.motion_blur", 1) != 0 ? 1 : 0;
-    // OpenCMR2: bloom on by default.
-    Menu_GetItem(pMenu, 0x13)->max = Sys_GetOption("video.bloom", 1) != 0 ? 1 : 0;
-    // OpenCMR2: rain on by default.
-    Menu_GetItem(pMenu, 0x14)->max = Sys_GetOption("video.particles", 1);
-    // OpenCMR2: shadows on by default.
-    Menu_GetItem(pMenu, 0x15)->max = Sys_GetOption("video.shadows", 1) != 0 ? 1 : 0;
+    // OpenCMR2: animated scenery on by default — idle crowds and trees cycle.
+    Menu_GetItem(pMenu, 0x11)->max = Sys_GetOption("video.animated_scenery", 1) != 0 ? 1 : 0;
+    // OpenCMR2: motion blur, bloom, particles and shadows are SDL_GPU-only;
+    // force them off on the OpenGL renderer so the menu doesn't pretend they
+    // work.
+    int isOpenGL = Gfx_IsOpenGL() != 0;
+    Menu_GetItem(pMenu, 0x12)->max = isOpenGL ? 0 : Sys_GetOption("video.motion_blur", 1) != 0 ? 1 : 0;
+    Menu_GetItem(pMenu, 0x13)->max = isOpenGL ? 0 : Sys_GetOption("video.bloom", 1) != 0 ? 1 : 0;
+    Menu_GetItem(pMenu, 0x14)->max = isOpenGL ? 0 : Sys_GetOption("video.particles", 1);
+    Menu_GetItem(pMenu, 0x15)->max = isOpenGL ? 0 : Sys_GetOption("video.shadows", 1) != 0 ? 1 : 0;
     if (CGameInfo::GetPreviewMode() != 0) {
         Menu_GetItem(pMenu, 10)->max = 1;
         return;
@@ -4056,21 +4056,20 @@ void FrontendMenu_ApplyAdvancedGraphicsOptions(Menu *pMenu, int param)
     Sys_SetOption("video.camera_effects", Menu_GetItem(pMenu, 0x10)->max);
     // OpenCMR2: animated scenery on/off.
     Sys_SetOption("video.animated_scenery", Menu_GetItem(pMenu, 0x11)->max);
-    // OpenCMR2: motion blur on/off; on blends the previous frame into this
-    // one at a modest strength, off restores the original look.
-    int motionBlur = Menu_GetItem(pMenu, 0x12)->max;
+    // OpenCMR2: motion blur, bloom, particles and shadows are SDL_GPU-only.
+    // On OpenGL the Enter routine already forced them off, so these values
+    // are always 0 here; keep the calls for symmetry.
+    int isOpenGL = Gfx_IsOpenGL() != 0;
+    int motionBlur = isOpenGL ? 0 : Menu_GetItem(pMenu, 0x12)->max;
     Sys_SetOption("video.motion_blur", motionBlur);
     Gfx_SetMotionBlur(motionBlur, motionBlur != 0 ? 40 : 0);
-    // OpenCMR2: bloom on/off; on adds a subtle bleed around bright pixels.
-    int bloom = Menu_GetItem(pMenu, 0x13)->max;
+    int bloom = isOpenGL ? 0 : Menu_GetItem(pMenu, 0x13)->max;
     Sys_SetOption("video.bloom", bloom);
     Gfx_SetBloom(bloom, bloom != 0 ? 60 : 0);
-    // OpenCMR2: particles — Off / Rain / Snow, with a modest intensity.
-    int particles = Menu_GetItem(pMenu, 0x14)->max;
+    int particles = isOpenGL ? 0 : Menu_GetItem(pMenu, 0x14)->max;
     Sys_SetOption("video.particles", particles);
     Gfx_SetParticles(particles, particles != 0 ? 120 : 0);
-    // OpenCMR2: shadows on/off with a small depth bias to reduce acne.
-    int shadows = Menu_GetItem(pMenu, 0x15)->max;
+    int shadows = isOpenGL ? 0 : Menu_GetItem(pMenu, 0x15)->max;
     Sys_SetOption("video.shadows", shadows);
     Gfx_SetShadows(shadows, shadows != 0 ? 5 : 0);
 }

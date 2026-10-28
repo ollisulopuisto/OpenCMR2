@@ -957,16 +957,19 @@ void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef)
     if (g_playerCameraMode[index] == 4)
         FixMatrix_RotateAboutRight(pM, (unsigned short)g_chaseCameraPitch[2 + pObj->view]);
 
-    // OpenCMR2: human-operator camera shake — random jitter on the chase
+    // OpenCMR2: human-operator camera shake — smoothed random jitter on the chase
     // camera position, scaled by car speed and impact strength
-    // ([video] video.camera_effects). The crash can still stop the car, but
-    // the camera keeps moving like a handheld operator.
+    // ([video] video.camera_effects). The camera drifts like a handheld
+    // operator instead of jumping randomly every frame.
     if (Sys_GetOption("video.camera_effects", 1) != 0) {
         extern BYTE g_viewObjectCarIndices[16];
         int carIx = g_viewObjectCarIndices[pObj->index];
         Car *pCar = Car_Get(carIx);
         int amp = Shake_Amplitude(pCar->speed, pCar->shakeLevel);
         if (amp > 0) {
+            static FixVector shakeTarget;
+            static FixVector shakeCurrent;
+            static int shakeFrame = 0;
             FixVector jitter;
             jitter.x = (rand() & 0xffff) - 0x8000;
             jitter.y = (rand() & 0xffff) - 0x8000;
@@ -974,11 +977,11 @@ void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef)
             int len = FixVecLength(&jitter);
             if (len > 0) {
                 FixVecScaleRecip(&jitter, &jitter, len);
-                FixVecScale(&jitter, &jitter, amp);
-                pObj->matrix.position.x += jitter.x;
-                pObj->matrix.position.y += jitter.y;
-                pObj->matrix.position.z += jitter.z;
             }
+            Shake_Smooth(&shakeCurrent, &jitter, amp, &shakeFrame);
+            pObj->matrix.position.x += shakeCurrent.x;
+            pObj->matrix.position.y += shakeCurrent.y;
+            pObj->matrix.position.z += shakeCurrent.z;
         }
     }
 
