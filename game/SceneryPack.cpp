@@ -28,7 +28,16 @@ bool treeLogged=false,spectatorLogged=false,assetFailureLogged=false;
 std::string root;
 std::map<std::string,PackTexture> textures;
 bool Read(const std::string &path,std::string &out) {
-    SysFile *f=Sys_OpenFile(path.c_str(),SYS_FILE_READ); if(!f)return false;
+    SysFile *f=nullptr;
+    if(Sys_HasSceneryDirectory()){
+        // Paths already carry the configured relative pack prefix. Remove only
+        // that exact prefix when reading from the independently selected root.
+        std::string prefix=Sys_GetOptionText("video.scenery_pack","scenery-pack");if(!prefix.empty()&&prefix.back()!='/')prefix+='/';
+        if(path.compare(0,prefix.size(),prefix)!=0)return false;
+        std::string relative=path.substr(prefix.size());if(!SafePath(relative))return false;
+        f=Sys_OpenSceneryFile(relative.c_str());
+    }else f=Sys_OpenFile(path.c_str(),SYS_FILE_READ);
+    if(!f)return false;
     DWORD n=Sys_GetFileSize(f);if(n>16*1024*1024){Sys_CloseFile(f);return false;}
     out.resize(n);bool ok=Sys_ReadFile(f,out.data(),n)==n;Sys_CloseFile(f);return ok;
 }
@@ -99,7 +108,7 @@ void SceneryPack_LogStatus(){
         Sys_Log("options: scenery=original (overrides disabled)");return;
     }
     std::string folder=Sys_GetOptionText("video.scenery_pack","scenery-pack");
-    if(!SceneryFormat::SafePath(folder)){
+    if(!Sys_HasSceneryDirectory()&&!SceneryFormat::SafePath(folder)){
         Sys_Log("options: scenery=original (invalid relative pack root)");return;
     }
     std::string text;
