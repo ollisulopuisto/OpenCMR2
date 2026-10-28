@@ -264,7 +264,7 @@ placement; changing near/far source variants does not remove limb motion.
 These foreground groups match the user's supplied screenshots, but native
 motion and clean-plate appearance still need checking in game. The low-source
 poses retain the original low-detail pixels; enlarging them invents no detail.
-Other38atlas files remain the limited upper-body sway route.
+After the expanded France recipes below,24atlas files retain the limited upper-body sway route.
 
 The requested25%-33%visible-person target remains open. A provisional decoded
 France01whole-stage audit counts290person-placements; these recipes cover22
@@ -287,3 +287,22 @@ stage. This is not a per-camera visible/occlusion measurement or native visual
 acceptance. No broader stage claim follows from regional texture availability.
 Finland still has no articulated limb recipes. The roughly-one-in-three-visible
 people target remains open. The previous22/290 count describes PR40 alone.
+
+### Export only observed missing source evidence
+
+For the debug/font and eight-tree coverage gap, this read-only tool scans an
+owned installation and creates a new private ZIP. It exports only stage font
+slot1 (`general/hel_20pt`, resolved from `Surface_LoadStageFonts`) and the exact
+eight tree names reported by the runtime, with archive/member/hash provenance.
+The archive scan is not proof of which duplicate the runtime selected.
+No game files are changed and nothing is uploaded. Python3 standard library
+only. Output must be new and outside the game-data directory.
+
+```sh
+python3 tools/scenery-patch/export-evidence.py \
+  --data "/Users/dst/Documents/games/CMR2" \
+  --output "$HOME/Desktop/cmr2-observed-scenery-evidence.zip"
+```
+
+Review `manifest.json` for missing names and archive parse failures. Do not
+publish the resulting ZIP or add it to Git. It contains original game artwork.
