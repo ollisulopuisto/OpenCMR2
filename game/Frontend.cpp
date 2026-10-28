@@ -390,7 +390,8 @@ bool CFrontend::LoadSplashScreens(bool param1) {
     int i;
 
     if (param1) {
-        CGraphics::RecreateGraphicsDeviceAndResources(CGameInfo::GetScreenWidth(), CGameInfo::GetScreenHeight(), CGameInfo::GetColourDepth(), CGameInfo::GetGraphicsOptionBits5To8(), CGameInfo::GetGraphicsOptionBits9To12());
+        if (!CGraphics::RecreateGraphicsDeviceAndResources(CGameInfo::GetScreenWidth(), CGameInfo::GetScreenHeight(), CGameInfo::GetColourDepth(), CGameInfo::GetGraphicsOptionBits5To8(), CGameInfo::GetGraphicsOptionBits9To12()))
+            return false;
         Scene_InitFixedMathTables();
         Sprite_Init();
         Line2D_Init();

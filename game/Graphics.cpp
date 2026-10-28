@@ -194,7 +194,7 @@ void CGraphics::SetDefaults(void) {
 }
 
 // FUNCTION: CMR2 0x004a78a0
-void CGraphics::RecreateGraphicsDeviceAndResources(unsigned int screenWidth, unsigned int screenHeight, unsigned int colourDepth, unsigned int param4, unsigned int param5) {
+bool CGraphics::RecreateGraphicsDeviceAndResources(unsigned int screenWidth, unsigned int screenHeight, unsigned int colourDepth, unsigned int param4, unsigned int param5) {
     if (m_unk0x00520b7c == 0) {
         CSound::CloseMusicStreamAndClearPath(TRUE);
         EvictManagedTextureResources(); // TODO: UNFINISHED
@@ -205,13 +205,17 @@ void CGraphics::RecreateGraphicsDeviceAndResources(unsigned int screenWidth, uns
     SetSelectedDisplayDriverIndex(param4);
     SetSelectedRenderDeviceIndex(param5);
 
-    if (CreateSelectedDisplayAndRenderDevice(screenWidth, screenHeight, colourDepth) != 0) {
-        if (CreateDirect3DDevice(screenWidth, screenHeight, colourDepth) != 0) {
-            Mesh_ReuploadAll();
-            Scene_RestoreLights();
-            Sound_RestartMusicAfterDeviceCreation();
-        }
+    if (!CreateSelectedDisplayAndRenderDevice(screenWidth, screenHeight, colourDepth) ||
+        !CreateDirect3DDevice(screenWidth, screenHeight, colourDepth)) {
+        Sys_Log("gfx: device initialization failed; stopping before resource loading");
+        CMain::m_exitCode = 1;
+        CGame::SetShouldExit();
+        return false;
     }
+    Mesh_ReuploadAll();
+    Scene_RestoreLights();
+    Sound_RestartMusicAfterDeviceCreation();
+    return true;
 }
 
 // FUNCTION: CMR2 0x004a5be0

@@ -304,3 +304,11 @@ add_test(NAME scenery_pack_runtime COMMAND scenery_pack_runtime_test ${CMAKE_CUR
 add_executable(driver_names_test driver_names.cpp)
 target_link_libraries(driver_names_test PRIVATE opencmr2_platform)
 add_test(NAME driver_names COMMAND driver_names_test)
+if(NOT APPLE AND NOT MSVC)
+ add_executable(graphics_startup_failure_test graphics_startup_failure.cpp)
+ target_link_libraries(graphics_startup_failure_test PRIVATE opencmr2_platform)
+ target_link_options(graphics_startup_failure_test PRIVATE
+  -Wl,--wrap=Gfx_SetVideoMode
+  -Wl,--wrap=_Z25Scene_InitFixedMathTablesv)
+ add_test(NAME graphics_startup_failure COMMAND graphics_startup_failure_test)
+endif()

@@ -204,6 +204,7 @@ BOOL CGame::UpdateFrontendCallbackMachine(void)
     if (m_frontendCallbackInitialized)
     {
         RunStateUpdateCallbacks(&m_frontendCallbackMachine);
+        if (m_shouldExit) return FALSE; // failed boot must not draw incomplete resources
         RunStateRenderCallbacks(&m_frontendCallbackMachine);
         AdvanceCallbackStateTimers(&m_frontendCallbackMachine);
         return FALSE;
