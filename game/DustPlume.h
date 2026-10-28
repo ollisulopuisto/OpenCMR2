@@ -33,6 +33,7 @@ inline bool DustPlume_Surface(bool dirt, bool gravel, bool water, bool snow, boo
 inline bool DustPlume_HasBudget(int active, int clouds, int capacity) {
     return capacity > 64 && clouds < DUST_PLUME_MAX && active < capacity-64;
 }
+void DustPlume_AdvanceWorld(int step16_16);
 void DustPlume_Update(Particle *, ParticleType *, SceneNode *);
 void DustPlume_Emit(FixVector *world, FixVector *velocity, BYTE *colour, BYTE shade, BYTE viewMask);
 #endif

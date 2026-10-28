@@ -1,4 +1,6 @@
 #include "DustPlume.h"
+#include "WorldDust.h"
+static WorldDust::Pool worldDust;
 #include "GraphicsOptions.h"
 #include "port/sys.h"
 #include "port/vector_sprite.h"
@@ -5304,6 +5306,7 @@ void Particle_Kill(Particle *p)
 // FUNCTION: CMR2 0x004aff80
 void Particle_KillAll(void)
 {
+    worldDust.Clear();
     int i;
     Particle *p = g_particles;
 
@@ -5316,6 +5319,7 @@ void Particle_KillAll(void)
 // FUNCTION: CMR2 0x004affb0
 void Particle_ClearActiveFlags(void)
 {
+    worldDust.Clear();
     int i;
     BYTE *p;
 
@@ -5567,8 +5571,12 @@ void Particle_DrawAll(SceneNode *pCamera, BYTE view)
     BYTE *pb;
 
     def.flags = 0;
-    GfxDustLobe lobes[16]={};int lobeCount=0;
+    GfxDustLobe lobes[32]={};int lobeCount=0;
     bool volume=Sys_GetOption("video.dust_volume",1)!=0;
+    lobeCount=worldDust.Sample(lobes,32);
+    bool volumeQueued=volume && lobeCount && Gfx_DrawDustVolume(lobes,lobeCount);
+    // Never draw the camera-facing cloud sheets over a successful world-volume
+    // submission. Original wheel chips/spray remain separate.
     mask = 1 << view;
     if (g_particleCount > 0) {
         pb = (BYTE *)g_particles + offsetof(Particle, field0x55);
@@ -5576,15 +5584,7 @@ void Particle_DrawAll(SceneNode *pCamera, BYTE view)
             if (DRAW_PARTICLE.active == 0 || (DRAW_PARTICLE.field0x55 & mask) == 0)
                 continue;
             pType = DRAW_PARTICLE.pType;
-            if(volume && pType==&g_particleTypes[DUST_PLUME_TYPE] && lobeCount<16 && DRAW_PARTICLE.type0x53>0){
-                GfxDustLobe &lobe=lobes[lobeCount++];
-                lobe.centreRadius[0]=DRAW_PARTICLE.vector0x1c.x/65536.f;
-                lobe.centreRadius[1]=DRAW_PARTICLE.vector0x1c.y/65536.f;
-                lobe.centreRadius[2]=DRAW_PARTICLE.vector0x1c.z/65536.f;
-                lobe.centreRadius[3]=DRAW_PARTICLE.size/65536.f;
-                for(int channel=0;channel<3;++channel)lobe.colourDensity[channel]=DRAW_PARTICLE.colour[channel]/255.f;
-                lobe.colourDensity[3]=DRAW_PARTICLE.type0x53/255.f;
-            }
+            if(volumeQueued && pType==&g_particleTypes[DUST_PLUME_TYPE])continue;
             if (pType->draw != 0) {
                 pType->draw(&DRAW_PARTICLE, pType, pCamera);
                 continue;
@@ -5639,9 +5639,9 @@ void Particle_DrawAll(SceneNode *pCamera, BYTE view)
             Billboard_Add(&def, texture);
         }
     }
-    // Additional experimental body; original sheet/debris remain fallback if
-    // resources/viewport/depth are unavailable. Command snapshots this camera.
-    if(lobeCount)Gfx_DrawDustVolume(lobes,lobeCount);
+    // Camera-facing cloud sheets are fallback only. Original chips/spray are
+    // independent; accepted volume commands snapshot this camera once.
+    // Volume command was queued once before sheet fallback selection.
 
 }
 
@@ -6997,6 +6997,8 @@ void Graphics_DrawMeshTextureBatches(Mesh *pMesh)
 }
 
 
+void DustPlume_AdvanceWorld(int step16_16){if(step16_16>0)worldDust.Step(step16_16/(65536.f*25.f));}
+
 void DustPlume_Update(Particle *p, ParticleType *, SceneNode *)
 {
     DustPlume_Step(*p, g_particleWind);
@@ -7004,6 +7006,9 @@ void DustPlume_Update(Particle *p, ParticleType *, SceneNode *)
 
 void DustPlume_Emit(FixVector *world, FixVector *velocity, BYTE *colour, BYTE shade, BYTE viewMask)
 {
+    if(world && colour && viewMask)
+        worldDust.Emit(world->x/65536.f,world->y/65536.f,world->z/65536.f,
+            colour[0]/255.f,colour[1]/255.f,colour[2]/255.f);
     if (!g_particles || !g_particleTypes || g_particleTypeCount <= DUST_PLUME_TYPE || g_particleCount <= 64 || !viewMask) return;
     int clouds = 0, active = 0;
     for (int i=0; i<g_particleCount; ++i) {

@@ -23,7 +23,8 @@ extern "C" {
 
 typedef struct GfxTexture GfxTexture;
 typedef struct GfxVertexBuffer GfxVertexBuffer;
-/* Experimental terrain-relative dust. Caller keeps original effects as fallback. */
+/* World-space dust. TRUE accepts a bounded, preflighted volume command;
+   caller suppresses cloud sheets, retaining ordinary chips/spray. FALSE uses fallback. */
 typedef struct GfxDustLobe { float centreRadius[4]; float colourDensity[4]; } GfxDustLobe;
 BOOL Gfx_DrawDustVolume(const GfxDustLobe *lobes,int count);
 
