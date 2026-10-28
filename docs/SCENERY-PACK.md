@@ -97,13 +97,14 @@ and legacy/headerless assets fall back to the original object. Fits and failed
 fits are cached per mesh for the stage lifetime. Spectator animation is
 unchanged and does not need this header.
 
-This is a runtime safety/fit change, not a working new-tree installation.
-The previous64-tree public patcher recipe emits headerless ring assets, which
-this loader deliberately rejects. Do not add a header to those old assets:
+The runtime safety/fit change alone is not a working new-tree installation.
+The previous64-tree public patcher recipe emitted headerless ring assets,
+which this loader deliberately rejects. Do not add a header to those old assets:
 their geometry/UV contract differs and they must be regenerated. Their
 spectators still load. Three private experimental candidates (md1/md4/fir1)
-use the new contract; fr1 and cropped variants remain original. Full new
-procedural recipe migration and native Mac appearance/performance remain
-pending. Privately restored texture RGB is not reproducible from the current
-source-only patcher without its private restoration inputs. No derived
-artwork is included in Git.
+use the new contract; fr1 and cropped variants remain original. The migrated
+source-only patcher generates those3 high-source mappings with4x interpolation,
+not private restored RGB. Low variants are unverified and
+remain original. Native Mac appearance/performance remain pending. Private
+restored texture RGB is not reproducible from this source-only patcher
+without its private restoration inputs. No derived artwork is included in Git.

@@ -2,56 +2,79 @@
 from pathlib import Path
 from PIL import Image
 import numpy as np,math,json
-from scipy.ndimage import distance_transform_edt
 
 
-# Preserve silhouette rows at ~16-source-pixel cadence for 256px assets, 8px for 128px.
-def mesh(a):
- h,w=a.shape[:2];rs=[];step=max(4,h//32)
- for iy in range(0,h,step):
-  ix=np.where(a[iy,:,3]>128)[0]
-  if len(ix):rs.append((2*(1-iy/h),(ix.max()+ix.min()+1)/h-w/h,max((ix.max()-ix.min()+1)/h,.018)))
- maxr=max(r[2] for r in rs);ts=np.linspace(0,math.tau,17);arcs=np.r_[0,np.cumsum(np.hypot(np.diff(maxr*np.cos(ts)),np.diff(.65*maxr*np.sin(ts))))];verts=[]
- for yy,cx,r in rs:
-  for k in range(17):
-   t=k/16*math.tau;verts.append((cx+r*math.cos(t),yy,r*.65*math.sin(t),arcs[k]/2,(2-yy)/2))
- faces=[]
- for j in range(len(rs)-1):
-  for k in range(16):
-   aa=j*17+k;bb=aa+17;faces.extend([(aa,aa+1,bb),(aa+1,bb+1,bb)])
- return np.array(verts),faces,arcs[-1]/2
-
-root=None # Set to caller-selected empty output directory in main().
+# Full-canvas source-fit contract. No restored artwork is bundled or fetched.
+TREE_CANDIDATES={('frahit.bfl','tre_md1'),('frahit.bfl','tre_md4'),('finhit.bfl','tre_fir1')}
+root=None
 def tree(a,rel):
- p=root/rel;p.mkdir(parents=True,exist_ok=True);src=Image.open(a['path']).convert('RGBA');ar=np.array(src);h,w=ar.shape[:2]
- crop=src.crop((int(w*.18),int(h*.15),int(w*.82),int(h*.67)));crop.save(p/'crown.tga',compression=None)
- v,fs,_=mesh(ar);fs=[f for f in fs if all(v[list(f),1]>=.62)]
- v[:,3]*=w/crop.width;v[:,4]=(v[:,4]-.15)*h/crop.height
- # Offline rasterizer compensates texture aspect; bake that into OBJ UVs.
- v[:,3]*=crop.height/crop.width
- v[:,:3]/=2
- trunk=np.array(src.crop((int(.43*w),int(.72*h),int(.57*w)+1,h)));valid=trunk[:,:,3]>128
- if valid.any():
-  _,near=distance_transform_edt(~valid,return_indices=True);trunk[~valid]=trunk[near[0][~valid],near[1][~valid]]
- trunk[:,:,3]=255;Image.fromarray(trunk).save(p/'trunk.tga',compression=None)
- lines=['mtllib tree.mtl'];verts=[];tris=[]
- for f in fs:
-  pts=v[list(f)].copy();xyz=pts[:,:3];normal=np.cross(xyz[1]-xyz[0],xyz[2]-xyz[0]);normal/=max(np.linalg.norm(normal),1e-10)
-  tris.append(('crown',len(verts)+1));verts.extend([(q[:3],(q[3],1-q[4]),normal) for q in pts])
+ name=Path(a['texture']).stem;src=Image.open(a['path']).convert('RGBA');a=np.array(src);h,w=a.shape[:2];p=root/rel;p.mkdir(parents=True,exist_ok=True)
+ # Source projection, not circumference repetition. Source alpha is retained.
+ crown_bottom=.74 if name.startswith('tre_md') else .88
+ cut=round(h*crown_bottom)
+ # Opaque stem-only texels; no nearest-fill transparency or ground colors.
+ bark=[]
+ for y in range(round(h*.78),round(h*.94)):
+  ix=np.where(a[y,:,3]>=220)[0];ix=ix[(ix>w*.3)&(ix<w*.7)]
+  if len(ix)<2:continue
+  center=int(np.median(ix));half=max(1,min(3,len(ix)//4));row=a[y,max(0,center-half):center+half+1];row=row[row[:,3]>=220]
+  if len(row):bark.append(row[np.linspace(0,len(row)-1,16).astype(int)])
+ if not bark:raise ValueError('No opaque stem data '+name)
+ ba=np.array(bark);ba[:,:,3]=255;Image.fromarray(ba).resize((64,len(ba)*4),Image.Resampling.LANCZOS).save(p/'trunk.tga')
+ # Alpha outline shapes the shell. Model horizontal extent exactly supplied source W/H.
+ rows=[]
+ for y in range(0,cut,max(2,h//64)):
+  ix=np.where(a[y,:,3]>=128)[0]
+  if len(ix):rows.append((y,ix.min(),ix.max()+1))
+ if len(rows)<2:raise ValueError("Insufficient crown silhouette "+name)
+ extent=w
+ verts=[]
+ for y,lo,hi in rows:
+  cx=((lo+hi)/2-w/2)/h;r=(hi-lo)/extent*(w/h)/2
+  for k in range(17):
+   t=k*math.tau/16;verts.append((cx+r*math.cos(t),1-y/h,r*.8*math.sin(t),y,lo,hi))
+ triangles=[]
+ for j in range(len(rows)-1):
+  for k in range(16):
+   aa=j*17+k;bb=aa+17;triangles.extend([(aa,aa+1,bb),(aa+1,bb+1,bb)])
+ out=[];faces=[]
+ for f in triangles:
+  q=np.array([verts[i][:3] for i in f]);nm=np.cross(q[1]-q[0],q[2]-q[0]);nm/=max(np.linalg.norm(nm),1e-12)
+  faces.append(('crown',len(out)+1))
+  for idx in f:
+   x,y,z,sy,lo,hi=verts[idx];theta=(idx%17)/16
+   out.append(((x,y,z),(theta,min(.999,max(.001,1-sy/cut))),nm))
+ # Bake a continuous cross-projection atlas, not repeated image stripes.
+ # Adjacent shell faces share exactly the same texture coordinates at seams.
+ color=np.array(src.convert('RGBa').resize((w*4,h*4),Image.Resampling.LANCZOS).convert('RGBA')).astype(float)/255
+ hh,ww=color.shape[:2];aw=1024;ah=cut*4;atlas=np.zeros((ah,aw,4),np.uint8)
+ ts=np.arange(aw)/aw*math.tau;co=np.cos(ts);si=np.sin(ts)
+ # Smooth, symmetric source image projection for front/back and side.
+ wx=np.abs(si)**4;wz=np.abs(co)**4;den=np.maximum(wx+wz,1e-8)
+ for iy in range(ah):
+  sy=iy/4;ri=min(range(len(rows)),key=lambda k:abs(rows[k][0]-sy));_,lo,hi=rows[ri];cx=((lo+hi)/2-w/2)/h;r=(hi-lo)/h/2
+  xx=cx+r*co;zz=r*si
+  u0=np.clip((.5+xx*h/w)*ww,0,ww-1).astype(int);u1=np.clip((.5+zz*h/w)*ww,0,ww-1).astype(int);yy=min(hh-1,round(sy*hh/h));ca=color[yy,u0];cb=color[yy,u1]
+  alpha=(ca[:,3]*wx+cb[:,3]*wz)/den;prem=(ca[:,:3]*ca[:,3,None]*wx[:,None]+cb[:,:3]*cb[:,3,None]*wz[:,None])/den[:,None];rgb=prem/np.maximum(alpha[:,None],1e-6)
+  atlas[iy,:,:3]=np.clip(rgb*255,0,255).astype('uint8');atlas[iy,:,3]=np.clip(alpha*255,0,255).astype('uint8')
+ Image.fromarray(atlas).save(p/'crown.tga')
+ # Stem diameter measured from source opaque pixels, capped at 6% source width.
+ stemwidth=min(w*.06,np.median([np.sum(a[y,:,3]>=220) for y in range(round(h*.82),round(h*.90))]))
+ radius=max(.005,stemwidth/extent*(w/h)/2);stemtop=1-crown_bottom+.035
  for j in range(8):
-  t=j*math.tau/8;u=(j+1)*math.tau/8;r=.0225*w/h
-  q=[(r*math.cos(t),0,r*math.sin(t)),(r*math.cos(t),.32,r*math.sin(t)),(r*math.cos(u),.32,r*math.sin(u)),(r*math.cos(u),0,r*math.sin(u))]
-  for f in [(0,1,2),(0,2,3)]:
-   tris.append(('trunk',len(verts)+1));nm=(math.cos((t+u)/2),0,math.sin((t+u)/2));uv=[(0,0),(0,1),(1,1),(1,0)];verts.extend([(q[i],uv[i],nm) for i in f])
- for xyz,uv,nm in verts:lines.append('v '+' '.join(f'{x:.8f}' for x in xyz))
- for xyz,uv,nm in verts:lines.append('vt '+' '.join(f'{x:.8f}' for x in uv))
- for xyz,uv,nm in verts:lines.append('vn '+' '.join(f'{x:.8f}' for x in nm))
+  t=j*math.tau/8;v=(j+1)*math.tau/8;q=[(radius*math.cos(t),0,radius*math.sin(t)),(radius*math.cos(t)*.7,stemtop,radius*.7*math.sin(t)),(radius*math.cos(v)*.7,stemtop,radius*.7*math.sin(v)),(radius*math.cos(v),0,radius*math.sin(v))];uv=[(0,0),(0,1),(1,1),(1,0)];nm=(math.cos((t+v)/2),0,math.sin((t+v)/2))
+  for f in [(0,1,2),(0,2,3)]:faces.append(('trunk',len(out)+1));out.extend([(q[i],uv[i],nm) for i in f])
+ lines=[f'# opencmr2-source-canvas-1 {w} {h}','mtllib tree.mtl']
+ for kind,j in [('v',0),('vt',1),('vn',2)]:lines += [kind+' '+' '.join(f'{v:.8f}' for v in q[j]) for q in out]
  last=None
- for mat,i in tris:
-  if last!=mat:lines.append('usemtl '+mat);last=mat
+ for mat,i in faces:
+  if mat!=last:lines.append('usemtl '+mat);last=mat
   lines.append('f '+' '.join(f'{k}/{k}/{k}' for k in range(i,i+3)))
+ (p/'source-vertices.json').write_text(json.dumps({'schema':'source-uv-per-obj-v-1','source_canvas_wh':[w,h],'vertices':[{'obj_v':i+1,'source_uv':[.5+float(q[0][0])*h/w,1-float(q[0][1])]} for i,q in enumerate(out)]},indent=2))
+ (p/'recipe.json').write_text(json.dumps({'schema':'source-canvas-tree-1','source_canvas_wh':[w,h],'source_mapping':str(rel),'method':'4x premultiplied interpolation, no new detail; continuous cross-projection atlas','triangles':len(faces),'crown_pixels':[aw,ah],'stem_radius':float(radius)},indent=2)+'\n')
  (p/'tree.obj').write_text('\n'.join(lines)+'\n');(p/'tree.mtl').write_text('newmtl crown\nKd 1 1 1\nd 1\nmap_Kd crown.tga\nnewmtl trunk\nKd 1 1 1\nd 1\nmap_Kd trunk.tga\n')
  return str(rel/'tree.obj')
+
 def spectator(a,rel):
  p=root/rel;p.mkdir(parents=True,exist_ok=True);src=Image.open(a['path']).convert('RGBA');src=src.resize((src.width*2,src.height*2),Image.Resampling.NEAREST);ar=np.array(src);h,w=ar.shape[:2];frames=[]
  # Subtle upper-body sway: original cutout remapped, lower 30% and feet fixed. No invented limbs.
@@ -136,8 +159,8 @@ def main():
    for key,rec in index.items():
     archive,leaf=key.split('/');a={**rec,'archive':archive,'texture':leaf};rel=Path(Path(archive).stem)/Path(leaf).stem
     source=Path(tmp)/archive/leaf;source.parent.mkdir(exist_ok=True);source.write_bytes(data[key]);a['path']=str(source)
-    if rec.get('category')=='individual-tree':
-     asset=tree(a,Path('trees')/rel);rows.append('\t'.join(['tree',archive,leaf,asset,'','1']));status='converted'
+    if rec.get('category')=='individual-tree' and (archive,Path(leaf).stem) in TREE_CANDIDATES:
+     asset=tree(a,Path('trees')/rel);rows.append('\t'.join(['tree',archive,leaf,asset,'','1']));status='source-fitted-interpolated'
     elif rec.get('category')=='spectator':
      frames=spectator(a,Path('spectators')/rel);rows.append('\t'.join(['spectator',archive,leaf,frames[0],','.join(frames),'5']));status='converted'
     else:status='retained-original'

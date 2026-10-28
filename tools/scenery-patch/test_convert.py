@@ -47,7 +47,7 @@ class Tests(unittest.TestCase):
         self.index = {}
         categories = ['individual-tree', 'spectator', 'forest-strip', 'shadow-mask']
         for name, category in zip(['frahit', 'fralot', 'finhit', 'finlot'], categories):
-            leaf = name + '.dds'
+            leaf = ('tre_md1' if category=='individual-tree' else name) + '.dds'
             (self.input / (name + '.bfl')).write_bytes(bfl([(leaf, self.raw)]))
             self.index[name + '.bfl/' + leaf] = {
                 'sha256': hashlib.sha256(self.raw).hexdigest(),
@@ -82,10 +82,25 @@ class Tests(unittest.TestCase):
             image = Image.open(frame).convert('RGBA')
             self.assertEqual(image.size, (64, 64))
             self.assertEqual(image.crop((0, 45, 64, 64)).tobytes(), first.crop((0, 45, 64, 64)).tobytes())
-        self.assertTrue(list(self.output.glob('trees/*/*/*.obj')))
+        objs=list(self.output.glob('trees/*/*/*.obj'));self.assertTrue(objs)
+        self.assertTrue(objs[0].read_text().startswith('# opencmr2-source-canvas-1 32 32\n'))
+        self.assertTrue('source-fitted-interpolated' in self.output.joinpath('coverage.json').read_text())
         self.assertFalse(list(self.output.rglob('*.dds')))
         self.assertFalse(list(self.output.rglob('*.bfl')))
         self.run_patch(ok=False)
+
+    def test_tree_generation_is_deterministic(self):
+        self.run_patch();before={str(p.relative_to(self.output)):p.read_bytes() for p in self.output.rglob('*') if p.is_file()}
+        shutil.rmtree(self.output);self.run_patch()
+        self.assertEqual(before,{str(p.relative_to(self.output)):p.read_bytes() for p in self.output.rglob('*') if p.is_file()})
+
+    def test_unsupported_tree_stays_original(self):
+        key=next(iter(self.index));rec=self.index.pop(key)
+        key='frahit.bfl/tre_fr1.dds';self.index[key]=rec;self.write_index()
+        (self.input/'frahit.bfl').write_bytes(bfl([('tre_fr1.dds',self.raw)]))
+        self.run_patch();self.assertFalse(list(self.output.glob('trees/*/*/*.obj')))
+        self.assertEqual(len(self.output.joinpath('manifest.tsv').read_text().splitlines()),2)
+        self.assertTrue('retained-original' in self.output.joinpath('coverage.json').read_text())
 
     def test_check_only(self):
         self.run_patch('--check-only')
@@ -96,7 +111,7 @@ class Tests(unittest.TestCase):
         one.unlink()
         self.run_patch(ok=False)
         self.assertFalse(self.output.exists())
-        one.write_bytes(bfl([('frahit.dds', self.raw)]))
+        one.write_bytes(bfl([('tre_md1.dds', self.raw)]))
         nested = self.input / 'nested'
         nested.mkdir()
         shutil.copy(one, nested / one.name)
@@ -104,7 +119,7 @@ class Tests(unittest.TestCase):
         (nested / one.name).unlink()
         one.unlink()
         one.symlink_to(self.base / 'outside.bfl')
-        (self.base / 'outside.bfl').write_bytes(bfl([('frahit.dds', self.raw)]))
+        (self.base / 'outside.bfl').write_bytes(bfl([('tre_md1.dds', self.raw)]))
         self.run_patch(ok=False)
         self.assertFalse(self.output.exists())
 
@@ -146,7 +161,7 @@ class Tests(unittest.TestCase):
         key = next(iter(self.index))
         self.index[key]['sha256'] = hashlib.sha256(raw).hexdigest()
         self.write_index()
-        (self.input / 'frahit.bfl').write_bytes(bfl([('frahit.dds', raw)]))
+        (self.input / 'frahit.bfl').write_bytes(bfl([('tre_md1.dds', raw)]))
         self.before['frahit.bfl'] = (self.input / 'frahit.bfl').read_bytes()
         self.run_patch(ok=False)
         self.assertFalse(self.output.exists())
