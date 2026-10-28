@@ -4,6 +4,7 @@
 #include "platform/platform.h"
 #include "port/sys.h"
 #include "render/presentation.h"
+#include "render/dust_volume_math.h"
 #include "render/postprocess_pass.h"
 #include "render/gfx_internal.h"
 
@@ -200,6 +201,10 @@ struct Executor : GfxExecutor {
     SDL_GPUShader *fsSpatialAA = nullptr;
     SDL_GPUGraphicsPipeline *spatialAAPipeline = nullptr;
     SDL_GPUTexture *spatialAATarget = nullptr;
+    SDL_GPUShader *fsDustVolume = nullptr, *fsDustComposite = nullptr;
+    SDL_GPUGraphicsPipeline *dustVolumePipeline = nullptr, *dustCompositePipeline = nullptr;
+    SDL_GPUTexture *dustVolumeTarget = nullptr, *dustCompositeTarget = nullptr;
+    bool SupportsDustVolume() override {return sampledDepth && backDepth && backColor;}
     bool spatialAA = false;
     bool metalFXSpatial = false;
     bool metalFXLogged = false;
@@ -312,6 +317,10 @@ struct Executor : GfxExecutor {
             SDL_ReleaseGPUGraphicsPipeline(device, p.second);
         for (auto &s : samplers)
             SDL_ReleaseGPUSampler(device, s.second);
+        SDL_ReleaseGPUTexture(device, dustCompositeTarget);
+        dustCompositeTarget = nullptr;
+        SDL_ReleaseGPUTexture(device, dustVolumeTarget);
+        dustVolumeTarget = nullptr;
         SDL_ReleaseGPUTexture(device, spatialAATarget);
         SDL_ReleaseGPUTexture(device, backColor);
         SDL_ReleaseGPUTexture(device, backDepth);
@@ -344,6 +353,10 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUShader(device, fsDoF);
         SDL_ReleaseGPUShader(device, fsGodRays);
         SDL_ReleaseGPUShader(device, fsColorGrading);
+        SDL_ReleaseGPUShader(device, fsDustComposite);
+        SDL_ReleaseGPUGraphicsPipeline(device, dustCompositePipeline);
+        SDL_ReleaseGPUShader(device, fsDustVolume);
+        SDL_ReleaseGPUGraphicsPipeline(device, dustVolumePipeline);
         SDL_ReleaseGPUShader(device, fsSpatialAA);
         SDL_ReleaseGPUGraphicsPipeline(device, spatialAAPipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, motionBlurPipeline);
@@ -516,6 +529,10 @@ struct Executor : GfxExecutor {
             return false;
         if (backColor == NULL || backWidth != width || backHeight != height) {
             SDL_WaitForGPUIdle(device);
+            SDL_ReleaseGPUTexture(device, dustCompositeTarget);
+            dustCompositeTarget = nullptr;
+            SDL_ReleaseGPUTexture(device, dustVolumeTarget);
+            dustVolumeTarget = nullptr;
             SDL_ReleaseGPUTexture(device, spatialAATarget);
             spatialAATarget = nullptr;
             SDL_ReleaseGPUTexture(device, backColor);
@@ -1122,14 +1139,15 @@ struct Executor : GfxExecutor {
     // draws three vertices, ends the pass.
     bool PostProcessPass(SDL_GPUCommandBuffer *cmd, SDL_GPUGraphicsPipeline *pipeline,
                          SDL_GPUTexture *target, const SDL_GPUTextureSamplerBinding *bindings,
-                         int numBindings, const void *uniformData, uint32_t uniformSize)
+                         int numBindings, const void *uniformData, uint32_t uniformSize,int width=0,int height=0)
     {
         SDL_GPURenderPass *pass = Gfx_BeginPostProcessPass(cmd,pipeline,target,bindings,numBindings);
         if (pass == NULL)
             return false;
         SDL_BindGPUGraphicsPipeline(pass, pipeline);
-        SDL_GPUViewport vp = { 0.0f, 0.0f, (float)backWidth, (float)backHeight, 0.0f, 1.0f };
-        SDL_Rect scissor = { 0, 0, backWidth, backHeight };
+        if(width<=0)width=backWidth;if(height<=0)height=backHeight;
+        SDL_GPUViewport vp = { 0.0f, 0.0f, (float)width, (float)height, 0.0f, 1.0f };
+        SDL_Rect scissor = { 0, 0, width, height };
         SDL_SetGPUViewport(pass, &vp);
         SDL_SetGPUScissor(pass, &scissor);
         if (uniformData != NULL)
@@ -1138,6 +1156,44 @@ struct Executor : GfxExecutor {
         SDL_DrawGPUPrimitives(pass, 3, 1, 0, 0);
         SDL_EndGPURenderPass(pass);
         return true;
+    }
+
+    void RenderDustVolume(SDL_GPUCommandBuffer *cmd,const GfxCommand &command,const GfxDrawState &state,const GfxFrame &frame)
+    {
+        if (!SupportsDustVolume() || command.dustCount<=0) return;
+        // First prototype supports one full-screen perspective viewport only.
+        // Split-screen/cubemap/orthographic paths keep ordinary wheel effects.
+        if (state.viewport.x || state.viewport.y || state.viewport.width!=(DWORD)backWidth ||
+            state.viewport.height!=(DWORD)backHeight || state.projection._34==0) return;
+        if (!fsDustVolume) fsDustVolume=Shader(SHADER_CODE(dust_volume_frag),SDL_GPU_SHADERSTAGE_FRAGMENT,1,1);
+        if (!dustVolumePipeline && fsDustVolume) dustVolumePipeline=PostProcessPipeline(vsMotionBlur,fsDustVolume);
+        int volumeWidth=std::max(1,backWidth/2),volumeHeight=std::max(1,backHeight/2);
+        if (!dustVolumeTarget && dustVolumePipeline) dustVolumeTarget=CreateTexture(SDL_GPU_TEXTURETYPE_2D,colorFormat,
+            volumeWidth,volumeHeight,1,1,SDL_GPU_TEXTUREUSAGE_COLOR_TARGET|SDL_GPU_TEXTUREUSAGE_SAMPLER);
+        if (!fsDustComposite) fsDustComposite=Shader(SHADER_CODE(dust_composite_frag),SDL_GPU_SHADERSTAGE_FRAGMENT,3,1);
+        if (!dustCompositePipeline && fsDustComposite) dustCompositePipeline=PostProcessPipeline(vsMotionBlur,fsDustComposite);
+        if (!dustCompositeTarget && dustCompositePipeline) dustCompositeTarget=CreateTexture(SDL_GPU_TEXTURETYPE_2D,colorFormat,
+            backWidth,backHeight,1,1,SDL_GPU_TEXTUREUSAGE_COLOR_TARGET|SDL_GPU_TEXTUREUSAGE_SAMPLER);
+        if (!dustVolumeTarget || !dustVolumePipeline || !dustCompositeTarget || !dustCompositePipeline) return;
+        struct Uniforms {float inverse[16],camera[4],target[4],centres[16][4],colours[16][4];} u={};
+        GfxMatrix vp;Multiply(state.view,state.projection,&vp._11);
+        float inverseView[16];
+        if (!DustVolume_Inverse(vp,u.inverse) || !DustVolume_Inverse(state.view,inverseView)) return;
+        u.camera[0]=inverseView[12];u.camera[1]=inverseView[13];u.camera[2]=inverseView[14];
+        u.camera[3]=(float)command.dustCount;u.target[0]=1.f/volumeWidth;u.target[1]=1.f/volumeHeight;
+        u.target[2]=1.f;u.target[3]=200.f;
+        if(command.dustOffset+command.dustCount>frame.dustLobes.size())return;
+        for(int i=0;i<command.dustCount;++i){const auto &lobe=frame.dustLobes[command.dustOffset+i];memcpy(u.centres[i],lobe.centreRadius,16);memcpy(u.colours[i],lobe.colourDensity,16);}
+        GfxStageState linear;linear.address=GFX_ADDRESS_CLAMP;linear.minFilter=linear.magFilter=GFX_FILTER_LINEAR;
+        GfxStageState point;point.address=GFX_ADDRESS_CLAMP;
+        SDL_GPUTextureSamplerBinding binding={backDepth,Sampler(point)};
+        if(!PostProcessPass(cmd,dustVolumePipeline,dustVolumeTarget,&binding,1,&u,sizeof(u),volumeWidth,volumeHeight))return;
+        SDL_GPUTextureSamplerBinding composite[3]={{backColor,Sampler(point)},{dustVolumeTarget,Sampler(point)},{backDepth,Sampler(point)}};
+        float size[4]={1.f/backWidth,1.f/backHeight,0,0};
+        if(!PostProcessPass(cmd,dustCompositePipeline,dustCompositeTarget,composite,3,size,sizeof(size)))return;
+        SDL_GPUBlitInfo blit={};blit.source.texture=dustCompositeTarget;blit.source.w=backWidth;blit.source.h=backHeight;
+        blit.destination.texture=backColor;blit.destination.w=backWidth;blit.destination.h=backHeight;
+        blit.load_op=SDL_GPU_LOADOP_DONT_CARE;blit.filter=SDL_GPU_FILTER_NEAREST;SDL_BlitGPUTexture(cmd,&blit);
     }
 
     // Billboard particle pipeline: position+colour+size vertices, alpha
@@ -2000,6 +2056,13 @@ struct Executor : GfxExecutor {
                 target = c.target;
                 continue;
             }
+            if (c.type == GFX_CMD_DUST_VOLUME) {
+                if (target != nullptr || !sampledDepth) continue;
+                if (pass) { SDL_EndGPURenderPass(pass);pass=nullptr; }
+                bound=PassBindings();vertexUniformState=nullptr;fragmentUniformsSet=false;
+                RenderDustVolume(cmd,c,frame.states[c.state],frame);
+                continue;
+            }
             if (c.type == GFX_CMD_BACKDROP) {
                 // A copy pass between render passes; the next draw starts a
                 // render pass that loads the back buffer as it is.
@@ -2021,6 +2084,7 @@ struct Executor : GfxExecutor {
                 size_t cleared;
                 pass = BeginPass(cmd, target, targetW, targetH, frame.commands, i, &cleared);
                 bound = PassBindings();
+                if (!pass) continue;
                 if (cleared > 0) {
                     i += cleared - 1;
                     continue;

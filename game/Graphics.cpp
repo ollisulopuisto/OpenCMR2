@@ -5562,7 +5562,9 @@ void Particle_DrawAll(SceneNode *pCamera, BYTE view)
     BYTE mask;
     BYTE *pb;
 
-    def.flags &= 0xfe;
+    def.flags = 0;
+    GfxDustLobe lobes[16]={};int lobeCount=0;
+    bool volume=Sys_GetOption("video.dust_volume",0)!=0;
     mask = 1 << view;
     if (g_particleCount > 0) {
         pb = (BYTE *)g_particles + offsetof(Particle, field0x55);
@@ -5570,6 +5572,15 @@ void Particle_DrawAll(SceneNode *pCamera, BYTE view)
             if (DRAW_PARTICLE.active == 0 || (DRAW_PARTICLE.field0x55 & mask) == 0)
                 continue;
             pType = DRAW_PARTICLE.pType;
+            if(volume && pType==&g_particleTypes[DUST_PLUME_TYPE] && lobeCount<16 && DRAW_PARTICLE.type0x53>0){
+                GfxDustLobe &lobe=lobes[lobeCount++];
+                lobe.centreRadius[0]=DRAW_PARTICLE.vector0x1c.x/65536.f;
+                lobe.centreRadius[1]=DRAW_PARTICLE.vector0x1c.y/65536.f;
+                lobe.centreRadius[2]=DRAW_PARTICLE.vector0x1c.z/65536.f;
+                lobe.centreRadius[3]=DRAW_PARTICLE.size/65536.f;
+                for(int channel=0;channel<3;++channel)lobe.colourDensity[channel]=DRAW_PARTICLE.colour[channel]/255.f;
+                lobe.colourDensity[3]=DRAW_PARTICLE.type0x53/255.f;
+            }
             if (pType->draw != 0) {
                 pType->draw(&DRAW_PARTICLE, pType, pCamera);
                 continue;
@@ -5624,6 +5635,10 @@ void Particle_DrawAll(SceneNode *pCamera, BYTE view)
             Billboard_Add(&def, texture);
         }
     }
+    // Additional experimental body; original sheet/debris remain fallback if
+    // resources/viewport/depth are unavailable. Command snapshots this camera.
+    if(lobeCount)Gfx_DrawDustVolume(lobes,lobeCount);
+
 }
 
 #undef DRAW_PARTICLE

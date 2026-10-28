@@ -33,3 +33,29 @@ overdraw, camera cuts/replays, snow separation and M2Air frame time. There is no
 soft-depth intersection, light scattering, volumetric shadow, GPU simulation or
 FPS claim. Existing billboard sorting/material limits remain. Keep this draft
 opt-in until a real game capture confirms density/placement and acceptable cost.
+
+## Experimental world-density GPU body
+
+`[video] dust_plume=1` plus `dust_volume=1` adds a world-space ray-integrated
+body behind the original sheet/debris fallback. Both default0, no default
+change. This is an early opt-in prototype, not a finished correction of all
+camera-facing dust: the ordinary billboards still coexist. Sixteen active
+lobes maximum,32steps, depth-clipped, fixed world-space procedural noise.
+The new path snapshots the camera at particle draw submission, executes before
+later HUD commands, uses a separate colour target and shared depthless pass
+helper, and samples scene depth without attaching it for writing. OpenGL,
+missing sampled depth, resource failures and non-fullscreen viewports skip it.
+No external texture pack is installed. Density is procedural, not the actual
+asset alpha used in the earlier offline comparison. The shader's light/tint is
+simple, with no real scattering or volumetric shadows.
+
+This first wiring prototype runs at half width/height with linear upscale.
+It stores scatter/transmittance separately and uses a depth-weighted
+four-tap full-resolution composite, preserving untouched scene pixels.
+Foreground halos and undersampling still need native checks.32×16
+worst-case samples can still be expensive. M2Air acceptance remains needed,
+along with lobe
+selection by camera relevance instead of first16pool entries, replay/reset,
+viewport orientation and native projection/terrain/HUD integration still need
+acceptance. Keep defaultOFF. Tests are software-GPU pixels and CPU matrix
+contracts, not native Metal gameplay or a frame-time result.
