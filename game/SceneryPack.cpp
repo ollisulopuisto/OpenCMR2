@@ -1,5 +1,6 @@
 #include "SceneryPack.h"
 #include "SceneryPackFormat.h"
+#include "ScenerySourceFit.h"
 #include "Graphics.h"
 #include "Texture.h"
 #include "Mesh.h"
@@ -21,7 +22,7 @@ struct PackTexture { GfxTexture *surface=nullptr; int width=0,height=0; };
 std::vector<GfxTexture*> ownedTextures;
 uint64_t animationTime=0;
 struct Part { std::vector<GfxVertex> vertices; PackTexture *texture=nullptr; };
-struct Asset { SceneryFormat::Entry entry; bool attempted=false,ready=false; std::vector<Part> parts; std::vector<PackTexture*> frames; };
+struct Asset { std::map<const Mesh*,std::vector<Part>> fitted; int sourceWidth=0,sourceHeight=0; SceneryFormat::Entry entry; bool attempted=false,ready=false; std::vector<Part> parts; std::vector<PackTexture*> frames; };
 std::vector<Asset> assets;
 bool loaded=false;
 bool treeLogged=false,spectatorLogged=false,assetFailureLogged=false;
@@ -68,6 +69,11 @@ bool Prepare(Asset &a){
         return a.ready=!a.frames.empty();
     }
     std::string text;if(!Read(root+a.entry.asset,text))return false;
+    // Legacy cylindrical/repeat assets are deliberately rejected: they must
+    // be regenerated with the source-canvas contract, not silently distorted.
+    { std::istringstream header(text);std::string hash,version;
+      if(!(header>>hash>>version>>a.sourceWidth>>a.sourceHeight)||hash!="#"||version!="opencmr2-source-canvas-1"||
+         a.sourceWidth<1||a.sourceHeight<1||a.sourceWidth>4096||a.sourceHeight>4096)return false; }
     std::vector<Group> groups;if(!ParseOBJ(text,groups))return false;
     std::istringstream obj(text);std::string line,tag,mtl;
     while(std::getline(obj,line)){std::istringstream in(line);in>>tag;if(tag=="mtllib")in>>mtl;}
@@ -145,12 +151,35 @@ bool SceneryPack_Draw(StageObject *object,const float *billboard){
         if(!spectatorLogged){Sys_Log("options: spectator sidecar active (first successful override draw)");spectatorLogged=true;}
         State(*(const GfxMatrix*)billboard);Gfx_SetTexture(0,t->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,vertices.data(),vertices.size());Gfx_PopState();return true;
     }
-    // Fixed placement orientation, never the camera-derived billboard matrix.
+    if(source->width!=asset->sourceWidth||source->height!=asset->sourceHeight)return false;
+    auto fitted=asset->fitted.find(mesh);
+    if(fitted==asset->fitted.end()){
+        ScenerySourceFit::Fit fit;
+        if(!ScenerySourceFit::Build(v,mesh->field_0x10,fit)){asset->fitted.emplace(mesh,std::vector<Part>{});return false;}
+        std::vector<Part> parts=asset->parts;
+        for(auto &part:parts)for(auto &q:part.vertices){float xyz[3];
+            float u=.5f+q.x*asset->sourceHeight/asset->sourceWidth;
+            float sv=1.f-q.y;
+            fit.Map(u,sv,q.z,xyz);
+            if(!std::isfinite(xyz[0])||!std::isfinite(xyz[1])||!std::isfinite(xyz[2])){
+                asset->fitted.emplace(mesh,std::vector<Part>{});return false;
+            }
+            q.x=xyz[0];q.y=xyz[1];q.z=xyz[2];
+        }
+        fitted=asset->fitted.emplace(mesh,std::move(parts)).first;
+    }
+    if(fitted->second.empty())return false;
+    // Apply placement basis exactly once. Source-fit positions are already in
+    // original mesh units, not normalized geometry multiplied by height again.
     const FixMatrix &f=object->matrix;
-    GfxMatrix m={f.right.x/65536.f*height,f.right.y/65536.f*height,f.right.z/65536.f*height,0,
-        f.up.x/65536.f*height,f.up.y/65536.f*height,f.up.z/65536.f*height,0,
-        f.forward.x/65536.f*height,f.forward.y/65536.f*height,f.forward.z/65536.f*height,0,
-        f.position.x/65536.f+bottom*f.up.x/65536.f,f.position.y/65536.f+bottom*f.up.y/65536.f,f.position.z/65536.f+bottom*f.up.z/65536.f,1};
-    if(!treeLogged){Sys_Log("options: tree sidecar active (first successful override draw)");treeLogged=true;}
-    State(m);for(auto &p:asset->parts){Gfx_SetTexture(0,p.texture->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,p.vertices.data(),p.vertices.size());}Gfx_PopState();return true;
+    GfxMatrix m={f.right.x/65536.f,f.right.y/65536.f,f.right.z/65536.f,0,
+        f.up.x/65536.f,f.up.y/65536.f,f.up.z/65536.f,0,
+        f.forward.x/65536.f,f.forward.y/65536.f,f.forward.z/65536.f,0,
+        f.position.x/65536.f,f.position.y/65536.f,f.position.z/65536.f,1};
+    if(!treeLogged){Sys_Log("options: tree sidecar active (source-fitted successful override draw)");treeLogged=true;}
+    State(m);
+    for(auto &p:fitted->second){
+        Gfx_SetTexture(0,p.texture->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,p.vertices.data(),p.vertices.size());
+    }
+    Gfx_PopState();return true;
 }
