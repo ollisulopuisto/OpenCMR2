@@ -383,6 +383,9 @@ extern "C" BOOL Gfx_SetVideoMode(int width, int height, BOOL fullscreen)
         return FALSE;
     }
     ResetState();
+    const char *backend=ChooseBackend()==BACKEND_NULL ? "headless/null" :
+        ChooseBackend()==BACKEND_GL ? "OpenGL" : "SDL_GPU";
+    Sys_Log("options: renderer initialized=%s, render=%dx%d, fullscreen=%d",backend,width,height,fullscreen!=0);
     return TRUE;
 }
 

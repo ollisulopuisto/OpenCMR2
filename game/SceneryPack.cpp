@@ -24,6 +24,7 @@ struct Part { std::vector<GfxVertex> vertices; PackTexture *texture=nullptr; };
 struct Asset { SceneryFormat::Entry entry; bool attempted=false,ready=false; std::vector<Part> parts; std::vector<PackTexture*> frames; };
 std::vector<Asset> assets;
 bool loaded=false;
+bool treeLogged=false,spectatorLogged=false,assetFailureLogged=false;
 std::string root;
 std::map<std::string,PackTexture> textures;
 bool Read(const std::string &path,std::string &out) {
@@ -93,8 +94,24 @@ void State(const GfxMatrix &m){
     Gfx_SetStageColorOp(1,GFX_TOP_DISABLE);Gfx_SetStageAlphaOp(1,GFX_TOP_DISABLE);
 }
 }
+void SceneryPack_LogStatus(){
+    if(!Sys_GetOption("video.scenery_overrides",1)){
+        Sys_Log("options: scenery=original (overrides disabled)");return;
+    }
+    std::string folder=Sys_GetOptionText("video.scenery_pack","scenery-pack");
+    if(!SceneryFormat::SafePath(folder)){
+        Sys_Log("options: scenery=original (invalid relative pack root)");return;
+    }
+    std::string text;
+    if(!Read(folder+"/manifest.tsv",text)){
+        Sys_Log("options: scenery=original (manifest missing/unreadable)");return;
+    }
+    std::istringstream input(text);std::string line;unsigned count=0;
+    while(std::getline(input,line)){SceneryFormat::Entry entry;if(ParseEntry(line,entry))count++;}
+    Sys_Log("options: scenery manifest=%u parsed mappings; NOT active yet, resources checked lazily at stage draw",count);
+}
 void SceneryPack_RegisterArchive(GenericFile *file,const char *path){if(file&&path)archives[file]=Leaf(path);}
-void SceneryPack_Clear(){assets.clear();archives.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;root.clear();animationTime=0;}
+void SceneryPack_Clear(){assets.clear();archives.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;treeLogged=false;spectatorLogged=false;assetFailureLogged=false;root.clear();animationTime=0;}
 void SceneryPack_Advance(int step){if(step>0)animationTime+=(unsigned)step;}
 bool SceneryPack_Draw(StageObject *object,const float *billboard){
     if(!object||!object->pMesh||!billboard||Sys_GetOption("video.scenery_overrides",1)==0)return false;
@@ -107,7 +124,11 @@ bool SceneryPack_Draw(StageObject *object,const float *billboard){
     auto archive=archives.find((GenericFile*)source->pArchive);if(archive==archives.end())return false;
     Init();Asset *asset=nullptr;
     for(auto &a:assets)if(a.entry.archive==archive->second&&a.entry.source==Stem(source->name)){asset=&a;break;}
-    if(!asset||!Prepare(*asset))return false;
+    if(!asset)return false;
+    if(!Prepare(*asset)){
+        if(!assetFailureLogged){Sys_Log("options: scenery asset failed preparation; keeping original for failed mappings");assetFailureLogged=true;}
+        return false;
+    }
     auto v=(MeshVertexF*)mesh->pVertexData;
     float bottom=v[0].y,top=v[0].y;
     for(int i=1;i<mesh->field_0x10;i++){bottom=std::min(bottom,v[i].y);top=std::max(top,v[i].y);}
@@ -121,6 +142,7 @@ bool SceneryPack_Draw(StageObject *object,const float *billboard){
         for(int i=0;i<mesh->triangleCount;i++)for(int j=0;j<3;j++){
             unsigned ix=mesh->pTriangles[i].vertexIndex[j];if(ix>=(unsigned)mesh->field_0x10)return false;
             auto &p=v[ix];vertices.push_back({p.x,p.y,p.z,p.nx,p.ny,p.nz,p.diffuseColour,p.specularColour,p.textureCoordinates[0][0],p.textureCoordinates[0][1],0,0});}
+        if(!spectatorLogged){Sys_Log("options: spectator sidecar active (first successful override draw)");spectatorLogged=true;}
         State(*(const GfxMatrix*)billboard);Gfx_SetTexture(0,t->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,vertices.data(),vertices.size());Gfx_PopState();return true;
     }
     // Fixed placement orientation, never the camera-derived billboard matrix.
@@ -129,5 +151,6 @@ bool SceneryPack_Draw(StageObject *object,const float *billboard){
         f.up.x/65536.f*height,f.up.y/65536.f*height,f.up.z/65536.f*height,0,
         f.forward.x/65536.f*height,f.forward.y/65536.f*height,f.forward.z/65536.f*height,0,
         f.position.x/65536.f+bottom*f.up.x/65536.f,f.position.y/65536.f+bottom*f.up.y/65536.f,f.position.z/65536.f+bottom*f.up.z/65536.f,1};
+    if(!treeLogged){Sys_Log("options: tree sidecar active (first successful override draw)");treeLogged=true;}
     State(m);for(auto &p:asset->parts){Gfx_SetTexture(0,p.texture->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,p.vertices.data(),p.vertices.size());}Gfx_PopState();return true;
 }

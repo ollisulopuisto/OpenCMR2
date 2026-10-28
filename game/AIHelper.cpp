@@ -25,12 +25,16 @@ char g_aiNames[15][20] = {
 namespace {
 char customNames[15][20];
 bool namesChecked=false, namesAvailable=false;
+const char *nameStatus="original (not checked)";
 char (*NameTable())[20] {
     if (!namesChecked) {
         namesChecked=true;
+        nameStatus="original (disabled)";
         if (Sys_GetOption("video.driver_name_overrides",1)!=0) {
+            nameStatus="original (sidecar missing)";
             SysFile *file=Sys_OpenFile("driver-names.tsv",SYS_FILE_READ);
             if (file) {
+                nameStatus="original (invalid sidecar)";
                 DWORD size=Sys_GetFileSize(file);
                 std::string content;
                 if(size<=1024) {
@@ -39,12 +43,17 @@ char (*NameTable())[20] {
                         namesAvailable=DriverNamePatch::Parse(content,customNames);
                 }
                 Sys_CloseFile(file);
-                if(!namesAvailable) Sys_Log("driver names: invalid sidecar; keeping original names");
+                if(namesAvailable) nameStatus="custom (15 validated names loaded)";
             }
         }
     }
     return namesAvailable ? customNames : g_aiNames;
 }
+}
+
+void CAIHelper::LogDriverNameStatus() {
+    NameTable();
+    Sys_Log("options: driver names=%s",nameStatus);
 }
 
 // FUNCTION: CMR2 0x00407f80

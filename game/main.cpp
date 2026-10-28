@@ -1,3 +1,4 @@
+#include "StartupOptions.h"
 #include "port/sys.h"
 #include "port/audio.h"
 #include "port/diagnostics.h"
@@ -59,6 +60,7 @@ unsigned int CMain::Initialize(const char *commandLine)
 	strncpy(commandLineCopy, commandLine, sizeof(commandLineCopy) - 1);
 	commandLineCopy[sizeof(commandLineCopy) - 1] = 0;
 	Args_Parse(commandLineCopy);
+	LogStartupOptions();
 
 	if (!CreateGameWindow(m_gameName)) {
 		m_exitCode = 1;

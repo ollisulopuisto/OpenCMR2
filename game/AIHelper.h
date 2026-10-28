@@ -6,6 +6,7 @@ class CAIHelper
 public:
     static char *GetNameForID(int ix);
     static int ResolveNameIndex(int id);
+    static void LogDriverNameStatus();
 };
 
 #endif
