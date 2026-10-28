@@ -317,8 +317,16 @@ if(NOT APPLE AND NOT MSVC)
  target_link_libraries(driver_names_runtime_test PRIVATE opencmr2_platform)
  target_link_options(driver_names_runtime_test PRIVATE
   -Wl,--wrap=Sys_GetOption -Wl,--wrap=Sys_OpenFile -Wl,--wrap=Sys_GetFileSize
-  -Wl,--wrap=Sys_ReadFile -Wl,--wrap=Sys_CloseFile)
+  -Wl,--wrap=Sys_ReadFile -Wl,--wrap=Sys_CloseFile -Wl,--wrap=Sys_Log)
  foreach(mode valid missing invalid disabled)
   add_test(NAME driver_names_runtime_${mode} COMMAND driver_names_runtime_test ${mode})
  endforeach()
+endif()
+if(NOT APPLE AND NOT MSVC)
+ add_executable(startup_options_test startup_options.cpp)
+ target_link_libraries(startup_options_test PRIVATE opencmr2_platform)
+ target_link_options(startup_options_test PRIVATE -Wl,--wrap=Sys_Log
+  -Wl,--wrap=Sys_GetOption -Wl,--wrap=Sys_GetOptionText -Wl,--wrap=Sys_OpenFile)
+ add_test(NAME startup_options_missing COMMAND startup_options_test missing)
+ add_test(NAME startup_options_disabled COMMAND startup_options_test disabled)
 endif()

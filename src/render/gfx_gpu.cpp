@@ -431,6 +431,11 @@ struct Executor : GfxExecutor {
         smoothScaling = Platform_GetSettingInt("video.smooth_scaling", 1);
         spatialAA = Platform_GetSettingInt("video.spatial_aa", 0) == 1;
         metalFXSpatial = Platform_GetSettingInt("video.metalfx_spatial", 0) == 1;
+#ifdef OPENCMR2_SHADERS_MSL
+        Sys_Log("options: compiled GPU shader formats=SPIR-V,MSL");
+#else
+        Sys_Log("options: compiled GPU shader formats=SPIR-V only (no Metal MSL)");
+#endif
         SDL_PropertiesID props = DeviceProperties();
         device = SDL_CreateGPUDeviceWithProperties(props);
         SDL_DestroyProperties(props);
@@ -445,10 +450,13 @@ struct Executor : GfxExecutor {
             return false;
         }
         Sys_Log("gfx: SDL_GPU driver %s", SDL_GetGPUDeviceDriver(device));
+        Sys_Log("options: GPU shader format=%s; spatial_aa requested=%d; MetalFX spatial requested=%d",
+            shaderFormat==SDL_GPU_SHADERFORMAT_MSL ? "MSL" : "SPIR-V",spatialAA,metalFXSpatial);
         // Function pointer supplied only by our pinned SDL Metal backend extension.
         // No application code accesses native handles or casts opaque SDL structs.
         metalFXBlit = reinterpret_cast<MetalFXBlit>(SDL_GetPointerProperty(
             SDL_GetGPUDeviceProperties(device), "OpenCMR2.MetalFXSpatialBlit", nullptr));
+        Sys_Log("options: MetalFX extension=%s (available is not proof of an encoded frame)",metalFXBlit ? "available" : "unavailable");
         if (metalFXSpatial && metalFXBlit == nullptr)
             Sys_Log("gfx: MetalFX extension unavailable; using ordinary scaling");
         if (!SDL_GPUTextureSupportsFormat(device, depthFormat, SDL_GPU_TEXTURETYPE_2D,
@@ -458,6 +466,7 @@ struct Executor : GfxExecutor {
         // and retain ordinary depth rendering if the device cannot provide it.
         sampledDepth = SDL_GPUTextureSupportsFormat(device, SDL_GPU_TEXTUREFORMAT_D32_FLOAT,
             SDL_GPU_TEXTURETYPE_2D, SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
+        Sys_Log("options: sampled depth support=%d (depth effects still require successful passes)",sampledDepth);
         if (sampledDepth)
             depthFormat = SDL_GPU_TEXTUREFORMAT_D32_FLOAT;
         bcSupported = SDL_GPUTextureSupportsFormat(device, SDL_GPU_TEXTUREFORMAT_BC3_RGBA_UNORM,

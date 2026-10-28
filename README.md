@@ -189,6 +189,21 @@ the game.
 | `[install] menu_shortcut` | asked | Entry in the applications menu (Linux) or Start menu (Windows): `1` keeps it pointing at this copy, `0` removes it |
 | `[net] ...` | | Network play, see [NETWORK.md](docs/NETWORK.md) |
 
+### Startup diagnostics
+
+`opencmr2.log` in the selected user directory prints a one-time options summary
+at startup. `requested` means configuration, not proof of an effect running.
+Follow-up lines report the initialized renderer, chosen shader format and
+MetalFX extension availability. MetalFX's existing first-presentation line
+reports `encoded` or `fallback`; availability alone is not an encoded frame.
+
+Driver names report custom validated names or an original-name fallback reason
+(missing/invalid/disabled sidecar). Scenery reports a manifest's parsed mapping
+count, not loaded textures. Trees and spectators each log their first successful
+stage override; failed asset preparation logs a fallback once per stage load.
+No per-frame option dump, generated artwork or message contents are logged.
+No performance or native visual-correctness claim follows from these messages.
+
 ## Building
 
 OpenCMR2 builds with Clang, CMake 3.24+, Ninja and glslang, using the presets
