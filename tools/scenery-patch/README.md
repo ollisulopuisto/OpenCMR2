@@ -88,3 +88,21 @@ Run the synthetic safety tests with the same environment:
 ```sh
 uv run --no-project --python tools/scenery-patch/.venv/bin/python tools/scenery-patch/test_convert.py
 ```
+
+## Optional fixed-cutout experiment
+
+Add `--tree-geometry crossed` to generate the same3 verified source mappings
+as four fixed intersecting planes instead of the default silhouette shell.
+It is not camera-facing and is not a full3Dtree. Source proportions/placements
+still use PR27's source fit. It uses64triangles for fir1 and80 for broadleaf
+including one opaque stem, rather than roughly1400-1800shell triangles, but
+transparent overdraw and native frame time have not been measured.
+
+The shell has visible horizontal tiers; the crossed candidate avoids that
+terraced silhouette but can show intersecting canopy seams and shape changes
+as the view rotates. It is not an accepted visual upgrade. Broadleaf canopy
+alpha excludes its lower central stem and bottom6% to avoid repeated trunks
+and source grass specks; the separate stem samples original opaque pixels.
+Fir1 keeps original alpha. These masks are explicit modifications, not exact
+alpha preservation. Textures are still4x interpolation, not restored detail.
+No low variants or rejected fr1 are added. Recipe metadata records the mode.

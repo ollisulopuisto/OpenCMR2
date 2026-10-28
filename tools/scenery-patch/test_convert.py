@@ -89,6 +89,17 @@ class Tests(unittest.TestCase):
         self.assertFalse(list(self.output.rglob('*.bfl')))
         self.run_patch(ok=False)
 
+    def test_crossed_candidate(self):
+        self.run_patch('--tree-geometry','crossed')
+        metadata=json.loads(next(self.output.glob('trees/*/*/recipe.json')).read_text())
+        self.assertEqual(metadata['triangles'],80)
+        self.assertIn('not full3D',metadata['geometry'])
+        self.assertIn('bottom6%',metadata['alpha_changes'])
+        self.assertFalse(list(self.output.glob('trees/*/*/crown.tga')))
+        before={str(p.relative_to(self.output)):p.read_bytes() for p in self.output.rglob('*') if p.is_file()}
+        shutil.rmtree(self.output);self.run_patch('--tree-geometry','crossed')
+        self.assertEqual(before,{str(p.relative_to(self.output)):p.read_bytes() for p in self.output.rglob('*') if p.is_file()})
+
     def test_tree_generation_is_deterministic(self):
         self.run_patch();before={str(p.relative_to(self.output)):p.read_bytes() for p in self.output.rglob('*') if p.is_file()}
         shutil.rmtree(self.output);self.run_patch()

@@ -75,6 +75,47 @@ def tree(a,rel):
  (p/'tree.obj').write_text('\n'.join(lines)+'\n');(p/'tree.mtl').write_text('newmtl crown\nKd 1 1 1\nd 1\nmap_Kd crown.tga\nnewmtl trunk\nKd 1 1 1\nd 1\nmap_Kd trunk.tga\n')
  return str(rel/'tree.obj')
 
+def crossed_tree(a,rel):
+ # Explicit opt-in cutout candidate, not a full3Dtree or private restored art.
+ asset=tree(a,rel);p=root/rel;src=Image.open(a['path']).convert('RGBA');ar=np.array(src);h,w=ar.shape[:2]
+ name=Path(a['texture']).stem;broad=name.startswith('tre_md')
+ if broad:
+  yy,xx=np.mgrid[:h,:w];ar[(yy>h*.72)&(abs(xx-w/2)<w*.08),3]=0
+  ar[round(h*.94):,:,3]=0 # discard source ground grass, not tree foliage
+ Image.fromarray(ar).convert('RGBa').resize((w*4,h*4),Image.Resampling.LANCZOS).convert('RGBA').save(p/'crossed.tga')
+ old=(p/'tree.obj').read_text().splitlines();op=[];ot=[];on=[];stem=[];material=''
+ for line in old:
+  a=line.split()
+  if not a:continue
+  if a[0]=='v':op.append(a[1:])
+  elif a[0]=='vt':ot.append(a[1:])
+  elif a[0]=='vn':on.append(a[1:])
+  elif a[0]=='usemtl':material=a[1]
+  elif a[0]=='f' and material=='trunk':stem.append([list(map(int,x.split('/'))) for x in a[1:]])
+ points=[];uv=[];normals=[[0,0,1]];faces=[]
+ for k in range(4):
+  theta=k*math.pi/4;co,si=math.cos(theta),math.sin(theta);start=len(points)
+  for j in range(9):
+   y=j/8;depth=.025*math.sin(j*1.7+k)*min(1,y*5)
+   for x in [-w/h/2,w/h/2]:points.append([x*co-depth*si,y,x*si+depth*co]);uv.append([0 if x<0 else 1,y])
+  for j in range(8):
+   v=start+j*2;faces.extend([(v,v+1,v+2),(v+1,v+3,v+2)])
+ lines=[f'# opencmr2-source-canvas-1 {w} {h}','mtllib tree.mtl'];ff=['usemtl crown']
+ for face in faces:ff.append('f '+' '.join(f'{v+1}/{v+1}/1' for v in face))
+ if broad:
+  ff.append('usemtl trunk')
+  for face in stem:
+   ids=[]
+   for v,t,n in face:
+    points.append(list(map(float,op[v-1])));uv.append(list(map(float,ot[t-1])));normals.append(list(map(float,on[n-1])));ids.append(f'{len(points)}/{len(uv)}/{len(normals)}')
+   ff.append('f '+' '.join(ids))
+ lines+=['v '+' '.join(map(str,v)) for v in points]+['vt '+' '.join(map(str,v)) for v in uv]+['vn '+' '.join(map(str,v)) for v in normals]+ff
+ (p/'tree.obj').write_text('\n'.join(lines)+'\n')
+ (p/'tree.mtl').write_text('newmtl crown\nKd 1 1 1\nd 1\nmap_Kd crossed.tga\nnewmtl trunk\nKd 1 1 1\nd 1\nmap_Kd trunk.tga\n')
+ (p/'source-vertices.json').write_text(json.dumps({'schema':'source-uv-per-obj-v-1','source_canvas_wh':[w,h],'vertices':[{'source_uv':[.5+v[0]*h/w,1-v[1]]}for v in points]},indent=2))
+ metadata=json.loads((p/'recipe.json').read_text());metadata.update(method='4x premultiplied interpolation, no new detail; fixed source-projection cutouts',crown_pixels=[w*4,h*4],geometry='four fixed intersecting cutout planes, not full3D',triangles=len(faces)+(len(stem) if broad else 0),alpha_changes='broadleaf lower central stem and bottom6% removed from canopy; separate original stem' if broad else 'original source alpha interpolated')
+ (p/'recipe.json').write_text(json.dumps(metadata,indent=2)+'\n');(p/'crown.tga').unlink();return asset
+
 def spectator(a,rel):
  p=root/rel;p.mkdir(parents=True,exist_ok=True);src=Image.open(a['path']).convert('RGBA');src=src.resize((src.width*2,src.height*2),Image.Resampling.NEAREST);ar=np.array(src);h,w=ar.shape[:2];frames=[]
  # Subtle upper-body sway: original cutout remapped, lower 30% and feet fixed. No invented limbs.
@@ -127,6 +168,7 @@ def main():
  ap=argparse.ArgumentParser(description='Local procedural asset patcher: requires verified original game files; contains no artwork. Never alters inputs.')
  ap.add_argument('--input-dir',type=Path,required=True)
  ap.add_argument('--output-dir',type=Path,required=True)
+ ap.add_argument('--tree-geometry',choices=['shell','crossed'],default='shell',help='Experimental fixed cutout alternative; neither mode has native visual acceptance')
  ap.add_argument('--check-only',action='store_true',help='Verify originals without creating output')
  args=ap.parse_args()
  global root
@@ -160,7 +202,7 @@ def main():
     archive,leaf=key.split('/');a={**rec,'archive':archive,'texture':leaf};rel=Path(Path(archive).stem)/Path(leaf).stem
     source=Path(tmp)/archive/leaf;source.parent.mkdir(exist_ok=True);source.write_bytes(data[key]);a['path']=str(source)
     if rec.get('category')=='individual-tree' and (archive,Path(leaf).stem) in TREE_CANDIDATES:
-     asset=tree(a,Path('trees')/rel);rows.append('\t'.join(['tree',archive,leaf,asset,'','1']));status='source-fitted-interpolated'
+     asset=(crossed_tree if args.tree_geometry=='crossed' else tree)(a,Path('trees')/rel);rows.append('\t'.join(['tree',archive,leaf,asset,'','1']));status='source-fitted-interpolated'
     elif rec.get('category')=='spectator':
      frames=spectator(a,Path('spectators')/rel);rows.append('\t'.join(['spectator',archive,leaf,frames[0],','.join(frames),'5']));status='converted'
     else:status='retained-original'
