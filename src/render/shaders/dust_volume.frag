@@ -1,15 +1,15 @@
 #version 450
-// Opt-in experimental world-density body, no native performance claim.
-// World-space density, not camera-facing sheets. Fixed32steps / maximum16lobes.
+// World-density body, no native performance claim.
+// World-space density, not camera-facing sheets. Fixed32steps / maximum32lobes.
 layout(location=0) out vec4 outColor;
 
 layout(set=2,binding=0) uniform sampler2D sceneDepth;
 layout(std140,set=3,binding=0) uniform DustVolumeUniforms {
     mat4 inverseViewProjection;
-    vec4 cameraAndCount; // xyz world camera; w active lobe count0..16
+    vec4 cameraAndCount; // xyz world camera; w active lobe count0..32
     vec4 targetAndDensity; // reciprocal target width/height, density, max distance
-    vec4 centres[16]; // xyz world centre, radius
-    vec4 colours[16]; // linear-ish tint RGB, opacity multiplier
+    vec4 centres[32]; // xyz world centre, radius
+    vec4 colours[32]; // linear-ish tint RGB, opacity multiplier
 };
 vec3 world(vec2 uv,float z) {
     vec4 p=inverseViewProjection*vec4(uv*2.-1.,z,1.);
@@ -24,7 +24,7 @@ float noise(vec3 p) {
 }
 void main() {
     vec2 uv=gl_FragCoord.xy*targetAndDensity.xy;
-    int count=clamp(int(cameraAndCount.w),0,16);
+    int count=clamp(int(cameraAndCount.w),0,32);
     if(count==0 || targetAndDensity.z<=0.) {outColor=vec4(0,0,0,1);return;}
     vec3 origin=cameraAndCount.xyz;
     vec3 dir=normalize(world(uv,1.)-origin);
@@ -43,8 +43,15 @@ void main() {
         float density=0.;vec3 tint=vec3(0.);
         for(int i=0;i<count;++i){
             vec3 q=(p-centres[i].xyz)/max(centres[i].w,.001);
-            float fall=max(0.,1.-dot(q,q));
-            float d=fall*fall*colours[i].w*(.4+.6*noise(p*2.1));
+            q.y*=1.6; // broad terrain-hugging body, not a camera-facing disc
+            float radial=dot(q,q);
+            if(radial>=1.)continue; // cheap broad-phase before either noise lookup
+            // Stable world noise perturbs the boundary, not only its opacity.
+            // Two scales keep billowing lobes rather than smooth camera discs.
+            float billow=noise(p*.31+centres[i].xyz*.07);
+            float fall=max(0.,1.-radial-billow*.65);
+            float detail=noise(p*1.7);
+            float d=fall*fall*colours[i].w*(.3+.7*billow)*(.35+.65*detail);
             density+=d;tint+=colours[i].rgb*d;
         }
         if(density>0.){

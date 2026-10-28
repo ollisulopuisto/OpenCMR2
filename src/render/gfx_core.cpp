@@ -1,3 +1,4 @@
+#include "render/dust_volume_math.h"
 // The renderer's front end: the gfx.h state machine, CPU copies of textures
 // and vertex buffers, and the recording of each frame for the executor.
 
@@ -416,8 +417,13 @@ extern "C" void Gfx_SetBloom(BOOL enabled, int intensity)
 extern "C" BOOL Gfx_DrawDustVolume(const GfxDustLobe *lobes,int count)
 {
     if (!lobes || count<=0 || !s_executor || s_target || !s_executor->SupportsDustVolume()) return 0;
+    if(s_state.viewport.x || s_state.viewport.y || s_state.viewport.width!=(DWORD)s_width ||
+       s_state.viewport.height!=(DWORD)s_height || s_state.projection._34==0)return 0;
+    float inverse[16];GfxMatrix vp;
+    for(int r=0;r<4;r++)for(int c=0;c<4;c++){(&vp._11)[r*4+c]=0;for(int k=0;k<4;k++)(&vp._11)[r*4+c]+=(&s_state.view._11)[r*4+k]*(&s_state.projection._11)[k*4+c];}
+    if(!DustVolume_Inverse(vp,inverse)||!DustVolume_Inverse(s_state.view,inverse))return 0;
     GfxCommand command={};command.type=GFX_CMD_DUST_VOLUME;
-    command.dustCount=std::min(count,16);command.state=RecordState();
+    command.dustCount=std::min(count,32);command.state=RecordState();
     command.dustOffset=(unsigned)s_frame.dustLobes.size();
     s_frame.dustLobes.insert(s_frame.dustLobes.end(),lobes,lobes+command.dustCount);
     s_frame.commands.push_back(command);return 1;

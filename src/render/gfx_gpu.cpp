@@ -204,7 +204,11 @@ struct Executor : GfxExecutor {
     SDL_GPUShader *fsDustVolume = nullptr, *fsDustComposite = nullptr;
     SDL_GPUGraphicsPipeline *dustVolumePipeline = nullptr, *dustCompositePipeline = nullptr;
     SDL_GPUTexture *dustVolumeTarget = nullptr, *dustCompositeTarget = nullptr;
-    bool SupportsDustVolume() override {return sampledDepth && backDepth && backColor;}
+    bool dustVolumeLogged=false;
+    bool SupportsDustVolume() override {
+        if(!sampledDepth || !backDepth || !backColor || !vsMotionBlur)return false;
+        return PrepareDustResources();
+    }
     bool spatialAA = false;
     bool metalFXSpatial = false;
     bool metalFXLogged = false;
@@ -1167,13 +1171,7 @@ struct Executor : GfxExecutor {
         return true;
     }
 
-    void RenderDustVolume(SDL_GPUCommandBuffer *cmd,const GfxCommand &command,const GfxDrawState &state,const GfxFrame &frame)
-    {
-        if (!SupportsDustVolume() || command.dustCount<=0) return;
-        // First prototype supports one full-screen perspective viewport only.
-        // Split-screen/cubemap/orthographic paths keep ordinary wheel effects.
-        if (state.viewport.x || state.viewport.y || state.viewport.width!=(DWORD)backWidth ||
-            state.viewport.height!=(DWORD)backHeight || state.projection._34==0) return;
+    bool PrepareDustResources(){
         if (!fsDustVolume) fsDustVolume=Shader(SHADER_CODE(dust_volume_frag),SDL_GPU_SHADERSTAGE_FRAGMENT,1,1);
         if (!dustVolumePipeline && fsDustVolume) dustVolumePipeline=PostProcessPipeline(vsMotionBlur,fsDustVolume);
         int volumeWidth=std::max(1,backWidth/2),volumeHeight=std::max(1,backHeight/2);
@@ -1183,8 +1181,18 @@ struct Executor : GfxExecutor {
         if (!dustCompositePipeline && fsDustComposite) dustCompositePipeline=PostProcessPipeline(vsMotionBlur,fsDustComposite);
         if (!dustCompositeTarget && dustCompositePipeline) dustCompositeTarget=CreateTexture(SDL_GPU_TEXTURETYPE_2D,colorFormat,
             backWidth,backHeight,1,1,SDL_GPU_TEXTUREUSAGE_COLOR_TARGET|SDL_GPU_TEXTUREUSAGE_SAMPLER);
-        if (!dustVolumeTarget || !dustVolumePipeline || !dustCompositeTarget || !dustCompositePipeline) return;
-        struct Uniforms {float inverse[16],camera[4],target[4],centres[16][4],colours[16][4];} u={};
+        return dustVolumeTarget && dustVolumePipeline && dustCompositeTarget && dustCompositePipeline;
+    }
+
+    void RenderDustVolume(SDL_GPUCommandBuffer *cmd,const GfxCommand &command,const GfxDrawState &state,const GfxFrame &frame)
+    {
+        if (!SupportsDustVolume() || command.dustCount<=0) return;
+        // First prototype supports one full-screen perspective viewport only.
+        // Split-screen/cubemap/orthographic paths keep ordinary wheel effects.
+        if (state.viewport.x || state.viewport.y || state.viewport.width!=(DWORD)backWidth ||
+            state.viewport.height!=(DWORD)backHeight || state.projection._34==0) return;
+        int volumeWidth=std::max(1,backWidth/2),volumeHeight=std::max(1,backHeight/2);
+        struct Uniforms {float inverse[16],camera[4],target[4],centres[32][4],colours[32][4];} u={};
         GfxMatrix vp;Multiply(state.view,state.projection,&vp._11);
         float inverseView[16];
         if (!DustVolume_Inverse(vp,u.inverse) || !DustVolume_Inverse(state.view,inverseView)) return;
@@ -1203,6 +1211,7 @@ struct Executor : GfxExecutor {
         SDL_GPUBlitInfo blit={};blit.source.texture=dustCompositeTarget;blit.source.w=backWidth;blit.source.h=backHeight;
         blit.destination.texture=backColor;blit.destination.w=backWidth;blit.destination.h=backHeight;
         blit.load_op=SDL_GPU_LOADOP_DONT_CARE;blit.filter=SDL_GPU_FILTER_NEAREST;SDL_BlitGPUTexture(cmd,&blit);
+        if(!dustVolumeLogged){Sys_Log("options: world dust volume encoded; camera-facing plume sheets suppressed, max32 terrain-anchored clouds");dustVolumeLogged=true;}
     }
 
     // Billboard particle pipeline: position+colour+size vertices, alpha

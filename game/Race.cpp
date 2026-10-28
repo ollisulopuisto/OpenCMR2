@@ -1,3 +1,4 @@
+#include "DustPlume.h"
 #include "SceneryPack.h"
 #include "SceneryPackFormat.h"
 #include <stddef.h>
@@ -5420,6 +5421,7 @@ void Race_UpdatePlayerViewAndDrivenCars(BYTE param1, int param2)
             Car_UpdateAndRenderAll();
         }
         if (player != 0) {
+            DustPlume_AdvanceWorld(SceneryFormat::Step(Car_Get(0)->simulationRateHz));
             SceneryPack_Advance(SceneryFormat::Step(Car_Get(0)->simulationRateHz)); // 25Hz authored units, not render frames
             StageObjects_Update();
         }

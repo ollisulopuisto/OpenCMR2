@@ -1,64 +1,73 @@
-# Dry dirt/gravel plume, first visual implementation
+# Dry dirt/gravel dust
 
-Dry dirt/gravel clouds now default on, as explicitly requested. Set
-`[video] dust_plume = 0` to disable the added clouds. Existing explicit values
-are respected; this changes fallback defaults, not saved settings.
-Uses the existing smoke texture and billboard/depth-tested/no-depth-write path.
-No downloaded artwork, scene collision changes or volumetric simulation.
+`[video] dust_plume=1` enables extra dry dirt/gravel clouds and `dust_volume=1`
+selects the GPU volume path where supported. Both default on at the user's
+request; saved opt-outs are preserved. `dust_plume=0` stops new emission;
+`dust_volume=0` keeps the legacy camera-facing cloud-sheet fallback. Neither
+setting changes original game files. No artwork pack is needed for dust.
 
-Each dry dirt/gravel wheel contact can emit a cloud in world space. It has no
-car attachment or owner-position callback, so old bends remain dusty after the
-car moves away. Motion decays toward existing wind, rises, expands over150fixed
-particle-update steps and fades in/out. Real seconds depend on game stepping.
-Original near-wheel debris/water/snow remain separate. Snow, ice, water and dry
-hard surfaces are explicitly excluded from this new cloud, not recoloured.
-Snow requires separate later calibration, including substantial powder clouds;
-this patch establishes no universal low-volume snow rule.
+## Terrain-anchored rebuild
 
-Bounded to96clouds inside the existing400particle pool, leaving64free slots
-before cloud emission can occur. No pool growth or evicting original particles
-for clouds. Lower quality modes naturally have a smaller budget. A private RNG
-for added-cloud spawn spread avoids advancing the game's global random stream.
-Its actual appearance/overdraw cost is still unmeasured on native Mac.
+The GPU body no longer borrows the first visible particles or overlays the
+same camera-facing cloud sheets. A dedicated fixed-capacity pool captures
+world XYZ once at wheel contact. It has no car/camera owner or inherited car
+velocity. Simulation advances its age, never its horizontal anchor. Repeated
+camera draws only sample it. Nearby fresh emissions merge without moving the
+stored position. Both particle-clear and particle-kill-all clear the trail.
 
-## Evidence and remaining acceptance
+Each cloud lives up to12 simulation seconds, expands to roughly9-15 world
+units in radius, and fades. World units are treated as metres for synthetic
+scale comparisons, not a new measured native gameplay guarantee. The pool
+holds128 anchors, overwriting oldest slots when full; at most32 are sampled
+across the active pool per draw. Fixed position-derived variation changes
+billow size/height/density without consuming the game's random stream.
+World-fixed noise erodes the broad, ground-hugging bodies. This is visual
+volume, not fluid simulation, lighting/scattering or terrain collision.
+Ground height is captured at emission, not continuously sampled across slopes.
 
-CPU tests run actual growth/advection/fade code, dry-surface exclusions and pool
-spawn code including96cap/64reserve/world-space birth. Synthetic motion views
-use actual C++ simulation output with a generated soft mask, NOT the uninspected
-game smoke texture or real gameplay. They verify persistence behind a moving
-emitter and eventual fade, not WRC-level visual quality.
+A preflighted GPU volume command replaces only added DUST_PLUME cloud sheets.
+Original chips/spray remain. Missing sampled depth, shader/pipeline/target
+failure, OpenGL, offscreen targets, split viewports, orthographic and singular
+camera matrices reject the command and retain sheet fallback. A rare GPU pass
+failure after command acceptance cannot restore already skipped sheets in that
+frame. First successful encoding logs `world dust volume encoded` once; startup
+requested settings alone do not prove rendering.
 
-Still needs native gameplay: texture softness/colour, cloud density against
-terrain, depth intersections, billboard transparency ordering, near-camera
-overdraw, camera cuts/replays, snow separation and M2Air frame time. There is no
-soft-depth intersection, light scattering, volumetric shadow, GPU simulation or
-FPS claim. Existing billboard sorting/material limits remain. Keep this draft
-under visual review until a real game capture confirms density/placement and acceptable cost.
+The half-width/half-height density pass uses32 ray steps and up to32 lobes,
+then a depth-weighted full-resolution composite. A cheap radius check avoids
+noise lookups outside each lobe. The doubled lobe bound still increases worst
+case work. Native Metal/M2Air frame time is not measured.
 
-## Experimental world-density GPU body
+## Fallback and material scope
 
-`[video] dust_plume=1` plus `dust_volume=1` adds a world-space ray-integrated
-body behind the original sheet/debris fallback. Both now default1 by explicit user request. Existing explicit0 settings are
-not overwritten. Set dust_volume=0 to retain ordinary sheets without the GPU
-body, or dust_plume=0 to stop new dry-cloud emission. This is an early prototype, not a finished correction of all
-camera-facing dust: the ordinary billboards still coexist. Sixteen active
-lobes maximum,32steps, depth-clipped, fixed world-space procedural noise.
-The new path snapshots the camera at particle draw submission, executes before
-later HUD commands, uses a separate colour target and shared depthless pass
-helper, and samples scene depth without attaching it for writing. OpenGL,
-missing sampled depth, resource failures and non-fullscreen viewports skip it.
-No external texture pack is installed. Density is procedural, not the actual
-asset alpha used in the earlier offline comparison. The shader's light/tint is
-simple, with no real scattering or volumetric shadows.
+The legacy sheet path still uses the existing smoke texture and400-particle
+pool, capped at96 added clouds with64 slots reserved for original effects.
+It has independent spawn randomness and no owner callback, but its sheets do
+face the camera. Dry dirt/gravel only: snow, ice, water and hard surfaces are
+excluded from added clouds; original effects remain. Snow needs separate
+calibration, not a universal low-volume rule.
 
-This first wiring prototype runs at half width/height with linear upscale.
-It stores scatter/transmittance separately and uses a depth-weighted
-four-tap full-resolution composite, preserving untouched scene pixels.
-Foreground halos and undersampling still need native checks.32×16
-worst-case samples can still be expensive. M2Air acceptance remains needed,
-along with lobe
-selection by camera relevance instead of first16pool entries, replay/reset,
-viewport orientation and native projection/terrain/HUD integration still need
-acceptance. Native performance remains unverified despite the requested default change. Tests are software-GPU pixels and CPU matrix
-contracts, not native Metal gameplay or a frame-time result.
+## Evidence and pending acceptance
+
+CPU tests cover fixed horizontal anchors, expansion, expiry, bounded sampling,
+read-only camera sampling, sheet replacement/fallback and stage clear. A real
+renderer-recorder test covers32-lobe snapshot ownership and unsupported,
+split, orthographic and singular-camera rejection. Software-GPU tests compile
+and render the production fragment shaders, checking orbit/translation,
+determinism, opaque depth rejection, neutral composite and alpha preservation.
+
+Reproduce the optional moving-camera synthetic road proof with:
+
+```
+./build/tests/world_dust_test --fixture /tmp/dust-pool.json
+python tests/dust_volume_shader.py --pool-fixture /tmp/dust-pool.json --output /tmp/dust-orbit.gif
+```
+
+The scene uses actual C++ pool output, a curved road, a checker ground plane
+and a4.2 x1.8 x1.5 world-unit white box as a car-size cue. It is not gameplay.
+Dependencies: moderngl, numpy, Pillow, glslangValidator, spirv-cross and EGL.
+
+Correctness evidence is separate from appearance acceptance. Uneven WRC-like
+billowing/opacity and native Mac ground/projection alignment, camera cuts,
+replays, HUD/depth ordering and frame time still need real game captures.
+The rebuild remains under visual review, not a completed WRC-quality claim.
