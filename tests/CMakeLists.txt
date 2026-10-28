@@ -94,6 +94,18 @@ add_executable(animated_scenery_test animated_scenery.cpp)
 target_include_directories(animated_scenery_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src)
 add_test(NAME animated_scenery COMMAND animated_scenery_test)
 
+add_executable(motion_blur_test motion_blur.cpp)
+target_include_directories(motion_blur_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
+add_test(NAME motion_blur COMMAND motion_blur_test)
+
+add_executable(bloom_test bloom.cpp)
+target_include_directories(bloom_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
+add_test(NAME bloom COMMAND bloom_test)
+
+add_executable(shadows_test shadows.cpp)
+target_include_directories(shadows_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
+add_test(NAME shadows COMMAND shadows_test)
+
 add_executable(render_stats_test render_stats.cpp
     ${PROJECT_SOURCE_DIR}/src/render/gfx_core.cpp
     ${PROJECT_SOURCE_DIR}/src/diagnostics/observer.cpp)

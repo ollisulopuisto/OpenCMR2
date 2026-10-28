@@ -16,6 +16,7 @@ layout(location = 3) out vec4 outTex1;
 layout(location = 4) out float outFog;
 layout(location = 5) out float outEyeDepth;
 layout(location = 6) out vec3 outEyePosition;  // for the distance fade's range
+layout(location = 7) out vec4 outLightPosition; // position in light clip space, for shadows
 
 vec4 MaterialColor(int source, vec4 material, vec4 color1, vec4 color2)
 {
@@ -53,6 +54,7 @@ void main()
     vec4 color1 = inDiffuse.zyxw;
     vec4 color2 = inSpecular.zyxw;
     vec4 eye = worldView * vec4(inPosition, 1.0);
+    vec4 worldPos = world * vec4(inPosition, 1.0);
     vec3 n = mat3(worldView) * inNormal;
     if (fogFlags.y != 0 && dot(n, n) > 0.0)
         n = normalize(n);
@@ -115,6 +117,9 @@ void main()
     outEyeDepth = eye.z;
     outEyePosition = eye.xyz;
     outFog = fogFlags.z != 0 ? color2.a : 1.0;
+    // Light clip-space position for shadow mapping: perspective divide and
+    // texture fetch happen in the fragment shader.
+    outLightPosition = lightViewProj * worldPos;
     if (fogFlags.x == 3) {
         float range = fogParams.y - fogParams.x;
         outFog = range != 0.0 ? clamp((fogParams.y - eye.z) / range, 0.0, 1.0) : 1.0;

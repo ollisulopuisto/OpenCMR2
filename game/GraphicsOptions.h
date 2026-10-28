@@ -205,4 +205,52 @@ inline int AnimTexture_Index(int baseTexture, int frame)
     return baseTexture + frame;
 }
 
+// OpenCMR2: motion blur between frames. `video.motion_blur` is 0 (off) to
+// MOTION_BLUR_MAX; the mix factor is how much of the previous frame to blend
+// into the current one. A value of 0 disables it; the useful range is small
+// (a few tens) before ghosting dominates. [video] video.motion_blur gates it.
+#define MOTION_BLUR_MAX 100
+
+// Blend factor (0..255) of the previous frame into the current one, from the
+// user's strength setting. 0 means no blur; MOTION_BLUR_MAX maps to 255.
+inline int MotionBlur_Mix(int strength)
+{
+    if (strength <= 0)
+        return 0;
+    if (strength >= MOTION_BLUR_MAX)
+        return 255;
+    return (strength * 255) / MOTION_BLUR_MAX;
+}
+
+// OpenCMR2: bloom intensity. `video.bloom` is 0 (off) to BLOOM_MAX; the mix
+// factor scales how strongly the blurred bright pixels are added back.
+// [video] video.bloom gates it.
+#define BLOOM_MAX 100
+
+// Blend factor (0..255) of the bloom layer into the scene, from the user's
+// intensity setting. 0 means no bloom; BLOOM_MAX maps to 255.
+inline int Bloom_Intensity(int strength)
+{
+    if (strength <= 0)
+        return 0;
+    if (strength >= BLOOM_MAX)
+        return 255;
+    return (strength * 255) / BLOOM_MAX;
+}
+
+// OpenCMR2: directional shadow depth bias. `video.shadows` is 0 (off) or 1
+// (on); `bias` (0..100) is converted to a depth bias (hundredths of a depth
+// unit). [video] video.shadows gates it.
+#define SHADOW_BIAS_MAX 100
+
+// Bias (0..100) clamped to the valid range.
+inline int Shadow_Bias(int bias)
+{
+    if (bias < 0)
+        return 0;
+    if (bias > SHADOW_BIAS_MAX)
+        return SHADOW_BIAS_MAX;
+    return bias;
+}
+
 #endif

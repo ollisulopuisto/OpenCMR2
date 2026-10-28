@@ -7,6 +7,7 @@ layout(location = 3) in vec4 inTex1;
 layout(location = 4) in float inFog;
 layout(location = 5) in float inEyeDepth;
 layout(location = 6) in vec3 inEyePosition;
+layout(location = 7) in vec4 inLightPosition;
 
 layout(location = 0) out vec4 outColor;
 
@@ -17,6 +18,7 @@ layout(set = 2, binding = 3) uniform samplerCube cube1;
 layout(set = 2, binding = 4) uniform sampler2D backdrop;   // Gfx_CaptureBackdrop
 layout(set = 2, binding = 5) uniform sampler2D native0;
 layout(set = 2, binding = 6) uniform sampler2D native1;
+layout(set = 2, binding = 7) uniform sampler2D shadowMap;   // directional light shadow map
 
 layout(std140, set = 3, binding = 0) uniform FragmentUniforms {
     ivec4 stage0;       // colour op, colour arg1, colour arg2, alpha op
@@ -32,6 +34,7 @@ layout(std140, set = 3, binding = 0) uniform FragmentUniforms {
     vec4 bumpMatrix;    // m00, m01, m10, m11 (of the bump stage)
     vec4 bumpLuminance; // scale, offset
     vec4 distanceFade;  // distance where the fade into the backdrop starts, ends; on (z != 0)
+    vec4 shadowParams;  // x: bias, y: enabled, -, -
 };
 
 const int TOP_DISABLE = 1, TOP_SELECTARG1 = 2, TOP_SELECTARG2 = 3, TOP_MODULATE = 4, TOP_MODULATE2X = 5,
@@ -227,6 +230,31 @@ void main()
         float f = smoothstep(distanceFade.x, distanceFade.y, length(inEyePosition));
         if (f > 0.0)
             current.rgb = mix(current.rgb, texelFetch(backdrop, ivec2(gl_FragCoord.xy), 0).rgb, f);
+    }
+
+    // Directional light shadow map: fragments in shadow are darkened. The
+    // light-space position is interpolated from the vertex shader; perspective
+    // divide and a small PCF filter soften the shadow edges.
+    if (shadowParams.y != 0.0) {
+        vec4 l = inLightPosition;
+        if (l.w > 0.0) {
+            l /= l.w;
+            l.xy = l.xy * 0.5 + 0.5;
+            l.z = l.z * 0.5 + 0.5;
+            float bias = shadowParams.x;
+            float vis = 1.0;
+            if (l.x >= 0.0 && l.x <= 1.0 && l.y >= 0.0 && l.y <= 1.0 && l.z >= 0.0 && l.z <= 1.0) {
+                float ts = 1.0 / 1024.0;
+                float pcf = 0.0;
+                pcf += (l.z - bias) <= texture(shadowMap, l.xy + vec2(-ts, 0.0)).r ? 1.0 : 0.0;
+                pcf += (l.z - bias) <= texture(shadowMap, l.xy + vec2( ts, 0.0)).r ? 1.0 : 0.0;
+                pcf += (l.z - bias) <= texture(shadowMap, l.xy + vec2(0.0, -ts)).r ? 1.0 : 0.0;
+                pcf += (l.z - bias) <= texture(shadowMap, l.xy + vec2(0.0,  ts)).r ? 1.0 : 0.0;
+                float center = (l.z - bias) <= texture(shadowMap, l.xy).r ? 1.0 : 0.0;
+                vis = (center + pcf) / 5.0;
+            }
+            current.rgb *= vis;
+        }
     }
     outColor = current;
 }

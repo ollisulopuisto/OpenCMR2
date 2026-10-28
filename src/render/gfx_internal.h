@@ -163,6 +163,19 @@ struct GfxExecutor {
     // OpenCMR2: the anisotropic filtering level (1: off); called when the
     // setting changes at runtime, between frames.
     virtual void SetAnisotropy(int) {}
+    // OpenCMR2: motion blur between frames. `enabled` turns it on/off and
+    // `mix` (0..255) is how much of the previous frame to blend into the
+    // current one. Called when the setting changes, between frames.
+    virtual void SetMotionBlur(BOOL, int) {}
+    // OpenCMR2: bloom. `enabled` turns it on/off and `intensity` (0..255)
+    // scales how strongly the blurred bright pixels are added back.
+    virtual void SetBloom(BOOL, int) {}
+    // OpenCMR2: particles (rain/snow). `type` 0=off, 1=rain, 2=snow;
+    // `intensity` (0..255) scales the emission rate.
+    virtual void SetParticles(int, int) {}
+    // OpenCMR2: directional shadows. `type` 0=off, 1=on; `bias` (0..100)
+    // is the depth bias in hundredths of a depth unit.
+    virtual void SetShadows(int, int) {}
     // Runs the recorded commands; with present, shows the back buffer and
     // ends the frame (otherwise the next commands continue it).
     virtual void Execute(GfxFrame &frame, std::vector<GfxTexture *> &textures, GfxReadback &readback, bool present,

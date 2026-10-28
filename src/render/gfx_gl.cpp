@@ -103,6 +103,7 @@ struct FragmentUniforms {
     float bumpMatrix[4];
     float bumpLuminance[4];
     float distanceFade[4];
+    float shadowParams[4];  // x: bias, y: enabled, -, -
 };
 
 enum { VERTEX_BLOCK, FRAGMENT_BLOCK };
@@ -454,6 +455,14 @@ struct Executor : GfxExecutor {
         for (GLuint &s : bound.samplers)
             s = ~0u;
     }
+
+    // OpenCMR2: shadow maps are not implemented on the OpenGL renderer; the
+    // setting is accepted so the menu works, but it has no effect there.
+    void SetShadows(int, int) override {}
+
+    // OpenCMR2: motion blur is not yet implemented on the OpenGL renderer;
+    // the setting is accepted so the menu works, but it has no effect there.
+    void SetMotionBlur(BOOL, int) override {}
 
     // ---- textures ----
 

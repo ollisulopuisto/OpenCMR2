@@ -14,6 +14,8 @@ struct Light {
 
 layout(std140, set = 1, binding = 0) uniform VertexUniforms {
     mat4 worldView;
+    mat4 world;               // model-to-world, for shadow map space
+    mat4 lightViewProj;       // light's view * projection, for shadow mapping
     mat4 projection;
     mat4 textureMatrix[2];
     vec4 materialDiffuse;

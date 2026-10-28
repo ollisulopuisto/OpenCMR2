@@ -230,6 +230,21 @@ void Gfx_SetFullscreen(BOOL fullscreen);
     the higher, the sharper textures seen at a slant). Takes effect at once,
     without recreating the device. [video] video.anisotropy */
 void Gfx_SetAnisotropy(int level);
+/* OpenCMR2: motion blur between frames. `enabled` turns it on or off and
+   `mix` (0..255) is how much of the previous frame to blend into the current
+   one. Takes effect at once, between frames. [video] video.motion_blur */
+void Gfx_SetMotionBlur(BOOL enabled, int mix);
+/* OpenCMR2: bloom. `enabled` turns it on or off and `intensity` (0..255)
+   scales how strongly the blurred bright pixels are added back to the frame.
+   Takes effect at once, between frames. [video] video.bloom */
+void Gfx_SetBloom(BOOL enabled, int intensity);
+/* OpenCMR2: particles (rain/snow). `type` 0=off, 1=rain, 2=snow; `intensity`
+   (0..255) scales the emission rate. Takes effect at once. [video]
+   video.particles */
+void Gfx_SetParticles(int type, int intensity);
+/* OpenCMR2: directional shadows. `type` 0=off, 1=on; `bias` (0..100) is the
+   shadow depth bias. Takes effect at once. [video] video.shadows */
+void Gfx_SetShadows(int type, int bias);
 void Gfx_Shutdown(void);
 
 /* Resolutions to offer, smallest first. */

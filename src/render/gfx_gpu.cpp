@@ -33,6 +33,8 @@ struct LightUniform {
 
 struct VertexUniforms {
     float worldView[16];
+    float world[16];          // model-to-world, for shadow mapping
+    float lightViewProj[16];  // light's view * projection, for shadow mapping
     float projection[16];
     float textureMatrix[2][16];
     float materialDiffuse[4], materialAmbient[4], materialSpecular[4], materialEmissive[4];
@@ -57,6 +59,7 @@ struct FragmentUniforms {
     float bumpMatrix[4];
     float bumpLuminance[4];
     float distanceFade[4];
+    float shadowParams[4];  // x: bias, y: enabled, -, -
 };
 
 struct ClearUniforms {
@@ -186,8 +189,22 @@ struct Executor : GfxExecutor {
     SDL_GPUDevice *device = nullptr;
     SDL_Window *window = nullptr;
     SDL_GPUShader *vs3d = nullptr, *vsTL = nullptr, *fs = nullptr, *vsClear = nullptr, *fsClear = nullptr;
+    SDL_GPUShader *vsMotionBlur = nullptr, *fsMotionBlur = nullptr;
+    SDL_GPUShader *fsBrightPass = nullptr, *fsBlur = nullptr, *fsComposite = nullptr;
+    SDL_GPUShader *vsParticle = nullptr, *fsParticle = nullptr;
+    SDL_GPUShader *vsShadow = nullptr, *fsShadow = nullptr;
     SDL_GPUTexture *backColor = nullptr, *backDepth = nullptr;
     SDL_GPUTexture *backdrop = nullptr;    // the copy of backColor the distance fade reads
+    SDL_GPUTexture *motionBlurPrevious = nullptr;  // the previous frame, for motion blur
+    SDL_GPUTexture *motionBlurTemp = nullptr;      // the blended frame, before the swapchain blit
+    SDL_GPUTexture *bloomBuf1 = nullptr, *bloomBuf2 = nullptr;  // bloom ping-pong buffers
+    SDL_GPUGraphicsPipeline *motionBlurPipeline = nullptr;  // the full-screen blend pass
+    SDL_GPUGraphicsPipeline *bloomBrightPassPipeline = nullptr;  // bright-pass extract
+    SDL_GPUGraphicsPipeline *bloomBlurPipeline = nullptr;  // directional blur pass
+    SDL_GPUGraphicsPipeline *bloomCompositePipeline = nullptr;  // scene + bloom additive
+    SDL_GPUGraphicsPipeline *particlePipeline = nullptr;  // particle billboard pass
+    SDL_GPUTexture *shadowMap = nullptr;   // directional light shadow map (depth)
+    SDL_GPUGraphicsPipeline *shadowPipeline = nullptr;  // depth-only shadow pass
     int backWidth = 0, backHeight = 0;
     SDL_GPUTextureFormat colorFormat = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM;
     SDL_GPUTextureFormat depthFormat = SDL_GPU_TEXTUREFORMAT_D24_UNORM_S8_UINT;
@@ -203,6 +220,40 @@ struct Executor : GfxExecutor {
     // OpenCMR2: video.anisotropy defaults to 8 (the original sampled without
     // anisotropy; 1 restores it). video.smooth_scaling as before.
     int anisotropy = 8, smoothScaling = 1;
+    // OpenCMR2: video.motion_blur — mix (0..255) of the previous frame into
+    // the current one at present time; 0 turns it off.
+    bool motionBlurEnabled = false;
+    int motionBlurMix = 0;
+    bool motionBlurHasPrevious = false;
+    // OpenCMR2: video.bloom — enabled and intensity (0..255).
+    bool bloomEnabled = false;
+    int bloomIntensity = 0;
+    // OpenCMR2: particles (rain/snow). type 0=off, 1=rain, 2=snow; intensity
+    // 0..255 scales the emission rate.
+    int particleType = 0;
+    int particleIntensity = 0;
+    uint32_t particleLastTicks = 0;
+    // OpenCMR2: directional shadows. type 0=off, 1=on; bias in depth units.
+    int shadowType = 0;
+    float shadowBias = 0.0005f;
+    // The sun's view and projection matrices, rebuilt when the stage changes.
+    GfxMatrix lightView;
+    GfxMatrix lightProj;
+    float lightViewProj[16];  // lightProj * lightView, for shadow mapping
+    // Particle pool: simulated and rendered entirely in the port layer.
+    struct Particle {
+        float x, y;          // normalised screen position (y=0 top)
+        float vx, vy;        // screen-space velocity per second
+        float sx, sy;        // half-size in screen fraction
+        float r, g, b, a;    // colour
+        float life;          // seconds remaining
+        bool active;
+    };
+    static const int kMaxParticles = 2000;
+    Particle particles[kMaxParticles];
+    SDL_GPUBuffer *particleVB = nullptr;
+    uint32_t particleVBCapacity = 0;
+    uint32_t particleCount = 0;
     Uint32 presentWidth = 0, presentHeight = 0; // the window's pixels, as last logged
     // The back buffer read of the last presented frame (the lens flare test):
     // it runs with that frame, and CollectReadback waits for it only when the
@@ -226,6 +277,10 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUTexture(device, backColor);
         SDL_ReleaseGPUTexture(device, backDepth);
         SDL_ReleaseGPUTexture(device, backdrop);
+        SDL_ReleaseGPUTexture(device, motionBlurPrevious);
+        SDL_ReleaseGPUTexture(device, motionBlurTemp);
+        SDL_ReleaseGPUTexture(device, bloomBuf1);
+        SDL_ReleaseGPUTexture(device, bloomBuf2);
         SDL_ReleaseGPUTexture(device, white2D);
         SDL_ReleaseGPUTexture(device, whiteCube);
         SDL_ReleaseGPUBuffer(device, vertexBuffer);
@@ -236,6 +291,21 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUShader(device, fs);
         SDL_ReleaseGPUShader(device, vsClear);
         SDL_ReleaseGPUShader(device, fsClear);
+        SDL_ReleaseGPUShader(device, vsMotionBlur);
+        SDL_ReleaseGPUShader(device, fsMotionBlur);
+        SDL_ReleaseGPUShader(device, fsBrightPass);
+        SDL_ReleaseGPUShader(device, fsBlur);
+        SDL_ReleaseGPUShader(device, fsComposite);
+        SDL_ReleaseGPUShader(device, vsParticle);
+        SDL_ReleaseGPUShader(device, fsParticle);
+        SDL_ReleaseGPUGraphicsPipeline(device, motionBlurPipeline);
+        SDL_ReleaseGPUGraphicsPipeline(device, bloomBrightPassPipeline);
+        SDL_ReleaseGPUGraphicsPipeline(device, bloomBlurPipeline);
+        SDL_ReleaseGPUGraphicsPipeline(device, bloomCompositePipeline);
+        SDL_ReleaseGPUGraphicsPipeline(device, particlePipeline);
+        SDL_ReleaseGPUGraphicsPipeline(device, shadowPipeline);
+        SDL_ReleaseGPUBuffer(device, particleVB);
+        SDL_ReleaseGPUTexture(device, shadowMap);
         SDL_ReleaseWindowFromGPUDevice(device, window);
         SDL_DestroyGPUDevice(device);
     }
@@ -318,7 +388,18 @@ struct Executor : GfxExecutor {
         fs = Shader(SHADER_CODE(fixed_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 7, 1);
         vsClear = Shader(SHADER_CODE(clear_vert), SDL_GPU_SHADERSTAGE_VERTEX, 0, 1);
         fsClear = Shader(SHADER_CODE(clear_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 0, 1);
-        if (!vs3d || !vsTL || !fs || !vsClear || !fsClear)
+        vsMotionBlur = Shader(SHADER_CODE(motionblur_vert), SDL_GPU_SHADERSTAGE_VERTEX, 0, 0);
+        fsMotionBlur = Shader(SHADER_CODE(motionblur_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1);
+        fsBrightPass = Shader(SHADER_CODE(brightpass_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
+        fsBlur = Shader(SHADER_CODE(blur_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
+        fsComposite = Shader(SHADER_CODE(composite_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1);
+        vsParticle = Shader(SHADER_CODE(particle_vert), SDL_GPU_SHADERSTAGE_VERTEX, 0, 1);
+        fsParticle = Shader(SHADER_CODE(particle_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
+        vsShadow = Shader(SHADER_CODE(shadow_vert), SDL_GPU_SHADERSTAGE_VERTEX, 0, 1);
+        fsShadow = Shader(SHADER_CODE(shadow_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 0, 1);
+        if (!vs3d || !vsTL || !fs || !vsClear || !fsClear || !vsMotionBlur || !fsMotionBlur ||
+            !fsBrightPass || !fsBlur || !fsComposite || !vsParticle || !fsParticle ||
+            !vsShadow || !fsShadow)
             return false;
 
         white2D = CreateTexture(SDL_GPU_TEXTURETYPE_2D, SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM, 1, 1, 1, 1,
@@ -367,20 +448,37 @@ struct Executor : GfxExecutor {
             SDL_ReleaseGPUTexture(device, backColor);
             SDL_ReleaseGPUTexture(device, backDepth);
             SDL_ReleaseGPUTexture(device, backdrop);
+            SDL_ReleaseGPUTexture(device, motionBlurPrevious);
+            SDL_ReleaseGPUTexture(device, motionBlurTemp);
+            SDL_ReleaseGPUTexture(device, bloomBuf1);
+            SDL_ReleaseGPUTexture(device, bloomBuf2);
             backColor = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, width, height, 1, 1,
                                       SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
             backDepth = CreateTexture(SDL_GPU_TEXTURETYPE_2D, depthFormat, width, height, 1, 1,
                                       SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET);
             backdrop = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, width, height, 1, 1,
                                      SDL_GPU_TEXTUREUSAGE_SAMPLER);
+            motionBlurPrevious = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, width, height, 1, 1,
+                                               SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
+            motionBlurTemp = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, width, height, 1, 1,
+                                           SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
+            bloomBuf1 = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, width, height, 1, 1,
+                                      SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
+            bloomBuf2 = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, width, height, 1, 1,
+                                      SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
+            shadowMap = CreateTexture(SDL_GPU_TEXTURETYPE_2D, SDL_GPU_TEXTUREFORMAT_D24_UNORM_S8_UINT, 1024, 1024,
+                                      1, 1, SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
             backWidth = width;
             backHeight = height;
-            if (backColor == NULL || backDepth == NULL || backdrop == NULL)
+            if (backColor == NULL || backDepth == NULL || backdrop == NULL ||
+                motionBlurPrevious == NULL || motionBlurTemp == NULL ||
+                bloomBuf1 == NULL || bloomBuf2 == NULL)
                 return false;
         }
         SDL_SetWindowResizable(window, true);
         SetFullscreen(fullscreen);
         SDL_ShowWindow(window);
+        BuildLightMatrices();
         return true;
     }
 
@@ -389,11 +487,87 @@ struct Executor : GfxExecutor {
         Gfx_SetWindowMode(window, fullscreen, backWidth, backHeight);
     }
 
+    // Builds the sun's view and projection matrices for shadow mapping: a
+    // directional light from the upper right, looking at the origin, with an
+    // orthographic projection covering the stage.
+    void BuildLightMatrices()
+    {
+        // Sun direction (where the light comes from): upper right, slightly
+        // behind the camera.
+        const float dir[3] = { 0.35f, -0.8f, -0.55f };
+        float len = sqrtf(dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]);
+        float lx = dir[0] / len, ly = dir[1] / len, lz = dir[2] / len;
+        // Light looks at the origin from -dir * dist.
+        const float dist = 200.0f;
+        float ex = -lx * dist, ey = -ly * dist, ez = -lz * dist;
+        float fx = lx, fy = ly, fz = lz; // looking toward origin
+        float ux = 0.0f, uy = 1.0f, uz = 0.0f;
+        if (fabsf(fy) > 0.99f) { ux = 0.0f; uy = 0.0f; uz = 1.0f; }
+        // s = normalize(cross(f, up)), u = cross(s, f)
+        float sx = fy * uz - fz * uy, sy = fz * ux - fx * uz, sz = fx * uy - fy * ux;
+        float sl = sqrtf(sx * sx + sy * sy + sz * sz);
+        sx /= sl; sy /= sl; sz /= sl;
+        float u2x = sy * fz - sz * fy, u2y = sz * fx - sx * fz, u2z = sx * fy - sy * fx;
+        // Row-major D3D view matrix.
+        memset(&lightView, 0, sizeof(lightView));
+        lightView._11 = sx; lightView._12 = u2x; lightView._13 = -fx; lightView._14 = 0.0f;
+        lightView._21 = sy; lightView._22 = u2y; lightView._23 = -fy; lightView._24 = 0.0f;
+        lightView._31 = sz; lightView._32 = u2z; lightView._33 = -fz; lightView._34 = 0.0f;
+        lightView._41 = -sx * ex - sy * ey - sz * ez;
+        lightView._42 = -u2x * ex - u2y * ey - u2z * ez;
+        lightView._43 = fx * ex + fy * ey + fz * ez;
+        lightView._44 = 1.0f;
+        // Orthographic projection covering the stage, D3D row-major.
+        float l = -150.0f, r = 150.0f, b = -150.0f, t = 150.0f, n = 1.0f, f = 500.0f;
+        memset(&lightProj, 0, sizeof(lightProj));
+        lightProj._11 = 2.0f / (r - l);
+        lightProj._22 = 2.0f / (t - b);
+        lightProj._33 = 1.0f / (f - n);   // D3D depth [0,1]: n->0, f->1
+        lightProj._41 = (l + r) / (l - r);
+        lightProj._42 = (t + b) / (b - t);
+        lightProj._43 = n / (n - f);
+        lightProj._44 = 1.0f;
+        // lightViewProj = lightProj * lightView, row-major.
+        Multiply(lightProj, lightView, lightViewProj);
+    }
+
     // OpenCMR2: the sampler cache's key carries the level, so the next draws
     // simply create their samplers at the new one.
     void SetAnisotropy(int level) override
     {
         anisotropy = level < 1 ? 1 : level;
+    }
+
+    // OpenCMR2: turns motion blur on or off and sets the previous-frame mix
+    // (0..255). Takes effect at the next present.
+    void SetMotionBlur(BOOL enabled, int mix) override
+    {
+        motionBlurEnabled = enabled != 0;
+        motionBlurMix = mix < 0 ? 0 : mix > 255 ? 255 : mix;
+    }
+
+    // OpenCMR2: turns bloom on or off and sets the bloom intensity (0..255).
+    // Takes effect at the next present.
+    void SetBloom(BOOL enabled, int intensity) override
+    {
+        bloomEnabled = enabled != 0;
+        bloomIntensity = intensity < 0 ? 0 : intensity > 255 ? 255 : intensity;
+    }
+
+    // OpenCMR2: sets the particle weather type (0=off, 1=rain, 2=snow) and
+    // emission intensity (0..255). Takes effect at once.
+    void SetParticles(int type, int intensity) override
+    {
+        particleType = type < 0 ? 0 : type > 2 ? 2 : type;
+        particleIntensity = intensity < 0 ? 0 : intensity > 255 ? 255 : intensity;
+    }
+
+    // OpenCMR2: sets the directional shadow mode (0=off, 1=on) and depth bias.
+    // Takes effect at once.
+    void SetShadows(int type, int bias) override
+    {
+        shadowType = type < 0 ? 0 : type > 1 ? 1 : type;
+        shadowBias = bias < 0 ? 0.0f : bias > 100 ? 100.0f : bias / 10000.0f;
     }
 
     // ---- textures ----
@@ -706,6 +880,335 @@ struct Executor : GfxExecutor {
         return p;
     }
 
+    SDL_GPUGraphicsPipeline *MotionBlurPipeline()
+    {
+        if (motionBlurPipeline != nullptr)
+            return motionBlurPipeline;
+        SDL_GPUColorTargetDescription color = {};
+        color.format = colorFormat;
+        color.blend_state.enable_blend = false;
+        SDL_GPUGraphicsPipelineCreateInfo info = {};
+        info.vertex_shader = vsMotionBlur;
+        info.fragment_shader = fsMotionBlur;
+        info.vertex_input_state.vertex_buffer_descriptions = nullptr;
+        info.vertex_input_state.num_vertex_buffers = 0;
+        info.vertex_input_state.vertex_attributes = nullptr;
+        info.vertex_input_state.num_vertex_attributes = 0;
+        info.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+        info.rasterizer_state.fill_mode = SDL_GPU_FILLMODE_FILL;
+        info.rasterizer_state.cull_mode = SDL_GPU_CULLMODE_NONE;
+        info.depth_stencil_state.enable_depth_test = false;
+        info.depth_stencil_state.enable_depth_write = false;
+        info.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_ALWAYS;
+        info.target_info.color_target_descriptions = &color;
+        info.target_info.num_color_targets = 1;
+        info.target_info.depth_stencil_format = depthFormat;
+        info.target_info.has_depth_stencil_target = false;
+        motionBlurPipeline = SDL_CreateGPUGraphicsPipeline(device, &info);
+        if (motionBlurPipeline == NULL)
+            Sys_Log("gfx: motion blur pipeline: %s", SDL_GetError());
+        return motionBlurPipeline;
+    }
+
+    // A full-screen quad pipeline with no vertex buffer, no depth test and no
+    // blending: used by the bright-pass, blur and composite bloom passes.
+    SDL_GPUGraphicsPipeline *PostProcessPipeline(SDL_GPUShader *vs, SDL_GPUShader *fs)
+    {
+        SDL_GPUColorTargetDescription color = {};
+        color.format = colorFormat;
+        color.blend_state.enable_blend = false;
+        SDL_GPUGraphicsPipelineCreateInfo info = {};
+        info.vertex_shader = vs;
+        info.fragment_shader = fs;
+        info.vertex_input_state.vertex_buffer_descriptions = nullptr;
+        info.vertex_input_state.num_vertex_buffers = 0;
+        info.vertex_input_state.vertex_attributes = nullptr;
+        info.vertex_input_state.num_vertex_attributes = 0;
+        info.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+        info.rasterizer_state.fill_mode = SDL_GPU_FILLMODE_FILL;
+        info.rasterizer_state.cull_mode = SDL_GPU_CULLMODE_NONE;
+        info.depth_stencil_state.enable_depth_test = false;
+        info.depth_stencil_state.enable_depth_write = false;
+        info.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_ALWAYS;
+        info.target_info.color_target_descriptions = &color;
+        info.target_info.num_color_targets = 1;
+        info.target_info.depth_stencil_format = depthFormat;
+        info.target_info.has_depth_stencil_target = false;
+        SDL_GPUGraphicsPipeline *p = SDL_CreateGPUGraphicsPipeline(device, &info);
+        if (p == NULL)
+            Sys_Log("gfx: post-process pipeline: %s", SDL_GetError());
+        return p;
+    }
+
+    SDL_GPUGraphicsPipeline *BloomBrightPassPipeline()
+    {
+        if (bloomBrightPassPipeline != nullptr)
+            return bloomBrightPassPipeline;
+        bloomBrightPassPipeline = PostProcessPipeline(vsMotionBlur, fsBrightPass);
+        if (bloomBrightPassPipeline == NULL)
+            Sys_Log("gfx: bloom bright-pass pipeline: %s", SDL_GetError());
+        return bloomBrightPassPipeline;
+    }
+
+    SDL_GPUGraphicsPipeline *BloomBlurPipeline()
+    {
+        if (bloomBlurPipeline != nullptr)
+            return bloomBlurPipeline;
+        bloomBlurPipeline = PostProcessPipeline(vsMotionBlur, fsBlur);
+        if (bloomBlurPipeline == NULL)
+            Sys_Log("gfx: bloom blur pipeline: %s", SDL_GetError());
+        return bloomBlurPipeline;
+    }
+
+    SDL_GPUGraphicsPipeline *BloomCompositePipeline()
+    {
+        if (bloomCompositePipeline != nullptr)
+            return bloomCompositePipeline;
+        bloomCompositePipeline = PostProcessPipeline(vsMotionBlur, fsComposite);
+        if (bloomCompositePipeline == NULL)
+            Sys_Log("gfx: bloom composite pipeline: %s", SDL_GetError());
+        return bloomCompositePipeline;
+    }
+
+    // Runs one full-screen quad pass: clears the target, binds the pipeline,
+    // pushes one fragment uniform buffer slot and up to 7 sampler bindings,
+    // draws three vertices, ends the pass.
+    void PostProcessPass(SDL_GPUCommandBuffer *cmd, SDL_GPUGraphicsPipeline *pipeline,
+                         SDL_GPUTexture *target, const SDL_GPUTextureSamplerBinding *bindings,
+                         int numBindings, const void *uniformData, uint32_t uniformSize)
+    {
+        SDL_GPUColorTargetInfo color = {};
+        color.texture = target;
+        color.load_op = SDL_GPU_LOADOP_CLEAR;
+        color.store_op = SDL_GPU_STOREOP_STORE;
+        color.clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
+        SDL_GPUDepthStencilTargetInfo depth = {};
+        depth.load_op = SDL_GPU_LOADOP_DONT_CARE;
+        depth.store_op = SDL_GPU_STOREOP_DONT_CARE;
+        SDL_GPURenderPass *pass = SDL_BeginGPURenderPass(cmd, &color, 1, &depth);
+        if (pass == NULL)
+            return;
+        SDL_BindGPUGraphicsPipeline(pass, pipeline);
+        SDL_GPUViewport vp = { 0.0f, 0.0f, (float)backWidth, (float)backHeight, 0.0f, 1.0f };
+        SDL_Rect scissor = { 0, 0, backWidth, backHeight };
+        SDL_SetGPUViewport(pass, &vp);
+        SDL_SetGPUScissor(pass, &scissor);
+        if (uniformData != NULL)
+            SDL_PushGPUFragmentUniformData(cmd, 0, uniformData, uniformSize);
+        SDL_BindGPUFragmentSamplers(pass, 0, bindings, numBindings);
+        SDL_DrawGPUPrimitives(pass, 3, 1, 0, 0);
+        SDL_EndGPURenderPass(pass);
+    }
+
+    // Billboard particle pipeline: position+colour+size vertices, alpha
+    // blending, no depth test, full screen.
+    SDL_GPUGraphicsPipeline *ParticlePipeline()
+    {
+        if (particlePipeline != nullptr)
+            return particlePipeline;
+        SDL_GPUColorTargetDescription color = {};
+        color.format = colorFormat;
+        color.blend_state.enable_blend = true;
+        color.blend_state.src_color_blendfactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA;
+        color.blend_state.dst_color_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
+        color.blend_state.color_blend_op = SDL_GPU_BLENDOP_ADD;
+        color.blend_state.src_alpha_blendfactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA;
+        color.blend_state.dst_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
+        color.blend_state.alpha_blend_op = SDL_GPU_BLENDOP_ADD;
+        SDL_GPUVertexBufferDescription vb = {};
+        vb.slot = 0;
+        vb.input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
+        vb.pitch = sizeof(float) * 2 + 4 + sizeof(float) * 2;  // pos, colour, size
+        SDL_GPUVertexAttribute attrs[3] = {};
+        attrs[0] = { 0, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2, 0 };
+        attrs[1] = { 1, 0, SDL_GPU_VERTEXELEMENTFORMAT_UBYTE4_NORM, 8 };
+        attrs[2] = { 2, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2, 12 };
+        SDL_GPUGraphicsPipelineCreateInfo info = {};
+        info.vertex_shader = vsParticle;
+        info.fragment_shader = fsParticle;
+        info.vertex_input_state.vertex_buffer_descriptions = &vb;
+        info.vertex_input_state.num_vertex_buffers = 1;
+        info.vertex_input_state.vertex_attributes = attrs;
+        info.vertex_input_state.num_vertex_attributes = 3;
+        info.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+        info.rasterizer_state.fill_mode = SDL_GPU_FILLMODE_FILL;
+        info.rasterizer_state.cull_mode = SDL_GPU_CULLMODE_NONE;
+        info.depth_stencil_state.enable_depth_test = false;
+        info.depth_stencil_state.enable_depth_write = false;
+        info.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_ALWAYS;
+        info.target_info.color_target_descriptions = &color;
+        info.target_info.num_color_targets = 1;
+        info.target_info.depth_stencil_format = depthFormat;
+        info.target_info.has_depth_stencil_target = true;
+        particlePipeline = SDL_CreateGPUGraphicsPipeline(device, &info);
+        if (particlePipeline == NULL)
+            Sys_Log("gfx: particle pipeline: %s", SDL_GetError());
+        return particlePipeline;
+    }
+
+    // Depth-only shadow map pipeline: transforms by lightViewProj * world,
+    // writes depth only, no colour output.
+    SDL_GPUGraphicsPipeline *ShadowPipeline()
+    {
+        if (shadowPipeline != nullptr)
+            return shadowPipeline;
+        SDL_GPUColorTargetDescription color = {};
+        color.format = colorFormat;
+        color.blend_state.enable_color_write_mask = true;
+        color.blend_state.color_write_mask = 0;   // no colour output
+        SDL_GPUGraphicsPipelineCreateInfo info = {};
+        info.vertex_shader = vsShadow;
+        info.fragment_shader = fsShadow;
+        info.vertex_input_state.vertex_buffer_descriptions = nullptr;
+        info.vertex_input_state.num_vertex_buffers = 0;
+        info.vertex_input_state.vertex_attributes = nullptr;
+        info.vertex_input_state.num_vertex_attributes = 0;
+        info.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+        info.rasterizer_state.fill_mode = SDL_GPU_FILLMODE_FILL;
+        info.rasterizer_state.cull_mode = SDL_GPU_CULLMODE_NONE;
+        info.depth_stencil_state.enable_depth_test = true;
+        info.depth_stencil_state.enable_depth_write = true;
+        info.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_LESS;
+        info.target_info.color_target_descriptions = &color;
+        info.target_info.num_color_targets = 1;
+        info.target_info.depth_stencil_format = depthFormat;
+        info.target_info.has_depth_stencil_target = true;
+        shadowPipeline = SDL_CreateGPUGraphicsPipeline(device, &info);
+        if (shadowPipeline == NULL)
+            Sys_Log("gfx: shadow pipeline: %s", SDL_GetError());
+        return shadowPipeline;
+    }
+
+    // ---- particles ----
+
+    void EmitParticle(int type, float x, float y, float vx, float vy, float sx, float sy,
+                      float r, float g, float b, float a, float life)
+    {
+        for (int i = 0; i < kMaxParticles; i++) {
+            if (!particles[i].active) {
+                particles[i] = { x, y, vx, vy, sx, sy, r, g, b, a, life, true };
+                return;
+            }
+        }
+    }
+
+    void UpdateParticles(float dt)
+    {
+        if (particleType == 0 || particleIntensity <= 0 || dt <= 0.0f)
+            return;
+        float emitPerSec = 0.0f;
+        if (particleType == 1) {   // rain
+            emitPerSec = 400.0f * (particleIntensity / 255.0f);
+        } else if (particleType == 2) {  // snow
+            emitPerSec = 120.0f * (particleIntensity / 255.0f);
+        }
+        int toEmit = (int)(emitPerSec * dt);
+        static float carry = 0.0f;
+        carry += emitPerSec * dt - toEmit;
+        if (carry >= 1.0f) {
+            toEmit += (int)carry;
+            carry -= (float)(int)carry;
+        }
+        for (int e = 0; e < toEmit; e++) {
+            static uint32_t seed = 0x12345678;
+            seed = seed * 1664525u + 1013904223u;
+            float rnd = (seed & 0x7fffffff) / (float)0x7fffffff;
+            seed = seed * 1664525u + 1013904223u;
+            float rnd2 = (seed & 0x7fffffff) / (float)0x7fffffff;
+            if (particleType == 1) {
+                float x = rnd;
+                float y = -0.05f - rnd2 * 0.1f;
+                float vy = 0.9f + rnd * 1.2f;
+                EmitParticle(1, x, y, 0.0f, vy, 0.0015f, 0.018f,
+                             0.7f, 0.8f, 1.0f, 0.35f, 0.25f + rnd2 * 0.2f);
+            } else if (particleType == 2) {
+                float x = rnd;
+                float y = -0.05f - rnd2 * 0.1f;
+                float vy = 0.15f + rnd * 0.25f;
+                float vx = (rnd2 - 0.5f) * 0.15f;
+                EmitParticle(2, x, y, vx, vy, 0.008f, 0.008f,
+                             0.95f, 0.98f, 1.0f, 0.5f, 1.5f + rnd * 2.0f);
+            }
+        }
+        int count = 0;
+        for (int i = 0; i < kMaxParticles; i++) {
+            Particle &p = particles[i];
+            if (!p.active)
+                continue;
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.life -= dt;
+            if (p.life <= 0.0f || p.y > 1.05f || p.x < -0.05f || p.x > 1.05f) {
+                p.active = false;
+                continue;
+            }
+            particles[count++] = p;
+        }
+        particleCount = count;
+    }
+
+    void RenderParticles(SDL_GPUCommandBuffer *cmd)
+    {
+        if (particleType == 0 || particleCount == 0)
+            return;
+        uint32_t vertexBytes = (uint32_t)(particleCount * 6 * 20);
+        if (vertexBytes > particleVBCapacity) {
+            SDL_ReleaseGPUBuffer(device, particleVB);
+            particleVBCapacity = std::max(vertexBytes, particleVBCapacity * 2);
+            SDL_GPUBufferCreateInfo info = { SDL_GPU_BUFFERUSAGE_VERTEX, particleVBCapacity, 0 };
+            particleVB = SDL_CreateGPUBuffer(device, &info);
+        }
+        if (particleVB == NULL)
+            return;
+        SDL_GPUTransferBufferCreateInfo tbi = { SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, vertexBytes, 0 };
+        SDL_GPUTransferBuffer *tb = SDL_CreateGPUTransferBuffer(device, &tbi);
+        uint8_t *map = (uint8_t *)SDL_MapGPUTransferBuffer(device, tb, true);
+        uint8_t *write = map;
+        for (int i = 0; i < particleCount; i++) {
+            const Particle &p = particles[i];
+            uint8_t r = (uint8_t)(p.r * 255), g = (uint8_t)(p.g * 255);
+            uint8_t b = (uint8_t)(p.b * 255), a = (uint8_t)(p.a * 255);
+            for (int v = 0; v < 6; v++) {
+                memcpy(write, &p.x, 8); write += 8;
+                memcpy(write, &r, 1); write += 1;
+                memcpy(write, &g, 1); write += 1;
+                memcpy(write, &b, 1); write += 1;
+                memcpy(write, &a, 1); write += 1;
+                memcpy(write, &p.sx, 8); write += 8;
+            }
+        }
+        SDL_UnmapGPUTransferBuffer(device, tb);
+        SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(cmd);
+        SDL_GPUTransferBufferLocation src = { tb, 0 };
+        SDL_GPUBufferRegion dst = { particleVB, 0, vertexBytes };
+        SDL_UploadToGPUBuffer(copy, &src, &dst, true);
+        SDL_EndGPUCopyPass(copy);
+        SDL_ReleaseGPUTransferBuffer(device, tb);
+        SDL_GPUColorTargetInfo color = {};
+        color.texture = backColor;
+        color.load_op = SDL_GPU_LOADOP_LOAD;
+        color.store_op = SDL_GPU_STOREOP_STORE;
+        SDL_GPUDepthStencilTargetInfo depth = {};
+        depth.load_op = SDL_GPU_LOADOP_LOAD;
+        depth.store_op = SDL_GPU_STOREOP_STORE;
+        SDL_GPURenderPass *pass = SDL_BeginGPURenderPass(cmd, &color, 1, &depth);
+        if (pass == NULL)
+            return;
+        SDL_BindGPUGraphicsPipeline(pass, ParticlePipeline());
+        SDL_GPUViewport vp = { 0.0f, 0.0f, (float)backWidth, (float)backHeight, 0.0f, 1.0f };
+        SDL_Rect scissor = { 0, 0, backWidth, backHeight };
+        SDL_SetGPUViewport(pass, &vp);
+        SDL_SetGPUScissor(pass, &scissor);
+        SDL_GPUBufferBinding vbBinding = { particleVB, 0 };
+        SDL_BindGPUVertexBuffers(pass, 0, &vbBinding, 1);
+        SDL_GPUTextureSamplerBinding bindings[1] = {
+            { white2D != NULL ? white2D : nullptr, Sampler(GfxStageState()) },
+        };
+        SDL_BindGPUFragmentSamplers(pass, 0, bindings, 1);
+        SDL_DrawGPUPrimitives(pass, (uint32_t)(particleCount * 6), 1, 0, 0);
+        SDL_EndGPURenderPass(pass);
+    }
+
     SDL_GPUSampler *Sampler(const GfxStageState &stage)
     {
         int aniso = anisotropy;
@@ -784,6 +1287,8 @@ struct Executor : GfxExecutor {
     {
         memset(&u, 0, sizeof(u));
         Multiply(s.world, s.view, u.worldView);
+        memcpy(u.world, &s.world, sizeof(u.world));
+        memcpy(u.lightViewProj, lightViewProj, sizeof(u.lightViewProj));
         memcpy(u.projection, &s.projection, sizeof(u.projection));
         memcpy(u.textureMatrix[0], &s.texture[0], 64);
         memcpy(u.textureMatrix[1], &s.texture[1], 64);
@@ -910,10 +1415,12 @@ struct Executor : GfxExecutor {
             u.distanceFade[1] = s.fadeEnd;
             u.distanceFade[2] = 1.0f;
         }
+        u.shadowParams[0] = shadowBias;
+        u.shadowParams[1] = shadowType != 0 ? 1.0f : 0.0f;
     }
 
     // The stages' textures (2D and cube for each), then the backdrop.
-    void TextureBindings(const GfxDrawState &s, SDL_GPUTextureSamplerBinding bindings[7])
+    void TextureBindings(const GfxDrawState &s, SDL_GPUTextureSamplerBinding bindings[8])
     {
         for (int i = 0; i < 2; i++) {
             const GfxStageState &stage = s.stages[i];
@@ -939,6 +1446,8 @@ struct Executor : GfxExecutor {
             bindings[5 + i] = { native != NULL ? native->texture : white2D, Sampler(source) };
         }
         bindings[4] = { backdrop, Sampler(GfxStageState()) };
+        // Directional light shadow map, bound for the fixed-function shaders.
+        bindings[7] = { shadowMap != NULL ? shadowMap : white2D, Sampler(GfxStageState()) };
     }
 
     // What a render pass has bound: each draw sets only what differs from the
@@ -948,7 +1457,7 @@ struct Executor : GfxExecutor {
         bool viewportSet = false, texturesSet = false, indicesSet = false;
         SDL_GPUViewport viewport = {};
         SDL_Rect scissor = {};
-        SDL_GPUTextureSamplerBinding textures[7] = {};
+        SDL_GPUTextureSamplerBinding textures[8] = {};
         SDL_GPUBuffer *vertices = nullptr;
     };
 
@@ -1145,6 +1654,55 @@ struct Executor : GfxExecutor {
         bool vertexUniformScaled = false;
         FragmentUniforms fragmentUniforms;
         bool fragmentUniformsSet = false;
+
+        // OpenCMR2: directional shadow map — render every shadow caster from
+        // the sun's point of view into shadowMap depth, before the normal pass
+        // samples it.
+        if (shadowType != 0 && shadowMap != NULL) {
+            SDL_GPUColorTargetInfo color = {};
+            color.texture = white2D;
+            color.load_op = SDL_GPU_LOADOP_DONT_CARE;
+            color.store_op = SDL_GPU_STOREOP_DONT_CARE;
+            SDL_GPUDepthStencilTargetInfo depth = {};
+            depth.texture = shadowMap;
+            depth.load_op = SDL_GPU_LOADOP_CLEAR;
+            depth.store_op = SDL_GPU_STOREOP_STORE;
+            depth.clear_depth = 1.0f;
+            depth.stencil_load_op = SDL_GPU_LOADOP_DONT_CARE;
+            depth.stencil_store_op = SDL_GPU_STOREOP_DONT_CARE;
+                SDL_GPURenderPass *spass = SDL_BeginGPURenderPass(cmd, &color, 1, &depth);
+                if (spass != NULL) {
+                    SDL_BindGPUGraphicsPipeline(spass, ShadowPipeline());
+                    SDL_GPUViewport svp = { 0.0f, 0.0f, 1024.0f, 1024.0f, 0.0f, 1.0f };
+                    SDL_Rect sscissor = { 0, 0, 1024, 1024 };
+                    SDL_SetGPUViewport(spass, &svp);
+                    SDL_SetGPUScissor(spass, &sscissor);
+                    const GfxDrawState *svUniformState = NULL;
+                    for (size_t si = 0; si < frame.commands.size(); si++) {
+                        const GfxCommand &sc = frame.commands[si];
+                        if (sc.type != GFX_CMD_DRAW)
+                            continue;
+                        const GfxDrawState &ss = frame.states[sc.state];
+                        if (svUniformState == NULL || memcmp(&ss.world, &svUniformState->world, sizeof(ss.world)) != 0) {
+                            VertexUniforms vu;
+                            memset(&vu, 0, sizeof(vu));
+                            memcpy(vu.world, &ss.world, sizeof(vu.world));
+                            memcpy(vu.lightViewProj, lightViewProj, sizeof(vu.lightViewProj));
+                            SDL_PushGPUVertexUniformData(cmd, 0, &vu, sizeof(vu));
+                            svUniformState = &ss;
+                        }
+                        SDL_GPUBuffer *vertices = sc.buffer != NULL ? ((GpuVertexBuffer *)sc.buffer->gpu)->buffer : vertexBuffer;
+                        uint32_t firstVertex = sc.firstVertexByte / sizeof(GfxVertex);
+                        if (sc.firstIndex != ~0u) {
+                            SDL_DrawGPUIndexedPrimitives(spass, sc.indexCount, 1, sc.firstIndex, (Sint32)firstVertex, 0);
+                        } else {
+                            SDL_DrawGPUPrimitives(spass, sc.vertexCount, 1, firstVertex, 0);
+                        }
+                    }
+                    SDL_EndGPURenderPass(spass);
+                }
+            }
+
         for (size_t i = 0; i < frame.commands.size(); i++) {
             const GfxCommand &c = frame.commands[i];
             if (c.type == GFX_CMD_TARGET) {
@@ -1242,10 +1800,10 @@ struct Executor : GfxExecutor {
                 fragmentUniforms = fu;
                 fragmentUniformsSet = true;
             }
-            SDL_GPUTextureSamplerBinding textures[7];
+            SDL_GPUTextureSamplerBinding textures[8];
             TextureBindings(s, textures);
             if (!bound.texturesSet || memcmp(textures, bound.textures, sizeof(textures)) != 0) {
-                SDL_BindGPUFragmentSamplers(pass, 0, textures, 7);
+                SDL_BindGPUFragmentSamplers(pass, 0, textures, 8);
                 memcpy(bound.textures, textures, sizeof(textures));
                 bound.texturesSet = true;
             }
@@ -1274,6 +1832,18 @@ struct Executor : GfxExecutor {
         if (!present) {
             SDL_SubmitGPUCommandBuffer(cmd);
             return;
+        }
+
+        // OpenCMR2: particles — simulate and render rain/snow into the scene
+        // before post-processing, so bloom and motion blur can pick them up.
+        if (particleType != 0 && particleIntensity > 0) {
+            uint32_t now = SDL_GetTicks();
+            float dt = particleLastTicks == 0 ? 0.0f : (float)(now - particleLastTicks) / 1000.0f;
+            particleLastTicks = now;
+            if (dt > 0.05f)
+                dt = 0.05f;   // spiral-of-death guard
+            UpdateParticles(dt);
+            RenderParticles(cmd);
         }
 
         // Read back before the frame is shown (the lens flare test).
@@ -1306,6 +1876,79 @@ struct Executor : GfxExecutor {
             reading = true;
         }
 
+        // OpenCMR2: bloom (bright-pass extract, separable blur, additive
+        // composite) followed by motion blur (previous-frame blend).
+        SDL_GPUTexture *presentSource = backColor;
+
+        if (bloomEnabled && bloomIntensity > 0 && backColor != NULL && bloomBuf1 != NULL &&
+            bloomBuf2 != NULL) {
+            // Bright pass: extract pixels brighter than a threshold -> bloomBuf1.
+            {
+                float uniforms[2] = { 0.75f, 0.3f };   // threshold, softness
+                SDL_GPUTextureSamplerBinding bindings[2] = {
+                    { backColor, Sampler(GfxStageState()) },
+                    { white2D, Sampler(GfxStageState()) },
+                };
+                PostProcessPass(cmd, BloomBrightPassPipeline(), bloomBuf1, bindings, 2,
+                                uniforms, sizeof(uniforms));
+            }
+            // Separable blur: horizontal then vertical, two ping-pong iterations.
+            for (int iteration = 0; iteration < 2; iteration++) {
+                float hUniforms[4] = { 1.0f, 0.0f, 1.0f, 0.0f };   // direction (1,0), offsetScale, samples
+                SDL_GPUTextureSamplerBinding hBindings[2] = {
+                    { bloomBuf1, Sampler(GfxStageState()) },
+                    { white2D, Sampler(GfxStageState()) },
+                };
+                PostProcessPass(cmd, BloomBlurPipeline(), bloomBuf2, hBindings, 2,
+                                hUniforms, sizeof(hUniforms));
+
+                float vUniforms[4] = { 0.0f, 1.0f, 1.0f, 0.0f };   // direction (0,1)
+                SDL_GPUTextureSamplerBinding vBindings[2] = {
+                    { bloomBuf2, Sampler(GfxStageState()) },
+                    { white2D, Sampler(GfxStageState()) },
+                };
+                PostProcessPass(cmd, BloomBlurPipeline(), bloomBuf1, vBindings, 2,
+                                vUniforms, sizeof(vUniforms));
+            }
+            // Composite: scene + blurred bright pixels -> motionBlurTemp.
+            {
+                float intensity = bloomIntensity / 255.0f;
+                SDL_GPUTextureSamplerBinding bindings[2] = {
+                    { backColor, Sampler(GfxStageState()) },
+                    { bloomBuf1, Sampler(GfxStageState()) },
+                };
+                PostProcessPass(cmd, BloomCompositePipeline(), motionBlurTemp, bindings, 2,
+                                &intensity, sizeof(intensity));
+                presentSource = motionBlurTemp;
+            }
+            motionBlurHasPrevious = true;
+        }
+
+        // Motion blur: blend the current frame (plain or bloomed) with the
+        // previous one, then remember it for the next frame.
+        if (motionBlurEnabled && motionBlurMix > 0 && motionBlurPrevious != NULL) {
+            SDL_GPUTexture *output =
+                (presentSource == motionBlurTemp && backColor != NULL) ? backColor : motionBlurTemp;
+            float mix = motionBlurMix / 255.0f;
+            SDL_GPUTextureSamplerBinding bindings[2] = {
+                { presentSource != NULL ? presentSource : white2D, Sampler(GfxStageState()) },
+                { motionBlurPrevious, Sampler(GfxStageState()) },
+            };
+            PostProcessPass(cmd, MotionBlurPipeline(), output, bindings, 2, &mix, sizeof(mix));
+            {
+                SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(cmd);
+                SDL_GPUTextureLocation src = {}, dst = {};
+                src.texture = output;
+                dst.texture = motionBlurPrevious;
+                SDL_CopyGPUTextureToTexture(copy, &src, &dst, backWidth, backHeight, 1, false);
+                SDL_EndGPUCopyPass(copy);
+            }
+            motionBlurHasPrevious = true;
+            presentSource = output;
+        } else if (!bloomEnabled) {
+            motionBlurHasPrevious = false;
+        }
+
         if (vsync != presentModeVsync) {
             SDL_GPUPresentMode mode = vsync ? SDL_GPU_PRESENTMODE_VSYNC : SDL_GPU_PRESENTMODE_IMMEDIATE;
             if (!vsync && !SDL_WindowSupportsGPUPresentMode(device, window, mode))
@@ -1326,7 +1969,7 @@ struct Executor : GfxExecutor {
             // Movie frames fill the drawable; ordinary game frames retain their aspect ratio.
             PresentationRect rect = GetPresentationRect(backWidth, backHeight, sw, sh, stretch);
             SDL_GPUBlitInfo blit = {};
-            blit.source.texture = backColor;
+            blit.source.texture = presentSource;
             blit.source.w = backWidth;
             blit.source.h = backHeight;
             blit.destination.texture = swapchain;

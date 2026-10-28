@@ -398,6 +398,30 @@ extern "C" void Gfx_SetAnisotropy(int level)
         s_executor->SetAnisotropy(level);
 }
 
+extern "C" void Gfx_SetMotionBlur(BOOL enabled, int mix)
+{
+    if (s_executor != NULL)
+        s_executor->SetMotionBlur(enabled != 0, mix);
+}
+
+extern "C" void Gfx_SetBloom(BOOL enabled, int intensity)
+{
+    if (s_executor != NULL)
+        s_executor->SetBloom(enabled != 0, intensity);
+}
+
+extern "C" void Gfx_SetParticles(int type, int intensity)
+{
+    if (s_executor != NULL)
+        s_executor->SetParticles(type, intensity);
+}
+
+extern "C" void Gfx_SetShadows(int type, int bias)
+{
+    if (s_executor != NULL)
+        s_executor->SetShadows(type, bias);
+}
+
 extern "C" void Gfx_Shutdown(void)
 {
     while (!s_textures.empty())

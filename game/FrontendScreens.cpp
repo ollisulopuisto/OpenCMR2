@@ -787,6 +787,67 @@ void FrontendMenu_DrawAdvancedGraphicsOptions(Menu *pMenu)
             }
             break;
         }
+        case 0x12: {
+            // OpenCMR2: motion blur, Off/On.
+            strcpy(CFrontend::m_stringDest, pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
+            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
+                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+            for (j = 0; j < pItem->min; j++) {
+                x += (int)(g_pGraphics->resX * 10) / 640 +
+                     Font_GetTextWidth(1, (BYTE *)CFrontend::m_stringDest);
+                strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(j == 0 ? 0x133 : 0x134));
+                Font_DrawText(1, CFrontend::m_stringDest, x,
+                              (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1],
+                              (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
+            }
+            break;
+        }
+        case 0x13: {
+            // OpenCMR2: bloom, Off/On.
+            strcpy(CFrontend::m_stringDest, pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
+            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
+                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+            for (j = 0; j < pItem->min; j++) {
+                x += (int)(g_pGraphics->resX * 10) / 640 +
+                     Font_GetTextWidth(1, (BYTE *)CFrontend::m_stringDest);
+                strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(j == 0 ? 0x133 : 0x134));
+                Font_DrawText(1, CFrontend::m_stringDest, x,
+                              (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1],
+                              (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
+            }
+            break;
+        }
+        case 0x14: {
+            // OpenCMR2: particles — Off / Rain / Snow.
+            static const char *const particleTexts[3] = { "Off", "Rain", "Snow" };
+            strcpy(CFrontend::m_stringDest, pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
+            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
+                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+            for (j = 0; j < pItem->min; j++) {
+                x += (int)(g_pGraphics->resX * 10) / 640 +
+                     Font_GetTextWidth(1, (BYTE *)CFrontend::m_stringDest);
+                strcpy(CFrontend::m_stringDest, particleTexts[j]);
+                Font_DrawText(1, CFrontend::m_stringDest, x,
+                              (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1],
+                              (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
+            }
+            break;
+        }
+        case 0x15: {
+            // OpenCMR2: shadows, Off/On.
+            strcpy(CFrontend::m_stringDest, pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
+            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
+                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+            for (j = 0; j < pItem->min; j++) {
+                x += (int)(g_pGraphics->resX * 10) / 640 +
+                     Font_GetTextWidth(1, (BYTE *)CFrontend::m_stringDest);
+                strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(j == 0 ? 0x133 : 0x134));
+                Font_DrawText(1, CFrontend::m_stringDest, x,
+                              (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1],
+                              (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
+            }
+            break;
+        }
         case 4:
             strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(0x1d2));
             Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
@@ -3932,6 +3993,14 @@ void FrontendMenu_EnterAdvancedGraphicsOptions(Menu *pMenu, int param)
     Menu_GetItem(pMenu, 0x10)->max = Sys_GetOption("video.camera_effects", 1) != 0 ? 1 : 0;
     // OpenCMR2: animated scenery off by default to preserve original look.
     Menu_GetItem(pMenu, 0x11)->max = Sys_GetOption("video.animated_scenery", 0) != 0 ? 1 : 0;
+    // OpenCMR2: motion blur off by default to preserve original look.
+    Menu_GetItem(pMenu, 0x12)->max = Sys_GetOption("video.motion_blur", 0) != 0 ? 1 : 0;
+    // OpenCMR2: bloom off by default to preserve original look.
+    Menu_GetItem(pMenu, 0x13)->max = Sys_GetOption("video.bloom", 0) != 0 ? 1 : 0;
+    // OpenCMR2: particles off by default to preserve original look.
+    Menu_GetItem(pMenu, 0x14)->max = Sys_GetOption("video.particles", 0);
+    // OpenCMR2: shadows off by default to preserve original look.
+    Menu_GetItem(pMenu, 0x15)->max = Sys_GetOption("video.shadows", 0) != 0 ? 1 : 0;
     if (CGameInfo::GetPreviewMode() != 0) {
         Menu_GetItem(pMenu, 10)->max = 1;
         return;
@@ -3987,6 +4056,23 @@ void FrontendMenu_ApplyAdvancedGraphicsOptions(Menu *pMenu, int param)
     Sys_SetOption("video.camera_effects", Menu_GetItem(pMenu, 0x10)->max);
     // OpenCMR2: animated scenery on/off.
     Sys_SetOption("video.animated_scenery", Menu_GetItem(pMenu, 0x11)->max);
+    // OpenCMR2: motion blur on/off; on blends the previous frame into this
+    // one at a modest strength, off restores the original look.
+    int motionBlur = Menu_GetItem(pMenu, 0x12)->max;
+    Sys_SetOption("video.motion_blur", motionBlur);
+    Gfx_SetMotionBlur(motionBlur, motionBlur != 0 ? 40 : 0);
+    // OpenCMR2: bloom on/off; on adds a subtle bleed around bright pixels.
+    int bloom = Menu_GetItem(pMenu, 0x13)->max;
+    Sys_SetOption("video.bloom", bloom);
+    Gfx_SetBloom(bloom, bloom != 0 ? 60 : 0);
+    // OpenCMR2: particles — Off / Rain / Snow, with a modest intensity.
+    int particles = Menu_GetItem(pMenu, 0x14)->max;
+    Sys_SetOption("video.particles", particles);
+    Gfx_SetParticles(particles, particles != 0 ? 120 : 0);
+    // OpenCMR2: shadows on/off with a small depth bias to reduce acne.
+    int shadows = Menu_GetItem(pMenu, 0x15)->max;
+    Sys_SetOption("video.shadows", shadows);
+    Gfx_SetShadows(shadows, shadows != 0 ? 5 : 0);
 }
 
 // FUNCTION: CMR2 0x004f1e40

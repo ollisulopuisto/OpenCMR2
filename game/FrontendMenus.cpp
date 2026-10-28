@@ -2568,6 +2568,22 @@ void FrontendMenu_BuildAdvancedGraphicsOptions(void)
     // ([video] video.animated_scenery).
     Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x11);
     Menu_GetItem(&g_menu0x0081cd78, 0x11)->text = (char *)"Animated Scenery";
+    // OpenCMR2: motion blur — blend each frame into the previous one
+    // ([video] video.motion_blur).
+    Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x12);
+    Menu_GetItem(&g_menu0x0081cd78, 0x12)->text = (char *)"Motion Blur";
+    // OpenCMR2: bloom — bright pixels bleed into their neighbours
+    // ([video] video.bloom).
+    Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x13);
+    Menu_GetItem(&g_menu0x0081cd78, 0x13)->text = (char *)"Bloom";
+    // OpenCMR2: particles — rain or snow falling through the scene
+    // ([video] video.particles).
+    Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 3, 0, 0, 0, 0, 0x14);
+    Menu_GetItem(&g_menu0x0081cd78, 0x14)->text = (char *)"Particles";
+    // OpenCMR2: directional shadows cast by the sun
+    // ([video] video.shadows).
+    Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x15);
+    Menu_GetItem(&g_menu0x0081cd78, 0x15)->text = (char *)"Shadows";
     Menu_AddItemType1(&g_menu0x0081cd78, 0, 0x67, (MenuItemAction)FrontendMenu_ApplyAdvancedGraphicsOptions, 0xe);
     Menu_SetCallbacks(&g_menu0x0081cd78, FrontendMenu_EnterAdvancedGraphicsOptions, (MenuCallback)FrontendMenu_UpdateAdvancedGraphicsOptions, (MenuCallback)FrontendMenu_DrawAdvancedGraphicsOptions, NULL);
     Menu_ValidateCursor(&g_menu0x0081cd78, 0);
