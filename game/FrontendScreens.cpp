@@ -3993,14 +3993,14 @@ void FrontendMenu_EnterAdvancedGraphicsOptions(Menu *pMenu, int param)
     Menu_GetItem(pMenu, 0x10)->max = Sys_GetOption("video.camera_effects", 1) != 0 ? 1 : 0;
     // OpenCMR2: animated scenery off by default to preserve original look.
     Menu_GetItem(pMenu, 0x11)->max = Sys_GetOption("video.animated_scenery", 0) != 0 ? 1 : 0;
-    // OpenCMR2: motion blur off by default to preserve original look.
-    Menu_GetItem(pMenu, 0x12)->max = Sys_GetOption("video.motion_blur", 0) != 0 ? 1 : 0;
-    // OpenCMR2: bloom off by default to preserve original look.
-    Menu_GetItem(pMenu, 0x13)->max = Sys_GetOption("video.bloom", 0) != 0 ? 1 : 0;
-    // OpenCMR2: particles off by default to preserve original look.
-    Menu_GetItem(pMenu, 0x14)->max = Sys_GetOption("video.particles", 0);
-    // OpenCMR2: shadows off by default to preserve original look.
-    Menu_GetItem(pMenu, 0x15)->max = Sys_GetOption("video.shadows", 0) != 0 ? 1 : 0;
+    // OpenCMR2: motion blur on by default.
+    Menu_GetItem(pMenu, 0x12)->max = Sys_GetOption("video.motion_blur", 1) != 0 ? 1 : 0;
+    // OpenCMR2: bloom on by default.
+    Menu_GetItem(pMenu, 0x13)->max = Sys_GetOption("video.bloom", 1) != 0 ? 1 : 0;
+    // OpenCMR2: rain on by default.
+    Menu_GetItem(pMenu, 0x14)->max = Sys_GetOption("video.particles", 1);
+    // OpenCMR2: shadows on by default.
+    Menu_GetItem(pMenu, 0x15)->max = Sys_GetOption("video.shadows", 1) != 0 ? 1 : 0;
     if (CGameInfo::GetPreviewMode() != 0) {
         Menu_GetItem(pMenu, 10)->max = 1;
         return;
