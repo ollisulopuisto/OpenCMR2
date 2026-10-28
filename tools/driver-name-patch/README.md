@@ -5,6 +5,18 @@ an original EXE, BFL, game configuration or any other original game file.
 The installer only checks that the input is an installed PC game directory.
 No graphics pack or Python package dependencies are needed. Use Python 3.10+.
 
+Preferred per-launch route in a build with enhancement CLI support:
+
+```sh
+./build/macos/src/opencmr2 --data "/path/to/owned/CMR2" --driver-names real
+./build/macos/src/opencmr2 --help-enhancements
+```
+
+This uses the same15display names without creating any sidecar, changing the
+profile root or touching driver progress. `--driver-names original` opts out for
+one launch. `--driver-names sidecar` uses an existing validated sidecar. No flags
+preserve existing behavior. The legacy installer below remains available.
+
 From the source checkout, replace the input path with your owned game folder:
 
 ```sh

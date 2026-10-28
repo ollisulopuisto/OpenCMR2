@@ -147,6 +147,8 @@ bool SceneryPack_Draw(StageObject *object,const float *billboard){
     Init();Asset *asset=nullptr;
     for(auto &a:assets)if(a.entry.archive==archive->second&&a.entry.source==Stem(source->name)){asset=&a;break;}
     if(!asset)return false;
+    if(asset->entry.kind=="tree"&&Sys_GetOption("video.tree_overrides",1)==0)return false;
+    if(asset->entry.kind=="spectator"&&Sys_GetOption("video.spectator_overrides",1)==0)return false;
     if(!Prepare(*asset)){
         LogRejection(*asset);
         return false;

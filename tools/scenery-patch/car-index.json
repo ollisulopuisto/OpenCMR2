@@ -1,0 +1,398 @@
+{
+  "205-dakar-1987": {
+    "archive": "cmr2_peugeot_205_dakar_1987_ari_vatanen.zip",
+    "sha256": "a6cd303a2e508d9bdfc4284e1bcf7acf2e6a33d41cacf92ac2a53ac61d7383dc",
+    "files": [
+      {
+        "target": "Game/Cars/205a1S.c3d",
+        "bytes": 27084,
+        "sha256": "ff9699a5314c629a7cc5ce67925bd8cd2e2d5af9aa0079c2f755ee49dc5a125c",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/205.cin",
+        "bytes": 459,
+        "sha256": "f54bf4a00916402951640a8c3382aa60fb05102d69d8c048199545d20e85eabf",
+        "ext": ".cin"
+      },
+      {
+        "target": "Game/Cars/205a1.bfl",
+        "bytes": 5356316,
+        "sha256": "1eb74731527e8e8c18fa645c786d14dc37f81f4658ea4295b7c13138a50cf0a8",
+        "ext": ".bfl"
+      },
+      {
+        "target": "Game/Cars/205a1L.c3d",
+        "bytes": 27084,
+        "sha256": "ff9699a5314c629a7cc5ce67925bd8cd2e2d5af9aa0079c2f755ee49dc5a125c",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/205a1N.c3d",
+        "bytes": 27084,
+        "sha256": "ff9699a5314c629a7cc5ce67925bd8cd2e2d5af9aa0079c2f755ee49dc5a125c",
+        "ext": ".c3d"
+      }
+    ]
+  },
+  "205-finland-1986": {
+    "archive": "cmr2_peugeot_205_finland_1986_salonen.zip",
+    "sha256": "c04697049c7adcd228a22f5e2d187c9a15e2c77516ae071436ba6f7de8731c9a",
+    "files": [
+      {
+        "target": "Game/Cars/205.cin",
+        "bytes": 459,
+        "sha256": "f54bf4a00916402951640a8c3382aa60fb05102d69d8c048199545d20e85eabf",
+        "ext": ".cin"
+      },
+      {
+        "target": "Game/Cars/205a1.bfl",
+        "bytes": 5356316,
+        "sha256": "804d42219f34436403c4ae0c4cfa636996e025a92eb7cbb22a66af179e0f2eda",
+        "ext": ".bfl"
+      },
+      {
+        "target": "Game/Cars/205a1L.c3d",
+        "bytes": 27084,
+        "sha256": "ff9699a5314c629a7cc5ce67925bd8cd2e2d5af9aa0079c2f755ee49dc5a125c",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/205a1N.c3d",
+        "bytes": 27084,
+        "sha256": "ff9699a5314c629a7cc5ce67925bd8cd2e2d5af9aa0079c2f755ee49dc5a125c",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/205a1S.c3d",
+        "bytes": 27084,
+        "sha256": "ff9699a5314c629a7cc5ce67925bd8cd2e2d5af9aa0079c2f755ee49dc5a125c",
+        "ext": ".c3d"
+      }
+    ]
+  },
+  "xsara-turkey-2006": {
+    "archive": "cmr2_citroen_xsara_rally_of_turkey_2006_colin_mcrae.zip",
+    "sha256": "d72ea0b39d332bbcaf7c08f23bf4af7a5c72d7f7e46c7ac293ee80425fbd370f",
+    "files": [
+      {
+        "target": "Game/Cars/sea.cin",
+        "bytes": 433,
+        "sha256": "2bb21d869edaa20c715ed953564e91413fcaba3cb21160f20c67338c4d43e2f5",
+        "ext": ".cin"
+      },
+      {
+        "target": "Game/Cars/seaa1.bfl",
+        "bytes": 7335596,
+        "sha256": "aa69efe633247a57e4698b185c9e40ad1a03d0420ea99652201db5b58908a8eb",
+        "ext": ".bfl"
+      },
+      {
+        "target": "Game/Cars/seaa1L.c3d",
+        "bytes": 2693,
+        "sha256": "f104ef29599d4035a17dee97cbd46a007f208c4c9c5d3b2eb798c73c1dc28d53",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/seaa1N.c3d",
+        "bytes": 28970,
+        "sha256": "13d8ddcc89ebbadc828e3082d8849e501ae14adc883583af2acab4d605c44335",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/seaa1S.c3d",
+        "bytes": 2668,
+        "sha256": "2ee41462653bc03046286aee0a44975ad9ff82064d9714d297285b96d6ce249b",
+        "ext": ".c3d"
+      }
+    ]
+  },
+  "fabia-redbull": {
+    "archive": "cmr2_skoda_fabia_red_bull_harri_rovanpera.zip",
+    "sha256": "073767271f247fb06182282274f0de143a7f86690355b1c04819fbbf61871a18",
+    "files": [
+      {
+        "target": "Game/Cars/fa1.cin",
+        "bytes": 473,
+        "sha256": "bf59c86239c812bf8c26a43a5a1945b830abd17e0af96a218561064862c09998",
+        "ext": ".cin"
+      },
+      {
+        "target": "Game/Cars/fa1a1L.c3d",
+        "bytes": 2687,
+        "sha256": "0f7b14b8e9d80826c267ada916e73f159a8d1de44867551a8cbd09c0642c283b",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/fa1a1N.c3d",
+        "bytes": 28473,
+        "sha256": "e03875c1feb800a9916923035fd5625e3f42c5ef4418fbaf7ef6693b6977a026",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/fa1a1S.c3d",
+        "bytes": 2685,
+        "sha256": "896c45fcf024d16643033e4521ea53abc0fa610e486761e07fd617807eeaa608",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/fa1a1.bfl",
+        "bytes": 7346508,
+        "sha256": "2c7e5249a356d6d21e91ae60e7d7a8b72b508c7f70b1e501339411bfe0ac362d",
+        "ext": ".bfl"
+      }
+    ]
+  },
+  "focus-norway-2007": {
+    "archive": "cmr2_ford_focus_rally_norway_2007_andreas_mikkelsen.zip",
+    "sha256": "96a1838beb0a52a6dd3340197dd27a6e239f35947204bea9449e07df5e6828f0",
+    "files": [
+      {
+        "target": "Game/Cars/fa2.cin",
+        "bytes": 461,
+        "sha256": "7f275530296bb030335e96b55f2afe4a0400fc8a4689639e347eddf8dba14e32",
+        "ext": ".cin"
+      },
+      {
+        "target": "Game/Cars/fa2a1.bfl",
+        "bytes": 7936868,
+        "sha256": "144b763212f4ed2759a784599f89f9d2ce1ef843dbc3a385902ddd584fa81b85",
+        "ext": ".bfl"
+      },
+      {
+        "target": "Game/Cars/fa2a1L.c3d",
+        "bytes": 58350,
+        "sha256": "22376c960860c832c716af4a9ef61d781a61ee23b6ff54b6cd9675eb07d87f90",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/fa2a1N.c3d",
+        "bytes": 206581,
+        "sha256": "68ba8b2c84ea3e9bf9abd4367e175871f996e4837ee82d8ee39ded8f845bf233",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/fa2a1S.c3d",
+        "bytes": 64493,
+        "sha256": "788e868f196d5d4e92c34cb8ec9fb8c09575e926c4377c2a3e338c72cde2ca37",
+        "ext": ".c3d"
+      }
+    ]
+  },
+  "focus-montecarlo-2006": {
+    "archive": "cmr2_ford_focus_rally_monte_carlo_2006_matthew_wilson.zip",
+    "sha256": "2e8b0e1e0ea7e5477fb02baa0e8e636972a10118b7478f9e3b8b2986453c4e43",
+    "files": [
+      {
+        "target": "Game/Cars/f99.cin",
+        "bytes": 461,
+        "sha256": "7f275530296bb030335e96b55f2afe4a0400fc8a4689639e347eddf8dba14e32",
+        "ext": ".cin"
+      },
+      {
+        "target": "Game/Cars/f99a1.bfl",
+        "bytes": 7936868,
+        "sha256": "16827a880635ae3ef17b7fb09461be48983d1f597d965334848603acea991ec1",
+        "ext": ".bfl"
+      },
+      {
+        "target": "Game/Cars/f99a1L.c3d",
+        "bytes": 58350,
+        "sha256": "22376c960860c832c716af4a9ef61d781a61ee23b6ff54b6cd9675eb07d87f90",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/f99a1N.c3d",
+        "bytes": 206581,
+        "sha256": "68ba8b2c84ea3e9bf9abd4367e175871f996e4837ee82d8ee39ded8f845bf233",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/f99a1S.c3d",
+        "bytes": 64493,
+        "sha256": "788e868f196d5d4e92c34cb8ec9fb8c09575e926c4377c2a3e338c72cde2ca37",
+        "ext": ".c3d"
+      }
+    ]
+  },
+  "subaru-spain-1996": {
+    "archive": "cmr2_subaru_impreza_rally_spain_1996_colin_mcrae.zip",
+    "sha256": "f26f0cd4238d78ac34cc753c0eff2afa8ff257aee990c01de8ce874ec50cae47",
+    "files": [
+      {
+        "target": "Game/Cars/sub.cin",
+        "bytes": 485,
+        "sha256": "01e245716c906bef18f276ec73f196ca03db36244fe55dada091073a764db087",
+        "ext": ".cin"
+      },
+      {
+        "target": "Game/Cars/suba1.bfl",
+        "bytes": 6275420,
+        "sha256": "d24bfbfd2d7a20c6932f2ba301186643d0c5011d7c5cf3071040e37cbf1b13b3",
+        "ext": ".bfl"
+      },
+      {
+        "target": "Game/Cars/suba1L.c3d",
+        "bytes": 2666,
+        "sha256": "e4b0e58ac4fa67ebad57ee6a9ccdb9b9eeed0f8c237b9b1bf9c01be0e549eb6e",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/suba1N.c3d",
+        "bytes": 29006,
+        "sha256": "824a389163f965b1f70ffcd385d3972d808e8b7b63dbfbf025288e5eec3de22e",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/suba1S.c3d",
+        "bytes": 2669,
+        "sha256": "2de40d7120ec8f21723c689b7185a619dee1ebafe5774478a7243e7e8f4a74a5",
+        "ext": ".c3d"
+      }
+    ]
+  },
+  "subaru-corsica-1998": {
+    "archive": "cmr2_subaru_impreza_tour_de_corse_1998_colin_mcrae.zip",
+    "sha256": "0f9414649cdbfc36fb8c217a3e68fe1c5f6702090350e771117827a374f9f93b",
+    "files": [
+      {
+        "target": "Game/Cars/sub.cin",
+        "bytes": 485,
+        "sha256": "01e245716c906bef18f276ec73f196ca03db36244fe55dada091073a764db087",
+        "ext": ".cin"
+      },
+      {
+        "target": "Game/Cars/suba1.bfl",
+        "bytes": 6188012,
+        "sha256": "8296ca87b410b1ed8d8bf3e872e1735fcafd0bb9acb5e21a2414d3803c287092",
+        "ext": ".bfl"
+      },
+      {
+        "target": "Game/Cars/suba1L.c3d",
+        "bytes": 2666,
+        "sha256": "e4b0e58ac4fa67ebad57ee6a9ccdb9b9eeed0f8c237b9b1bf9c01be0e549eb6e",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/suba1N.c3d",
+        "bytes": 29006,
+        "sha256": "824a389163f965b1f70ffcd385d3972d808e8b7b63dbfbf025288e5eec3de22e",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/suba1S.c3d",
+        "bytes": 2669,
+        "sha256": "2de40d7120ec8f21723c689b7185a619dee1ebafe5774478a7243e7e8f4a74a5",
+        "ext": ".c3d"
+      }
+    ]
+  },
+  "307-montecarlo-2006": {
+    "archive": "cmr2_peugeot_307_rallye_monte_carlo_2006_henning_solberg.zip",
+    "sha256": "5b0cb8c18cb9296c4fffc54ec91532125d65c00d3e3767b0f511b7e7c9ec2520",
+    "files": [
+      {
+        "target": "Game/Cars/pum.cin",
+        "bytes": 531,
+        "sha256": "039b150a77c727a560e69883192ea6705cf2d65b7232d4b6c7692adfadc35a78",
+        "ext": ".cin"
+      },
+      {
+        "target": "Game/Cars/puma1.bfl",
+        "bytes": 14691560,
+        "sha256": "9dd2a8040a327743ae6ff2a4d657e058f70a0f6eec1df8a6837c2e2e23be0ab1",
+        "ext": ".bfl"
+      },
+      {
+        "target": "Game/Cars/puma1L.c3d",
+        "bytes": 7240,
+        "sha256": "a1e285667e7acf801f6e2fcb738ff391f14c87b443d174d4821b559dda362189",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/puma1N.c3d",
+        "bytes": 163610,
+        "sha256": "1a96e12a5316b648942d5ce3a6371a568de0e5f724299e3b49a475e20801788c",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/puma1S.c3d",
+        "bytes": 2668,
+        "sha256": "2ee41462653bc03046286aee0a44975ad9ff82064d9714d297285b96d6ce249b",
+        "ext": ".c3d"
+      }
+    ]
+  },
+  "lancer-finland-2001": {
+    "archive": "cmr2_mitsubishi_lancer_rally_finland_2001_tommi_makinen.zip",
+    "sha256": "aab1cee1a58fb5298a3a31a4be4eea97d72933fe093e82caa8d93bb05cde8482",
+    "files": [
+      {
+        "target": "Game/Cars/mita1.bfl",
+        "bytes": 7324036,
+        "sha256": "cd3a4123ed9ab20e26092fbff4ee5ad998a7a539517ec92951d430867682dcdc",
+        "ext": ".bfl"
+      },
+      {
+        "target": "Game/Cars/mita1L.c3d",
+        "bytes": 2682,
+        "sha256": "8af5e90f05ca678de284f5b981fccf6d4927b679c27dd51f87d1401704b7eeb9",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/mita1N.c3d",
+        "bytes": 28503,
+        "sha256": "96db73e6d95ed00ad71760236a0ad80f46614594b7ffa07048cbf4b251177541",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/mita1S.c3d",
+        "bytes": 2716,
+        "sha256": "96a9fb28d1e7db441278b45e5c8d02221d40d9e2e141e1d9d9b30eb295e5287e",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/mit.cin",
+        "bytes": 456,
+        "sha256": "39375c35d14d47d4dd2dce41fd3b6e1eaf40d3cba39cabcf2ff405f56131d7d3",
+        "ext": ".cin"
+      }
+    ]
+  },
+  "subaru-xgames-2006": {
+    "archive": "cmr2_subaru_impreza_xgames_2006_colin_mcrae.zip",
+    "sha256": "c5a5af70c9a1a31a7e0975b3e99255edb8961f49911c365aab2cbd5661d2da1c",
+    "files": [
+      {
+        "target": "Game/Cars/sub.cin",
+        "bytes": 438,
+        "sha256": "2f6bcc7ab18185a5e894a4ef374ec0061cc47b60533255b9145096247d54bd12",
+        "ext": ".cin"
+      },
+      {
+        "target": "Game/Cars/suba1.bfl",
+        "bytes": 7652512,
+        "sha256": "753e0f38babaf22c0773b9581dabfcbb3aa818102921567d7796d73de91087e6",
+        "ext": ".bfl"
+      },
+      {
+        "target": "Game/Cars/suba1L.c3d",
+        "bytes": 52076,
+        "sha256": "8ca95cc19a489c38e5aaf4412036d6fef2a2f54f846a4548faf4e7d2cef98f2a",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/suba1N.c3d",
+        "bytes": 25729,
+        "sha256": "feb001c2559afacf3f818fb04d8b201af5230deccdc68775b936c8427831b51d",
+        "ext": ".c3d"
+      },
+      {
+        "target": "Game/Cars/suba1S.c3d",
+        "bytes": 2669,
+        "sha256": "2de40d7120ec8f21723c689b7185a619dee1ebafe5774478a7243e7e8f4a74a5",
+        "ext": ".c3d"
+      }
+    ]
+  }
+}

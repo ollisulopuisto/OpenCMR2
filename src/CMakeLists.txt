@@ -54,6 +54,7 @@ add_library(opencmr2_platform STATIC
     port/replay_disk.cpp
     $<TARGET_OBJECTS:cmr2_game>)
 target_sources(opencmr2_platform PRIVATE diagnostics/observer.cpp diagnostics/timing.cpp)
+target_compile_definitions(opencmr2_platform PRIVATE OPENCMR2_SOURCE_ROOT="${PROJECT_SOURCE_DIR}")
 target_include_directories(opencmr2_platform PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${GAME_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/port/compat)
 target_link_libraries(opencmr2_platform PUBLIC SDL3::SDL3)
 
@@ -66,6 +67,17 @@ else()
     add_executable(opencmr2 platform/main.cpp)
 endif()
 target_link_libraries(opencmr2 PRIVATE opencmr2_platform)
+# Source-only preparation helpers ship with desktop binaries. No game artwork.
+add_custom_command(TARGET opencmr2 POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:opencmr2>/enhancements/scenery-patch
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${PROJECT_SOURCE_DIR}/tools/scenery-patch/prepare.py
+        ${PROJECT_SOURCE_DIR}/tools/scenery-patch/convert.py
+        ${PROJECT_SOURCE_DIR}/tools/scenery-patch/car-index.json
+        ${PROJECT_SOURCE_DIR}/tools/scenery-patch/source-index.json
+        ${PROJECT_SOURCE_DIR}/tools/scenery-patch/requirements.txt
+        $<TARGET_FILE_DIR:opencmr2>/enhancements/scenery-patch)
+
 if(WIN32)
     target_sources(opencmr2 PRIVATE ${PROJECT_SOURCE_DIR}/res/opencmr2.rc)
     # SDL3.dll (and any other runtime DLL) next to the executable.

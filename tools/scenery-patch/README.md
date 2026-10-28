@@ -14,7 +14,71 @@ to redistribute them and does not provide copyright or game-license clearance.
 The new code follows this repository's GPLv3 license; that does not license the
 game's artwork. No third-party executable is executed or distributed.
 
-## macOS / Linux
+## One binary command (preferred)
+
+After building a revision with enhancement CLI support, run:
+
+```sh
+./build/macos/src/opencmr2 --help-enhancements
+./build/macos/src/opencmr2 --data "/path/to/owned/game-data" --trees crossed --spectators animated --driver-names real
+```
+
+The binary verifies originals, prepares or reuses a private versioned pack and
+starts the game. Use `--trees shell` for the experimental tiered shell instead;
+`--trees original` and `--spectators original` disable those kinds for this
+launch. A newly prepared pack activates only the kinds explicitly requested,
+so add both flags to enable trees and people together. `--prepare-only` prepares
+and validates then exits without running the game. No selection is saved to INI.
+No new launcher config or remembered path is created. Existing `--data`/folder
+selection behavior stays as it was.
+
+Generated cache is under `enhancements/` in the already-selected user profile;
+this does NOT change the user/profile root. It never moves or overwrites an old
+pack, original archive or save. Each reuse rechecks original hashes and every
+generated file. Changed/incomplete cache fails rather than overwriting it. A
+changed recipe creates a new version. Old caches are kept, not auto-deleted.
+The old manual `--scenery-dir` route below still works, but don't combine it
+with automatic tree/animated-spectator preparation flags.
+
+Preparation uses the shipped source-only helper beside the executable. Source
+builds also find the checkout helper and reuse its existing `.venv`. Python3.10+
+with Pillow/numpy is required for scenery; no artwork is shipped or downloaded.
+If dependencies are missing, the binary stops with an explanation. To explicitly
+allow isolated Python/package setup using an already-installed `uv`, append
+`--install-enhancement-deps` to the same binary command. This may download
+Python3.12, Pillow and numpy from their package sources. It does not install uv,
+change a global Python, replace an existing venv, or download game/mod assets.
+Without that flag no Python/dependency download is allowed. Internet/package
+availability and native Mac execution remain separate checks.
+
+`--driver-names real` uses the15previously extracted display names directly,
+without generating or changing a sidecar or player progress. `original` forces
+the original table for this launch; `sidecar` selects the existing validated
+`driver-names.tsv` route. No flags preserve the existing settings/sidecars.
+
+### Local car alternatives
+
+Use `--cars ALIAS[,ALIAS] --mods-dir "/path/to/owned/downloaded-zips"` in the
+same binary command. `--help-enhancements` lists the11known alternatives.
+The helper reads only exact hash-matched local ZIPs and verifies each required
+member, then creates/reuses a private read-only car-file overlay. It does not
+modify original or mod files and does not download anything. Keep original ZIP
+filenames. Only one205and oneSubaru alternative can be selected; conflicting
+choices stop before writing a pack. Six other replacement slots are independent.
+No extra roster slots are added. The models, information and textures from each
+selected ZIP stay together; `.cin` information may change physics/performance.
+Only the supplied file variants are replaced (some are high-resolution only).
+This is import/hash evidence, NOT native model, damage, physics, replay, UI or
+render acceptance. HQ Cars, CMR2.5 and V6 automatic import is unsupported.
+
+Use `--cars original` or omit the car flag next launch to use the selected
+base data without this overlay. Existing mods already inside the chosen
+`--data` remain part of that base, so "original" here cannot undo files you had
+previously merged into that game installation. No original car restoration is
+claimed. Author licenses still apply; no derived assets/readmes/Drive URLs are
+included publicly, only source filenames, byte counts and hashes.
+
+## Manual macOS / Linux fallback
 
 Use Python 3.10+ and `uv` in the checked-out source directory:
 

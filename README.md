@@ -327,34 +327,46 @@ SDL 3.4+ can be used with `OPENCMR2_METALFX=OFF` and
 `OPENCMR2_VENDORED_SDL=OFF`; MSL must stay ON. This is a separate fallback,
 not the MetalFX build above.
 
-#### Optional private scenery pack
+#### Optional enhancements from the command line
 
-Current `main` already includes the external pack loader and local procedural
-patcher. No extra `git apply` step or public artwork download is needed.
-To generate trees and spectator animation from your own supported originals,
-follow the [local patcher setup and conversion commands](tools/scenery-patch/README.md).
-Generate into `$HOME/OpenCMR2-private/scenery-pack`, then launch with the
-separate `--user-dir "$HOME/OpenCMR2-private"` command above. The default
-relative `scenery-pack` root works without an INI edit in a new profile.
-**Patching does not change your original files.** The patcher opens the input
-archives read-only, verifies their hashes, and writes generated assets into a
-separate directory. It rejects output inside the input tree and refuses to
-replace nonempty output. Generation is staged in a temporary directory and the
-complete pack is moved into place only after success. `--check-only` verifies
-the originals without generating output. The game reads the sidecar pack;
-it does not patch the original archives in place.
+```sh
+./build/macos/src/opencmr2 --help-enhancements
+./build/macos/src/opencmr2 --data "/path/to/owned/game-data" --trees crossed --spectators animated --driver-names real
+```
 
-Do not put an absolute path in `scenery_pack` and do not overwrite original
-archives yourself. Keep the separate `--user-dir` launch above: the game writes
-settings, saves and logs in that private profile, not in the original data
-folder. The pack output directory must be new or empty. The patcher requires the
-supported France/Finland archives and checks their hashes before generation;
-other releases may be rejected.
+The binary verifies originals, prepares/reuses private versioned assets, and
+starts the game. `--trees shell` selects the experimental tiered shell instead
+of fixed crossed cutouts. Only3high-source tree mappings are generated; people
+have12-frame sprite upper-body sway, not3Dmodels. Neither tree mode has native
+visual acceptance. `original` disables that kind for this launch, and selections
+are not written to settings. No `--user-dir` switch is needed: driver progress
+and saves stay in the current/default profile.
+
+Scenery requires supported owned archives and Python3.10+ with Pillow/numpy.
+An existing converter `.venv` is reused. If dependencies are missing, opt in to
+isolated uv setup with `--install-enhancement-deps` on the same command. No
+Python/packages are downloaded without that explicit flag; uv itself must be
+installed already. No proprietary asset downloads or public artwork are added.
+`--prepare-only` validates/prepares and exits without launching.
+
+`--cars LIST --mods-dir PATH` selects hash-verified local owned ZIP car
+alternatives; help lists names and conflict groups. Slots are replacements,
+not an expanded roster. Native compatibility and physics are unverified.
+`--effect dust_volume=off` (or another listed effect) overrides a GPU option
+for this launch; runtime logs still determine actual backend support.
+`--driver-names real` selects the extracted15display names, not saved player
+progress. Omit flags to preserve existing settings/mods.
+
+See the [scenery and car preparation guide](tools/scenery-patch/README.md) for
+requirements, cache/failure behavior, car caveats and the old manual converter
+route. Existing `--scenery-dir PATH` remains a read-only pack selection; don't
+combine it with automatic preparation flags. No original data or nonempty pack
+is overwritten. Generated files stay in a separate private versioned cache.
 
 Complete generated assets stay private and out of Git/public releases.
 Generation success does not verify native placement, appearance or M2
-performance. To undo this isolated setup, stop using that private profile or
-set `scenery_overrides=0` in its INI's existing `[video]` section. See the
+performance. To undo automatic selections, omit those flags on the next launch. Existing
+manual sidecars/settings remain as they were. See the
 [pack format and limits](docs/SCENERY-PACK.md).
 
 ### Windows
