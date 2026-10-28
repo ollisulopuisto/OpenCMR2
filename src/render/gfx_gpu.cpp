@@ -1179,7 +1179,7 @@ struct Executor : GfxExecutor {
         info.target_info.color_target_descriptions = &color;
         info.target_info.num_color_targets = 1;
         info.target_info.depth_stencil_format = depthFormat;
-        info.target_info.has_depth_stencil_target = true;
+        info.target_info.has_depth_stencil_target = false;
         particlePipeline = SDL_CreateGPUGraphicsPipeline(device, &info);
         if (particlePipeline == NULL)
             Sys_Log("gfx: particle pipeline: %s", SDL_GetError());
@@ -1421,6 +1421,9 @@ struct Executor : GfxExecutor {
     {
         if (particleType == 0 || particleCount == 0)
             return;
+        SDL_GPUGraphicsPipeline *pipeline = ParticlePipeline();
+        SDL_GPUSampler *sampler = Sampler(GfxStageState());
+        if (!cmd || !backColor || !pipeline || !white2D || !sampler) return;
         uint32_t vertexBytes = (uint32_t)(particleCount * 6 * 20);
         if (vertexBytes > particleVBCapacity) {
             SDL_ReleaseGPUBuffer(device, particleVB);
@@ -1432,7 +1435,9 @@ struct Executor : GfxExecutor {
             return;
         SDL_GPUTransferBufferCreateInfo tbi = { SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, vertexBytes, 0 };
         SDL_GPUTransferBuffer *tb = SDL_CreateGPUTransferBuffer(device, &tbi);
+        if (!tb) return;
         uint8_t *map = (uint8_t *)SDL_MapGPUTransferBuffer(device, tb, true);
+        if (!map) { SDL_ReleaseGPUTransferBuffer(device,tb); return; }
         uint8_t *write = map;
         for (int i = 0; i < particleCount; i++) {
             const Particle &p = particles[i];
@@ -1449,22 +1454,16 @@ struct Executor : GfxExecutor {
         }
         SDL_UnmapGPUTransferBuffer(device, tb);
         SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(cmd);
+        if (!copy) { SDL_ReleaseGPUTransferBuffer(device,tb); return; }
         SDL_GPUTransferBufferLocation src = { tb, 0 };
         SDL_GPUBufferRegion dst = { particleVB, 0, vertexBytes };
         SDL_UploadToGPUBuffer(copy, &src, &dst, true);
         SDL_EndGPUCopyPass(copy);
         SDL_ReleaseGPUTransferBuffer(device, tb);
-        SDL_GPUColorTargetInfo color = {};
-        color.texture = backColor;
-        color.load_op = SDL_GPU_LOADOP_LOAD;
-        color.store_op = SDL_GPU_STOREOP_STORE;
-        SDL_GPUDepthStencilTargetInfo depth = {};
-        depth.load_op = SDL_GPU_LOADOP_LOAD;
-        depth.store_op = SDL_GPU_STOREOP_STORE;
-        SDL_GPURenderPass *pass = SDL_BeginGPURenderPass(cmd, &color, 1, &depth);
+        SDL_GPURenderPass *pass = Gfx_BeginColourOnlyPass(cmd,backColor,SDL_GPU_LOADOP_LOAD);
         if (pass == NULL)
             return;
-        SDL_BindGPUGraphicsPipeline(pass, ParticlePipeline());
+        SDL_BindGPUGraphicsPipeline(pass, pipeline);
         SDL_GPUViewport vp = { 0.0f, 0.0f, (float)backWidth, (float)backHeight, 0.0f, 1.0f };
         SDL_Rect scissor = { 0, 0, backWidth, backHeight };
         SDL_SetGPUViewport(pass, &vp);
@@ -1472,7 +1471,7 @@ struct Executor : GfxExecutor {
         SDL_GPUBufferBinding vbBinding = { particleVB, 0 };
         SDL_BindGPUVertexBuffers(pass, 0, &vbBinding, 1);
         SDL_GPUTextureSamplerBinding bindings[1] = {
-            { white2D != NULL ? white2D : nullptr, Sampler(GfxStageState()) },
+            { white2D, sampler },
         };
         SDL_BindGPUFragmentSamplers(pass, 0, bindings, 1);
         SDL_DrawGPUPrimitives(pass, (uint32_t)(particleCount * 6), 1, 0, 0);
@@ -1864,6 +1863,7 @@ struct Executor : GfxExecutor {
         } else {
             GfxTexture *root = target->cube != NULL ? target->cube : target;
             GpuTexture *g = Ensure(root);
+            if (!g) { *cleared = 0; return nullptr; }
             color.texture = g->texture;
             color.layer_or_depth_plane = target->cube != NULL ? target->face : 0;
             depth.texture = g->depth;
@@ -1871,6 +1871,9 @@ struct Executor : GfxExecutor {
             h = root->height;
         }
         *cleared = 0;
+        // Geometry pipelines require both targets; never pass a descriptor
+        // with a null texture to Metal after allocation failure.
+        if (!color.texture || !depth.texture) return nullptr;
         for (size_t i = first; i < commands.size() && commands[i].type == GFX_CMD_CLEAR; i++) {
             const GfxCommand &c = commands[i];
             GfxViewport v = ToTarget(c.clearViewport, c.clearScreenW, c.clearScreenH, target == NULL, w, h);

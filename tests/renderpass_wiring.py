@@ -1,0 +1,14 @@
+from pathlib import Path
+s=(Path(__file__).resolve().parents[1]/'src/render/gfx_gpu.cpp').read_text()
+p=s[s.index('SDL_GPUGraphicsPipeline *ParticlePipeline()'):s.index('SDL_GPUGraphicsPipeline *ShadowPipeline()')]
+assert 'has_depth_stencil_target = false' in p
+r=s[s.index('void RenderParticles('):s.index('SDL_GPUSampler *Sampler(')]
+assert 'Gfx_BeginColourOnlyPass(cmd,backColor,SDL_GPU_LOADOP_LOAD)' in r
+assert 'SDL_GPUDepthStencilTargetInfo' not in r
+# Remaining raw calls are actual geometry + shadow, both with validated depth.
+assert s.count('SDL_BeginGPURenderPass(')==2
+b=s[s.index('SDL_GPURenderPass *BeginPass('):s.index('void Execute(')]
+assert 'if (!color.texture || !depth.texture) return nullptr' in b
+sh=s[s.index('if (shadowType != 0 && shadowMap != NULL'):s.index('for (size_t i = 0; i < frame.commands.size(); i++)')]
+assert 'depth.texture = shadowDepth' in sh
+print('all render-pass attachment sites audited; native Metal acceptance remains open')
