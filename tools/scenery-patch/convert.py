@@ -131,12 +131,62 @@ def articulated_spectator(src):
   im=base.copy();im.alpha_composite(arm.rotate(angle,resample=Image.Resampling.BICUBIC,center=(68,14)));poses.append(im)
  return poses
 
+# Authored masks are normalized to the original128pxFranceatlases.
+# High/low source variants are hash-gated by source-index before this function.
+FOREGROUND_LIMBS = {'spc_mn15a': {'angles': [0, 8, 16, 8],
+               'pivot': [9, 18],
+               'plate': [],
+               'polygon': [[6, 17], [8, 12], [18, 7], [23, 5], [26, 7], [24, 10], [16, 12], [11, 20]]},
+ 'spc_mn1a': {'angles': [0, 8, 16, 8],
+              'pivot': [8, 18],
+              'plate': [],
+              'polygon': [[4, 16], [7, 12], [18, 7], [25, 4], [28, 7], [19, 11], [11, 19]]},
+ 'spe_05': {'angles': [0, -5, -10, -5],
+            'pivot': [34, 38],
+            'plate': [],
+            'polygon': [[30, 38],
+                        [36, 37],
+                        [36, 48],
+                        [34, 55],
+                        [40, 58],
+                        [40, 62],
+                        [32, 63],
+                        [28, 58],
+                        [29, 48]]},
+ 'spe_10': {'angles': [0, 8, 16, 8],
+            'pivot': [28, 19],
+            'plate': [],
+            'polygon': [[25, 17], [29, 12], [39, 6], [48, 4], [50, 9], [39, 11], [32, 20]]}}
+def foreground_limb_poses(src,name):
+ original_size=src.size
+ if src.size!=(128,128):src=src.resize((128,128),Image.Resampling.NEAREST)
+ if name=='spc_mn9a':poses=articulated_spectator(src)
+ else:
+  r=FOREGROUND_LIMBS[name];mask=Image.new('L',src.size);ImageDraw.Draw(mask).polygon([tuple(p) for p in r['polygon']],fill=255)
+  arm=src.copy();arm.putalpha(Image.composite(src.getchannel('A'),Image.new('L',src.size),mask))
+  base=src.copy();base.putalpha(Image.composite(Image.new('L',src.size),src.getchannel('A'),mask))
+  if name=='spe_05':
+   # Continue the occluded purple-shirt neighbour behind the moving arm.
+   for y in range(38,64):
+    for x in range(28,41):
+     if mask.getpixel((x,y)):base.putpixel((x,y),src.getpixel((x-7,y)))
+  plates={
+   'spe_10':([(46,8),(48,6),(51,7),(51,11),(49,13),(47,11)],(156,128,111,255)),
+   'spc_mn1a':([(23,8),(24,6),(27,6),(29,8),(29,11),(26,12)],(151,125,108,255)),
+   'spc_mn15a':([(21,8),(23,7),(26,8),(28,10),(26,12),(22,11)],(124,104,86,255))}
+  if name in plates:
+   points,color=plates[name];ImageDraw.Draw(base).polygon(points,fill=color)
+  poses=[]
+  for angle in r['angles']:
+   im=base.copy();im.alpha_composite(arm.rotate(angle,resample=Image.Resampling.BICUBIC,center=tuple(r['pivot'])));poses.append(im)
+ return [im.resize((original_size[0]*2,original_size[1]*2),Image.Resampling.NEAREST) for im in poses]
+
 def spectator(a,rel):
  p=root/rel;p.mkdir(parents=True,exist_ok=True);src=Image.open(a['path']).convert('RGBA');frames=[]
- import hashlib
- if hashlib.sha256(Path(a['path']).read_bytes()).hexdigest()=='42dc26428fcd9da58332e6b9b7189c2b5d4dbdcb689911b14da96e52a5e52aba':
-  for i,pose in enumerate(articulated_spectator(src)):
-   path=p/f'frame-{i:02}.tga';pose.resize((src.width*2,src.height*2),Image.Resampling.NEAREST).save(path,compression=None);frames.append(str(rel/path.name))
+ name=Path(a.get('texture','')).stem
+ if a.get('archive') in ('frahit.bfl','fralot.bfl') and (name in FOREGROUND_LIMBS or name=='spc_mn9a'):
+  for i,pose in enumerate(foreground_limb_poses(src,name)):
+   path=p/f'frame-{i:02}.tga';pose.save(path,compression=None);frames.append(str(rel/path.name))
   return frames
  src=src.resize((src.width*2,src.height*2),Image.Resampling.NEAREST);ar=np.array(src);h,w=ar.shape[:2]
  # Subtle upper-body sway: original cutout remapped, lower 30% and feet fixed. No invented limbs.
