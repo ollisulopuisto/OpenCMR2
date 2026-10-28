@@ -1,3 +1,4 @@
+#include "GraphicsOptions.h"
 #include "port/sys.h"
 #include "port/vector_sprite.h"
 #include <stdio.h>
@@ -5057,7 +5058,7 @@ float Graphics_GetFrameRate(void)
 // video.debug_draw.
 bool Graphics_DebugDrawWanted(void)
 {
-    return (g_pGraphics->field913_0x3bc & 4) != 0 || Sys_GetOption("video.debug_draw", 0) != 0;
+    return (g_pGraphics->field913_0x3bc & 4) != 0 || Sys_GetOption("video.debug_draw", OPENCMR2_DEBUG_DRAW_DEFAULT) != 0;
 }
 
 // FUNCTION: CMR2 0x004b23b0
@@ -6544,6 +6545,8 @@ void CGraphics::ConfigureTextureStageBlendMode(int stage, Texture *pTexture)
         Gfx_SetStageAlphaArg1(stage, GFX_TA_TEXTURE);
         Gfx_SetStageAlphaArg2(stage, GFX_TA_DIFFUSE);
         Gfx_SetStageAlphaOp(stage, GFX_TOP_SELECTARG2);
+        Gfx_SetStageMagFilter(stage, GFX_FILTER_LINEAR);
+        Gfx_SetStageMinFilter(stage, GFX_FILTER_LINEAR);
         Gfx_SetStageTexCoordIndex(stage, GFX_TCI_CAMERASPACEREFLECTIONVECTOR | 1);
         Gfx_SetStageTextureTransform(stage, GFX_TTFF_COUNT3);
         break;
@@ -6650,7 +6653,10 @@ int Graphics_ReserveCubeMapsAndLoadEnvironment(char *name, int count, GenericFil
     unsigned int *pId;
     unsigned short *pTexture;
 
-    CGraphics::m_cubeMapSize = size;
+    // More detailed existing dynamic reflections, not new reflective materials.
+    // video.reflection_resolution=0 restores the original stage-selected size.
+    CGraphics::m_cubeMapSize = ReflectionCube_Size(
+        Sys_GetOption("video.reflection_resolution", 128), (int)size);
     memset(g_carReflectionCubeMaps, 0xff, sizeof(g_carReflectionCubeMaps));
     if ((*(BYTE *)&g_pGraphics->field913_0x3bc & 0x80) != 0 && count > 0) {
         pId = g_carReflectionCubeMaps;

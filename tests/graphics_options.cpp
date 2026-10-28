@@ -43,6 +43,12 @@ int main(void)
         Check(Anisotropy_LevelToIndex(Anisotropy_IndexToLevel(i)) == i, "filtering round trip");
     Check(Anisotropy_IndexToLevel(-1) == 1 && Anisotropy_IndexToLevel(99) == 16, "filtering index clamps");
 
+    Check(OPENCMR2_DEBUG_DRAW_DEFAULT == 1, "diagnostic overlay defaults on");
+    Check(ReflectionCube_Size(0, 64) == 64, "original reflection size opt out");
+    Check(ReflectionCube_Size(-1, 128) == 128, "negative uses original size");
+    Check(ReflectionCube_Size(128, 64) == 128, "higher detail reflection default");
+    Check(ReflectionCube_Size(65, 64) == 128, "round resolution to bounded tier");
+    Check(ReflectionCube_Size(99999, 64) == 256, "reflection allocation capped");
     if (failures == 0) {
         puts("graphics options: draw distance and texture filtering mappings hold");
         return 0;

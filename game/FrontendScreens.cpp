@@ -4060,7 +4060,7 @@ void FrontendMenu_EnterAdvancedGraphicsOptions(Menu *pMenu, int param)
     // OpenCMR2: initialise the new rows from the settings, before the preview
     // mode's early return below.
     Menu_GetItem(pMenu, 0xb)->max = DrawDistance_PercentToIndex(Sys_GetOption("video.draw_distance", 100));
-    Menu_GetItem(pMenu, 0xc)->max = Sys_GetOption("video.debug_draw", 0) != 0 ? 1 : 0;
+    Menu_GetItem(pMenu, 0xc)->max = Sys_GetOption("video.debug_draw", OPENCMR2_DEBUG_DRAW_DEFAULT) != 0 ? 1 : 0;
     Menu_GetItem(pMenu, 0xd)->max = Anisotropy_LevelToIndex(Sys_GetOption("video.anisotropy", 8));
     // OpenCMR2: breakable trees default on; off restores solid scenery.
     Menu_GetItem(pMenu, 0xf)->max = Sys_GetOption("video.tree_break", 1) != 0 ? 1 : 0;

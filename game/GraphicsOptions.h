@@ -10,6 +10,17 @@
 #include "FixedPoint.h"
 #include <cstdint>
 
+// User-visible defaults; explicit saved Off still wins.
+#define OPENCMR2_DEBUG_DRAW_DEFAULT 1
+inline int ReflectionCube_Size(int requested, int original)
+{
+    if (requested <= 0) return original; // preserve native resolution when requested
+    if (requested <= 64) return 64;
+    if (requested <= 128) return 128;
+    return 256; // bounded six-face cost; no unlimited texture allocation
+}
+
+
 struct StageObject;
 
 // The user draw distance as a percent of the stage's far plane, clamped to a
