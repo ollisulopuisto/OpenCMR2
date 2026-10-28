@@ -72,10 +72,7 @@ shadows, replay appearance or M2Air performance. Those remain native gates.
 
 ## Driver names
 
-`game/AIHelper.cpp` changes only the15x20-byte `g_aiNames` table. Slot order is
-transcribed from the user's supplied real-driver patch executable's static
-name table at file offset0x1166b4, corresponding to source address0x005166b4.
-SHA256 of that reference executable:
-`87c235b054853480559b2d7902a6a5c0021c22838b44ef2beeaefe8a46c458e3`.
-It was inspected as data, not executed. Performance/car/AI configuration is not
-imported. Names retain the reference ASCII spellings and initial formatting.
+Driver names are an independent, optional sidecar, not part of the scenery
+manifest. The original built-in names remain the fallback. See
+[the driver-name patch instructions](../tools/driver-name-patch/README.md).
+No original executable or archive is patched in place.

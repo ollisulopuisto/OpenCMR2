@@ -141,6 +141,13 @@ The installation can also be set with the `OPENCMR2_DATA` environment variable
 or `[paths] data` in `opencmr2.ini`, or copied into a `Data` folder next to the
 executable, which is found without asking.
 
+### Optional real-driver names
+
+The real-driver names are a separate local patch, not an edit to the original
+game files. Generate `driver-names.tsv` in a private user directory and launch
+with that `--user-dir`. Without the sidecar, the original names remain.
+See [enable, mapping and undo instructions](tools/driver-name-patch/README.md).
+
 ## Configuration
 
 Settings are stored in `opencmr2.ini` in the user directory

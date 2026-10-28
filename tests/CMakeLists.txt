@@ -312,3 +312,13 @@ if(NOT APPLE AND NOT MSVC)
   -Wl,--wrap=_Z25Scene_InitFixedMathTablesv)
  add_test(NAME graphics_startup_failure COMMAND graphics_startup_failure_test)
 endif()
+if(NOT APPLE AND NOT MSVC)
+ add_executable(driver_names_runtime_test driver_names_runtime.cpp)
+ target_link_libraries(driver_names_runtime_test PRIVATE opencmr2_platform)
+ target_link_options(driver_names_runtime_test PRIVATE
+  -Wl,--wrap=Sys_GetOption -Wl,--wrap=Sys_OpenFile -Wl,--wrap=Sys_GetFileSize
+  -Wl,--wrap=Sys_ReadFile -Wl,--wrap=Sys_CloseFile)
+ foreach(mode valid missing invalid disabled)
+  add_test(NAME driver_names_runtime_${mode} COMMAND driver_names_runtime_test ${mode})
+ endforeach()
+endif()
