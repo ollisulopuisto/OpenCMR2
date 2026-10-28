@@ -38,7 +38,8 @@ textures and stage-specific archives. Filenames alone never authorize a new-pack
 replacement. Old packs without identity records keep their strict archive-based
 matching; regenerate using this revision into a new cache for corrected routing.
 An active draw marker proves the override was submitted, not native appearance or
-frame-time acceptance. Animated spectators remain subtle sprite upper-body sway.
+frame-time acceptance. One spectator atlas has articulated forearm poses; the
+other47 retain subtle sprite upper-body sway.
 
 Generated cache is under `enhancements/` in the already-selected user profile;
 this does NOT change the user/profile root. It never moves or overwrites an old
@@ -63,6 +64,25 @@ availability and native Mac execution remain separate checks.
 without generating or changing a sidecar or player progress. `original` forces
 the original table for this launch; `sidecar` selects the existing validated
 `driver-names.tsv` route. No flags preserve the existing settings/sidecars.
+
+### Skin-aware car labels
+
+Selected owned overlays contain a hash-checked `car-names.tsv`, derived from
+car/rally facts in their ZIP readmes, not inferred from alias names. The binary
+uses those labels only for the exact selected archive slots in the frontend
+and stage text tables, including selection lists, lobby and results labels.
+It does not rename other variants in the same family (Fabia replaces FA1,
+not the original Focus). Short labels are used where the game requests its
+abbreviated car names. Limits are 39/23 printable ASCII characters; labels
+remain consistent across languages rather than inventing translations.
+
+`--car-names original` restores original labels for this launch without
+removing the skins; `--car-names skin` is the default with a selected overlay.
+No overlay means no label changes. Invalid/missing label metadata falls back
+to original text. Other localized text tables reuse numeric IDs and are
+explicitly excluded. Saves, unlocks and underlying slot IDs are unchanged.
+New metadata creates a new versioned cache; old caches remain untouched.
+Native Mac label fit/appearance remains unverified.
 
 ### Local car alternatives
 

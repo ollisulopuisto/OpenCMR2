@@ -4,17 +4,18 @@
 #include <string>
 #include <map>
 struct EnhancementOptions {
-    std::string trees, spectators, names, cars, modsDir;
+    std::string trees, spectators, names, cars, modsDir, carNames;
     bool installDependencies=false,prepareOnly=false;
     std::map<std::string,int> overrides;
     bool Consume(int &i,int argc,char **argv,std::string &error) {
         std::string key=argv[i];
         if(key=="--prepare-only"){prepareOnly=true;return true;}
         if(key=="--install-enhancement-deps"){installDependencies=true;return true;}
-        if(key!="--tree-wind"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect")return false;
+        if(key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect")return false;
         if(i+1>=argc){error="Missing value for "+key;return true;}
         std::string value=argv[++i];
         if(key=="--tree-wind"){if(value!="on"&&value!="off")error="--tree-wind expects on or off";else overrides["video.tree_wind"]=value=="on";}
+        if(key=="--car-names"){if(value!="original"&&value!="skin")error="--car-names expects original or skin";else carNames=value;}
         if(key=="--trees") {if(value!="original"&&value!="shell"&&value!="crossed")error="--trees expects original, shell or crossed";else trees=value;}
         if(key=="--spectators"){if(value!="original"&&value!="animated")error="--spectators expects original or animated";else spectators=value;}
         if(key=="--driver-names"){if(value!="original"&&value!="real"&&value!="sidecar")error="--driver-names expects original, real or sidecar";else names=value;}
@@ -32,6 +33,7 @@ struct EnhancementOptions {
     }
     void Apply(){
         if(!trees.empty()&&!overrides.count("video.tree_wind"))overrides["video.tree_wind"]=trees!="original";
+        if(!carNames.empty())overrides["video.skin_car_names"]=carNames=="skin";
         // A generated pack contains both kinds; activate only requested kinds.
         if(NeedsPack()&&trees.empty())overrides["video.tree_overrides"]=0;
         if(NeedsPack()&&spectators.empty())overrides["video.spectator_overrides"]=0;
@@ -60,6 +62,8 @@ inline const char *EnhancementHelp(){return
 "                              Sidecar=existing validated driver-names.tsv\n"
 "  --cars LIST                 Comma-separated owned ZIP alternatives (below)\n"
 "                              original=use unchanged selected data\n"
+"  --car-names skin|original   Selected skin labels (default skin); display only\n"
+"                              Original restores labels, not replacement assets\n"
 "  --mods-dir PATH             Folder containing original downloaded ZIPs\n"
 "                              Required with --cars, no assets downloaded\n"
 "                              Hash-checked replacement models/info/textures\n"

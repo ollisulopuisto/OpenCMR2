@@ -366,7 +366,8 @@ not the MetalFX build above.
 The binary verifies originals, prepares/reuses private versioned assets, and
 starts the game. `--trees shell` selects the experimental tiered shell instead
 of fixed crossed cutouts. Only3high-source tree mappings are generated; people
-have12-frame sprite upper-body sway, not3Dmodels. Neither tree mode has native
+have four forearm poses on one verified atlas and limited sway on the other47,
+not3Dmodels. Neither tree mode has native
 visual acceptance. `original` disables that kind for this launch, and selections
 are not written to settings. No `--user-dir` switch is needed: driver progress
 and saves stay in the current/default profile.
@@ -380,7 +381,12 @@ installed already. No proprietary asset downloads or public artwork are added.
 
 `--cars LIST --mods-dir PATH` selects hash-verified local owned ZIP car
 alternatives; help lists names and conflict groups. Slots are replacements,
-not an expanded roster. Native compatibility and physics are unverified.
+not an expanded roster. Selected skins also supply car display labels from
+verified archive metadata, for example Skoda Fabia WRC Red Bull in the Focus
+Alternate 1 slot. Exact variants stay independent. `--car-names original`
+restores the original labels while keeping the selected assets; `skin` is the
+default with a selected overlay. Labels do not change slot IDs, unlocks,
+physics or saves. Native compatibility, label fit and physics are unverified.
 `--effect dust_volume=off` (or another listed effect) overrides a GPU option
 for this launch; runtime logs still determine actual backend support.
 `--driver-names real` selects the extracted15display names, not saved player

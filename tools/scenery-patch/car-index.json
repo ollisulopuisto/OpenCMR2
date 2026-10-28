@@ -33,7 +33,10 @@
         "sha256": "ff9699a5314c629a7cc5ce67925bd8cd2e2d5af9aa0079c2f755ee49dc5a125c",
         "ext": ".c3d"
       }
-    ]
+    ],
+    "slot": "205",
+    "display_name": "Peugeot 205 T16 EVO Dakar 1987",
+    "short_name": "205 T16 Dakar 1987"
   },
   "205-finland-1986": {
     "archive": "cmr2_peugeot_205_finland_1986_salonen.zip",
@@ -69,7 +72,10 @@
         "sha256": "ff9699a5314c629a7cc5ce67925bd8cd2e2d5af9aa0079c2f755ee49dc5a125c",
         "ext": ".c3d"
       }
-    ]
+    ],
+    "slot": "205",
+    "display_name": "Peugeot 205 T16 EVO Finland 1986",
+    "short_name": "205 T16 Finland 1986"
   },
   "xsara-turkey-2006": {
     "archive": "cmr2_citroen_xsara_rally_of_turkey_2006_colin_mcrae.zip",
@@ -105,7 +111,10 @@
         "sha256": "2ee41462653bc03046286aee0a44975ad9ff82064d9714d297285b96d6ce249b",
         "ext": ".c3d"
       }
-    ]
+    ],
+    "slot": "sea",
+    "display_name": "Citroen Xsara WRC Kronos Turkey 2006",
+    "short_name": "Xsara WRC Turkey 2006"
   },
   "fabia-redbull": {
     "archive": "cmr2_skoda_fabia_red_bull_harri_rovanpera.zip",
@@ -141,7 +150,10 @@
         "sha256": "2c7e5249a356d6d21e91ae60e7d7a8b72b508c7f70b1e501339411bfe0ac362d",
         "ext": ".bfl"
       }
-    ]
+    ],
+    "slot": "fa1",
+    "display_name": "Skoda Fabia WRC Red Bull",
+    "short_name": "Fabia WRC Red Bull"
   },
   "focus-norway-2007": {
     "archive": "cmr2_ford_focus_rally_norway_2007_andreas_mikkelsen.zip",
@@ -177,7 +189,10 @@
         "sha256": "788e868f196d5d4e92c34cb8ec9fb8c09575e926c4377c2a3e338c72cde2ca37",
         "ext": ".c3d"
       }
-    ]
+    ],
+    "slot": "fa2",
+    "display_name": "Ford Focus WRC05 Ramsport Norway 2007",
+    "short_name": "Focus WRC05 Norway 2007"
   },
   "focus-montecarlo-2006": {
     "archive": "cmr2_ford_focus_rally_monte_carlo_2006_matthew_wilson.zip",
@@ -213,7 +228,10 @@
         "sha256": "788e868f196d5d4e92c34cb8ec9fb8c09575e926c4377c2a3e338c72cde2ca37",
         "ext": ".c3d"
       }
-    ]
+    ],
+    "slot": "f99",
+    "display_name": "Ford Focus WRC04 Monte Carlo 2006",
+    "short_name": "Focus WRC04 Monte 2006"
   },
   "subaru-spain-1996": {
     "archive": "cmr2_subaru_impreza_rally_spain_1996_colin_mcrae.zip",
@@ -249,7 +267,10 @@
         "sha256": "2de40d7120ec8f21723c689b7185a619dee1ebafe5774478a7243e7e8f4a74a5",
         "ext": ".c3d"
       }
-    ]
+    ],
+    "slot": "sub",
+    "display_name": "Subaru Impreza 555 Spain 1996",
+    "short_name": "Impreza 555 Spain 1996"
   },
   "subaru-corsica-1998": {
     "archive": "cmr2_subaru_impreza_tour_de_corse_1998_colin_mcrae.zip",
@@ -285,7 +306,10 @@
         "sha256": "2de40d7120ec8f21723c689b7185a619dee1ebafe5774478a7243e7e8f4a74a5",
         "ext": ".c3d"
       }
-    ]
+    ],
+    "slot": "sub",
+    "display_name": "Subaru Impreza Tour de Corse 1998",
+    "short_name": "Impreza Corse 1998"
   },
   "307-montecarlo-2006": {
     "archive": "cmr2_peugeot_307_rallye_monte_carlo_2006_henning_solberg.zip",
@@ -321,7 +345,10 @@
         "sha256": "2ee41462653bc03046286aee0a44975ad9ff82064d9714d297285b96d6ce249b",
         "ext": ".c3d"
       }
-    ]
+    ],
+    "slot": "pum",
+    "display_name": "Peugeot 307 WRC Expert Monte Carlo 2006",
+    "short_name": "307 WRC Monte 2006"
   },
   "lancer-finland-2001": {
     "archive": "cmr2_mitsubishi_lancer_rally_finland_2001_tommi_makinen.zip",
@@ -357,7 +384,10 @@
         "sha256": "39375c35d14d47d4dd2dce41fd3b6e1eaf40d3cba39cabcf2ff405f56131d7d3",
         "ext": ".cin"
       }
-    ]
+    ],
+    "slot": "mit",
+    "display_name": "Mitsubishi Lancer EVO 6.5 Finland 2001",
+    "short_name": "Lancer EVO 6.5 2001"
   },
   "subaru-xgames-2006": {
     "archive": "cmr2_subaru_impreza_xgames_2006_colin_mcrae.zip",
@@ -393,6 +423,9 @@
         "sha256": "2de40d7120ec8f21723c689b7185a619dee1ebafe5774478a7243e7e8f4a74a5",
         "ext": ".c3d"
       }
-    ]
+    ],
+    "slot": "sub",
+    "display_name": "Subaru WRX STI X-Games 2006",
+    "short_name": "WRX STI X-Games 2006"
   }
 }
