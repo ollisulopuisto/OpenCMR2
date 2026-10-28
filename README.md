@@ -314,8 +314,18 @@ follow the [local patcher setup and conversion commands](tools/scenery-patch/REA
 Generate into `$HOME/OpenCMR2-private/scenery-pack`, then launch with the
 separate `--user-dir "$HOME/OpenCMR2-private"` command above. The default
 relative `scenery-pack` root works without an INI edit in a new profile.
+**Patching does not change your original files.** The patcher opens the input
+archives read-only, verifies their hashes, and writes generated assets into a
+separate directory. It rejects output inside the input tree and refuses to
+replace nonempty output. Generation is staged in a temporary directory and the
+complete pack is moved into place only after success. `--check-only` verifies
+the originals without generating output. The game reads the sidecar pack;
+it does not patch the original archives in place.
+
 Do not put an absolute path in `scenery_pack` and do not overwrite original
-archives. The output directory must be new or empty. The patcher requires the
+archives yourself. Keep the separate `--user-dir` launch above: the game writes
+settings, saves and logs in that private profile, not in the original data
+folder. The pack output directory must be new or empty. The patcher requires the
 supported France/Finland archives and checks their hashes before generation;
 other releases may be rejected.
 
