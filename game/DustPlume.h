@@ -56,9 +56,21 @@ inline void SpeedMote_Step(Particle &p) {
     p.type0x52 = p.type0x56;
     p.type0x56 = (BYTE)(150 * fadeIn * fadeOut / 60);
 }
-inline bool SpeedMote_HasBudget(int active, int motes, int capacity) {
-    return capacity > 64 && motes < SPEED_MOTE_MAX && active < capacity - 64;
+// The live-mote cap grows with video.speed_motes_amount above 100% (64 at 100%, 192 at 300%); below 100% it stays 64 and
+// only the spawn rate drops. Before this, amount 300 saturated at 64 live motes and could not show more.
+inline int SpeedMote_Cap(int amountPercent) {
+    int a = amountPercent < 100 ? 100 : amountPercent > 300 ? 300 : amountPercent;
+    return SPEED_MOTE_MAX * a / 100;
 }
+// Motes beyond the original 64 are only allowed while the whole pool is less than half full, so the extra motes never crowd the
+// dust plume budget (which counts every active particle) or the original particles; non-mote spawns still evict motes first.
+inline bool SpeedMote_HasBudget(int active, int motes, int capacity, int amountPercent = 100) {
+    if (!(capacity > 64 && active < capacity - 64)) return false;
+    if (motes < SPEED_MOTE_MAX) return true;
+    return motes < SpeedMote_Cap(amountPercent) && active < capacity / 2;
+}
+// video.speed_motes_size: quad size in percent of the normal 0.5 m speck (100 = unchanged), clamped 50..800.
+inline int SpeedMote_SizePercent(int v) { return v < 50 ? 50 : v > 800 ? 800 : v; }
 void SpeedMote_Update(Particle *, ParticleType *, SceneNode *);
 void SpeedMote_Spawn(FixVector *world);
 struct BillboardDef; struct SceneNode;

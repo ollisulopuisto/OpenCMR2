@@ -6014,6 +6014,7 @@ void RallyData_DrawProjectedChallengeScene(int param1, int param2)
     // OpenCMR2: camera effects — dirt on the lens and a sun lens flare,
     // drawn over the finished frame ([video] video.camera_effects).
     CameraEffects_DrawOverlays(rect);
+    TuningPanel_DrawPaused();
     Graphics_PresentFrameAndResetCounters();
 }
 
@@ -6042,6 +6043,7 @@ int g_windscreenWiperManualFrames = 0;
 static bool g_tuneOpen = false, g_tuneSnapshotTaken = false;
 static int g_tuneRow = 0, g_tuneSnapshot[16];
 static unsigned g_tuneSavedStamp = 0, g_tuneFrame = 0;
+static bool g_tuneDrawn = false;  // set by every TuningPanel_Draw; the paused-scene draw skips when another path already drew this frame
 static TuningEdges g_tuneEdges;
 bool TuningPanel_IsOpen(void) { return g_tuneOpen; }
 int TuningPanel_ToggleKey(void)
@@ -6095,6 +6097,7 @@ void TuningPanel_Update(void)
 void TuningPanel_Draw(void)
 {
     if (!g_tuneOpen) return;
+    g_tuneDrawn = true;
     int count = 0;
     const TuningRow *rows = Tuning_Rows(count);
     DebugOverlayLayout layout = DebugOverlayLayout::For(g_pGraphics->resX, g_pGraphics->resY, count + 3);
@@ -6113,6 +6116,12 @@ void TuningPanel_Draw(void)
     Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
     snprintf(text, sizeof text, g_tuneSavedStamp && g_tuneFrame - g_tuneSavedStamp < 100 ? "saved to opencmr2.ini; F10 closes" : "F10 closes; per launch until saved");
     Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
+}
+// The paused scene (render callback of Race_UpdatePauseState) never reaches the per-view overlay that normally draws the panel.
+void TuningPanel_DrawPaused(void)
+{
+    if (!g_tuneDrawn) TuningPanel_Draw();
+    g_tuneDrawn = false;
 }
 
 // Returns 1 when the wiper key was just pressed this frame (edge trigger),
