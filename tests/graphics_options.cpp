@@ -51,6 +51,7 @@ int main(void)
     Check(ReflectionCube_Size(-1, 128) == 128, "negative uses original size");
     Check(ReflectionCube_Size(128, 64) == 128, "higher detail reflection default");
     Check(ReflectionCube_Size(65, 64) == 128, "round resolution to bounded tier");
+    Check(ReflectionCube_Size(3, 64) == 256 && ReflectionCube_Size(2, 64) == 128 && ReflectionCube_Size(1, 64) == 64, "legacy selector index 1..3 maps to 64/128/256");
     Check(ReflectionCube_Size(99999, 64) == 256, "reflection allocation capped");
     if (failures == 0) {
         puts("graphics options: draw distance and texture filtering mappings hold");
