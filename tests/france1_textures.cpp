@@ -18,6 +18,7 @@ static std::vector<char> geometry;
 extern "C" const char*Sys_GetTextureDirectory(){return root.c_str();}
 void*CGenericFileLoader::FindFile(GenericFile*,char*,BYTE*,DWORD*n,BYTE){*n=geometry.size();return geometry.data();}
 extern "C" void Sys_Log(const char*,...){}
+extern "C" double Sys_GetTicksPrecise(void){return 0;}
 extern "C" void Sys_GetDesktopSize(int*w,int*h){*w=640;*h=480;}
 int Platform_GetSettingInt(const char*,int x){return x;}
 const char*Platform_GetSetting(const char*,const char*x){return x;}

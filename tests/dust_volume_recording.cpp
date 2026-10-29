@@ -8,6 +8,7 @@ const char *Platform_GetSetting(const char*,const char*v){return v;}
 extern "C" void Sys_Log(const char*,...){}
 extern "C" void Sys_GetDesktopSize(int*w,int*h){*w=640;*h=480;}
 extern "C" unsigned Sys_GetTicks(){return 0;}
+extern "C" double Sys_GetTicksPrecise(void){return 0;}
 static bool supported=true;static int seen=0;
 struct Executor:GfxExecutor{
  bool SetVideoMode(int,int,bool)override{return true;}void SetFullscreen(bool)override{}

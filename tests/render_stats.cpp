@@ -12,6 +12,7 @@ const char *Platform_GetSetting(const char *, const char *value) { return value;
 extern "C" void Sys_Log(const char *, ...) {}
 extern "C" void Sys_GetDesktopSize(int *w, int *h) { *w = 640; *h = 480; }
 extern "C" unsigned int Sys_GetTicks() { return 0; }
+extern "C" double Sys_GetTicksPrecise(void) { return 0; }
 
 // Force the null (headless) backend: no GPU executor to link/stub.
 #ifdef _WIN32
