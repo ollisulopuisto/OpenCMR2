@@ -1,6 +1,10 @@
 #pragma once
 #include "dust_volume_math.h"
 #include <cstring>
+// Volumetric clouds are rolled back for now (12-17 fps, unacceptable look on native).
+// The pass stays in the tree; this switch keeps it from running whatever video.volumetric_clouds
+// holds (INI, menu or --effect). Flip to true to bring it back for development.
+inline bool Clouds_Enabled(){return false;}
 struct CloudUniforms {float inverse[16],camera[4],layer[4],sun[4],target[4];};
 inline bool CloudUniforms_Build(const GfxCommand &c,const GfxDrawState &s,int w,int h,CloudUniforms &u){
  for(float f:c.clouds)if(!std::isfinite(f))return false;

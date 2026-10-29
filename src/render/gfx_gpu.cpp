@@ -2309,7 +2309,7 @@ struct Executor : GfxExecutor {
                 Sys_Log("gfx: spatial AA unavailable; retaining original output");
         }
         SDL_GPUTexture *cloudMask=white2D;
-        if(raceWorld && sampledDepth && Sys_GetOption("video.volumetric_clouds",1)!=0){
+        if(raceWorld && sampledDepth && Clouds_Enabled()&&Sys_GetOption("video.volumetric_clouds",0)!=0){
             CloudUniforms u={};
             if(CloudUniforms_Build(frame.commands[worldEnd],frame.states[frame.commands[worldEnd].state],backWidth,backHeight,u)){
                 if(!fsClouds)fsClouds=Shader(SHADER_CODE(clouds_frag),SDL_GPU_SHADERSTAGE_FRAGMENT,2,1);

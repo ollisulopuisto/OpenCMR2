@@ -1285,7 +1285,7 @@ struct Executor : GfxExecutor {
             const GfxCommand &c = frame.commands[i];
             if(c.type==GFX_CMD_WORLD_END){
                 if(present && boundaries==1 && !target){
-                    cloudsValid=c.raceWorld && Sys_GetOption("video.volumetric_clouds",1)!=0 && CloudUniforms_Build(c,frame.states[c.state],backWidth,backHeight,cloudUniforms);
+                    cloudsValid=c.raceWorld && Clouds_Enabled()&&Sys_GetOption("video.volumetric_clouds",0)!=0 && CloudUniforms_Build(c,frame.states[c.state],backWidth,backHeight,cloudUniforms);
                     if(c.raceWorld)RenderWeather();
                     else {weather.clear();weatherTicks=0;weatherCarry=0;historyValid=false;}
                     GLuint output=ApplyEffects();
