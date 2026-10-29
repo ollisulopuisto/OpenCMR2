@@ -765,6 +765,15 @@ static int View_GetShownFarPlane(BYTE view)
     return g_viewShownFarPlanes[view];
 }
 
+// OpenCMR2: last projection scale actually sent to the renderer, per view, for the debug overlay.
+static int g_lastProjZoom[8], g_lastProjFovY[8];
+void View_GetEffectiveProjection(unsigned int view, int *zoom, int *fovY, int *fovSetting)
+{
+    *zoom = g_lastProjZoom[view & 7];
+    *fovY = g_lastProjFovY[view & 7];
+    *fovSetting = Sys_GetOption("video.fov", 70);
+}
+
 // Sets the camera projection for the selected player's view.
 // match 66%: below the 90% bar; kept as FUNCTION on purpose so reccmp measures it (see CONVENCIONES)
 // FUNCTION: CMR2 0x00422d40
@@ -778,6 +787,8 @@ void View_SetPlayerProjection(unsigned int player)
     int fovX = FixMul(0x123d7, FixMul(FixMul(zoom, View_GetFovScale()),
         (int)FTOI(__int64, X87S_MUL(X87S_MUL((16.0 / 9.0), (X87S_DIV((double)g_pGraphics->resY, (double)g_pGraphics->resX))), CGraphics::m_65536))));
     int fovY = FixMul(0x2147a, FixMul(zoom, View_GetFovScale()));
+    g_lastProjZoom[i & 7] = zoom;
+    g_lastProjFovY[i & 7] = fovY;
     // PORT: the far plane eases to the view distance (View_GetShownFarPlane).
     // OpenCMR2: the user's draw distance scales the far plane
     // ([video] video.draw_distance).

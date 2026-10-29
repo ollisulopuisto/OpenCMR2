@@ -4663,7 +4663,7 @@ void StageObject_InterpolateHeadlightGlows(int t);
 // effects and the debris, then refreshes them once the frame gate opens.
 // FUNCTION: CMR2 0x0041d060
 int StageTiming_GetClockTime(void);
-void AttractCapture_ViewSignature(int *type, int *drone);
+void AttractCapture_ViewSignature(int view, int *type, int *drone);
 void Race_UpdateFrameEffects(int param_1)
 {
     Car_InterpolateRenderTransforms();
@@ -4676,7 +4676,7 @@ void Race_UpdateFrameEffects(int param_1)
     // OpenCMR2: --attract-capture reads the stage clock only (no sim input).
     if (AttractCapture::Started()) {
         int viewType = 0, drone = 0;
-        AttractCapture_ViewSignature(&viewType, &drone);
+        AttractCapture_ViewSignature(0, &viewType, &drone);
         Car *pCapture = Car_Get(0);
         AttractCapture::Tick(StageTiming_GetClockTime(), (BYTE)RallyDataCountryIndex(), (BYTE)RallyDataStageIndex(), pCapture->speed,
                              pCapture->position.x, pCapture->position.y, pCapture->position.z, viewType, drone);

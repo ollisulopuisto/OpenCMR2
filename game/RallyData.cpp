@@ -6187,6 +6187,8 @@ float Graphics_GetFrameRate(void);
 void StageTiming_DrawProjectedCarMarker(int param1, int param2);
 void StageTiming_DrawClockAndCountdown(void);
 void View_SetPlayerProjection(unsigned int player);
+void View_GetEffectiveProjection(unsigned int view, int *zoom, int *fovY, int *fovSetting);
+void AttractCapture_ViewSignature(int view, int *type, int *drone);
 void StageObject_ApplyInterpolatedNodeMatrices(int param1);
 void Race_DrawPlayerCallSlots(unsigned int player, int *pViewRect);
 void Dash_Draw(int player, int *pViewRect);
@@ -6386,7 +6388,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         BYTE colour[4] = {240, 246, 255, 255};
         unsigned long long tick=0;unsigned frame=0,changes=0;
         bool spectator=SceneryPack_GetAnimationStatus(&tick,&frame,&changes);
-        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?4:3)+11+3);
+        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?4:3)+11+5);
         short panel[4] = {(short)layout.x,(short)layout.y,(short)layout.width,(short)layout.height};
         Sprite_FillRect(NULL, panel, background, 1);
         char text[96];
@@ -6436,6 +6438,15 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             bool mb=!gl&&(status.encoded&4)!=0;
             snprintf(text,sizeof text,"Motion blur (separate effect): %s",mb?"encoded":"off");
             line(text,mb?lit:dim);
+        }
+        {
+            int viewType=0,drone=0,zoomRaw=0,fovYRaw=0,fovSet=70;
+            AttractCapture_ViewSignature((int)param2,&viewType,&drone);
+            View_GetEffectiveProjection(param2,&zoomRaw,&fovYRaw,&fovSet);
+            snprintf(text,sizeof text,"Camera: type %d%s (live, view %d)",viewType,drone?" drone":"",(int)param2);
+            line(text);
+            snprintf(text,sizeof text,"FOV: base %d zoom %.2f proj %.2f (live)",fovSet,zoomRaw/65536.0,fovYRaw/65536.0);
+            line(text);
         }
         line("enc=encoded; skip=requested, not encoded");
         line("Previous frame; encoded is not pixel proof");
