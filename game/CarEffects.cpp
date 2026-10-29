@@ -1,5 +1,6 @@
 #include "port/sys.h"
 #include "DustPlume.h"
+#include <cmath>
 #include "CarBodyDirt.h"
 #include "WheelParticleEmission.h"
 #include "CarInfo.h"
@@ -1797,4 +1798,43 @@ void CarEffect_UpdateWheelSurfaceParticles(int car, bool emitParticles)
             }
         }
     }
+}
+
+// Optional speed cue: sparse world-fixed specks beside the road ahead of the player car (see DustPlume.h).
+// Spawn only; the car, camera and physics are never read back from the particles. Own LCG, not rand().
+bool Track_CameraGroundHeight(FixVector *point, int *height);
+void SpeedMotes_Step(int step16_16)
+{
+    if (step16_16 <= 0 || Sys_GetOption("video.speed_motes", 0) == 0) return;
+    Car *car = Car_Get(0);
+    if (!car) return;
+    float ratio = car->speed / 65536.f / 1.5f; // 1.0 is the speed the tunnel-vision ramp calls full
+    if (ratio < 0.4f) return;
+    if (ratio > 1.f) ratio = 1.f;
+    int amount = Sys_GetOption("video.speed_motes_amount", 100);
+    if (amount < 0) amount = 0;
+    if (amount > 300) amount = 300;
+    static float carry = 0.f;
+    static unsigned seed = 0x7e3a91c5u;
+    auto unit = [&]() { seed = seed * 1664525u + 1013904223u; return (seed >> 8) / 16777216.f; };
+    carry += (ratio - 0.4f) / 0.6f * 0.7f * (amount / 100.f) * (step16_16 / 65536.f);
+    float fx = car->forward.x / 65536.f, fz = car->forward.z / 65536.f;
+    float len = std::sqrt(fx * fx + fz * fz);
+    if (!(len > 0.2f)) { carry = 0.f; return; }
+    fx /= len; fz /= len;
+    float rx = fz, rz = -fx;
+    int guard = 4;
+    while (carry >= 1.f && guard-- > 0) {
+        carry -= 1.f;
+        float ahead = 30.f + 40.f * unit();
+        float side = (5.f + 11.f * unit()) * (unit() < 0.5f ? -1.f : 1.f); // stays out of the central sightline
+        float x = car->position.x / 65536.f + fx * ahead + rx * side;
+        float z = car->position.z / 65536.f + fz * ahead + rz * side;
+        FixVector p = { (int)std::lround(x * 65536.f), car->position.y, (int)std::lround(z * 65536.f) };
+        int ground;
+        if (Track_CameraGroundHeight(&p, &ground)) p.y = ground;
+        p.y += (int)((0.3f + 2.7f * unit()) * 65536.f);
+        SpeedMote_Spawn(&p);
+    }
+    if (carry > 4.f) carry = 4.f;
 }

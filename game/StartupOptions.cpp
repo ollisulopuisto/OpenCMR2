@@ -14,7 +14,7 @@ void LogStartupOptions() {
   {"fullscreen",1},{"vsync",1},{"anisotropy",8},{"smooth_scaling",1},
   {"spatial_aa",0},{"metalfx_spatial",0},{"dust_plume",1},{"dust_volume",1},
   {"reflection_resolution",128},{"motion_blur",1},{"bloom",1},{"particles",1},
-  {"shadows",1},{"volumetric_clouds",1},{"body_dirt",1},{"reactive_spectators",1},{"depth_of_field",0},{"god_rays",0},{"color_grading",0}
+  {"shadows",1},{"volumetric_clouds",1},{"body_dirt",1},{"reactive_spectators",1},{"depth_of_field",0},{"speed_motes",0},{"god_rays",0},{"color_grading",0}
  };
  for(const auto &option:options){char key[80];snprintf(key,sizeof key,"video.%s",option.key);
   Sys_Log("options: requested %s=%d",key,Sys_GetOption(key,option.value));}
