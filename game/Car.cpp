@@ -8326,6 +8326,20 @@ void View_RefreshForTuning(void)
     CameraState_Copy(VIEW_STATE(index), pActive);
 }
 
+// OpenCMR2 debug overlay: where the camera really is this frame, measured from the camera state and the car, in world units (16.16 / 65536). dist is the
+// straight distance to the car origin, height the camera's y above it, along the car's forward axis is not used (the axis is not named in source).
+void View_GetCameraCarOffset(unsigned view, double *dist, double *height)
+{
+    BYTE v = (BYTE)(view & 1);
+    Car *car = Car_Get(v);
+    if (!car) { *dist = 0; *height = 0; return; }
+    double dx = (double)(VIEW_STATE(v)->matrix.position.x - car->position.x) / 65536.0;
+    double dy = (double)(VIEW_STATE(v)->matrix.position.y - car->position.y) / 65536.0;
+    double dz = (double)(VIEW_STATE(v)->matrix.position.z - car->position.z) / 65536.0;
+    *dist = sqrt(dx * dx + dy * dy + dz * dz);
+    *height = dy;
+}
+
 // Resets the cameras of a view to their records (after a restart).
 // FUNCTION: CMR2 0x00421d80
 void View_ResetCameras(int view)

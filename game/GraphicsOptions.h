@@ -390,6 +390,7 @@ int WindscreenWiperKeyPressed(void);
 void WindscreenWiper_UpdateInput(void);
 void TuningPanel_Update(void);
 void View_RefreshForTuning(void);
+void View_GetCameraCarOffset(unsigned view, double *dist, double *height);
 void Race_ApplySpeedEffectParams(void);
 void TuningPanel_Draw(void);
 void TuningPanel_DrawPaused(void);
