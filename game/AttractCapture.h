@@ -28,7 +28,7 @@ inline void OnDemoStart() {
     char path[600];
     snprintf(path, sizeof path, "%s/capture.csv", s.dir);
     s.manifest = fopen(path, "w");
-    if (s.manifest) { fprintf(s.manifest, "target_s,request_clock_ms,saved_clock_ms,tick_frames_to_save,country,stage,speed_raw,car_x,car_y,car_z,view_type,drone_view\n"); fflush(s.manifest); }
+    if (s.manifest) { fprintf(s.manifest, "target_s,request_clock_cs,saved_clock_cs,tick_frames_to_save,country,stage,speed_raw,car_x,car_y,car_z,view_type,drone_view\n"); fflush(s.manifest); }
     Sys_Log("capture: demo started, %d shots every %d s of stage clock into %s", s.count, s.interval, s.dir);
 }
 // Called when the main menu is entered again: the demo ended before all shots were taken.
@@ -43,14 +43,14 @@ inline void OnMainMenu() {
 // Called once per rendered race frame while the demo runs. The renderer saves the next
 // presented frame after the request, so a row is written once the save is seen: it holds the
 // state at the request, the clock when the save was seen, and how many ticks that took.
-inline void Tick(int clockMs, int country, int stage, int speedRaw, int x, int y, int z, int view, int drone) {
+inline void Tick(int clockCs, int country, int stage, int speedRaw, int x, int y, int z, int view, int drone) {
     State &s = S();
     if (!Started() || s.done) return;
     if (s.pending) {
         s.frames++;
         if (Gfx_GetCaptureSerial() != s.serial) {
             s.pending = false;
-            if (s.manifest) { fprintf(s.manifest, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n", s.row.target, s.row.clock, clockMs, s.frames,
+            if (s.manifest) { fprintf(s.manifest, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n", s.row.target, s.row.clock, clockCs, s.frames,
                 s.row.country, s.row.stage, s.row.speed, s.row.x, s.row.y, s.row.z, s.row.view, s.row.drone); fflush(s.manifest); }
         } else if (s.frames > 120) { s.pending = false; Sys_Log("capture: shot %d not saved after 120 frames", s.row.target); }
         return;
@@ -60,12 +60,12 @@ inline void Tick(int clockMs, int country, int stage, int speedRaw, int x, int y
         return;
     }
     int target = s.next * s.interval;
-    if (clockMs < target * 1000) return;
+    if (clockCs < target * 100) return; // the stage clock counts centiseconds (+4 per 25 Hz step)
     char path[600];
     snprintf(path, sizeof path, "%s/demo-t%03d.png", s.dir, target);
     s.serial = Gfx_GetCaptureSerial();
     Gfx_RequestCapture(path);
-    s.row = {target, clockMs, country, stage, speedRaw, x, y, z, view, drone};
+    s.row = {target, clockCs, country, stage, speedRaw, x, y, z, view, drone};
     s.pending = true;
     s.frames = 0;
     s.next++;
