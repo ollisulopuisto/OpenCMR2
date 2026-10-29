@@ -6546,7 +6546,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             int moteLive=0;unsigned moteDrawn=0;SpeedMote_GetStats(&moteLive,&moteDrawn);
             snprintf(text,sizeof text,"Speed FOV %d%% (eased speed %d%%) | motes %s stretch %d",sfPct,sfShown*100/65536,Sys_GetOption("video.speed_motes",0)?"on":"off",Sys_GetOption("video.speed_motes_stretch",0));
             line(text);
-            snprintf(text,sizeof text,"Speed motes live %d | drawn total %u",moteLive,moteDrawn);
+            snprintf(text,sizeof text,"Speed motes live %d | queued ok total %u (not pixels)",moteLive,moteDrawn);
             line(text);
         }
         line("enc=encoded; skip=requested, not encoded");
