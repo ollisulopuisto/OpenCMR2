@@ -6036,30 +6036,29 @@ int g_windscreenWiperKeyPrevState = 0;
 int g_windscreenWiperManualFrames = 0;
 
 // ---- Live effect tuning (visual only) ---------------------------------------------------------
-// Backslash opens a panel on the right. [ and ] pick a row, - and = change it, 0 resets the row and / resets all rows to
-// the values this launch started with, ; saves the shown values to opencmr2.ini. Changes are per launch until saved.
+// F10 (video.tuning_key, a DirectInput scancode) opens a panel on the right. Digit keys 1/2 pick a row, 3/4 change it, 5 resets
+// the row and 6 resets all rows to the values this launch started with, 7 saves the shown values to opencmr2.ini. Changes are
+// per launch until saved. While open, these keys are removed from the game's keyboard state (see CInput::ReadKeyboardState).
 static bool g_tuneOpen = false, g_tuneSnapshotTaken = false;
 static int g_tuneRow = 0, g_tuneSnapshot[16];
 static unsigned g_tuneSavedStamp = 0, g_tuneFrame = 0;
-static bool TuneKeyEdge(int slot, int key)
+static TuningEdges g_tuneEdges;
+bool TuningPanel_IsOpen(void) { return g_tuneOpen; }
+int TuningPanel_ToggleKey(void)
 {
-    static bool prev[16];
-    bool down = Input_IsKeyDown(key) != 0;
-    bool edge = down && !prev[slot];
-    prev[slot] = down;
-    return edge;
+    int key = Sys_GetOption("video.tuning_key", kTuningToggleDefault);
+    return key > 0 && key < 256 ? key : kTuningToggleDefault;
 }
 void TuningPanel_Update(void)
 {
     ++g_tuneFrame;
     int count = 0;
     const TuningRow *rows = Tuning_Rows(count);
-    bool toggle = TuneKeyEdge(0, 0x2B); // backslash
-    bool prevRow = TuneKeyEdge(1, 0x1A), nextRow = TuneKeyEdge(2, 0x1B); // [ ]
-    bool down = TuneKeyEdge(3, 0x0C), up = TuneKeyEdge(4, 0x0D);         // - =
-    bool resetRow = TuneKeyEdge(5, 0x0B), resetAll = TuneKeyEdge(6, 0x35), save = TuneKeyEdge(7, 0x27); // 0 / ;
-    if (toggle) g_tuneOpen = !g_tuneOpen;
+    if (g_tuneEdges.Edge(0, Input_IsKeyDown(TuningPanel_ToggleKey()) != 0)) g_tuneOpen = !g_tuneOpen;
+    bool pressed[7];
+    for (int i = 0; i < 7; ++i) pressed[i] = g_tuneEdges.Edge(1 + i, Input_IsKeyDown(kTuningKeys[i]) != 0);
     if (!g_tuneOpen) return;
+    bool prevRow = pressed[0], nextRow = pressed[1], down = pressed[2], up = pressed[3], resetRow = pressed[4], resetAll = pressed[5], save = pressed[6];
     if (!g_tuneSnapshotTaken) {
         for (int i = 0; i < count; ++i) g_tuneSnapshot[i] = Sys_GetOption(rows[i].key, rows[i].fallback);
         g_tuneSnapshotTaken = true;
@@ -6091,13 +6090,13 @@ void TuningPanel_Draw(void)
     Sprite_FillRect(NULL, panel, background, 1);
     char text[96];
     int tx = panel[0] + layout.pad, ty = panel[1] + layout.pad, row = 0;
-    snprintf(text, sizeof text, "TUNING  [ ] row  - = value");
+    snprintf(text, sizeof text, "TUNING (keys 1-7, F10 closes)");
     Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
     for (int i = 0; i < count; ++i) {
         snprintf(text, sizeof text, "%s %s: %d", i == g_tuneRow ? ">" : " ", rows[i].label, Sys_GetOption(rows[i].key, rows[i].fallback));
         Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, i == g_tuneRow ? lit : colour);
     }
-    snprintf(text, sizeof text, "0 row reset  / all reset  ; save INI");
+    snprintf(text, sizeof text, "5 row reset  6 all reset  7 save INI");
     Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
     snprintf(text, sizeof text, g_tuneSavedStamp && g_tuneFrame - g_tuneSavedStamp < 100 ? "saved to opencmr2.ini" : "per launch until saved");
     Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);

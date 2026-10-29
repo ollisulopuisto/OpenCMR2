@@ -29,4 +29,20 @@ inline int Tuning_Step(const TuningRow &row, int value, int dir)
 }
 // Row selection wraps around.
 inline int Tuning_Select(int index, int dir, int count) { return count <= 0 ? 0 : ((index + dir) % count + count) % count; }
+// Physical-key scancodes (DirectInput numbering, the same on every keyboard layout): the digit row 1..7 and F10.
+// The old [ ] keys were the default gear shifts, so they are not used. While the panel is open, its keys are removed from
+// the keyboard state the game reads, so they never also drive the car or a menu.
+static const int kTuningToggleDefault = 0x44;                       // F10
+static const int kTuningKeys[7] = {0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}; // 1 prev row, 2 next row, 3 down, 4 up, 5 reset row, 6 reset all, 7 save
+inline void Tuning_FilterKeys(unsigned char keys[256], bool open, int toggleKey)
+{
+    if (toggleKey > 0 && toggleKey < 256) keys[toggleKey] = 0;
+    if (open)
+        for (int k : kTuningKeys) keys[k] = 0;
+}
+// Edge detector: true once per press (key went from up to down), never while held.
+struct TuningEdges {
+    bool prev[8] = {};
+    bool Edge(int slot, bool down) { bool e = down && !prev[slot]; prev[slot] = down; return e; }
+};
 #endif
