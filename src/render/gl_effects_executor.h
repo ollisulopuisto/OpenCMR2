@@ -152,7 +152,7 @@ GLuint ApplyEffects()
         gl.BindFramebuffer(GL_READ_FRAMEBUFFER,effectFbo[3]);gl.BindFramebuffer(GL_DRAW_FRAMEBUFFER,cloudMaskFbo);gl.Disable(GL_SCISSOR_TEST);
         gl.BlitFramebuffer(0,0,backWidth,backHeight,0,0,backWidth,backHeight,GL_COLOR_BUFFER_BIT,GL_NEAREST);
         if(gl.GetError()==GL_NO_ERROR){source=cloudMaskTexture;sourceFbo=cloudMaskFbo;cloudMask=cloudMaskTexture;
-            if(!cloudLogged){Sys_Log("options: GL volumetric clouds encoded (48 view / 6 sun samples), transmission coupled to rays; native pixels unverified");cloudLogged=true;}
+            if(!cloudLogged){Sys_Log("options: GL volumetric clouds encoded (48 view / 4 sun samples, early-out density), transmission coupled to rays; native pixels unverified");cloudLogged=true;}
         }}ForgetEffectState();
     }
     if (bloomOn && bloomAmount > 0) {

@@ -32,6 +32,7 @@ void main(){
  float enter=0.,exit=limit;
  if(abs(dir.y)<.0001){if(origin.y<layer.x||origin.y>layer.y){outColor=vec4(base.rgb,1);return;}}
  else {float a=(layer.x-origin.y)/dir.y,b=(layer.y-origin.y)/dir.y;enter=max(0.,min(a,b));exit=min(exit,max(a,b));}
+ exit=min(exit,enter+3000.); // bound grazing rays so the fixed step count stays dense
  if(exit<=enter){outColor=vec4(base.rgb,1);return;}
  float stepSize=(exit-enter)/48.;float trans=1.;vec3 light=vec3(0);vec3 sunDir=length(sun.xyz)>.0001?normalize(sun.xyz):vec3(0,1,0);
  for(int i=0;i<48;i++){
