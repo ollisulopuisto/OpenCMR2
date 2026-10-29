@@ -1,3 +1,6 @@
+#include "TuningPanel.h"
+bool TuningPanel_IsOpen(void);
+int TuningPanel_ToggleKey(void);
 #include "port/sys.h"
 #include "Input.h"
 #include "GameInfo.h"
@@ -737,6 +740,8 @@ void CInput::ReadKeyboardState(void)
 {
     if (m_pDirectInputKeyboard != NULL)
         Input_ReadKeyboard(m_pDirectInputKeyboard, m_keyboardState);
+    // Live tuning panel: its keys never also reach the game while it is open (F10 never does).
+    Tuning_FilterKeys(m_keyboardState, TuningPanel_IsOpen(), TuningPanel_ToggleKey());
 }
 
 // FUNCTION: CMR2 0x0049fd00

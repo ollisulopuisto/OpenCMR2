@@ -8379,10 +8379,15 @@ void View_SetCameraType(int view, int type, BYTE target, int blend)
 // never changes the camera position, the car or any physics input.
 extern BYTE g_playerCameraMode[8];
 extern BYTE g_droneVariant[8];
+static int g_speedFovShown[2], g_speedFovPct[2];
+// Diagnostics overlay: the effective percent setting and the eased 0..65536 speed ratio of a view.
+void SpeedFov_GetStatus(int view, int *pct, int *shown) { *pct = g_speedFovPct[view & 1]; *shown = g_speedFovShown[view & 1]; }
 static int View_SpeedFovZoom(BYTE view, int zoom)
 {
-    static int shown[2], lastMs[2];
+    static int lastMs[2];
+    int (&shown)[2] = g_speedFovShown;
     int pct = Sys_GetOption("video.speed_fov", 0);
+    g_speedFovPct[view & 1] = pct;
     if (pct <= 0 || view >= 2) { shown[view & 1] = 0; return zoom; }
     if (pct > 40) pct = 40;
     if (g_playerCameraMode[view] == 4 && g_droneVariant[view] && Sys_GetOption("video.camera_operator", 0)) return zoom;

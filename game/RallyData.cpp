@@ -1,4 +1,6 @@
 #include "EffectAmounts.h"
+#include "TuningPanel.h"
+#include "render/effect_settings.h"
 #include "DebugOverlayLayout.h"
 #include "SceneryPack.h"
 #include "SavedGame.h"
@@ -6033,6 +6035,86 @@ int g_windscreenWiperKeyPrevState = 0;
 // the wiper sweeps once and then stops (unlike the always-on setting).
 int g_windscreenWiperManualFrames = 0;
 
+// ---- Live effect tuning (visual only) ---------------------------------------------------------
+// F10 (video.tuning_key, a DirectInput scancode) opens a panel on the right. Digit keys 1/2 pick a row, 3/4 change it, 5 resets
+// the row and 6 resets all rows to the values they had when the panel was first opened this launch (after any menu edits), 7 saves the shown values to opencmr2.ini. Changes are
+// per launch until saved. While open, these keys are removed from the game's keyboard state (see CInput::ReadKeyboardState).
+static bool g_tuneOpen = false, g_tuneSnapshotTaken = false;
+static int g_tuneRow = 0, g_tuneSnapshot[16];
+static unsigned g_tuneSavedStamp = 0, g_tuneFrame = 0;
+static TuningEdges g_tuneEdges;
+bool TuningPanel_IsOpen(void) { return g_tuneOpen; }
+int TuningPanel_ToggleKey(void)
+{
+    static int checked = -1, result = kTuningToggleDefault;
+    int key = Sys_GetOption("video.tuning_key", kTuningToggleDefault);
+    if (key == checked) return result;
+    checked = key;
+    bool ok = Tuning_ToggleKeyAllowed(key);
+    // Also refuse a key the player has bound to a driving action on any attached keyboard device.
+    for (int device = 0; ok && device < CInput::CountAttachedInputDevices(); device++) {
+        DeviceInfo *info = CInput::GetAvailableDeviceRecord(device);
+        if (info && info->field_0x0 == 1)
+            for (int action = 0; action < 9; action++)
+                if ((&info->keyboard.field_0x468)[action] == key) ok = false;
+    }
+    if (!ok) Sys_Log("tuning panel: video.tuning_key=%d is a driving/menu key or invalid; using F10 (68)", key);
+    result = ok ? key : kTuningToggleDefault;
+    return result;
+}
+void TuningPanel_Update(void)
+{
+    ++g_tuneFrame;
+    int count = 0;
+    const TuningRow *rows = Tuning_Rows(count);
+    if (g_tuneEdges.Edge(0, Input_IsKeyDown(TuningPanel_ToggleKey()) != 0)) g_tuneOpen = !g_tuneOpen;
+    bool pressed[7];
+    for (int i = 0; i < 7; ++i) pressed[i] = g_tuneEdges.Edge(1 + i, Input_IsKeyDown(kTuningKeys[i]) != 0);
+    if (!g_tuneOpen) return;
+    bool prevRow = pressed[0], nextRow = pressed[1], down = pressed[2], up = pressed[3], resetRow = pressed[4], resetAll = pressed[5], save = pressed[6];
+    if (!g_tuneSnapshotTaken) {
+        for (int i = 0; i < count; ++i) g_tuneSnapshot[i] = Sys_GetOption(rows[i].key, rows[i].fallback);
+        g_tuneSnapshotTaken = true;
+    }
+    bool changed = false;
+    if (prevRow) g_tuneRow = Tuning_Select(g_tuneRow, -1, count);
+    if (nextRow) g_tuneRow = Tuning_Select(g_tuneRow, 1, count);
+    if (down || up) {
+        const TuningRow &r = rows[g_tuneRow];
+        Sys_SetOptionTemporary(r.key, Tuning_Step(r, Sys_GetOption(r.key, r.fallback), up ? 1 : -1));
+        changed = true;
+    }
+    if (resetRow) { Sys_SetOptionTemporary(rows[g_tuneRow].key, g_tuneSnapshot[g_tuneRow]); changed = true; }
+    if (resetAll) { for (int i = 0; i < count; ++i) Sys_SetOptionTemporary(rows[i].key, g_tuneSnapshot[i]); changed = true; }
+    if (save) {
+        for (int i = 0; i < count; ++i) Sys_SetOption(rows[i].key, Sys_GetOption(rows[i].key, rows[i].fallback));
+        g_tuneSavedStamp = g_tuneFrame;
+    }
+    if (changed) EffectSettings::Apply();
+}
+void TuningPanel_Draw(void)
+{
+    if (!g_tuneOpen) return;
+    int count = 0;
+    const TuningRow *rows = Tuning_Rows(count);
+    DebugOverlayLayout layout = DebugOverlayLayout::For(g_pGraphics->resX, g_pGraphics->resY, count + 3);
+    short panel[4] = {(short)(g_pGraphics->resX - layout.width - layout.x), (short)(g_pGraphics->resY * 23 / 100), (short)layout.width, (short)layout.height};
+    BYTE background[4] = {12, 16, 22, 220}, colour[4] = {240, 246, 255, 255}, lit[4] = {110, 255, 140, 255};
+    Sprite_FillRect(NULL, panel, background, 1);
+    char text[96];
+    int tx = panel[0] + layout.pad, ty = panel[1] + layout.pad, row = 0;
+    snprintf(text, sizeof text, "TUNING  1/2 row  3/4 value");
+    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
+    for (int i = 0; i < count; ++i) {
+        snprintf(text, sizeof text, "%s %s: %d", i == g_tuneRow ? ">" : " ", rows[i].label, Sys_GetOption(rows[i].key, rows[i].fallback));
+        Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, i == g_tuneRow ? lit : colour);
+    }
+    snprintf(text, sizeof text, "5 row reset  6 all to opening  7 save");
+    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
+    snprintf(text, sizeof text, g_tuneSavedStamp && g_tuneFrame - g_tuneSavedStamp < 100 ? "saved to opencmr2.ini; F10 closes" : "F10 closes; per launch until saved");
+    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
+}
+
 // Returns 1 when the wiper key was just pressed this frame (edge trigger),
 // 0 otherwise. Resets the edge after reading.
 int WindscreenWiperKeyPressed(void)
@@ -6189,6 +6271,8 @@ void StageTiming_DrawClockAndCountdown(void);
 void View_SetPlayerProjection(unsigned int player);
 void View_GetEffectiveProjection(unsigned int view, int *zoom, int *fovY, int *fovSetting);
 void AttractCapture_ViewSignature(int view, int *type, int *drone);
+void SpeedFov_GetStatus(int view, int *pct, int *shown);
+void SpeedMote_GetStats(int *live, unsigned *drawn);
 void StageObject_ApplyInterpolatedNodeMatrices(int param1);
 void Race_DrawPlayerCallSlots(unsigned int player, int *pViewRect);
 void Dash_Draw(int player, int *pViewRect);
@@ -6375,6 +6459,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
     }
     Graphics_SetShadowGeometryState(!CGameInfo::IsRecordFlagSet(0xf));
     View_SetPlayerProjection(param2);
+    TuningPanel_Draw();
     if (Graphics_DebugDrawWanted()) {
         if(Sys_GetOption("video.debug_draw",OPENCMR2_DEBUG_DRAW_DEFAULT)==1){
             char text[32];snprintf(text,sizeof text,"FPS %.1f",Graphics_GetFrameRate());BYTE color[4]={240,246,255,255};
@@ -6388,7 +6473,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         BYTE colour[4] = {240, 246, 255, 255};
         unsigned long long tick=0;unsigned frame=0,changes=0;
         bool spectator=SceneryPack_GetAnimationStatus(&tick,&frame,&changes);
-        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?4:3)+11+5);
+        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?4:3)+11+5+2);
         short panel[4] = {(short)layout.x,(short)layout.y,(short)layout.width,(short)layout.height};
         Sprite_FillRect(NULL, panel, background, 1);
         char text[96];
@@ -6446,6 +6531,12 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             snprintf(text,sizeof text,"Camera: type %d%s (live, view %d)",viewType,drone?" drone":"",(int)param2);
             line(text);
             snprintf(text,sizeof text,"FOV setting %d deg; zoom x%.2f, proj scale %.2f (scales)",fovSet,zoomRaw/65536.0,fovYRaw/65536.0);
+            line(text);
+            int sfPct=0,sfShown=0;SpeedFov_GetStatus((int)param2,&sfPct,&sfShown);
+            int moteLive=0;unsigned moteDrawn=0;SpeedMote_GetStats(&moteLive,&moteDrawn);
+            snprintf(text,sizeof text,"Speed FOV %d%% (eased speed %d%%) | motes %s stretch %d",sfPct,sfShown*100/65536,Sys_GetOption("video.speed_motes",0)?"on":"off",Sys_GetOption("video.speed_motes_stretch",0));
+            line(text);
+            snprintf(text,sizeof text,"Speed motes live %d | drawn total %u",moteLive,moteDrawn);
             line(text);
         }
         line("enc=encoded; skip=requested, not encoded");
