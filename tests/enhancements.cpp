@@ -37,6 +37,10 @@ int main(){
   EnhancementOptions p;t=p;CHECK(run({"t","--test-preset","overdo","--speed-fov","5","--effect","motion_blur=off"})&&e2.empty());t.Apply();
   CHECK(t.overrides["video.speed_fov"]==5&&t.overrides["video.speed_fov_hold"]==1&&t.overrides["video.motion_blur"]==0&&t.overrides["video.speed_motes"]==1&&t.overrides["video.speed_motes_stretch"]==100&&t.overrides["video.dof_blur"]==100&&t.overrides["video.speed_motes_amount"]==300&&t.overrides["video.dof_blur_max_px"]==16&&t.overrides["video.speed_streak"]==100);
   t=p;CHECK(run({"t","--test-preset","overdo","--speed-streak","0"})&&e2.empty());t.Apply();CHECK(t.overrides["video.speed_streak"]==0);   // explicit flag wins over the preset
+  t=p;CHECK(run({"t","--test-preset","overdo","--speed-hold","0","--dof-focus-car","0"})&&e2.empty());t.Apply();CHECK(t.overrides["video.speed_fov_hold"]==0&&t.overrides["video.dof_focus_car"]==0);   // explicit flags beat the preset
+  t=p;CHECK(run({"t","--test-preset","overdo"})&&e2.empty());t.Apply();CHECK(t.overrides["video.speed_fov_hold"]==1&&t.overrides["video.dof_focus_car"]==1);   // preset default unchanged except focus
+  t=p;CHECK(run({"t","--speed-hold","1"})&&e2.empty());t.Apply();CHECK(t.overrides["video.speed_fov_hold"]==1&&!t.overrides.count("video.dof_focus_car"));   // without the preset only what was asked
+  CHECK(run({"t","--speed-hold","2"})&&!e2.empty());CHECK(run({"t","--dof-focus-car","x"})&&!e2.empty());
   CHECK(run({"t","--speed-streak","101"})&&!e2.empty());CHECK(run({"t","--speed-streak","x"})&&!e2.empty());
   CHECK(run({"t","--speed-motes-size","250"})&&e2.empty()&&t.overrides["video.speed_motes_size"]==250);CHECK(run({"t","--speed-motes-size","49"})&&!e2.empty());CHECK(run({"t","--speed-motes-size","801"})&&!e2.empty());
   CHECK(run({"t","--dof-blur-max-px","8"})&&e2.empty()&&t.overrides["video.dof_blur_max_px"]==8);CHECK(run({"t","--dof-blur-max-px","0"})&&!e2.empty());CHECK(run({"t","--dof-blur-max-px","41"})&&!e2.empty());

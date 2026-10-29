@@ -1,4 +1,5 @@
 #include "render/dof_gate.h"
+#include "render/dof_focus.h"
 #include "render/projection_vote.h"
 #include "shadow_caster.h"
 #include "cloud_uniforms.h"
@@ -2638,7 +2639,20 @@ struct Executor : GfxExecutor {
             ResolveProjection(&sceneNear, &sceneFar);
             float aspect = backHeight ? (float)backWidth / (float)backHeight : 1.0f;
             // x focus distance, y focus range (shallower with speed), z max blur, w tunnel strength 0..1
-            float uniforms[8] = { dofFocalDistance / 100.0f,
+            // Optional (video.dof_focus_car, default 0): focus on the followed car instead of the fixed plane. Depth comes from the
+            // car's own draws (world origin x view, forward axis), so it follows every camera; no car draw in front (cockpit) = fixed plane.
+            float focusPos = dofFocalDistance / 100.0f, carDepth = 0.0f;
+            if (Sys_GetOption("video.dof_focus_car", 0) != 0 && sceneNear > 0.0f && worldEnd < frame.commands.size() && frame.commands[worldEnd].playerObject != 0) {
+                DofFocusAccum acc;
+                for (const GfxCommand &oc : frame.commands)
+                    if (oc.type == GFX_CMD_DRAW && oc.target == NULL && !oc.transformed) {
+                        const GfxDrawState &os = frame.states[oc.state];
+                        if (os.objectId == frame.commands[worldEnd].playerObject) { float p[3] = { os.world._41, os.world._42, os.world._43 }; acc.Add(&os.view._11, p); }
+                    }
+                float z, pos;
+                if (acc.Depth(&z) && DofFocus_Position(z, sceneNear, sceneFar, &pos)) { focusPos = pos; carDepth = z; }
+            }
+            float uniforms[8] = { focusPos,
                                   dofFocalRange / 100.0f * (1.0f - 0.5f * speedFocusSmooth),
                                   !dofGate.depthBlur ? 0.0f : dofMaxBlur / 100.0f * (float)(Sys_GetOption("video.dof_blur_max_px", 4) < 1 ? 1 : Sys_GetOption("video.dof_blur_max_px", 4) > 40 ? 40 : Sys_GetOption("video.dof_blur_max_px", 4)), speedFocusSmooth,
                                   aspect, 0.014f * (float)backHeight, sceneNear, sceneFar };
@@ -2648,7 +2662,7 @@ struct Executor : GfxExecutor {
             if (PostProcessPass(cmd, DofPipeline(), dofBuf1, bindings, 2,
                                 uniforms, sizeof(uniforms)))
                 {presentSource = dofBuf1;encoded|=8;
-                 dofStatus={5,speedFocusTarget,speedFocusSmooth,uniforms[1],uniforms[2]};}
+                 dofStatus={5,speedFocusTarget,speedFocusSmooth,uniforms[1],uniforms[2],focusPos,carDepth};}
         }
         if (godRaysEnabled && sunVisible && sampledDepth && godRaysIntensity > 0 &&
             godRaysBuf1 != nullptr && backDepth != nullptr && GodRaysPipeline() != nullptr) {
