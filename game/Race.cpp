@@ -4696,6 +4696,8 @@ void Race_UpdateFrameEffects(int param_1)
     }
     // OpenCMR2: speed streak (visual only): directional radial streak, 0 = off (default). Same speed ratio and overdo hold as above.
     Gfx_SetSpeedStreak(SpeedStreak_Strength((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0), Sys_GetOption("video.speed_streak", 0)));
+    // OpenCMR2: vapor trails (visual only, video.vapor_trails 0/1, default off): same speed ratio and overdo hold; the renderer eases and fades them in.
+    Gfx_SetVaporTrail(SpeedStreak_Strength((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0), Sys_GetOption("video.vapor_trails", 0) != 0 ? 100 : 0));
     // OpenCMR2: windscreen dirt accumulates while driving; faster = more dirt.
     if (Sys_GetOption("video.windscreen_dirt", 40) != 0) {
         Car *pPlayer = Car_Get(0);

@@ -10,9 +10,12 @@ inline const TuningRow *Tuning_Rows(int &count)
         {"DoF (0/1)", "video.depth_of_field", 0, 1, 1, 0},
         {"DoF blur %", "video.dof_blur", 0, 100, 10, 30},
         {"DoF max px at 100%", "video.dof_blur_max_px", 1, 40, 2, 4},
+        {"Blur mode (0 peripheral, 1 whole scene minus car)", "video.blur_mode", 0, 1, 1, 0},
         {"Tunnel vision %", "video.tunnel_vision", 0, 100, 10, 100},
         {"Motion blur (0/1)", "video.motion_blur", 0, 1, 1, 1},
         {"Motion blur %", "video.motion_blur_amount", 0, 100, 10, 16},
+        {"Vapor trails behind car (0/1)", "video.vapor_trails", 0, 1, 1, 0},
+        {"Radial speed lines (0/1)", "video.speed_lines", 0, 1, 1, 1},
         {"Speed streak %", "video.speed_streak", 0, 100, 10, 0},
         {"FOV preview, video.fov number (0 off)", "video.fov_preview", 0, 150, 5, 0},   // absolute video.fov, debug only, a legacy scale number not an angle, below 20 acts as 20; Speed FOV % is separate
     };

@@ -561,6 +561,12 @@ extern "C" void Gfx_SetSpeedStreak(float strength)
         s_executor->SetSpeedStreak(strength);
 }
 
+extern "C" void Gfx_SetVaporTrail(float strength)
+{
+    if (s_executor != NULL)
+        s_executor->SetVaporTrail(strength);
+}
+
 extern "C" void Gfx_SetSpeedFocus(float speed)
 {
     if (s_executor != NULL)

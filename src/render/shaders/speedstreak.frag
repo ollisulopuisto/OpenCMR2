@@ -1,8 +1,13 @@
 #version 450
 layout(location = 0) out vec4 outColor;
 layout(set = 2, binding = 0) uniform sampler2D scene;
+layout(set = 2, binding = 1) uniform sampler2D depthTex;   // scene depth, read only to hide vapor trails behind nearer geometry
 layout(std140, set = 3, binding = 0) uniform SpeedStreakUniforms {
     vec4 settings; // strength 0..1, aspect (width/height), time in seconds, speed-lines amount 0..1
+    vec4 trailBox[4];  // vapor trails: per trail the screen box (uv x0 y0 x1 y1, v downwards); all zero = no trails
+    vec4 trailPts[28]; // 7 points per trail: uv x, uv y, half width (screen heights, 0 = point unusable), opacity
+    vec4 trailZ[28];   // x = view depth of that point (world units)
+    vec4 depthInfo;    // x near plane, y far plane (0 = no depth: trails off), z depth tolerance (world units, the car's own surface), w fade width (world units)
 };
 // Mirrors src/render/speed_streak.h. Directional radial streak: samples run from the pixel toward the screen centre, so the
 // scenery smears outward. The clear inner zone is a radial exclusion, not a car mask.
@@ -34,6 +39,34 @@ float speedLines(vec2 pc, float time)
     float zone = smoothstep(LINES_INNER, LINES_INNER + LINES_FADE, r);
     return line * seg * zone * (0.45 + 0.55 * h);
 }
+// Vapor trails: soft lines through the projected history points of the car's rear anchors (src/render/vapor_trail.h). Visual only.
+float vaporTrails(vec2 uv, float aspect)
+{
+    float best = 0.0;
+    vec2 pq = vec2(uv.x * aspect, uv.y);
+    float sceneZ = 1e30;
+    bool haveBox = false;
+    for (int k = 0; k < 4; ++k) { vec4 bx = trailBox[k]; if (uv.x >= bx.x && uv.x <= bx.z && uv.y >= bx.y && uv.y <= bx.w) haveBox = true; }
+    if (!haveBox || depthInfo.y <= depthInfo.x) return 0.0;
+    float dep = textureLod(depthTex, uv, 0.0).r;   // explicit lod: this runs under a non-uniform branch
+    sceneZ = depthInfo.x * depthInfo.y / max(depthInfo.y - dep * (depthInfo.y - depthInfo.x), 1e-6);   // same recovery as dof.frag
+    for (int k = 0; k < 4; ++k) {
+        vec4 bx = trailBox[k];
+        if (uv.x < bx.x || uv.x > bx.z || uv.y < bx.y || uv.y > bx.w) continue;
+        for (int i = 0; i < 6; ++i) {
+            vec4 a = trailPts[k * 7 + i], b = trailPts[k * 7 + i + 1];
+            if (a.z <= 0.0 || b.z <= 0.0) continue;
+            vec2 pa = vec2(a.x * aspect, a.y), pb = vec2(b.x * aspect, b.y), ba = pb - pa;
+            float t = clamp(dot(pq - pa, ba) / max(dot(ba, ba), 1e-9), 0.0, 1.0);
+            float d = length(pq - pa - ba * t);
+            float hw = mix(a.z, b.z, t), al = mix(a.w, b.w, t);
+            float tz = 1.0 / mix(1.0 / max(trailZ[k * 7 + i].x, 1e-3), 1.0 / max(trailZ[k * 7 + i + 1].x, 1e-3), t);   // perspective-correct depth along the segment
+            float vis = 1.0 - smoothstep(0.0, max(depthInfo.w, 1e-3), tz - (sceneZ + depthInfo.z));                    // hidden behind nearer geometry
+            best = max(best, (1.0 - smoothstep(hw * 0.35, hw, d)) * al * vis);
+        }
+    }
+    return best;
+}
 void main()
 {
     vec2 uv = gl_FragCoord.xy / vec2(textureSize(scene, 0));
@@ -43,6 +76,7 @@ void main()
     float w = smoothstep(INNER, INNER + RAMP, r) * clamp(settings.x, 0.0, 1.0);
     float linesAmount = smoothstep(LINES_ONSET, LINES_FULL, clamp(settings.w, 0.0, 1.0));
     float lines = linesAmount > 0.0 ? speedLines(c * vec2(settings.y, 1.0), settings.z) * linesAmount * LINES_OPACITY : 0.0;
+    lines = max(lines, vaporTrails(uv, settings.y));
     if (w <= 0.0) { outColor = vec4(mix(base.rgb, vec3(0.93, 0.95, 1.0), lines), base.a); return; }
     vec2 toCenter = -c * (w * MAXLEN);
     vec3 sum = base.rgb * 2.0;

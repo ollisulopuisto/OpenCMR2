@@ -1,6 +1,9 @@
 #include "render/dof_gate.h"
 #include "render/tunnel_vision.h"
 #include "render/dof_focus.h"
+#include "render/car_region.h"
+#include "render/vapor_trail.h"
+#include "render/speed_streak.h"
 #include "render/projection_vote.h"
 #include "shadow_caster.h"
 #include "cloud_uniforms.h"
@@ -349,6 +352,7 @@ struct Executor : GfxExecutor {
     float speedFocusTarget = 0.0f, speedFocusSmooth = 0.0f; // 0..1 tunnel vision; smoothed per frame
     Uint64 speedFocusTicks = 0;
     float speedStreakTarget = 0.0f, speedStreakSmooth = 0.0f, speedStreakClock = 0.0f; Uint64 speedStreakTicks = 0; // 0..1, smoothed in real time
+    float vaporTarget = 0.0f, vaporSmooth = 0.0f; Uint64 vaporTicks = 0; VaporHistory vaporHistory; float vaporPrevCentre[3] = {}, vaporDir[3] = {}; bool vaporHavePrev = false, vaporHaveDir = false;
     // OpenCMR2: god rays state.
     bool godRaysEnabled = false;
     int godRaysIntensity = 100;
@@ -575,7 +579,7 @@ struct Executor : GfxExecutor {
         fsBlur = Shader(SHADER_CODE(blur_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
         fsComposite = Shader(SHADER_CODE(composite_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1);
         fsLensGrime = Shader(SHADER_CODE(lens_grime_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
-        fsSpeedStreak = Shader(SHADER_CODE(speedstreak_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
+        fsSpeedStreak = Shader(SHADER_CODE(speedstreak_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1);
         fsDoF = Shader(SHADER_CODE(dof_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1);
         fsGodRays = Shader(SHADER_CODE(godRays_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 3, 1);
         fsColorGrading = Shader(SHADER_CODE(colorGrading_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
@@ -841,6 +845,7 @@ struct Executor : GfxExecutor {
 
     // OpenCMR2: god rays / volumetric lighting. `enabled` turns it on/off,
     // `intensity` (0..255) scales the effect strength.
+    void SetVaporTrail(float strength) override { vaporTarget = !(strength > 0.0f) ? 0.0f : strength > 1.0f ? 1.0f : strength; }
     void SetSpeedStreak(float strength) override { speedStreakTarget = !(strength > 0.0f) ? 0.0f : strength > 1.0f ? 1.0f : strength; }
 
     void SetGodRays(BOOL enabled, int intensity) override
@@ -2653,17 +2658,48 @@ struct Executor : GfxExecutor {
                 float z, pos;
                 if (acc.Depth(&z) && DofFocus_Position(z, sceneNear, sceneFar, &pos)) { focusPos = pos; carDepth = z; }
             }
-            float uniforms[8] = { focusPos,
+            // Blur mode (video.blur_mode): 0 peripheral (default, the old look), 1 whole scene except the car. The car is located from its own
+            // projected vertices (bounding rectangle + depth range), so this is an approximate region, not a per-pixel mask. No car (cockpit) = peripheral.
+            int blurMode = Sys_GetOption("video.blur_mode", 0) != 0 ? 1 : 0, blurShown = 0;
+            CarRegion carRegion;
+            if (blurMode == 1 && sceneNear > 0.0f && worldEnd < frame.commands.size() && frame.commands[worldEnd].playerObject != 0) {
+                for (const GfxCommand &oc : frame.commands)
+                    if (oc.type == GFX_CMD_DRAW && oc.target == NULL && !oc.transformed) {
+                        const GfxDrawState &os = frame.states[oc.state];
+                        if (os.objectId != frame.commands[worldEnd].playerObject) continue;
+                        const GfxVertex *vs = NULL;
+                        if (oc.buffer != NULL) {
+                            size_t first = oc.firstVertexByte / sizeof(GfxVertex);
+                            if (first + oc.vertexCount <= oc.buffer->vertices.size()) vs = oc.buffer->vertices.data() + first;
+                        } else if ((size_t)oc.firstVertexByte + (size_t)oc.vertexCount * sizeof(GfxVertex) <= frame.vertices.size())
+                            vs = (const GfxVertex *)(frame.vertices.data() + oc.firstVertexByte);
+                        if (vs == NULL) continue;
+                        GfxViewport cv = ToTarget(os.viewport, os.screenW, os.screenH, true, backWidth, backHeight);
+                        CarRegion_AddDraw(carRegion, &os.world._11, &os.view._11, &os.projection._11, (const unsigned char *)vs, (unsigned)sizeof(GfxVertex), oc.vertexCount,
+                                          (float)cv.x, (float)cv.y, (float)cv.width, (float)cv.height, (float)backWidth, (float)backHeight);
+                    }
+            }
+            float carPosMin = 0.0f, carPosMax = 0.0f;
+            if (blurMode == 1 && carRegion.Valid() && DofFocus_Position(carRegion.zMin, sceneNear, sceneFar, &carPosMin) && DofFocus_Position(carRegion.zMax, sceneNear, sceneFar, &carPosMax)) blurShown = 1;
+            else blurMode = 0;
+            float uniforms[16] = { focusPos,
                                   dofFocalRange / 100.0f * (1.0f - 0.5f * speedFocusSmooth),
                                   !dofGate.depthBlur ? 0.0f : dofMaxBlur / 100.0f * (float)(Sys_GetOption("video.dof_blur_max_px", 4) < 1 ? 1 : Sys_GetOption("video.dof_blur_max_px", 4) > 40 ? 40 : Sys_GetOption("video.dof_blur_max_px", 4)), speedFocusSmooth,
-                                  aspect, kTunnelRadiusPerHeight * (float)backHeight, sceneNear, sceneFar };
+                                  aspect, kTunnelRadiusPerHeight * (float)backHeight, sceneNear, sceneFar,
+                                  carRegion.u0, carRegion.v0, carRegion.u1, carRegion.v1,
+                                  (float)blurShown, carPosMin, carPosMax, 0.02f };
+            if (!blurShown) for (int k = 8; k < 16; ++k) uniforms[k] = 0.0f;
+            static int blurLogCounter = 0;
+            if (Sys_GetOption("video.blur_mode", 0) != 0 && (blurLogCounter++ % 120) == 0)
+                Sys_Log("blur mode: whole scene except car requested, %s; car rect u %.3f..%.3f v %.3f..%.3f (0..1, v downwards), view depth %.2f..%.2f world units, %d vertices; native pixels unverified",
+                        blurShown ? "region found" : "NO car region, peripheral used", carRegion.u0, carRegion.u1, carRegion.v0, carRegion.v1, carRegion.zMin, carRegion.zMax, carRegion.count);
             SDL_GPUTextureSamplerBinding bindings[2] = {
                 { presentSource, linearSampler }, { backDepth, depthSampler }
             };
             if (PostProcessPass(cmd, DofPipeline(), dofBuf1, bindings, 2,
                                 uniforms, sizeof(uniforms)))
                 {presentSource = dofBuf1;encoded|=8;
-                 dofStatus={5,speedFocusTarget,speedFocusSmooth,uniforms[1],uniforms[2],focusPos,carDepth};}
+                 dofStatus={5,speedFocusTarget,speedFocusSmooth,uniforms[1],uniforms[2],focusPos,carDepth,Sys_GetOption("video.blur_mode", 0) != 0 ? (blurShown ? 1 : -1) : 0,carRegion.u0,carRegion.v0,carRegion.u1,carRegion.v1};}
         }
         if (godRaysEnabled && sunVisible && sampledDepth && godRaysIntensity > 0 &&
             godRaysBuf1 != nullptr && backDepth != nullptr && GodRaysPipeline() != nullptr) {
@@ -2685,12 +2721,88 @@ struct Executor : GfxExecutor {
             speedStreakSmooth += (speedStreakTarget - speedStreakSmooth) * (1.0f - std::exp(-dtSeconds / 0.4f));
             if (!raceWorld) speedStreakSmooth = 0.0f;
         }
+        // Vapor trails (video.vapor_trails, set by the game through SetVaporTrail): history of the car's rear anchors, projected for the shader.
+        float vaporUniforms[60 * 4 + 4] = {};   // 4 trail boxes + 28 points + 28 depths + depth info, see speedstreak.frag
+        float vaporNear = 0.0f, vaporFar = 0.0f;
+        bool vaporDraw = false;
+        {
+            Uint64 vTicks = SDL_GetTicksNS();
+            float rawDt = vaporTicks ? (float)(vTicks - vaporTicks) * 1e-9f : 0.0f;
+            vaporTicks = vTicks;
+            vaporSmooth += (vaporTarget - vaporSmooth) * (1.0f - std::exp(-std::min(rawDt, 0.25f) / 0.4f));
+            if (!raceWorld || vaporTarget <= 0.0f) { if (vaporSmooth < 0.01f || !raceWorld) vaporSmooth = 0.0f; }
+            float trailStrength = SpeedStreak_Smoothstep(0.30f, 0.90f, vaporSmooth);
+            if (vaporSmooth <= 0.01f || !raceWorld || worldEnd >= frame.commands.size() || frame.commands[worldEnd].playerObject == 0) { vaporHistory.Reset(); vaporHavePrev = vaporHaveDir = false; }
+            else if (trailStrength > 0.0f && sampledDepth && backDepth != nullptr) {   // trails are hidden by nearer geometry, which needs the scene depth: no depth = no trails
+                const unsigned player = frame.commands[worldEnd].playerObject;
+                const GfxDrawState *ref = NULL;   // any of the car's draws: they share the view, projection and viewport
+                auto carVertices = [&](auto &&fn) {
+                    for (const GfxCommand &oc : frame.commands) {
+                        if (oc.type != GFX_CMD_DRAW || oc.target != NULL || oc.transformed) continue;
+                        const GfxDrawState &os = frame.states[oc.state];
+                        if (os.objectId != player) continue;
+                        const GfxVertex *vs = NULL;
+                        if (oc.buffer != NULL) {
+                            size_t first = oc.firstVertexByte / sizeof(GfxVertex);
+                            if (first + oc.vertexCount <= oc.buffer->vertices.size()) vs = oc.buffer->vertices.data() + first;
+                        } else if ((size_t)oc.firstVertexByte + (size_t)oc.vertexCount * sizeof(GfxVertex) <= frame.vertices.size())
+                            vs = (const GfxVertex *)(frame.vertices.data() + oc.firstVertexByte);
+                        if (vs == NULL) continue;
+                        if (ref == NULL) ref = &os;
+                        for (uint32_t k = 0; k < oc.vertexCount; ++k) {
+                            float lp[3] = { vs[k].x, vs[k].y, vs[k].z }, wp[3];
+                            Vapor_ToWorld(&os.world._11, lp, wp);
+                            fn(wp);
+                        }
+                    }
+                };
+                VaporBounds vb;
+                carVertices([&](const float *wp) { vb.Add(wp); });
+                ResolveProjection(&vaporNear, &vaporFar);
+                if (vb.Valid() && ref != NULL && vaporNear > 0.0f && vaporFar > vaporNear) {
+                    float centre[3]; vb.Centre(centre);
+                    float carHeight = vb.hi[1] - vb.lo[1];
+                    float jump = 0.0f;
+                    if (vaporHavePrev) { float dx = centre[0] - vaporPrevCentre[0], dz = centre[2] - vaporPrevCentre[2]; jump = std::sqrt(dx * dx + dz * dz); }
+                    if (vaporHavePrev && jump > 20.0f * carHeight) { vaporHistory.Reset(); vaporHaveDir = false; }   // teleport / restart: never draw a line across it
+                    if (vaporHavePrev) { float d[3]; if (Vapor_Direction(vaporPrevCentre, centre, 0.01f * carHeight, d)) { for (int c = 0; c < 3; ++c) vaporDir[c] = d[c]; vaporHaveDir = true; } }
+                    for (int c = 0; c < 3; ++c) vaporPrevCentre[c] = centre[c];
+                    vaporHavePrev = true;
+                    if (vaporHaveDir) {
+                        VaporAnchors anchors;
+                        carVertices([&](const float *wp) { Vapor_ConsiderAnchor(anchors, wp, centre, vaporDir, vb); });
+                        vaporHistory.Step(rawDt, 0.25f, anchors);
+                        GfxViewport cv = ToTarget(ref->viewport, ref->screenW, ref->screenH, true, backWidth, backHeight);
+                        for (int k = 0; k < kVaporAnchors; ++k) {
+                            float x0 = 1e30f, y0 = 1e30f, x1 = -1e30f, y1 = -1e30f;
+                            for (int j = 0; j < kVaporPoints; ++j) {
+                                float *pt = &vaporUniforms[16 + (k * kVaporPoints + j) * 4];
+                                float wp[3], u, v, z, sv;
+                                int age = kVaporPickIndex[j];
+                                if (!vaporHistory.Get(age, k, wp) || !Vapor_Project(&ref->view._11, &ref->projection._11, wp, (float)cv.x, (float)cv.y, (float)cv.width, (float)cv.height, (float)backWidth, (float)backHeight, &u, &v, &z, &sv)) continue;
+                                float hw = Vapor_HalfWidth(carHeight, sv, age);
+                                if (!(hw > 0.0f)) continue;
+                                pt[0] = u; pt[1] = v; pt[2] = hw; pt[3] = Vapor_Alpha(trailStrength, age);
+                                vaporUniforms[(4 + 28 + k * kVaporPoints + j) * 4] = z;
+                                x0 = std::min(x0, u - 2.0f * hw); x1 = std::max(x1, u + 2.0f * hw); y0 = std::min(y0, v - 2.0f * hw); y1 = std::max(y1, v + 2.0f * hw);
+                                vaporDraw = true;
+                                vaporUniforms[60 * 4] = vaporNear; vaporUniforms[60 * 4 + 1] = vaporFar; vaporUniforms[60 * 4 + 2] = 0.5f * carHeight; vaporUniforms[60 * 4 + 3] = 0.5f * carHeight;
+                            }
+                            if (x1 > x0) { float *bx = &vaporUniforms[k * 4]; bx[0] = x0; bx[1] = y0; bx[2] = x1; bx[3] = y1; }
+                        }
+                    }
+                }
+            }
+        }
         bool streakApplied = false;
-        if (speedStreakSmooth > 0.01f && raceWorld && gradingTarget != nullptr && presentSource != nullptr &&
+        if ((speedStreakSmooth > 0.01f || vaporDraw) && raceWorld && gradingTarget != nullptr && presentSource != nullptr &&
             presentSource != gradingTarget && SpeedStreakPipeline() != nullptr) {
-            float uniforms[4] = { speedStreakSmooth, backHeight ? (float)backWidth / (float)backHeight : 1.0f, speedStreakClock, speedStreakSmooth };
-            SDL_GPUTextureSamplerBinding binding = { presentSource, linearSampler };
-            if (PostProcessPass(cmd, SpeedStreakPipeline(), gradingTarget, &binding, 1, uniforms, sizeof(uniforms)))
+            float uniforms[4 + 60 * 4 + 4];
+            uniforms[0] = speedStreakSmooth; uniforms[1] = backHeight ? (float)backWidth / (float)backHeight : 1.0f; uniforms[2] = speedStreakClock;
+            uniforms[3] = Sys_GetOption("video.speed_lines", 1) != 0 ? speedStreakSmooth : 0.0f;   // radial lines have their own toggle
+            memcpy(uniforms + 4, vaporUniforms, sizeof(vaporUniforms));
+            SDL_GPUTextureSamplerBinding binding[2] = { { presentSource, linearSampler }, vaporDraw ? SDL_GPUTextureSamplerBinding{ backDepth, depthSampler } : SDL_GPUTextureSamplerBinding{ presentSource, linearSampler } };   // no trails: the second sampler just needs some texture
+            if (PostProcessPass(cmd, SpeedStreakPipeline(), gradingTarget, binding, 2, uniforms, sizeof(uniforms)))
                 {presentSource = gradingTarget;encoded|=256;streakApplied = true;}
         }
         if ((colorGradingTemperature != 0 || colorGradingTint != 0 ||

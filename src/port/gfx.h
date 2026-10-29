@@ -284,6 +284,8 @@ void Gfx_SetDepthOfField(BOOL enabled, int focalDistance, int focalRange, int ma
 void Gfx_SetSpeedFocus(float speed);
 /* OpenCMR2: speed streak strength 0..1 (visual only; directional radial streak, SDL_GPU backend). */
 void Gfx_SetSpeedStreak(float strength);
+/* OpenCMR2: vapor trail strength 0..1 (visual only; thin trails shed behind the followed car, SDL_GPU backend, 0 = off). */
+void Gfx_SetVaporTrail(float strength);
 /* OpenCMR2: god rays / volumetric lighting. `enabled` turns it on/off,
    `intensity` (0..255) scales the effect strength. SDL_GPU only. */
 void Gfx_SetGodRays(BOOL enabled, int intensity);
@@ -328,7 +330,7 @@ enum {GFX_RAYS_UNKNOWN, GFX_RAYS_OFF, GFX_RAYS_ENCODED, GFX_RAYS_NO_WORLD,
    unavailable, 5 encoded. `target` is the requested speed amount 0..1, `smooth` the amount actually
    sent to the shader, `range` the effective focus range 0..1, `blur` the effective blur radius.
    Encoded means submitted to the GPU, not proof of pixels. */
-typedef struct GfxDofStatus {int reason;float target,smooth,range,blur;float focus,carDepth;} GfxDofStatus;   /* carDepth > 0: focus follows the car (view-space depth); 0: fixed plane */
+typedef struct GfxDofStatus {int reason;float target,smooth,range,blur;float focus,carDepth;int blurMode;float carU0,carV0,carU1,carV1;} GfxDofStatus;   /* blurMode 0 peripheral, 1 whole scene except the car (SDL_GPU only), -1 requested but the car region was unavailable (peripheral used); car* = the car rectangle (uv) */ /* carDepth > 0: focus follows the car (view-space depth); 0: fixed plane */
 void Gfx_SetDofStatus(GfxDofStatus status);
 GfxDofStatus Gfx_GetDofStatus(void);
 /* Diagnostic read of the current draw state: out[0..9] = depthTest, depthWrite, depthFunc, alphaBlend, srcBlend, destBlend, alphaTest, alphaRef, fog, lighting. */
