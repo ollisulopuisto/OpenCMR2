@@ -398,8 +398,14 @@ void Font_DrawTextScaled(BYTE index, const char *text, int x, int y, int pixelHe
     for (const unsigned char *p = (const unsigned char *)text; *p; ++p) {
         if (*p == '\n' || *p == '^') break;
         if (*p == ' ') { pen += font.pHeader->spaceWidth * scale; continue; }
-        int glyph = font.pCharMap[*p];
-        if (glyph < 0 || (unsigned)glyph >= font.pHeader->glyphCount) continue;
+        // Uppercase cells are absent from the reported native diagnostic frame.
+        // Their exact atlas failure is not established. Use lowercase for
+        // labels/status words, independently of the normal game font path.
+        unsigned char ch=(*p>='A' && *p<='Z')?*p-'A'+'a':*p;
+        int glyph = font.pCharMap[ch];
+        if (glyph < 0 || (unsigned)glyph >= font.pHeader->glyphCount) {
+            pen += font.pHeader->spaceWidth * scale; continue;
+        }
         FontGlyph &g = font.pGlyphs[glyph];
         int left = (int)(pen + 0.5), width = (int)(g.width * scale + 0.5);
         int height = (int)(g.height * scale + 0.5);

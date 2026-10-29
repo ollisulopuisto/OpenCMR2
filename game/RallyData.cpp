@@ -6409,7 +6409,8 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         auto effect=[&](unsigned bit){return status.submitted<0?"?":!(status.requested&bit)?"off":status.encoded&bit?"enc":"skip";};
         snprintf(text,sizeof text,"AA:%s bloom:%s blur:%s",effect(1),effect(2),effect(4));line(text);
         snprintf(text,sizeof text,"DoF:%s rays:%s grade:%s",effect(8),effect(16),effect(32));line(text);
-        snprintf(text,sizeof text,"Shadow:%s rain/snow:%s submit:%s",effect(64),effect(128),status.submitted<0?"?":status.submitted?"OK":"FAIL");line(text);
+        snprintf(text,sizeof text,"shadow:%s rain/snow:%s",effect(64),effect(128));line(text);
+        snprintf(text,sizeof text,"submission:%s",status.submitted<0?"unknown":status.submitted?"accepted":"failed");line(text);
         snprintf(text,sizeof text,"MetalFX:%s",status.metalFX<0?"off/unknown":status.metalFX?"encoded":"fallback");line(text);
         const char *raysReasons[]={"unknown","off","encoded","no single world view",
             "sun offscreen or unavailable","sampled depth unavailable","amount zero","resource or pass unavailable"};
