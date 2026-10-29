@@ -13,9 +13,16 @@ float noise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
 float density(vec3 p){
  float h=(p.y-layer.x)/(layer.y-layer.x);if(h<=0.||h>=1.)return 0.;
  vec3 q=(p-vec3(camera.w*2.,0.,camera.w*.65))*.008;
- float n=noise(q)*.64+noise(q*2.07)*.26+noise(q*4.13)*.10;
+ // Exact early-out: the two finer octaves add at most .36, so skip them (and the
+ // shape terms) when the base octave cannot reach the coverage threshold.
+ float cut=1.-layer.z;
+ float n=noise(q)*.64;
+ if(n+.36<=cut)return 0.;
+ n+=noise(q*2.07)*.26;
+ if(n+.10<=cut)return 0.;
+ n+=noise(q*4.13)*.10;
  float shape=smoothstep(0.,.18,h)*(1.-smoothstep(.65,1.,h));
- return max(0.,n-(1.-layer.z))*shape*layer.w;
+ return max(0.,n-cut)*shape*layer.w;
 }
 void main(){
  vec2 uv=gl_FragCoord.xy*target.xy;vec4 base=texture(scene,uv);
@@ -29,7 +36,7 @@ void main(){
  float stepSize=(exit-enter)/48.;float trans=1.;vec3 light=vec3(0);vec3 sunDir=length(sun.xyz)>.0001?normalize(sun.xyz):vec3(0,1,0);
  for(int i=0;i<48;i++){
   vec3 p=origin+dir*(enter+(float(i)+.5)*stepSize);float d=density(p);if(d<=0.)continue;
-  float optical=0.;for(int j=0;j<6;j++)optical+=density(p+sunDir*(float(j)+.5)*35.)*35.;
+  float optical=0.;for(int j=0;j<4;j++)optical+=density(p+sunDir*(float(j)+.5)*52.5)*52.5;
   float illumination=.3+.7*exp(-optical);float a=1.-exp(-d*stepSize);
   light+=trans*a*mix(vec3(.48,.55,.65),vec3(1.,.98,.92),illumination);trans*=1.-a;if(trans<.01)break;
  }

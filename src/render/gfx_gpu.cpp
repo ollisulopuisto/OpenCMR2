@@ -2316,7 +2316,7 @@ struct Executor : GfxExecutor {
                 GfxStageState sample;sample.address=GFX_ADDRESS_CLAMP;sample.minFilter=sample.magFilter=GFX_FILTER_LINEAR;
                 SDL_GPUTextureSamplerBinding cloudBindings[2]={{presentSource,Sampler(sample)},{backDepth,Sampler(sample)}};
                 if(cloudTarget&&cloudPipeline&&PostProcessPass(cmd,cloudPipeline,cloudTarget,cloudBindings,2,&u,sizeof(u))){presentSource=cloudTarget;cloudMask=cloudTarget;
-                    if(!cloudLogged){Sys_Log("options: volumetric clouds encoded (48 view / 6 sun samples), transmission coupled to rays; native pixels unverified");cloudLogged=true;}
+                    if(!cloudLogged){Sys_Log("options: volumetric clouds encoded (48 view / 4 sun samples, early-out density), transmission coupled to rays; native pixels unverified");cloudLogged=true;}
                 }
             }
         }
