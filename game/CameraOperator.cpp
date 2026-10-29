@@ -10,7 +10,9 @@ void CameraOperator_Update(CameraRecord*record,const FixMatrix*reference){
  if(!reference||g_playerCameraMode[record->index]!=4||!Sys_GetOption("video.camera_operator",0)||record->car>=8){state.Reset();return;}
  Car*car=Car_Get(record->car);if(!car){state.Reset();return;}
  if(!car->pWorld){state.Reset();return;}
- float x=car->pWorld->forward.x/65536.f,z=car->pWorld->forward.z/65536.f;
+ // Original chase forward is the reference right axis (ChaseCamera_Restart),
+ // not the matrix field named forward. Match that game coordinate convention.
+ float x=car->pWorld->right.x/65536.f,z=car->pWorld->right.z/65536.f;
  float vx=car->velocity.x/65536.f,vz=car->velocity.z/65536.f;
  if(!std::isfinite(x)||!std::isfinite(z)||x*x+z*z<.25f){state.Reset();return;}
  float heading=std::atan2(x,z),travel=vx*vx+vz*vz>.0001f?std::atan2(vx,vz):heading;

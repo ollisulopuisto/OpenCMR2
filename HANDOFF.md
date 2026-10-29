@@ -60,7 +60,8 @@ trend and actual travel direction. No position movement, random jitter or
 extra spring lag. Existing height/distance/pitch/lag and terrain-clearance
 paths retained; operator suppresses old chase jitter only while active.
 State per camera index, reset start/restart/disabled/discontinuous heading.
-Source tests planned; native feel/menu/seek/split-screen acceptance unverified.
+Source and actual update/apply harness tests pass; full83/83 Linux tests on
+merged main ddeec08. Native feel/menu/seek/split-screen acceptance unverified.
 
 ## Historical completed batch
 

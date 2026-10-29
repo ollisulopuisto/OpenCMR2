@@ -13,8 +13,8 @@ int main(){
  CameraRecord record={};record.index=0;record.car=0;g_playerCameraMode[0]=4;
  FixMatrix body={};body.up.y=65536;car.pWorld=&body;car.speed=65536;
  for(int i=0;i<100;i++){
-  float a=i*.012f;body.forward.x=std::lround(std::sin(a)*65536);body.forward.z=std::lround(std::cos(a)*65536);
-  car.velocity=body.forward;CameraOperator_Update(&record,&body);
+  float a=i*.012f;body.right.x=std::lround(std::sin(a)*65536);body.right.z=std::lround(std::cos(a)*65536);
+  car.velocity=body.right;CameraOperator_Update(&record,&body);
  }
  record.matrix.right.x=record.matrix.up.y=record.matrix.forward.z=65536;record.matrix.position={65536,131072,196608};auto base=record;
  CameraOperator_Apply(&record);CHECK(record.matrix.forward.x!=0);CHECK(!memcmp(&record.matrix.position,&base.matrix.position,sizeof(FixVector)));CHECK(record.matrix.up.y==65536);
