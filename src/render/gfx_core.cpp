@@ -452,9 +452,35 @@ extern "C" void Gfx_EndWorldEffects(void)
         }
         s_frame.commands.push_back(c); }
 }
+static float s_dustSamplingCamera[3]={};
+extern "C" void Gfx_NoteDustSamplingCamera(float x,float y,float z){s_dustSamplingCamera[0]=x;s_dustSamplingCamera[1]=y;s_dustSamplingCamera[2]=z;}
+// Log-only diagnostics, at most once per second: does the camera the volume is encoded with match the camera the lobes
+// were sampled for, and how close are the sampled lobes to the lens.
+static void LogDustDiagnostics()
+{
+    static unsigned long long lastMs=0;
+    const unsigned long long now=(unsigned long long)Sys_GetTicksPrecise();
+    if(now-lastMs<1000ull&&lastMs!=0)return;
+    lastMs=now;
+    float inverseView[16];
+    if(!DustVolume_Inverse(s_state.view,inverseView))return;
+    const float *e=&inverseView[12];
+    float dx=e[0]-s_dustSamplingCamera[0],dy=e[1]-s_dustSamplingCamera[1],dz=e[2]-s_dustSamplingCamera[2];
+    int inside=0;float nearest=1e9f;
+    for(const auto &l:s_pendingDust){
+        float ex=e[0]-l.centreRadius[0],ey=e[1]-l.centreRadius[1],ez=e[2]-l.centreRadius[2];
+        float d=std::sqrt(ex*ex+ey*ey+ez*ez);
+        if(d<nearest)nearest=d;
+        if(d<l.centreRadius[3])++inside;
+    }
+    Sys_Log("dust diag: lobes=%d camera(encode)=%.1f,%.1f,%.1f camera(sampling)=%.1f,%.1f,%.1f mismatch=%.2f nearest_lobe=%.2f lobes_containing_camera=%d",
+        (int)s_pendingDust.size(),e[0],e[1],e[2],s_dustSamplingCamera[0],s_dustSamplingCamera[1],s_dustSamplingCamera[2],
+        std::sqrt(dx*dx+dy*dy+dz*dz),nearest,inside);
+}
 extern "C" void Gfx_FlushDustVolume(void)
 {
     if(s_pendingDust.empty())return;
+    LogDustDiagnostics();
     if(!DustVolumeStateSupported()){
         Sys_Log("options: dust volume late-state rejected; check world pass viewport/projection");
         s_pendingDust.clear();return;
