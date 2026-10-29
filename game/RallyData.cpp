@@ -6386,7 +6386,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         BYTE colour[4] = {240, 246, 255, 255};
         unsigned long long tick=0;unsigned frame=0,changes=0;
         bool spectator=SceneryPack_GetAnimationStatus(&tick,&frame,&changes);
-        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?4:3)+9);
+        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?4:3)+10);
         short panel[4] = {(short)layout.x,(short)layout.y,(short)layout.width,(short)layout.height};
         Sprite_FillRect(NULL, panel, background, 1);
         char text[96];
@@ -6411,6 +6411,10 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         snprintf(text,sizeof text,"DoF:%s rays:%s grade:%s",effect(8),effect(16),effect(32));line(text);
         snprintf(text,sizeof text,"Shadow:%s rain/snow:%s submit:%s",effect(64),effect(128),status.submitted<0?"?":status.submitted?"OK":"FAIL");line(text);
         snprintf(text,sizeof text,"MetalFX:%s",status.metalFX<0?"off/unknown":status.metalFX?"encoded":"fallback");line(text);
+        const char *raysReasons[]={"unknown","off","encoded","no single world view",
+            "sun offscreen or unavailable","sampled depth unavailable","amount zero","resource or pass unavailable"};
+        int reason=Gfx_GetRaysStatus();
+        snprintf(text,sizeof text,"rays reason:%s",reason>=0&&reason<8?raysReasons[reason]:"unknown");line(text);
         line("enc=encoded; skip=requested, not encoded");
         line("Previous frame; not completed-pixel proof");
         }
