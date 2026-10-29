@@ -425,6 +425,13 @@ if(OPENCMR2_TEST_ELF_WRAP)
   -Wl,--wrap=_Z24Track_ResearchExactEdgesb)
 endif()
 
+add_executable(camera_operator_test camera_operator.cpp)
+target_include_directories(camera_operator_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
+add_test(NAME camera_operator COMMAND camera_operator_test)
+add_executable(camera_operator_runtime_test camera_operator_runtime.cpp ${PROJECT_SOURCE_DIR}/game/CameraOperator.cpp)
+target_include_directories(camera_operator_runtime_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src)
+target_compile_options(camera_operator_runtime_test PRIVATE "SHELL:-include ${PROJECT_SOURCE_DIR}/src/port/types.h" -fms-extensions)
+add_test(NAME camera_operator_runtime COMMAND camera_operator_runtime_test)
 add_executable(france1_textures_test france1_textures.cpp
  ${PROJECT_SOURCE_DIR}/game/France1Textures.cpp ${PROJECT_SOURCE_DIR}/src/render/gfx_core.cpp ${PROJECT_SOURCE_DIR}/src/diagnostics/observer.cpp)
 target_include_directories(france1_textures_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src)

@@ -173,3 +173,19 @@ Portable tests and the actual game still build on Windows/Mac. The affected
 advanced-menu, startup-failure, names/startup options, dust routing, scenery
 capture, car-name and road probes are not native Windows/Mac coverage. A real
 portable interception harness would be needed before claiming that coverage.
+
+### Deliberate custom-camera operator (experimental)
+
+The custom chase camera's Human operator option is separate from Camera Effects
+shake. Default Off preserves the existing view. Accept saves
+`video.camera_operator`; Cancel leaves it unchanged. On uses filtered heading
+trend plus travel direction for a small anticipatory orientation lead, with
+half-degree hold, bounded8degree framing and12degree/second maximum slew.
+It does not move the camera position or modify saved chase height/distance/
+pitch/spring records. Old chase jitter is suppressed only for this active mode.
+State advances in the actual chase simulation update, not matrix building or
+render passes, and resets on camera start/restart, disabled mode, invalid time
+step or large heading discontinuity. Replay seeks with smaller heading changes,
+teleports and split-screen transitions still need native acceptance. Near/far
+planes, terrain clearance and camera blending remain in their original paths.
+Tests establish deterministic control bounds, not how a real driving shot feels.

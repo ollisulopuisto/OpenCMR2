@@ -1,3 +1,4 @@
+#include "CameraOperator.h"
 #include "port/sys.h"
 #include "FloatToInt.h"
 #include "FixedPoint.h"
@@ -912,6 +913,7 @@ void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef);
 // FUNCTION: CMR2 0x00447a00
 void ChaseCamera_Restart(CameraRecord *pObj, FixMatrix *pRef)
 {
+    CameraOperator_Reset(pObj->index);
     FixMatrix_GetUp(&g_chaseCameraOffsets[2 + pObj->index], pRef);
     FixMatrix_GetRight(&g_chaseCameraViewOffsets[2 + pObj->index], pRef);
     ChaseCamera_BuildMatrix(pObj, pRef);
@@ -961,7 +963,7 @@ void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef)
     // camera position, scaled by car speed and impact strength
     // ([video] video.camera_effects). The camera drifts like a handheld
     // operator instead of jumping randomly every frame.
-    if (Sys_GetOption("video.camera_effects", 1) != 0) {
+    if (Sys_GetOption("video.camera_effects", 1) != 0 && !(g_playerCameraMode[index]==4 && Sys_GetOption("video.camera_operator",0))) {
         extern BYTE g_viewObjectCarIndices[16];
         int carIx = g_viewObjectCarIndices[pObj->index];
         Car *pCar = Car_Get(carIx);
@@ -984,6 +986,8 @@ void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef)
             pObj->matrix.position.z += shakeCurrent.z;
         }
     }
+
+    CameraOperator_Apply(pObj);
 
     pObj->carLift = 0;
     pObj->nearPlane = 0x10000;
