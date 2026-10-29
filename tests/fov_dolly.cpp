@@ -47,6 +47,11 @@ int main()
         int wd = FovDolly_Widening(65536, 80 * 65536, e), sc = FovDolly_Scale(wd, 100);
         long long size = (long long)sc * wd / 65536; if (sc > kFovDollyMinScale) CHECK(size > 65536 - 60 && size < 65536 + 60); else CHECK(size >= 65536);
     }
+    // Experimental linear curve: same endpoints, but not exhausted at widening 1.31.
+    CHECK(FovDolly_ScaleLinear(65536, 150) == 65536);
+    CHECK(FovDolly_ScaleLinear(2 * 65536, 150) == kFovDollyMinScale && FovDolly_ScaleLinear(5 * 65536, 150) == kFovDollyMinScale);
+    { int a = FovDolly_ScaleLinear(65536 * 131 / 100, 150), b = FovDolly_ScaleLinear(65536 * 185 / 100, 150); CHECK(a > kFovDollyMinScale && b < a && b >= kFovDollyMinScale); }
+    CHECK(FovDolly_ScaleLinear(65536 * 150 / 100, 0) == 65536);
     if (!fails) puts("fov_dolly ok");
     return fails;
 }

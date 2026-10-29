@@ -24,4 +24,15 @@ inline int FovDolly_Scale(int widening16, int amountPct)
     long long scale = 65536 - (65536 - full) * amountPct / 100;
     return scale < kFovDollyMinScale ? kFovDollyMinScale : scale > 65536 ? 65536 : (int)scale;
 }
+// Experimental (video.fov_dolly_curve=1): same endpoints (1.0 at no widening, kFovDollyMinScale at widening 2.0 and above, amount scales the travel)
+// but spread linearly over widening 1.0..2.0, so the distance keeps changing with speed instead of reaching the floor at about x1.3.
+inline int FovDolly_ScaleLinear(int widening16, int amountPct)
+{
+    if (widening16 <= 65536) return 65536;
+    if (amountPct < 0) amountPct = 0;
+    if (amountPct > kFovDollyMaxPct) amountPct = kFovDollyMaxPct;
+    long long t = widening16 >= 2 * 65536 ? 65536 : widening16 - 65536;                  // 0..65536 over widening 1..2
+    long long travel = (65536LL - kFovDollyMinScale) * t / 65536 * (amountPct > 100 ? 100 : amountPct) / 100;   // never beyond the floor
+    return (int)(65536 - travel);
+}
 #endif
