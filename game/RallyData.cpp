@@ -6279,6 +6279,7 @@ float Graphics_GetFrameRate(void);
 void StageTiming_DrawProjectedCarMarker(int param1, int param2);
 void StageTiming_DrawClockAndCountdown(void);
 void View_SetPlayerProjection(unsigned int player);
+extern int g_viewZooms[2];   // the camera record's zoom before speed FOV
 void View_GetEffectiveProjection(unsigned int view, int *zoom, int *fovY, int *fovSetting);
 void View_GetFovPreview(int *preview, int *base);
 void View_GetMeasuredFov(unsigned int view, double *vertDeg, double *horzDeg);
@@ -6552,7 +6553,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             View_GetEffectiveProjection(param2,&zoomRaw,&fovYRaw,&fovSet);
             snprintf(text,sizeof text,"Camera: type %d%s (live, view %d)",viewType,drone?" drone":"",(int)param2);
             line(text);
-            snprintf(text,sizeof text,"video.fov number %d (legacy scale, 70 original, higher = wider; not an angle); zoom x%.2f, proj scale %.2f",fovSet,zoomRaw/65536.0,fovYRaw/65536.0);
+            snprintf(text,sizeof text,"video.fov number %d (legacy scale, 70 original, higher = wider; not an angle); zoom x%.2f (camera base x%.2f), proj scale %.2f",fovSet,zoomRaw/65536.0,g_viewZooms[param2&1]/65536.0,fovYRaw/65536.0);
             line(text);
             {double vd=0,hd=0;View_GetMeasuredFov(param2,&vd,&hd);snprintf(text,sizeof text,"Measured from the projection matrix: vertical %.1f deg, horizontal %.1f deg (this view, now)",vd,hd);line(text);}
             {int pv=0,pbase=70;View_GetFovPreview(&pv,&pbase);
