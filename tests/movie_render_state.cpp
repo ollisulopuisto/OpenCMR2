@@ -19,6 +19,7 @@ extern "C" DWORD Sys_ReadFile(SysFile *file, void *dst, DWORD count) {
     std::memcpy(dst, data.data() + file->position, count); file->position += count; return count;
 }
 extern "C" DWORD Sys_GetTicks() { return 0; }
+extern "C" double Sys_GetTicksPrecise(void) { return 0; }
 extern "C" void Sys_GetDesktopSize(int *w, int *h) { *w = 640; *h = 480; }
 extern "C" void Sys_Log(const char *, ...) {}
 extern "C" int Sys_GetOption(const char *, int fallback) { return fallback; }
