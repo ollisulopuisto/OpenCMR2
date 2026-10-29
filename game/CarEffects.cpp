@@ -1819,21 +1819,20 @@ void SpeedMotes_Step(int step16_16)
     static unsigned seed = 0x7e3a91c5u;
     auto unit = [&]() { seed = seed * 1664525u + 1013904223u; return (seed >> 8) / 16777216.f; };
     carry += (ratio - 0.4f) / 0.6f * 0.7f * (amount / 100.f) * (step16_16 / 65536.f);
-    float fx = car->forward.x / 65536.f, fz = car->forward.z / 65536.f;
-    float len = std::sqrt(fx * fx + fz * fz);
-    if (!(len > 0.2f)) { carry = 0.f; return; }
-    fx /= len; fz /= len;
-    float rx = fz, rz = -fx;
+    // The driving direction is Car::right in this code base (see SpeedMote_SpawnOffset); Car::forward is the side axis. Using forward
+    // put every mote 27 to 54 world units to the SIDE of the road, outside the picture.
+    float hx = car->right.x / 65536.f, hz = car->right.z / 65536.f;
+    if (!(hx * hx + hz * hz > 0.04f)) { carry = 0.f; return; }
     int guard = 4;
     while (carry >= 1.f && guard-- > 0) {
         carry -= 1.f;
         // Place the mote so the car reaches it in 18 to 36 steps (0.7 to 1.4 s): distance = speed per step * steps, which is
         // independent of the world-unit scale. Life (48 steps) always outlasts the approach, so it passes the camera.
-        float stepsToReach = 18.f + 18.f * unit();
-        float ahead = std::max(12.f, car->speed / 65536.f * stepsToReach);
-        float side = (4.f + 10.f * unit()) * (unit() < 0.5f ? -1.f : 1.f); // stays out of the central sightline
-        float x = car->position.x / 65536.f + fx * ahead + rx * side;
-        float z = car->position.z / 65536.f + fz * ahead + rz * side;
+        float u1 = unit(), u2 = unit(), u3 = unit();
+        float ox = 0.f, oz = 0.f;
+        if (!SpeedMote_SpawnOffset(hx, hz, car->speed / 65536.f, u1, u2, u3, &ox, &oz)) break;   // ahead 27-54 units, 4-14 to the side, out of the central sightline
+        float x = car->position.x / 65536.f + ox;
+        float z = car->position.z / 65536.f + oz;
         FixVector p = { (int)std::lround(x * 65536.f), car->position.y, (int)std::lround(z * 65536.f) };
         int ground;
         if (Track_CameraGroundHeight(&p, &ground)) p.y = ground; else SpeedMote_NoteSkippedGround();
