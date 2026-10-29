@@ -18,7 +18,7 @@ struct EnhancementOptions {
         if(equal!=key.npos){inlineValue=key.substr(equal+1);key.resize(equal);}
         if(equal==key.npos && key=="--prepare-only"){prepareOnly=true;return true;}
         if(equal==key.npos && key=="--install-enhancement-deps"){installDependencies=true;return true;}
-        if(key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect"&&key!="--attract-capture"&&key!="--capture-interval"&&key!="--capture-count"&&key!="--speed-fov"&&key!="--speed-motes-stretch"&&key!="--speed-motes-amount"&&key!="--speed-motes-size"&&key!="--dof-blur-max-px"&&key!="--speed-streak"&&key!="--speed-hold"&&key!="--dof-focus-car"&&key!="--test-preset")return false;
+        if(key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect"&&key!="--attract-capture"&&key!="--capture-interval"&&key!="--capture-count"&&key!="--speed-fov"&&key!="--speed-motes-stretch"&&key!="--speed-motes-amount"&&key!="--speed-motes-size"&&key!="--dof-blur-max-px"&&key!="--speed-streak"&&key!="--speed-hold"&&key!="--fov-preview"&&key!="--dof-focus-car"&&key!="--test-preset")return false;
         if(equal==std::string::npos && i+1>=argc){error="Missing value for "+key;return true;}
         std::string value=equal==std::string::npos?argv[++i]:inlineValue;
         if(key=="--textures"){if(value!="original"&&value!="france1")error="--textures expects original or france1";else textures=value;}
@@ -45,6 +45,12 @@ struct EnhancementOptions {
             // 0/1. --speed-hold 0 makes --test-preset overdo run its speed effects (FOV, tunnel, streak) at the real car speed instead of
             // pretending full speed; --dof-focus-car 0 keeps the fixed focus plane under the preset. An explicit flag always wins.
             if(value!="0"&&value!="1")error=key+" expects 0 or 1";else overrides[key=="--speed-hold"?"video.speed_fov_hold":"video.dof_focus_car"]=value=="1"?1:0;
+        }
+        if(key=="--fov-preview"){
+            // Debug view of the absolute video.fov number (legacy scale, higher = wider; not a measured angle): 0 = off, else 20..150.
+            // Per launch only. Speed FOV % is a different, relative setting.
+            char *end=nullptr;long n=strtol(value.c_str(),&end,10);
+            if(value.empty()||*end||(n!=0&&(n<20||n>150)))error="--fov-preview expects 0 (off) or 20..150";else overrides["video.fov_preview"]=(int)n;
         }
         if(key=="--speed-streak"){
             char *end=nullptr;long n=strtol(value.c_str(),&end,10);
@@ -126,6 +132,7 @@ inline const char *EnhancementHelp(){return
 "                              camera reprojection, no object velocity), default off.\n"
 "  --speed-fov 0..40           Widen the regular cameras' view with speed (percent); default 0 = off\n"
 "  --speed-streak 0..100       Directional radial speed streak (SDL_GPU only); default 0 = off\n""  --speed-hold 0|1            Hold speed effects at full speed (overdo sets 1); 0 = real car speed\n"
+"  --fov-preview 0|20..150     Debug: try an absolute video.fov number (legacy scale, 70 = original, higher = wider, not an angle); F10 row too; 0 = off\n"
 "  --dof-focus-car 0|1         Focus depth of field on the followed car (SDL_GPU; overdo sets 1); default 0 = fixed plane\n"
 
 "  --speed-motes-stretch 0..100 Stretch speed motes into radial streaks; needs --effect speed_motes=on\n"

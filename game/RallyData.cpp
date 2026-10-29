@@ -1,5 +1,6 @@
 #include "EffectAmounts.h"
 #include "TuningPanel.h"
+#include "FovPreview.h"
 #include "render/effect_settings.h"
 #include "DebugOverlayLayout.h"
 #include "SceneryPack.h"
@@ -6089,7 +6090,7 @@ void TuningPanel_Update(void)
     if (resetRow) { Sys_SetOptionTemporary(rows[g_tuneRow].key, g_tuneSnapshot[g_tuneRow]); changed = true; }
     if (resetAll) { for (int i = 0; i < count; ++i) Sys_SetOptionTemporary(rows[i].key, g_tuneSnapshot[i]); changed = true; }
     if (save) {
-        for (int i = 0; i < count; ++i) Sys_SetOption(rows[i].key, Sys_GetOption(rows[i].key, rows[i].fallback));
+        for (int i = 0; i < count; ++i) if (strcmp(rows[i].key, "video.fov_preview")) Sys_SetOption(rows[i].key, Sys_GetOption(rows[i].key, rows[i].fallback));   // the FOV preview is a per-launch debug view, never saved
         g_tuneSavedStamp = g_tuneFrame;
     }
     if (changed) EffectSettings::Apply();
@@ -6279,6 +6280,8 @@ void StageTiming_DrawProjectedCarMarker(int param1, int param2);
 void StageTiming_DrawClockAndCountdown(void);
 void View_SetPlayerProjection(unsigned int player);
 void View_GetEffectiveProjection(unsigned int view, int *zoom, int *fovY, int *fovSetting);
+void View_GetFovPreview(int *preview, int *base);
+void View_GetMeasuredFov(unsigned int view, double *vertDeg, double *horzDeg);
 void AttractCapture_ViewSignature(int view, int *type, int *drone);
 void SpeedFov_GetStatus(int view, int *pct, int *shown);
 void SpeedMote_GetStats(int *live, unsigned *drawn);
@@ -6549,8 +6552,11 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             View_GetEffectiveProjection(param2,&zoomRaw,&fovYRaw,&fovSet);
             snprintf(text,sizeof text,"Camera: type %d%s (live, view %d)",viewType,drone?" drone":"",(int)param2);
             line(text);
-            snprintf(text,sizeof text,"FOV setting %d deg; zoom x%.2f, proj scale %.2f (scales)",fovSet,zoomRaw/65536.0,fovYRaw/65536.0);
+            snprintf(text,sizeof text,"video.fov number %d (legacy scale, 70 original, higher = wider; not an angle); zoom x%.2f, proj scale %.2f",fovSet,zoomRaw/65536.0,fovYRaw/65536.0);
             line(text);
+            {double vd=0,hd=0;View_GetMeasuredFov(param2,&vd,&hd);snprintf(text,sizeof text,"Measured from the projection matrix: vertical %.1f deg, horizontal %.1f deg (this view, now)",vd,hd);line(text);}
+            {int pv=0,pbase=70;View_GetFovPreview(&pv,&pbase);
+             if(pv>0){snprintf(text,sizeof text,"FOV PREVIEW video.fov number %d (debug; saved %d; x%.2f vs saved, higher = wider). Speed FOV %% below is separate.",pv,pbase,FovPreview_Magnification(pv,pbase));line(text);}}
             int sfPct=0,sfShown=0;SpeedFov_GetStatus((int)param2,&sfPct,&sfShown);
             int moteLive=0;unsigned moteDrawn=0;SpeedMote_GetStats(&moteLive,&moteDrawn);
             snprintf(text,sizeof text,"Speed FOV %d%% (eased speed %d%%%s) | motes %s stretch %d",sfPct,sfShown*100/65536,Sys_GetOption("video.speed_fov_hold",0)?", HELD at full speed for FOV and tunnel (overdo test)":"",Sys_GetOption("video.speed_motes",0)?"on":"off",Sys_GetOption("video.speed_motes_stretch",0));

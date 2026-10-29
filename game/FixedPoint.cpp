@@ -1,6 +1,7 @@
 #include "CameraOperator.h"
 #include "EffectAmounts.h"
 #include "port/sys.h"
+#include "FovPreview.h"
 #include "FloatToInt.h"
 #include "FixedPoint.h"
 #include "GraphicsOptions.h"
@@ -720,9 +721,13 @@ int RallyData_IsHeadToHeadRaceMode(void);
 // the original's 0x275c2; like SilentPatch, the scale is inversely
 // proportional to it (30 to 150).
 static int g_appliedFovSetting;   // OpenCMR2: the video.fov value the cached scale was built from (overlay shows this, not the live INI)
+static int g_previewFov;   // OpenCMR2 debug: the live video.fov_preview in force this frame (0 = off)
 static int View_GetFovScale(void)
 {
     static int scale;
+    int preview = Sys_GetOption("video.fov_preview", 0);
+    g_previewFov = preview > 0 ? FovPreview_Effective(preview, 70) : 0;
+    if (g_previewFov) return FTOI(int, X87S_DIV(0x275c2 * 70.0, g_previewFov));   // not cached: follows the panel live
     if (scale == 0) {
         int fov = Sys_GetOption("video.fov", 70);
         fov = fov < 30 ? 30 : fov > 150 ? 150 : fov;
@@ -768,12 +773,25 @@ static int View_GetShownFarPlane(BYTE view)
 }
 
 // OpenCMR2: last projection scale actually sent to the renderer, per view, for the debug overlay.
-static int g_lastProjZoom[8], g_lastProjFovY[8];
+static int g_lastProjZoom[8], g_lastProjFovY[8], g_lastProjFovX[8];
 void View_GetEffectiveProjection(unsigned int view, int *zoom, int *fovY, int *fovSetting)
 {
     *zoom = g_lastProjZoom[view & 7];
     *fovY = g_lastProjFovY[view & 7];
-    *fovSetting = g_appliedFovSetting ? g_appliedFovSetting : Sys_GetOption("video.fov", 70);   // applied (cached) base, not a later INI edit
+    *fovSetting = g_previewFov ? g_previewFov : g_appliedFovSetting ? g_appliedFovSetting : Sys_GetOption("video.fov", 70);   // preview, else applied (cached) base, not a later INI edit
+}
+// Debug overlay: the live preview (0 = off) and the saved base the preview replaces.
+// Debug overlay: the field of view in degrees that the projection matrix really gives: the matrix has 0.5 * fov in elements _11 / _22 (CGraphics::SetProjection),
+// so the half angle is atan(1 / (0.5 * fov)). Horizontal and vertical, from the last values sent for the view.
+void View_GetMeasuredFov(unsigned int view, double *vertDeg, double *horzDeg)
+{
+    *vertDeg = FovPreview_MeasuredDegrees(g_lastProjFovY[view & 7] / 65536.0);
+    *horzDeg = FovPreview_MeasuredDegrees(g_lastProjFovX[view & 7] / 65536.0);
+}
+void View_GetFovPreview(int *preview, int *base)
+{
+    *preview = g_previewFov;
+    *base = g_appliedFovSetting ? g_appliedFovSetting : Sys_GetOption("video.fov", 70);
 }
 
 // Sets the camera projection for the selected player's view.
@@ -792,6 +810,7 @@ void View_SetPlayerProjection(unsigned int player)
     int fovY = FixMul(0x2147a, FixMul(zoom, View_GetFovScale()));
     g_lastProjZoom[i & 7] = zoom;
     g_lastProjFovY[i & 7] = fovY;
+    g_lastProjFovX[i & 7] = fovX;
     // PORT: the far plane eases to the view distance (View_GetShownFarPlane).
     // OpenCMR2: the user's draw distance scales the far plane
     // ([video] video.draw_distance).
