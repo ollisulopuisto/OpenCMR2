@@ -230,6 +230,8 @@ if(OPENCMR2_SHADER_PIXEL_TESTS)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
     add_test(NAME post_effects_pixels COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/post_effects_shader.py)
+    add_test(NAME post_shader_semantics COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/post_shader_semantics.py)
     add_test(NAME shadow_pixels COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/shadow_shader.py)
     add_test(NAME spatial_aa_pixels COMMAND ${Python3_EXECUTABLE}
