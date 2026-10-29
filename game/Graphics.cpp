@@ -4047,6 +4047,8 @@ void Scene_GetLightColour(DWORD *pColour, int level);
 // previous one when both use the same texture.
 // match 70%: below the 90% bar; kept as FUNCTION on purpose so reccmp measures it (see CONVENCIONES)
 // FUNCTION: CMR2 0x004b11c0
+// OpenCMR2 diagnostics: why queued billboards were refused, and the peak queue depth before a draw (cap 800 per frame).
+unsigned g_billboardRefusedDisabled = 0, g_billboardRefusedFull = 0, g_billboardPeakQueue = 0;
 void Billboard_Add(BillboardDef *pDef, Texture *pTexture)
 {
     BillboardQuad *pQuad;
@@ -4061,8 +4063,10 @@ void Billboard_Add(BillboardDef *pDef, Texture *pTexture)
     if (g_billboardsEnabled == 0) {
         if (g_billboardsRequested == 0)
             g_billboardsRequested = 1;
+        ++g_billboardRefusedDisabled;
         return;
     }
+    if (pTexture != NULL && pDef != NULL && (unsigned int)g_unk0x006dd784 >= 800) ++g_billboardRefusedFull;
     if (pTexture == NULL || pDef == NULL || (unsigned int)g_unk0x006dd784 >= 800)
         return;
     pQuad = &g_billboards[g_unk0x006dd784];
@@ -4242,6 +4246,7 @@ void Billboard_Draw(SceneNode *pCamera)
             pQuad++;
         } while (--n != 0);
     }
+    if ((unsigned)g_unk0x006dd784 > g_billboardPeakQueue) g_billboardPeakQueue = (unsigned)g_unk0x006dd784;
     CGraphics::SetZWriteEnable(0);
     g_billboardRun = g_billboardRuns[0];
     for (i = 0; i < (unsigned int)g_unk0x006dd788; i++) {
@@ -5577,13 +5582,13 @@ void SpeedMote_ApplyStreak(BillboardDef *def, SceneNode *camera)
         def->top = (int)((long long)def->top * sizePct / 100); def->bottom = (int)((long long)def->bottom * sizePct / 100);
         def->left = (int)((long long)def->left * sizePct / 100); def->right = (int)((long long)def->right * sizePct / 100);
     }
-    {   // Diagnostic: the submitted quad of one mote about every 300 draws (camera-space offsets, quad half-sizes, alpha).
+    {   // Diagnostic: the candidate quad of one mote (before Billboard_Add accepts it) about every 300 draws (camera-space offsets, quad half-sizes, alpha).
         static unsigned calls = 0;
         if (camera && ++calls % 300 == 1) {
             const FixMatrix &cm = camera->world;
             float dx = def->pos.x - cm.position.x, dy = def->pos.y - cm.position.y, dz = def->pos.z - cm.position.z;
             const float sc = 1.f / (65536.f * 65536.f);
-            Sys_Log("speed mote quad: depth=%.1f right=%.1f up=%.1f half_w=%.3f half_h=%.3f alpha=%d size_pct=%d (16.16 world units, camera node axes)",
+            Sys_Log("speed mote candidate quad: depth=%.1f right=%.1f up=%.1f half_w=%.3f half_h=%.3f alpha=%d size_pct=%d (16.16 world units, camera node axes)",
                 (dx * cm.forward.x + dy * cm.forward.y + dz * cm.forward.z) * sc, (dx * cm.right.x + dy * cm.right.y + dz * cm.right.z) * sc,
                 (dx * cm.up.x + dy * cm.up.y + dz * cm.up.z) * sc, (def->right - def->left) / 131072.f, (def->top - def->bottom) / 131072.f,
                 (int)def->a, sizePct);
@@ -5606,7 +5611,7 @@ void SpeedMote_ApplyStreak(BillboardDef *def, SceneNode *camera)
 }
 #define DRAW_PARTICLE (*(Particle *)(pb - offsetof(Particle, field0x55)))
 // FUNCTION: CMR2 0x004b0480
-static unsigned g_speedMotesDrawn=0,g_speedMotesSpawned=0,g_speedMotesBudgetSkipped=0,g_speedMotesNoGround=0;
+static unsigned g_speedMotesRefused=0,g_speedMotesDrawn=0,g_speedMotesSpawned=0,g_speedMotesBudgetSkipped=0,g_speedMotesNoGround=0;
 void Particle_DrawAll(SceneNode *pCamera, BYTE view)
 {
     BillboardDef def;
@@ -5693,8 +5698,11 @@ void Particle_DrawAll(SceneNode *pCamera, BYTE view)
             def.shade = DRAW_PARTICLE.field0x54;
             if (g_particleTypeCount > SPEED_MOTE_TYPE && pType == &g_particleTypes[SPEED_MOTE_TYPE])
                 SpeedMote_ApplyStreak(&def, pCamera);
+            const int queuedBefore = g_unk0x006dd784;
             Billboard_Add(&def, texture);
-            if (g_particleTypeCount > SPEED_MOTE_TYPE && pType == &g_particleTypes[SPEED_MOTE_TYPE]) ++g_speedMotesDrawn;
+            if (g_particleTypeCount > SPEED_MOTE_TYPE && pType == &g_particleTypes[SPEED_MOTE_TYPE]) {
+                if (g_unk0x006dd784 > queuedBefore) ++g_speedMotesDrawn; else ++g_speedMotesRefused;  // refused = queue disabled or full
+            }
         }
     }
     // Camera-facing cloud sheets are fallback only. Original chips/spray are
@@ -7136,8 +7144,10 @@ void SpeedMote_LogStats(float speedRatio, int stepsElapsed)
     if (g_particles && g_particleTypes && g_particleTypeCount > SPEED_MOTE_TYPE)
         for (int i = 0; i < g_particleCount; ++i)
             if (g_particles[i].active && g_particles[i].pType == &g_particleTypes[SPEED_MOTE_TYPE]) ++live;
-    Sys_Log("speed motes: speed_ratio=%.2f spawned=%u budget_skipped=%u no_ground_height=%u live=%d billboards_submitted=%u (cumulative, billboards = draw submissions)",
-        speedRatio, g_speedMotesSpawned, g_speedMotesBudgetSkipped, g_speedMotesNoGround, live, g_speedMotesDrawn);
+    Sys_Log("speed motes: speed_ratio=%.2f spawned=%u budget_skipped=%u no_ground_height=%u live=%d billboards_queued=%u refused_by_queue=%u (cumulative; queued = accepted by Billboard_Add, not proof of visible pixels)",
+        speedRatio, g_speedMotesSpawned, g_speedMotesBudgetSkipped, g_speedMotesNoGround, live, g_speedMotesDrawn, g_speedMotesRefused);
+    Sys_Log("billboard queue: peak_depth=%u of 800 refused_disabled=%u refused_full=%u (all billboard users, cumulative)",
+        g_billboardPeakQueue, g_billboardRefusedDisabled, g_billboardRefusedFull);
 }
 
 void DustPlume_Emit(FixVector *world, FixVector *velocity, BYTE *colour, BYTE shade, BYTE viewMask)
