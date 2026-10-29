@@ -39,6 +39,18 @@ simulation clock and deterministic phase; no render-clock or physics RNG use.
 This does not claim every game's asset/track is source-covered or add unrelated
 object motion. Native culling/reflections/appearance/performance remain open.
 
+## Deliberate custom-camera operator
+
+Claim: feat/deliberate-camera-operator on main15308db. Existing camera_effects
+is shake, not anticipation. New opt-in Human operator row in actual custom
+camera menu saves separately on accept, Cancel does not save. Only custom
+mode4 gets bounded, acceleration/slew-limited orientation lead from heading
+trend and actual travel direction. No position movement, random jitter or
+extra spring lag. Existing height/distance/pitch/lag and terrain-clearance
+paths retained; operator suppresses old chase jitter only while active.
+State per camera index, reset start/restart/disabled/discontinuous heading.
+Source tests planned; native feel/menu/seek/split-screen acceptance unverified.
+
 ## Historical completed batch
 
 ## Summary

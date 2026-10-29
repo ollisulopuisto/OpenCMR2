@@ -3914,6 +3914,7 @@ void InRaceMenu_BuildCameraOffsetOptions(void)
     Menu_AddItemType3(&g_menu0x0052a870, 0, 0x5f, 0x1f, 10, 0, 0, 0, 1);
     Menu_AddItemType3(&g_menu0x0052a870, 0, 0x60, 0x1f, 10, 0, 0, 0, 2);
     Menu_AddItemType3(&g_menu0x0052a870, 0, 0x61, 0x15, 10, 0, 0, 0, 3);
+    Menu_AddItemType3(&g_menu0x0052a870, (char *)"Human operator", -1, 2, 0, 0, 0, 0, 6);
     Menu_AddItemType4(&g_menu0x0052a870, 0, 0x62, (MenuItemAction)InRaceMenu_ResetCameraDefaults, 4);
     Menu_AddItemType2(&g_menu0x0052a870, 0, 0x3b, &g_menu0x00529ed8, 0, 5);
     Menu_SetCallbacks(&g_menu0x0052a870, (MenuCallback)InRaceMenu_EnterCameraOffsetOptions,
@@ -4371,6 +4372,7 @@ void InRaceMenu_LeaveCameraOffsetOptions(Menu *pMenu, char cancel)
         ChaseCamera_SetPitch(g_unk0x0052af58[1], g_cameraMenuStartPitch);
         return;
     }
+    Sys_SetOption("video.camera_operator",pMenu->items[4].max != 0);
     ChaseCamera_SetLag(g_unk0x0052af58[1], g_cameraMenuLag);
     ChaseCamera_SetOffset(g_unk0x0052af58[1], &g_cameraMenuOffset);
     ChaseCamera_SetPitch(g_unk0x0052af58[1], g_cameraMenuPitch);
@@ -5443,6 +5445,7 @@ void InRaceMenu_EnterCameraOffsetOptions(Menu *pMenu, char unused)
     g_cameraMenuOffset.z = g_cameraMenuStartOffset.z;
     g_cameraMenuLag = g_cameraMenuStartLag;
     g_cameraMenuPitch = g_cameraMenuStartPitch;
+    pMenu->items[4].max=Sys_GetOption("video.camera_operator",0)!=0;
     InRaceMenu_FillCameraOffsetSliders(pMenu);
     g_unk0x0052ad54 = 1;
 }
@@ -8843,10 +8846,10 @@ void InRaceMenu_DrawSliderRows(Menu *pMenu)
     for (k = 0; k < pMenu->itemCount; k++) {
         if (pMenu->items[k].id == 0x62)
             break;
-        text = CFrontend::GetTextString(pMenu->items[k].id);
+        text = pMenu->items[k].text ? pMenu->items[k].text : CFrontend::GetTextString(pMenu->items[k].id);
         width = Font_GetTextWidth(1, (BYTE *)text);
         if (width > maxWidth) {
-            text = CFrontend::GetTextString(pMenu->items[k].id);
+            text = pMenu->items[k].text ? pMenu->items[k].text : CFrontend::GetTextString(pMenu->items[k].id);
             maxWidth = Font_GetTextWidth(1, (BYTE *)text);
         }
     }
@@ -8856,6 +8859,11 @@ void InRaceMenu_DrawSliderRows(Menu *pMenu)
         do {
             pColour = pMenu->cursor == i ? &g_inRaceMenuSelectedColour : &g_inRaceMenuUnselectedColour;
             switch (pItem->value) {
+            case 6: {
+                char label[64];snprintf(label,sizeof label,"Human operator: %s",pItem->max?"On":"Off");
+                y=(int)(g_pGraphics->resY*0xaa)/0x1e0+((int)(g_pGraphics->resY*0x2a)/0x1e0)*i;
+                Font_DrawText(1,label,(int)(g_pGraphics->resX*0x86)/0x280,y,pColour,0x11);break;
+            }
             case 4:
                 y = (int)(g_pGraphics->resY * 0xaa) / 0x1e0
                     + ((int)(g_pGraphics->resY * 0x2a) / 0x1e0) * i;

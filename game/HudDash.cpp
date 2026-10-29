@@ -1,3 +1,4 @@
+#include "CameraOperator.h"
 #include <stdio.h>
 #include "FloatToInt.h"
 #include <stdlib.h>
@@ -872,6 +873,7 @@ void ChaseCamera_Start(CameraRecord *param_1, FixMatrix *param_2, int param_3)
     BYTE index;
     CameraRecord *pSettings = param_1;
 
+    CameraOperator_Reset(pSettings->index);
     index = pSettings->view;
     g_playerCameraMode[pSettings->index] = (BYTE)param_3;
     if (pSettings->car >= (BYTE)RallyDataState()) {
@@ -907,6 +909,7 @@ void ChaseCamera_Update(CameraRecord *param_1, FixMatrix *param_2, int param_3)
     FixMatrix xform;
     int index;
 
+    CameraOperator_Update(param_1,param_2);
     index = param_1->index;
     pUp = &g_chaseCameraOffsets[2 + index];
     pRight = &g_chaseCameraViewOffsets[2 + index];

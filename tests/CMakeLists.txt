@@ -424,3 +424,7 @@ if(OPENCMR2_TEST_ELF_WRAP)
   -Wl,--wrap=_ZN5CGame16RegisterCallbackEPvS0_
   -Wl,--wrap=_Z24Track_ResearchExactEdgesb)
 endif()
+
+add_executable(camera_operator_test camera_operator.cpp)
+target_include_directories(camera_operator_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
+add_test(NAME camera_operator COMMAND camera_operator_test)
