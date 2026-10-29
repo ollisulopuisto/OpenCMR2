@@ -16,6 +16,7 @@ inline const TuningRow *Tuning_Rows(int &count)
         {"Tunnel vision %", "video.tunnel_vision", 0, 100, 10, 100},
         {"Motion blur (0/1)", "video.motion_blur", 0, 1, 1, 1},
         {"Motion blur %", "video.motion_blur_amount", 0, 100, 10, 16},
+        {"Speed streak %", "video.speed_streak", 0, 100, 10, 0},
     };
     count = (int)(sizeof(rows) / sizeof(*rows));
     return rows;

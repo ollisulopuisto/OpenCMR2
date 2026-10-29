@@ -1,4 +1,5 @@
 #include "SpeedFov.h"
+#include "render/speed_streak.h"
 #include "EffectAmounts.h"
 #include "France1Textures.h"
 #include "DustPlume.h"
@@ -4693,6 +4694,8 @@ void Race_UpdateFrameEffects(int param_1)
         if (strength > 100) strength = 100;
         Gfx_SetSpeedFocus(speedUnits * (float)strength / 100.0f);
     }
+    // OpenCMR2: speed streak (visual only): directional radial streak, 0 = off (default). Same speed ratio and overdo hold as above.
+    Gfx_SetSpeedStreak(SpeedStreak_Strength((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0), Sys_GetOption("video.speed_streak", 0)));
     // OpenCMR2: windscreen dirt accumulates while driving; faster = more dirt.
     if (Sys_GetOption("video.windscreen_dirt", 40) != 0) {
         Car *pPlayer = Car_Get(0);

@@ -201,6 +201,7 @@ struct GfxExecutor {
     // is how wide the in-focus band is, `maxBlur` (0..100) is the blur radius.
     virtual void SetDepthOfField(BOOL, int, int, int) {}
     virtual void SetSpeedFocus(float) {}
+    virtual void SetSpeedStreak(float) {}
     // OpenCMR2: god rays / volumetric lighting. `enabled` turns it on/off,
     // `intensity` (0..255) scales the effect strength.
     virtual void SetGodRays(BOOL, int) {}

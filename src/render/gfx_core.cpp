@@ -555,6 +555,12 @@ extern "C" void Gfx_SetDepthOfField(BOOL enabled, int focalDistance, int focalRa
         s_executor->SetDepthOfField(enabled != 0, focalDistance, focalRange, maxBlur);
 }
 
+extern "C" void Gfx_SetSpeedStreak(float strength)
+{
+    if (s_executor != NULL)
+        s_executor->SetSpeedStreak(strength);
+}
+
 extern "C" void Gfx_SetSpeedFocus(float speed)
 {
     if (s_executor != NULL)

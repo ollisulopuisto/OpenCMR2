@@ -203,7 +203,7 @@ struct Executor : GfxExecutor {
     SDL_GPUShader *fsBrightPass = nullptr, *fsBlur = nullptr, *fsComposite = nullptr;
     SDL_GPUShader *vsParticle = nullptr, *fsParticle = nullptr;
     SDL_GPUShader *vsShadow = nullptr, *fsShadow = nullptr;
-    SDL_GPUShader *fsLensGrime = nullptr;
+    SDL_GPUShader *fsLensGrime = nullptr, *fsSpeedStreak = nullptr;
     SDL_GPUShader *fsDoF = nullptr, *fsGodRays = nullptr, *fsColorGrading = nullptr;
     // OpenCMR2: optional single-frame AA, with an independent non-aliasing target.
     SDL_GPUShader *fsClouds=nullptr;
@@ -280,7 +280,7 @@ struct Executor : GfxExecutor {
     float chromaticAberration = 0;
     float vignette = 0;
     float filmGrain = 0;
-    SDL_GPUGraphicsPipeline *lensGrimePipeline = nullptr;
+    SDL_GPUGraphicsPipeline *lensGrimePipeline = nullptr, *speedStreakPipeline = nullptr;
     SDL_GPUGraphicsPipeline *dofPipeline = nullptr;       // depth of field
     SDL_GPUGraphicsPipeline *godRaysPipeline = nullptr;   // volumetric light shafts
     SDL_GPUGraphicsPipeline *colorGradingPipeline = nullptr; // analytic color grading
@@ -346,6 +346,7 @@ struct Executor : GfxExecutor {
     GfxDofStatus dofStatus = {0, 0, 0, 0, 0};
     float speedFocusTarget = 0.0f, speedFocusSmooth = 0.0f; // 0..1 tunnel vision; smoothed per frame
     Uint64 speedFocusTicks = 0;
+    float speedStreakTarget = 0.0f, speedStreakSmooth = 0.0f; Uint64 speedStreakTicks = 0; // 0..1, smoothed in real time
     // OpenCMR2: god rays state.
     bool godRaysEnabled = false;
     int godRaysIntensity = 100;
@@ -432,6 +433,7 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUShader(device, vsParticle);
         SDL_ReleaseGPUShader(device, fsParticle);
         SDL_ReleaseGPUShader(device, fsLensGrime);
+        SDL_ReleaseGPUShader(device, fsSpeedStreak);
         SDL_ReleaseGPUShader(device, fsDoF);
         SDL_ReleaseGPUShader(device,fsClouds);
         SDL_ReleaseGPUShader(device,fsTemporal);
@@ -452,6 +454,7 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUGraphicsPipeline(device, particlePipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, shadowPipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, lensGrimePipeline);
+        SDL_ReleaseGPUGraphicsPipeline(device, speedStreakPipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, dofPipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, godRaysPipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, colorGradingPipeline);
@@ -570,6 +573,7 @@ struct Executor : GfxExecutor {
         fsBlur = Shader(SHADER_CODE(blur_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
         fsComposite = Shader(SHADER_CODE(composite_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1);
         fsLensGrime = Shader(SHADER_CODE(lens_grime_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
+        fsSpeedStreak = Shader(SHADER_CODE(speedstreak_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
         fsDoF = Shader(SHADER_CODE(dof_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1);
         fsGodRays = Shader(SHADER_CODE(godRays_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 3, 1);
         fsColorGrading = Shader(SHADER_CODE(colorGrading_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
@@ -578,7 +582,7 @@ struct Executor : GfxExecutor {
         vsShadow = Shader(SHADER_CODE(shadow_vert), SDL_GPU_SHADERSTAGE_VERTEX, 0, 1);
         fsShadow = Shader(SHADER_CODE(shadow_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
         if (!vs3d || !vsTL || !fs || !vsClear || !fsClear || !vsMotionBlur || !fsMotionBlur ||
-            !fsBrightPass || !fsBlur || !fsComposite || !fsLensGrime || !fsDoF || !fsGodRays ||
+            !fsBrightPass || !fsBlur || !fsComposite || !fsLensGrime || !fsSpeedStreak || !fsDoF || !fsGodRays ||
             !fsColorGrading || !vsParticle || !fsParticle || !vsShadow || !fsShadow)
             return false;
 
@@ -835,6 +839,8 @@ struct Executor : GfxExecutor {
 
     // OpenCMR2: god rays / volumetric lighting. `enabled` turns it on/off,
     // `intensity` (0..255) scales the effect strength.
+    void SetSpeedStreak(float strength) override { speedStreakTarget = !(strength > 0.0f) ? 0.0f : strength > 1.0f ? 1.0f : strength; }
+
     void SetGodRays(BOOL enabled, int intensity) override
     {
         godRaysEnabled = enabled != 0;
@@ -1432,6 +1438,36 @@ struct Executor : GfxExecutor {
         if (lensGrimePipeline == NULL)
             Sys_Log("gfx: lens grime pipeline: %s", SDL_GetError());
         return lensGrimePipeline;
+    }
+
+    SDL_GPUGraphicsPipeline *SpeedStreakPipeline()
+    {
+        if (speedStreakPipeline != nullptr)
+            return speedStreakPipeline;
+        SDL_GPUColorTargetDescription color = {};
+        color.format = colorFormat;
+        color.blend_state.enable_blend = false;
+        SDL_GPUGraphicsPipelineCreateInfo info = {};
+        info.vertex_shader = vsMotionBlur;
+        info.fragment_shader = fsSpeedStreak;
+        info.vertex_input_state.vertex_buffer_descriptions = nullptr;
+        info.vertex_input_state.num_vertex_buffers = 0;
+        info.vertex_input_state.vertex_attributes = nullptr;
+        info.vertex_input_state.num_vertex_attributes = 0;
+        info.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+        info.rasterizer_state.fill_mode = SDL_GPU_FILLMODE_FILL;
+        info.rasterizer_state.cull_mode = SDL_GPU_CULLMODE_NONE;
+        info.depth_stencil_state.enable_depth_test = false;
+        info.depth_stencil_state.enable_depth_write = false;
+        info.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_ALWAYS;
+        info.target_info.color_target_descriptions = &color;
+        info.target_info.num_color_targets = 1;
+        info.target_info.depth_stencil_format = depthFormat;
+        info.target_info.has_depth_stencil_target = true;
+        speedStreakPipeline = SDL_CreateGPUGraphicsPipeline(device, &info);
+        if (speedStreakPipeline == NULL)
+            Sys_Log("gfx: speed streak pipeline: %s", SDL_GetError());
+        return speedStreakPipeline;
     }
 
     // Depth of field pipeline: samples scene + depth map, applies blur based
@@ -2624,15 +2660,33 @@ struct Executor : GfxExecutor {
                                 uniforms, sizeof(uniforms)))
                 {presentSource = godRaysBuf1;encoded|=16;}
         }
+        // Speed streak: directional radial streak of the scene (not a temporal blend). Reads presentSource, writes gradingTarget.
+        {
+            Uint64 nowTicks = SDL_GetTicksNS();
+            float dtSeconds = speedStreakTicks ? (float)(nowTicks - speedStreakTicks) * 1e-9f : 0.0f;
+            speedStreakTicks = nowTicks;
+            if (dtSeconds > 0.25f) dtSeconds = 0.25f;
+            speedStreakSmooth += (speedStreakTarget - speedStreakSmooth) * (1.0f - std::exp(-dtSeconds / 0.4f));
+            if (!raceWorld) speedStreakSmooth = 0.0f;
+        }
+        bool streakApplied = false;
+        if (speedStreakSmooth > 0.01f && raceWorld && gradingTarget != nullptr && presentSource != nullptr &&
+            presentSource != gradingTarget && SpeedStreakPipeline() != nullptr) {
+            float uniforms[4] = { speedStreakSmooth, backHeight ? (float)backWidth / (float)backHeight : 1.0f, 0.0f, 0.0f };
+            SDL_GPUTextureSamplerBinding binding = { presentSource, linearSampler };
+            if (PostProcessPass(cmd, SpeedStreakPipeline(), gradingTarget, &binding, 1, uniforms, sizeof(uniforms)))
+                {presentSource = gradingTarget;encoded|=256;streakApplied = true;}
+        }
         if ((colorGradingTemperature != 0 || colorGradingTint != 0 ||
              colorGradingSaturation != 100.0f || colorGradingContrast != 100.0f) &&
-            gradingTarget != nullptr && ColorGradingPipeline() != nullptr) {
+            gradingTarget != nullptr && godRaysBuf1 != nullptr && ColorGradingPipeline() != nullptr) {
             float uniforms[4] = { colorGradingTemperature / 100.0f, colorGradingTint / 100.0f,
                 colorGradingSaturation / 100.0f, colorGradingContrast / 100.0f };
             SDL_GPUTextureSamplerBinding binding = { presentSource, linearSampler };
-            if (PostProcessPass(cmd, ColorGradingPipeline(), gradingTarget, &binding, 1,
+            SDL_GPUTexture *gradeOut = streakApplied ? godRaysBuf1 : gradingTarget;
+            if (PostProcessPass(cmd, ColorGradingPipeline(), gradeOut, &binding, 1,
                                 uniforms, sizeof(uniforms)))
-                {presentSource = gradingTarget;encoded|=32;}
+                {presentSource = gradeOut;encoded|=32;}
         }
 
         } else motionBlurHasPrevious=false;

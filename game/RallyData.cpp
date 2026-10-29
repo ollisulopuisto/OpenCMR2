@@ -6533,6 +6533,13 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             bool mb=!gl&&(status.encoded&4)!=0;
             snprintf(text,sizeof text,"Motion blur (separate effect): %s",mb?"encoded":"off");
             line(text,mb?lit:dim);
+            {
+                int ss=Sys_GetOption("video.speed_streak",0);bool ssOn=!gl&&(status.encoded&256)!=0;
+                if(gl)snprintf(text,sizeof text,"Speed streak: n/a (OpenGL backend)");
+                else if(ss<=0)snprintf(text,sizeof text,"Speed streak: off (video.speed_streak=0)");
+                else snprintf(text,sizeof text,"Speed streak: %s (setting %d%%, centre zone kept clear)",ssOn?"encoded":"idle",ss);
+                line(text,ssOn?lit:dim);
+            }
         }
         {
             int viewType=0,drone=0,zoomRaw=0,fovYRaw=0,fovSet=70;

@@ -18,7 +18,7 @@ struct EnhancementOptions {
         if(equal!=key.npos){inlineValue=key.substr(equal+1);key.resize(equal);}
         if(equal==key.npos && key=="--prepare-only"){prepareOnly=true;return true;}
         if(equal==key.npos && key=="--install-enhancement-deps"){installDependencies=true;return true;}
-        if(key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect"&&key!="--attract-capture"&&key!="--capture-interval"&&key!="--capture-count"&&key!="--speed-fov"&&key!="--speed-motes-stretch"&&key!="--speed-motes-amount"&&key!="--speed-motes-size"&&key!="--dof-blur-max-px"&&key!="--test-preset")return false;
+        if(key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect"&&key!="--attract-capture"&&key!="--capture-interval"&&key!="--capture-count"&&key!="--speed-fov"&&key!="--speed-motes-stretch"&&key!="--speed-motes-amount"&&key!="--speed-motes-size"&&key!="--dof-blur-max-px"&&key!="--speed-streak"&&key!="--test-preset")return false;
         if(equal==std::string::npos && i+1>=argc){error="Missing value for "+key;return true;}
         std::string value=equal==std::string::npos?argv[++i]:inlineValue;
         if(key=="--textures"){if(value!="original"&&value!="france1")error="--textures expects original or france1";else textures=value;}
@@ -41,6 +41,10 @@ struct EnhancementOptions {
             if(value.empty()||*end||n<lo||n>hi)error=key+" expects "+std::to_string(lo)+".."+std::to_string(hi);
             else overrides[key=="--speed-fov"?"video.speed_fov":key=="--speed-motes-stretch"?"video.speed_motes_stretch":key=="--dof-blur-max-px"?"video.dof_blur_max_px":key=="--speed-motes-size"?"video.speed_motes_size":"video.speed_motes_amount"]=(int)n;
         }
+        if(key=="--speed-streak"){
+            char *end=nullptr;long n=strtol(value.c_str(),&end,10);
+            if(value.empty()||*end||n<0||n>100)error="--speed-streak expects 0..100";else overrides["video.speed_streak"]=(int)n;
+        }
         if(key=="--test-preset"){if(value!="overdo"&&value!="off")error="--test-preset expects overdo or off";else testPreset=value;}
         if(key=="--attract-capture"){if(value.empty())error="--attract-capture needs an output folder";else captureDir=value;}
         if(key=="--capture-interval"||key=="--capture-count"){
@@ -57,7 +61,7 @@ struct EnhancementOptions {
     void ApplyTestPreset(){
         if(testPreset!="overdo")return;
         static const std::pair<const char*,int> kOverdo[]={{"video.speed_motes",1},{"video.speed_motes_amount",300},{"video.speed_motes_size",400},{"video.speed_motes_stretch",100},
-            {"video.speed_fov",40},{"video.speed_fov_hold",1},{"video.depth_of_field",1},{"video.dof_blur",100},{"video.dof_blur_max_px",16},{"video.tunnel_vision",100},{"video.motion_blur",1},{"video.motion_blur_amount",60}};
+            {"video.speed_fov",40},{"video.speed_fov_hold",1},{"video.depth_of_field",1},{"video.dof_blur",100},{"video.dof_blur_max_px",16},{"video.tunnel_vision",100},{"video.motion_blur",1},{"video.motion_blur_amount",60},{"video.speed_streak",100}};
         for(auto&e:kOverdo)if(!overrides.count(e.first))overrides[e.first]=e.second;
     }
     void Apply(){
@@ -116,6 +120,7 @@ inline const char *EnhancementHelp(){return
 "                              see runtime log. temporal_aa = PARTIAL stage (SDL_GPU only,\n"
 "                              camera reprojection, no object velocity), default off.\n"
 "  --speed-fov 0..40           Widen the regular cameras' view with speed (percent); default 0 = off\n"
+"  --speed-streak 0..100       Directional radial speed streak (SDL_GPU only); default 0 = off\n"
 "  --speed-motes-stretch 0..100 Stretch speed motes into radial streaks; needs --effect speed_motes=on\n"
 "  --speed-motes-amount 0..300 Percent of the normal mote spawn rate (live cap 64 at 100, up to 192 at 300)\n"
 "  --speed-motes-size 50..800  Mote size in percent (default 100)\n"
