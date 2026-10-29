@@ -1,4 +1,28 @@
-# Handoff — OpenCMR2 rendering enhancements (done)
+# Handoff - OpenCMR2 rendering enhancements
+
+
+## Current graphics coordination (29 October 2026)
+
+Owner: current optional graphics work. This section is the coordination record
+for these lanes; the completed batch below is historical, not a claim that all
+current experiments have shipped. Read this file and `docs/DEVELOPMENT.md`
+before changing these areas. No AGENTS.md, CODEX.md, board, roadmap, TODO or
+bugs coordination file was present at this revision. Preserve other owners' work.
+All patches are PRs. Merges remain human-led. Never commit original game bytes.
+
+| Lane | Current state and next handoff |
+| --- | --- |
+| Curved road CLI | PR #45 merged by the owner. `--roads original` and the default retain original geometry. Experimental `curved` is exact-source Ballon only, jointly selects render/contact buffers, and preserves original FIN. Isolated full suite: 79/79 tests; actual binary prepare-only and loader/session probes passed. Native Mac graphics, driving, culling, barrier alignment and frame-time acceptance remain unverified. Do not treat Linux probes or merge as native acceptance. |
+| Reactive crowd/person layers | Claimed, local inactive research only. Existing accepted forearm animation stays unchanged. Source-authored transparent person seam and lossless rest partition checked privately. Head tilt/hop needs extra canvas and matched UV/geometry; neck joins, source-cell layout, single-update integration, car-relative orientation, occlusion, reflection and performance remain open. Single-view art cannot supply true head yaw. No runtime activation or ready-to-merge claim. |
+| Scene-only grading | Claimed, local inactive research only. Pure snapshot/transaction and compiled shader checks cover viewport bounds, alpha, failure refusal and later synthetic HUD composition. No game caller. Native SDL_GPU/Metal execution/copy failures, stage/weather eligibility and performance remain open. Preserve original full-frame effects and default settings. |
+| Bitmap upscale | Retained private candidates only, no runtime installation. Road seam/mip periodic filtering and exact source identity integration remain open. Foliage, people and fonts stay quarantined from generic atlas filtering. Do not duplicate asset-owner processing or publish owned art. |
+| Trees/font source gaps | Preserve accepted tree baseline and human-merged PR #44. Missing exact source exports remain separate; no guessed replacement bytes or blanket acceptance. |
+
+Update the relevant lane with tests, blockers and next handoff as it changes.
+Do not overlap these claimed lanes silently or combine inactive experiments into
+a road follow-up. Changes to eligibility/defaults need their own reviewed scope.
+
+## Historical completed batch
 
 ## Summary
 User-adjustable draw distance, in-GUI debug stats (FPS + draw calls + vertices), expanded Advanced graphics options ("juice"), breakable trees, camera effects (dirt on lens, lens flare, human-operator shake), animated idle bitmaps (crowds/trees), motion blur, bloom, rain/snow particles, and directional shadows are all implemented. Everything is gated behind `[video]` settings in `opencmr2.ini` and marked `// OpenCMR2:` per the README.
