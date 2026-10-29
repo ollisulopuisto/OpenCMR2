@@ -3,6 +3,7 @@
 #include "France1Textures.h"
 #include "SceneryPack.h"
 #include "DustPlume.h"
+#include "CarBodyDirt.h"
 #include "WorldDust.h"
 static WorldDust::Pool worldDust;
 #include "GraphicsOptions.h"
@@ -6920,6 +6921,7 @@ void Graphics_DrawMeshLOD(Mesh *pMesh, int useParts, int clampTexture, int markT
         Graphics_DrawMeshTextureBatches(pLod);
     }
 
+    Gfx_SetBodyDirt(0,0,0,0); // never pigment the additive reflection pass
     if ((pLod->flags & 0x200) != 0 && (pLod->flags & 0x40000) == 0 &&
         (g_pGraphics->field913_0x3bc & 8) != 0) {
         if ((g_pGraphics->field913_0x3bc & 0x80) != 0)
@@ -6930,6 +6932,15 @@ void Graphics_DrawMeshLOD(Mesh *pMesh, int useParts, int clampTexture, int markT
 
     if ((pLod->flags & 0x20) == 0)
         Graphics_SetLightingMode(lightingMode);
+}
+
+// Called only inside a verified live car-node draw scope, then material
+// qualified. Glass/frame atlases, wheels and unknown mod names stay clean.
+void Graphics_BindCarPaintDirt(Texture *texture){
+ int car=CarBodyDirt::drawingCar;
+ if(car>=0&&car<8&&texture&&CarBodyDirt::IsPaintAtlas(texture->name)&&Sys_GetOption("video.body_dirt",1)){
+  const auto &d=CarBodyDirt::cars[car];Gfx_SetBodyDirt(d.amount,d.red,d.green,d.blue);
+ }else Gfx_SetBodyDirt(0,0,0,0);
 }
 
 // Draws every part of a mesh from its vertex buffer, one texture at a time,
@@ -6947,6 +6958,7 @@ void Graphics_DrawMeshPartsByTexture(Mesh *pMesh)
         do {
             pPart = *ppPart;
             CGraphics::ApplyTextureStageChange(0, CGraphics::m_pTextureManager->textureBuffer[pPart->texture]);
+            Graphics_BindCarPaintDirt(CGraphics::m_pTextureManager->textureBuffer[pPart->texture]);
             Gfx_DrawIndexedPrimitiveVB(GFX_TRIANGLELIST, CGraphics::m_pTextureManager->pVertexBuffers[pMesh->vertexBufferIndex], pMesh->vertexOffset + pPart->minIndex, pMesh->field_0x10 - pPart->minIndex, pPart->pData, pPart->indexCount);
             CGame::m_unk0x0059ce18 += pPart->indexCount / 3;
             i++;
@@ -6970,6 +6982,7 @@ void Graphics_MarkTexturesAndDrawMeshParts(Mesh *pMesh)
             pPart = *ppPart;
             Frontend_SetObjectField118(CGraphics::m_pTextureManager->textureBuffer[pPart->texture], 10);
             CGraphics::ApplyTextureStageChange(0, CGraphics::m_pTextureManager->textureBuffer[pPart->texture]);
+            Graphics_BindCarPaintDirt(CGraphics::m_pTextureManager->textureBuffer[pPart->texture]);
             Gfx_DrawIndexedPrimitiveVB(GFX_TRIANGLELIST, CGraphics::m_pTextureManager->pVertexBuffers[pMesh->vertexBufferIndex], pMesh->vertexOffset + pPart->minIndex, pMesh->field_0x10 - pPart->minIndex, pPart->pData, pPart->indexCount);
             CGame::m_unk0x0059ce18 += pPart->indexCount / 3;
             i++;
@@ -7000,6 +7013,7 @@ void Graphics_DrawMeshTextureBatches(Mesh *pMesh)
             }
             count = 0;
             CGraphics::ApplyTextureStageChange(0, CGraphics::m_pTextureManager->textureBuffer[texture]);
+            Graphics_BindCarPaintDirt(CGraphics::m_pTextureManager->textureBuffer[texture]);
             currentTexture = texture;
         }
         g_unk0x0059be74[count++] = pTri->vertexIndex[0];
@@ -7012,6 +7026,7 @@ void Graphics_DrawMeshTextureBatches(Mesh *pMesh)
         MeshTriangle *pLast = &pMesh->pTriangles[total - 1];
         int texture = pLast->textures[pLast->field_0x2c];
         CGraphics::ApplyTextureStageChange(0, CGraphics::m_pTextureManager->textureBuffer[texture]);
+        Graphics_BindCarPaintDirt(CGraphics::m_pTextureManager->textureBuffer[texture]);
         Gfx_DrawIndexedPrimitiveVB(GFX_TRIANGLELIST, CGraphics::m_pTextureManager->pVertexBuffers[pMesh->vertexBufferIndex], pMesh->vertexOffset, pMesh->field_0x10, g_unk0x0059be74, count);
     }
 }

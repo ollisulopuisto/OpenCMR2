@@ -25,8 +25,8 @@ program=ctx.program(vertex_shader=vs,fragment_shader=fs)
 size=program['FragmentUniforms'].size
 u=np.zeros(size//4,dtype='u4');f=u.view('f4')
 u[0:4]=[2,0,0,2];u[8:12]=[1,0,0,1] # diffuse stage, stage1 disabled
-# alpha test disabled, fog disabled, no distance fade; final shadow vec4.
-f[-4:]=[0.0005,1,0,0]
+# alpha test disabled, fog disabled, no distance fade; shadow vec4 followed by zero body-dirt vec4.
+f[-8:-4]=[0.0005,1,0,0]
 ubo=ctx.buffer(u.tobytes());program['FragmentUniforms'].binding=0;ubo.bind_to_uniform_block(0)
 for name in ['tex0','tex1','backdrop','native0','native1']:
     if name in program: program[name].value=0
@@ -41,7 +41,7 @@ depth=np.ones((64,64),dtype='f4');depth[:32,:32]=.3
 shadow=ctx.texture((64,64),1,depth.tobytes(),dtype='f4');shadow.filter=(moderngl.NEAREST,moderngl.NEAREST);shadow.repeat_x=shadow.repeat_y=False;shadow.use(2)
 target=ctx.texture((128,128),4);fb=ctx.framebuffer([target]);fb.use();vao=ctx.vertex_array(program,[])
 def render(enabled):
-    f[-3]=enabled;ubo.write(u.tobytes());vao.render(vertices=3)
+    f[-7]=enabled;ubo.write(u.tobytes());vao.render(vertices=3)
     return np.frombuffer(fb.read(components=4),dtype='u1').reshape(128,128,4).copy()
 off=render(0);on=render(1)
 assert np.array_equal(on[16:48,16:48],off[16:48,16:48]), 'clear region darkened: y flip/depth wrong'

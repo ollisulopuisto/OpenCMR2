@@ -66,6 +66,7 @@ struct FragmentUniforms {
     float bumpLuminance[4];
     float distanceFade[4];
     float shadowParams[4];  // x: bias, y: enabled, -, -
+    float bodyDirt[4];
 };
 
 struct ClearUniforms {
@@ -1772,6 +1773,7 @@ struct Executor : GfxExecutor {
         u.stage1b[1] = b.alphaArg2;
         u.stage1b[2] = TextureKind(b);
         u.stage1b[3] = ScaledPoint(b);
+        memcpy(u.bodyDirt,s.bodyDirt,sizeof(u.bodyDirt));
         Color(s.textureFactor, u.textureFactor);
         u.alphaTest[0] = s.alphaTest;
         u.alphaTest[1] = s.alphaFunc;

@@ -1355,7 +1355,7 @@ extern "C" const char *Sys_GetLaunchSummary(int line){
  char text[192];
  if(line==0)snprintf(text,sizeof text,"Trees:%s crowd:%s wind:%s",choice(s_enhancements.trees),choice(s_enhancements.spectators),Sys_GetOption("video.tree_wind",0)?"on":"off");
  else if(line==1)snprintf(text,sizeof text,"Roads:%s textures:%s names:%s",choice(s_enhancements.roads),choice(s_enhancements.textures),choice(s_enhancements.names));
- else {unsigned count=0;for(const auto&entry:s_enhancements.overrides)if(entry.first=="video.spatial_aa"||entry.first=="video.metalfx_spatial"||entry.first=="video.motion_blur"||entry.first=="video.bloom"||entry.first=="video.particles"||entry.first=="video.shadows"||entry.first=="video.depth_of_field"||entry.first=="video.god_rays"||entry.first=="video.color_grading"||entry.first=="video.dust_plume"||entry.first=="video.dust_volume")count++;
+ else {unsigned count=0;for(const auto&entry:s_enhancements.overrides)if(entry.first=="video.spatial_aa"||entry.first=="video.metalfx_spatial"||entry.first=="video.motion_blur"||entry.first=="video.bloom"||entry.first=="video.particles"||entry.first=="video.shadows"||entry.first=="video.depth_of_field"||entry.first=="video.god_rays"||entry.first=="video.color_grading"||entry.first=="video.dust_plume"||entry.first=="video.dust_volume"||entry.first=="video.body_dirt"||entry.first=="video.volumetric_clouds")count++;
  snprintf(text,sizeof text,"Car skins:%s | CLI effects:%u",s_enhancements.cars.empty()?"none":"selected",count);}
 
  summary=text;return summary.c_str();

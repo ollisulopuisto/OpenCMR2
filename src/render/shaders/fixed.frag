@@ -35,6 +35,7 @@ layout(std140, set = 3, binding = 0) uniform FragmentUniforms {
     vec4 bumpLuminance; // scale, offset
     vec4 distanceFade;  // distance where the fade into the backdrop starts, ends; on (z != 0)
     vec4 shadowParams;  // x: bias, y: enabled, z: PCF radius in texels, -
+    vec4 bodyDirt; // amount, soil RGB
 };
 
 const int TOP_DISABLE = 1, TOP_SELECTARG1 = 2, TOP_SELECTARG2 = 3, TOP_MODULATE = 4, TOP_MODULATE2X = 5,
@@ -207,6 +208,16 @@ void main()
         }
     }
 
+    // Non-destructive pigment overlay on qualified paint draws only. UVs
+    // anchor the mottling to the car rather than the screen/camera.
+    if(bodyDirt.x>0.){
+        vec2 uv=inTex0.xy;
+        float coarse=.5+.5*sin(uv.x*91.+sin(uv.y*47.)*2.3)*sin(uv.y*103.);
+        float speck=fract(sin(dot(floor(uv*256.),vec2(12.9898,78.233)))*43758.5453);
+        float cover=clamp(bodyDirt.x*(.25+.75*coarse)+bodyDirt.x*speck*.15,0.,.82);
+        float shade=clamp(dot(current.rgb,vec3(.299,.587,.114))*1.8,.18,1.);
+        current.rgb=mix(current.rgb,bodyDirt.yzw*shade,cover);
+    }
     if (fogMode.z != 0)
         current.rgb = clamp(current.rgb + inSpecular.rgb, 0.0, 1.0);
 
