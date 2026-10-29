@@ -162,3 +162,16 @@ must already exist; this texture helper does not install anything. A complete
 playable installation is needed for visual comparison. Linux tests and upload
 readback do not establish native Mac appearance, sampler seam quality or frame
 time. Hedge/bank depth is a separate experiment, not included in this option.
+
+## Wiper and driving-key remapping
+
+Options > Controls now has a separate Wiper key row. Select it, release the
+confirm key, then press a new physical key. Escape cancels. Keys already used
+by driving are refused instead of erasing acceleration/steering bindings.
+This option saves separately from the original nine-key Controller.rcf record.
+Driving keys stay on the selected controller's configuration/bindings page.
+The default is physical W (DIK17); an explicit saved wiper key is retained.
+If an active keyboard uses W for driving and no explicit wiper key is saved,
+the implicit W shortcut is suppressed. Choose an unused key in Controls.
+A rising edge toggles continuous wiping, even with dirt strength zero.
+Native menu rendering and navigation still require verification on real game data.

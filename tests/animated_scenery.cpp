@@ -2,6 +2,7 @@
 // cycling driven by [video] video.animated_scenery. Pure helpers are
 // unit-tested here; the draw-loop wiring lives in Game.cpp.
 #include "GraphicsOptions.h"
+#include "SceneryMotion.h"
 #include <cstdio>
 
 static int failures;
@@ -15,6 +16,17 @@ static void Check(bool ok, const char *what)
 
 int main(void)
 {
+    using SceneryMotion::Offset;
+    Check(Offset(0,0,10,0,1000,true)==0,"tree base fixed");
+    Check(Offset(0,0,10,0,1000,false)==0,"all people feet fixed");
+    Check(std::abs(Offset(10,0,10,0,1000,true))>.3f,"stronger tree crown motion");
+    Check(std::abs(Offset(10,0,10,0,1000,false))>.2f,"visible spectator motion");
+    Check(Offset(10,0,10,0,1000,true)==Offset(10,0,10,0,1000,true),"draws don't advance time");
+    Check(Offset(10,0,0,0,1000,true)==0,"invalid extent refused");
+    for(unsigned t=0;t<10000;t+=37){
+        Check(std::abs(Offset(10,0,10,t*65536ull,1234,true))<=.450001f,"tree bounded 4.5 percent");
+        Check(std::abs(Offset(10,0,10,t*65536ull,1234,false))<=.250001f,"people bounded 2.5 percent");
+    }
     // Frame advance: timer counts down, frame wraps within frameCount.
     struct { int timer; int frame; int count; int wantFrame; int wantTimer; } cases[] = {
         { 5,  0, 4, 0, 4 },   // tick, no wrap
