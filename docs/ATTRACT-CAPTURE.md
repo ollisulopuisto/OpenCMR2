@@ -10,9 +10,11 @@
 
 Files: `DIR/demo-t000.png`, `demo-t005.png`, ... and `capture.csv` with one row per shot:
 
-`target_s, request_clock_ms, saved_clock_ms, tick_frames_to_save, country, stage, speed_raw, car_x, car_y, car_z, view_type, drone_view`
+`target_s, request_clock_cs, saved_clock_cs, tick_frames_to_save, country, stage, speed_raw, car_x, car_y, car_z, view_type, drone_view`
 
-The state columns (`country`..`drone_view`, raw fixed-point car position, active camera record type and whether it is the drone variant) are sampled when the capture is requested. The renderer saves the next presented frame; `saved_clock_ms` is the stage clock when the save was seen and `tick_frames_to_save` the number of update ticks it took (1 means the frame rendered right after the request). A larger gap means the saved picture can be a few frames later than the logged state. The row is the state signature of the shot, not a camera pose: the camera position itself is not logged.
+The state columns (`country`..`drone_view`, raw fixed-point car position, active camera record type and whether it is the drone variant) are sampled when the capture is requested. The renderer saves the next presented frame; `saved_clock_cs` is the stage clock when the save was seen and `tick_frames_to_save` the number of update ticks it took (1 means the frame rendered right after the request). A larger gap means the saved picture can be a few frames later than the logged state. The row is the state signature of the shot, not a camera pose: the camera position itself is not logged.
+
+The clock columns are stage-clock centiseconds (hundredths of a second, 100 = 1 s). The first version compared them to milliseconds, so shots after t=0 only fired at ten times the intended time (the 5 s shot at 50 s); this is fixed.
 
 Why stage clock: the shot is requested on the first rendered frame at or after the target clock value, so both runs of an A/B pair line up on the simulation clock, not on wall time. The renderer saves the next presented frame, so the true clock is the logged value and can be a frame or so later than the target.
 
