@@ -284,6 +284,38 @@ struct Executor : GfxExecutor {
     SDL_GPUGraphicsPipeline *colorGradingPipeline = nullptr; // analytic color grading
     SDL_GPUTexture *gradingTarget = nullptr;
     bool sampledDepth = false;
+    // Projections of the draws that wrote the sampled depth (back buffer, untransformed, depth test+write),
+    // recovered from _33/_43 and counted per distinct near/far pair. The dominant pair feeds the DoF pass.
+    struct ProjVote { float n, f; int count; };
+    ProjVote projVotes[4] = {}; int projVoteTotal = 0;
+    float sceneNear = 0.0f, sceneFar = 0.0f;
+    void VoteProjection(const GfxMatrix &m)
+    {
+        if (!(m._34 == 1.0f && m._33 > 1.0f && m._43 < 0.0f)) return;
+        float n = -m._43 / m._33, f = m._43 / (m._33 - 1.0f);
+        if (!(n > 0.0f && f > n)) return;
+        projVoteTotal++;
+        for (ProjVote &v : projVotes)
+            if (v.count && std::fabs(v.n - n) < 1e-3f * n && std::fabs(v.f - f) < 1e-3f * f) { v.count++; return; }
+        for (ProjVote &v : projVotes)
+            if (!v.count) { v = { n, f, 1 }; return; }
+    }
+    void ResolveProjection(float *outNear, float *outFar)
+    {
+        *outNear = *outFar = 0.0f;
+        int best = -1, distinct = 0;
+        for (int i = 0; i < 4; ++i) { if (projVotes[i].count) distinct++; if (best < 0 || projVotes[i].count > projVotes[best].count) best = i; }
+        if (best >= 0 && projVotes[best].count) {
+            // More than one near/far pair among depth-writing draws: the whole-frame depth is ambiguous, so
+            // keep the old raw-depth rule (near = far = 0 tells dof.frag to use it) instead of guessing.
+            if (distinct == 1) { *outNear = projVotes[best].n; *outFar = projVotes[best].f; }
+            static int lastDistinct = -1;
+            if (distinct != lastDistinct) {
+                lastDistinct = distinct;
+                Sys_Log("options: DoF projection from depth-writing draws: %d distinct near/far pair(s), dominant near %.3f far %.1f (%d of %d draws); %s", distinct, projVotes[best].n, projVotes[best].f, projVotes[best].count, projVoteTotal, distinct == 1 ? "linear depth candidate in use" : "ambiguous: old raw-depth rule used");
+            }
+        }
+    }
     SDL_GPUTexture *dofBuf1 = nullptr;  // depth-aware disk blur output
     SDL_GPUTexture *godRaysBuf1 = nullptr; // normalized light-shaft output
     // OpenCMR2: depth of field state.
@@ -2138,6 +2170,7 @@ struct Executor : GfxExecutor {
                 }
             }
 
+        memset(projVotes, 0, sizeof(projVotes)); projVoteTotal = 0; // votes are per rendered frame, never carried over
         size_t worldEnd=frame.commands.size();unsigned boundaries=0;bool raceWorld=false;
         for(size_t i=0;i<frame.commands.size();++i)if(frame.commands[i].type==GFX_CMD_WORLD_END){worldEnd=i;raceWorld=frame.commands[i].raceWorld;++boundaries;}
         // Per-view history is not implemented. Multi-view/UI-only frames skip
@@ -2222,6 +2255,7 @@ struct Executor : GfxExecutor {
                 SDL_BindGPUGraphicsPipeline(pass, pipeline);
                 bound.pipeline = pipeline;
             }
+            if (target == NULL && !c.transformed && s.depthTest && s.depthWrite) VoteProjection(s.projection);
             const bool scaled = target == NULL && s.screenW > 0 && s.screenH > 0;
             const GfxViewport viewport = ToTarget(s.viewport, s.screenW, s.screenH, target == NULL, targetW, targetH);
             SDL_GPUViewport vp;
@@ -2529,12 +2563,13 @@ struct Executor : GfxExecutor {
             speedFocusTicks = nowTicks;
             if (dtSeconds > 0.25f) dtSeconds = 0.25f;
             speedFocusSmooth += (speedFocusTarget - speedFocusSmooth) * (1.0f - std::exp(-dtSeconds / 0.8f));
+            ResolveProjection(&sceneNear, &sceneFar);
             float aspect = backHeight ? (float)backWidth / (float)backHeight : 1.0f;
             // x focus distance, y focus range (shallower with speed), z max blur, w tunnel strength 0..1
             float uniforms[8] = { dofFocalDistance / 100.0f,
                                   dofFocalRange / 100.0f * (1.0f - 0.5f * speedFocusSmooth),
                                   dofMaxBlur / 100.0f * 4.0f, speedFocusSmooth,
-                                  aspect, 0.0f, 0.0f, 0.0f };
+                                  aspect, 0.014f * (float)backHeight, sceneNear, sceneFar };
             SDL_GPUTextureSamplerBinding bindings[2] = {
                 { presentSource, linearSampler }, { backDepth, depthSampler }
             };

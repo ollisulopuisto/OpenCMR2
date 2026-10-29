@@ -7,7 +7,7 @@ layout(std140, set = 3, binding = 0) uniform DoFUniforms {
     float focalRange;
     float maxBlur;
     float tunnel;  // 0..1 speed-driven tunnel vision (0 = off, identical to the old pass)
-    vec4 extra;    // x aspect ratio
+    vec4 extra;    // x aspect ratio, y peripheral (tunnel) blur radius in pixels at full tunnel, z near plane, w far plane (0 = unknown)
 };
 void main()
 {
@@ -15,7 +15,17 @@ void main()
     vec2 uv = gl_FragCoord.xy * pixel;
     vec4 center = texture(sceneTex, uv);
     float depth = texture(depthTex, uv).r;
-    float coc = smoothstep(0.0, max(focalRange, 0.001), abs(depth - focalDistance));
+    // Raw hardware depth is hyperbolic (depth = far/(far-near) * (1 - near/z)), so with near 0.1 almost
+    // every pixel sits above 0.9 and a linear |depth - focus| saturated the blur everywhere. Recover the
+    // view distance and measure focus on a log scale between near and far (unit free):
+    // 0 = near plane, 1 = far plane.
+    float focusPos = depth;
+    if (extra.z > 0.0 && extra.w > extra.z) {
+        float z = extra.z * extra.w / max(extra.w - depth * (extra.w - extra.z), 1e-6);
+        focusPos = clamp(log(max(z, extra.z) / extra.z) / log(extra.w / extra.z), 0.0, 1.0);
+    }
+    float coc = smoothstep(0.0, max(focalRange, 0.001), abs(focusPos - focalDistance));
+    float tunnelRadius = 0.0;
     // Tunnel vision: blur grows with distance from the screen centre, and the sharp circle
     // closes as speed rises. The car sits low in the frame (r about 0.5) and stays sharp.
     if (tunnel > 0.0) {
@@ -25,8 +35,10 @@ void main()
         float inner = mix(1.4, 0.7, tunnel);
         float peripheral = smoothstep(inner, inner + 0.8, edge) * tunnel;
         coc = max(coc, peripheral);
+        tunnelRadius = peripheral * extra.y;
     }
-    float radius = coc * max(maxBlur, 0.0);
+    // The peripheral blur has its own radius: dof_blur (about 1 px at the default) is far too small to see.
+    float radius = max(coc * max(maxBlur, 0.0), tunnelRadius);
     if (radius < 0.25) { outColor = center; return; }
     // Golden-angle disk: smoother defocus than a box, with foreground rejection
     // to avoid pulling a sharp foreground silhouette into the blurred distance.

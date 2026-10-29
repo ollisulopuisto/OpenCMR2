@@ -5558,6 +5558,13 @@ int View_GetCameraSpotIndex(unsigned int view);
 // FUNCTION: CMR2 0x004218d0
 extern BYTE g_droneVariant[8], g_dronePairDone[8];
 extern signed char g_droneOverride[8];
+// OpenCMR2: --attract-capture state signature: the active camera record type and whether it is the drone variant.
+void AttractCapture_ViewSignature(int view, int *type, int *drone)
+{
+    BYTE rec = (BYTE)(g_activeViewRecord[view & 1] + (view & 1) * 2);
+    *type = g_viewRecords[rec & 3].type;
+    *drone = g_droneVariant[rec & 7];
+}
 int View_FindFreeModeSlot(unsigned char view)
 {
     int mode;

@@ -1365,6 +1365,8 @@ void Gfx_SetWindowMode(SDL_Window *window, bool fullscreen, int width, int heigh
 }
 
 static char s_capturePath[1024];
+static unsigned s_captureSerial;
+extern "C" unsigned Gfx_GetCaptureSerial(void) { return s_captureSerial; }
 extern "C" void Gfx_RequestCapture(const char *path)
 {
     snprintf(s_capturePath, sizeof(s_capturePath), "%s", path ? path : "");
@@ -1388,6 +1390,7 @@ void Gfx_HashFrame(const uint8_t *bgra, int width, int height)
         if (s != NULL)
             SDL_DestroySurface(s);
         s_capturePath[0] = 0;
+        s_captureSerial++;
     }
     if (file == NULL)
         return;
