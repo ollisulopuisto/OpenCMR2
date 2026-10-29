@@ -881,6 +881,7 @@ void ChaseCamera_Start(CameraRecord *param_1, FixMatrix *param_2, int param_3)
     BYTE index;
     CameraRecord *pSettings = param_1;
 
+    BYTE prevMode = pSettings->index < 8 ? g_playerCameraMode[pSettings->index] : 0xff;
     CameraOperator_Reset(pSettings->index);
     index = pSettings->view;
     g_playerCameraMode[pSettings->index] = (BYTE)param_3;
@@ -892,6 +893,9 @@ void ChaseCamera_Start(CameraRecord *param_1, FixMatrix *param_2, int param_3)
             g_droneVariant[pSettings->index] = (BYTE)g_droneOverride[pSettings->index];
             g_dronePairDone[pSettings->index] = 1;
             g_droneOverride[pSettings->index] = -1;
+        } else if (prevMode == 4) {
+            // Restart of the view already in this mode (replay, split-screen change, reload):
+            // keep the stop the player chose, classic or drone.
         } else {
             // Not from the cycle (menu, saved selection): keep the old behaviour, drone
             // when the option is on.

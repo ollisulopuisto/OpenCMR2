@@ -3915,7 +3915,7 @@ void InRaceMenu_BuildCameraOffsetOptions(void)
     Menu_AddItemType3(&g_menu0x0052a870, 0, 0x5f, 0x1f, 10, 0, 0, 0, 1);
     Menu_AddItemType3(&g_menu0x0052a870, 0, 0x60, 0x1f, 10, 0, 0, 0, 2);
     Menu_AddItemType3(&g_menu0x0052a870, 0, 0x61, 0x15, 10, 0, 0, 0, 3);
-    Menu_AddItemType3(&g_menu0x0052a870, (char *)"human operator", -1, 2, 0, 0, 0, 0, 6);
+    Menu_AddItemType3(&g_menu0x0052a870, (char *)"drone", -1, 2, 0, 0, 0, 0, 6);
     Menu_AddItemType4(&g_menu0x0052a870, 0, 0x62, (MenuItemAction)InRaceMenu_ResetCameraDefaults, 4);
     Menu_AddItemType2(&g_menu0x0052a870, 0, 0x3b, &g_menu0x00529ed8, 0, 5);
     Menu_SetCallbacks(&g_menu0x0052a870, (MenuCallback)InRaceMenu_EnterCameraOffsetOptions,

@@ -176,7 +176,7 @@ portable interception harness would be needed before claiming that coverage.
 
 ### Deliberate custom-camera operator (experimental)
 
-The custom chase camera's Human operator option is separate from Camera Effects
+The custom chase camera's Drone option (formerly "human operator") is separate from Camera Effects
 shake. Default Off preserves the existing view. Accept saves
 `video.camera_operator`; Cancel leaves it unchanged. On uses filtered heading
 trend plus travel direction for a small anticipatory orientation lead, with

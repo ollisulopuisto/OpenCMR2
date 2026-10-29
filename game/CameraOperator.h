@@ -3,7 +3,7 @@
 #include <cmath>
 
 namespace CameraOperator {
-inline const char* Label(bool enabled){return enabled?"human operator: on":"human operator: off";}
+inline const char* Label(bool enabled){return enabled?"drone: on":"drone: off";}
 inline float Max(float a,float b){return a>b?a:b;}
 inline float Clamp(float x,float a,float b){return x<a?a:x>b?b:x;}
 inline float Wrap(float x){return std::atan2(std::sin(x),std::cos(x));}
