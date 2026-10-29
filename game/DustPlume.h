@@ -71,6 +71,22 @@ inline bool SpeedMote_HasBudget(int active, int motes, int capacity, int amountP
 }
 // video.speed_motes_size: quad size in percent of the normal 0.5 m speck (100 = unchanged), clamped 50..800.
 inline int SpeedMote_SizePercent(int v) { return v < 50 ? 50 : v > 800 ? 800 : v; }
+// Where a mote spawns relative to the car (world units, pure maths, see tests/speed_mote_spawn.cpp). hx/hz is the car's horizontal
+// DRIVING direction (any length, not normalised). In this code base the car's longitudinal axis is Car::right (velocity . right >= 0 when
+// driving forward, and the contact patch uses right as the length axis), while Car::forward is the side axis, so the caller passes
+// car->right. u1..u3 are 0..1 random numbers. Result: dx/dz offset from the car; ahead = speed * (18..36 steps), at least 12, and 4..14 to one side.
+inline bool SpeedMote_SpawnOffset(float hx, float hz, float speedPerStep, float u1, float u2, float u3, float *dx, float *dz) {
+    float len = std::sqrt(hx * hx + hz * hz);
+    if (!(len > 0.2f)) return false;
+    hx /= len; hz /= len;
+    float rx = hz, rz = -hx; // horizontal perpendicular of the heading
+    float ahead = speedPerStep * (18.f + 18.f * u1);
+    if (ahead < 12.f) ahead = 12.f;
+    float side = (4.f + 10.f * u2) * (u3 < 0.5f ? -1.f : 1.f);
+    *dx = hx * ahead + rx * side;
+    *dz = hz * ahead + rz * side;
+    return true;
+}
 void SpeedMote_Update(Particle *, ParticleType *, SceneNode *);
 void SpeedMote_Spawn(FixVector *world);
 struct BillboardDef; struct SceneNode;
