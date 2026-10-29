@@ -3,11 +3,15 @@ from pathlib import Path
 import tempfile,subprocess,argparse
 import moderngl,numpy as np
 from PIL import Image,ImageDraw
-parser=argparse.ArgumentParser();parser.add_argument('--output');parser.add_argument('--pool-fixture',type=Path);args=parser.parse_args()
+parser=argparse.ArgumentParser();parser.add_argument('--output');parser.add_argument('--benchmark',action='store_true',help='synthetic draw timing only, not gameplay performance');parser.add_argument('--pool-fixture',type=Path);args=parser.parse_args()
 root=Path(__file__).resolve().parents[1]/'src/render/shaders'
-with tempfile.TemporaryDirectory() as tmp:
- spv=str(Path(tmp)/'v.spv');subprocess.run(['glslangValidator','-V',str(root/'dust_volume.frag'),'-o',spv],check=True)
- frag=subprocess.check_output(['spirv-cross',spv,'--version','330','--no-es'],text=True)
+def compile_volume(source):
+ with tempfile.TemporaryDirectory() as tmp:
+  path=Path(tmp)/'volume.frag';path.write_text(source)
+  spv=str(Path(tmp)/'v.spv');subprocess.run(['glslangValidator','-V',str(path),'-o',spv],check=True)
+  return subprocess.check_output(['spirv-cross',spv,'--version','330','--no-es'],text=True)
+source=(root/'dust_volume.frag').read_text()
+frag=compile_volume(source)
 ctx=moderngl.create_standalone_context(require=330,backend='egl');w,h=240,160
 # Emulate SDL GPU's TOP-origin fragment position in bottom-origin EGL. Depth
 # uploads below are flipped too. Previous tests used GL convention on both
@@ -20,7 +24,7 @@ prog=ctx.program(vertex_shader=vert,fragment_shader=frag);prog['DustVolumeUnifor
 pixels=np.zeros((h,w,4),dtype='u1');pixels[:]=[45,70,53,255]
 scene=ctx.texture((w,h),4,pixels.tobytes());scene.use(0)
 out=ctx.texture((w,h),4);fbo=ctx.framebuffer([out]);vao=ctx.vertex_array(prog,[])
-def render(yaw,count=3,depth=1.,density=1.,offset=0.,large=False,clouds=None,trail=False,close=False,transmittance=False,pitch=0.):
+def render(yaw,count=3,depth=1.,density=1.,offset=0.,large=False,clouds=None,trail=False,close=False,transmittance=False,pitch=0.,gpu_times=None):
  eye=np.array([np.sin(yaw)*7,2,np.cos(yaw)*7]);eye[0]+=offset;target=np.array([offset,1,0]);forward=(target-eye);forward/=np.linalg.norm(forward);right=np.cross(forward,[0,1,0]);right/=np.linalg.norm(right);up=np.cross(right,forward)
  view=np.eye(4);view[:3,:3]=[right,up,forward];view[:3,3]=-view[:3,:3]@eye
  if trail:
@@ -54,7 +58,55 @@ def render(yaw,count=3,depth=1.,density=1.,offset=0.,large=False,clouds=None,tra
   hc=np.concatenate([hit,np.ones((h,w,1))],axis=-1)@(proj@view).T
   depths[valid]=(hc[:,:,2]/hc[:,:,3])[valid]
  d=ctx.texture((w,h),1,np.flipud(depths).copy().tobytes(),dtype='f4');d.use(0);prog['sceneDepth'].value=0
- fbo.use();vao.render(vertices=3);raw=np.frombuffer(fbo.read(components=4),dtype='u1').reshape(h,w,4).copy();arr=raw.copy();arr[:,:,:3]=np.clip(raw[:,:,:3].astype(float)+background[:,:,:3].astype(float)*raw[:,:,3,None]/255.,0,255);arr[:,:,3]=pixels[:,:,3];ubo.release();d.release();return raw[:,:,3] if transmittance else arr
+ fbo.use()
+ if gpu_times is None:vao.render(vertices=3)
+ else:
+  query=ctx.query(time=True)
+  with query:vao.render(vertices=3)
+  gpu_times.append(query.elapsed/1e6)
+ raw=np.frombuffer(fbo.read(components=4),dtype='u1').reshape(h,w,4).copy();arr=raw.copy();arr[:,:,:3]=np.clip(raw[:,:,:3].astype(float)+background[:,:,:3].astype(float)*raw[:,:,3,None]/255.,0,255);arr[:,:,3]=pixels[:,:,3];ubo.release();d.release();return raw[:,:,3] if transmittance else arr
+# Compare the real optimized kernel with the previous per-lobe evaluation.
+# Reconstruct just that expression site, not an unrelated CPU approximation.
+shared='float detail=noise(p*1.7);'
+assert source.count(shared)==1
+reference=source.replace(shared,'').replace('float d=fall*',shared+'\n            float d=fall*')
+reference_frag=compile_volume(reference).replace('gl_FragCoord.xy', 'vec2(gl_FragCoord.x, '+str(h)+'.0 - gl_FragCoord.y)')
+reference_prog=ctx.program(vertex_shader=vert,fragment_shader=reference_frag)
+reference_prog['DustVolumeUniforms'].binding=0
+reference_vao=ctx.vertex_array(reference_prog,[])
+optimized_prog,optimized_vao=prog,vao
+# Unlike count=32 with only three nonzero entries, this is a genuine dense
+# 32-lobe overlap. It exercises the repeated detail-noise site under load.
+clouds=np.zeros((32,8),dtype='f4')
+for i in range(32):
+ clouds[i]=[(i%4-1.5)*.35, .7+(i//4%4)*.25, (i//16-.5)*.6, 3., .62,.47,.28,.035]
+comparisons=0
+for yaw in [0.,.4,1.2,2.7]:
+ for n in [0,1,3,16,32]:
+  for depth in [0.,.99,1.]:
+   for transmittance in [False,True]:
+    kwargs=dict(clouds=clouds[:n],depth=depth,transmittance=transmittance,pitch=.7)
+    prog,vao=optimized_prog,optimized_vao;optimized=render(yaw,**kwargs)
+    prog,vao=reference_prog,reference_vao;old=render(yaw,**kwargs)
+    assert np.array_equal(optimized,old), 'shared detail noise must preserve every output byte'
+    comparisons+=1
+prog,vao=optimized_prog,optimized_vao
+if args.benchmark:
+ # Interleave variants, discard two warmup rounds, no flaky speed threshold.
+ # GPU timer covers draw only, not shader build/readback/fixture creation.
+ for label,fixture in [('dense32',clouds),('sparse3',clouds[:3].copy())]:
+  if label=='sparse3':fixture[:,3]=.45
+  timings={'original':[],'shared':[]}
+  for iteration in range(12):
+   for name,p,v in [('original',reference_prog,reference_vao),('shared',optimized_prog,optimized_vao)]:
+    prog,vao=p,v;batch=[]
+    for _ in range(4):render(.4,clouds=fixture,depth=1.,pitch=.7,gpu_times=batch)
+    if iteration>=2:timings[name].extend(batch)
+  for name,values in timings.items():
+   print(label,name,'draw ms median',np.median(values),'p10/p90',np.percentile(values,[10,90]),'N',len(values))
+ prog,vao=optimized_prog,optimized_vao
+reference_vao.release();reference_prog.release()
+print('PASS shared-detail equivalence:',comparisons,'dense/empty/occluded GPU outputs')
 assert np.array_equal(render(0,count=0),pixels)
 assert np.array_equal(render(0,density=0),pixels)
 assert np.array_equal(render(0,depth=0),pixels),'opaque foreground must occlude cloud'

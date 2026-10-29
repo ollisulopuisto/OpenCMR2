@@ -155,6 +155,25 @@ existence was not a usable UI. Make that action explicitly Rebind driving
 controls, label the bindings save action and player rows. Test constructed menu
 links and actual action traversal/capture/save. Native pixels/navigation still
 need owner's check; do not tell them an unverified hidden path is usable.
+## Heavy dust cost follow-up
+
+Claim: perf/dust-shared-detail-noise. Native screenshots show lower FPS during
+heavy dust; varying camera/time and recording mean this is not a controlled
+bottleneck measurement. Inspect actual kernel and reduce repeated work without
+changing density/shape first. Shared world detail noise is independent of lobe
+and now computed once per ray sample before the lobe loop. The lazy branch
+variant was byte-identical but slightly slower on llvmpipe, so was rejected. Preserve depth/HUD,
+fallbacks, sample counts/defaults and compare actual shader pixels, not source
+syntax alone. Mac same-camera/weather frame-time acceptance remains required.
+Wiper PR57 and Controls PR58 stay separate; scenery additions paused.
+
+Local synthetic240x160 draw-query evidence, not Mac gameplay FPS: interleaved
+40timed samples each, dense32lobes original median6.410ms vs shared5.157ms;
+sparse3smalllobes original.0943ms vs shared.0856ms (noisy short draws).
+These measure llvmpipe/software rasterization only.120 before/after actual
+compiled-kernel outputs byte-identical across dense/empty/occluded/orbit cases.
+No sample-count, shape, pool, compositor, default or fallback change. Native
+same-camera/weather heavy-dust comparison remains open.
 
 ## Helicopter camera operator refinement
 
@@ -177,3 +196,13 @@ H/O vanish, new lowercase label emits both. Original font pair unavailable, so
 this is a source-path regression, NOT native-font/pixel acceptance. Loader slot1
 is Fonts/general/hel_15pt in frontend, hel_12pt in-race (.pcf+.tga). Native
 menu and helicopter feel must still be checked in owner build.
+
+## PR59 CI repair follow-up
+All failed Linux job logs show recipe tests missing PIL. Exact desktop workflow
+requirements-install patch held separately because credential lacks workflow
+scope. Linux CI dependency gap remains open, not fixed by skipping tests.
+Windows enhancements_test link failure came from redefining private as public,
+changing static member mangling. Use existing public SetGameHDPath, same save
+assertions. Explicit string headers repair wiper and camera Windows tests.
+Both human-merged camera/wiper and dust notes retained above. Native CI pending;
+no merges, dispatches or reruns performed.

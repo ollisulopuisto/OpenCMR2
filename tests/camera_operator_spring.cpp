@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <fstream>
 #include <chrono>
+#include <string>
 extern void Scene_InitFixedMathTables();
 extern void ChaseCamera_Update(CameraRecord*,FixMatrix*,int);
 extern BYTE g_playerCameraMode[8];

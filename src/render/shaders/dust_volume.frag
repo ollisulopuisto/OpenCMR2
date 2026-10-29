@@ -44,6 +44,7 @@ void main() {
     for(int step=0;step<32;++step){
         float distance=start+(float(step)+.5)*stepSize;vec3 p=origin+dir*distance;
         float density=0.;vec3 tint=vec3(0.);
+        float detail=noise(p*1.7);
         for(int i=0;i<count;++i){
             vec3 q=(p-centres[i].xyz)/max(centres[i].w,.001);
             q.y*=1.2; // broad terrain-hugging body, not a camera-facing disc
@@ -55,7 +56,6 @@ void main() {
             // Radial edge stays bounded; density varies at two world scales.
             float billow=noise(p*.55+centres[i].xyz*.07);
             float fall=max(0.,1.-radial-(1.-billow)*.7);
-            float detail=noise(p*1.7);
             float d=fall*colours[i].w*3.8*(.25+.75*billow)*(.35+.65*detail);
             // Cheap art-directed internal lighting, fixed in world space. This
             // is not scattering/shadow simulation, but avoids flat ochre fill.
