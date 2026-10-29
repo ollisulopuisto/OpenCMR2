@@ -1101,6 +1101,8 @@ extern Graphics *g_pGraphics;
 struct StageObject;
 class CGraphics {
     friend struct SceneryPackTestAccess; // Preserve private static linkage in the isolated renderer test.
+    friend void France1Textures_Clear();
+    friend struct France1TexturesTestAccess;
     friend bool SceneryPack_Draw(StageObject *, const float *);
 public:
     static bool InitializeDirectX(void);

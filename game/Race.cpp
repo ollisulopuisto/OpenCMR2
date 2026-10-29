@@ -1,3 +1,4 @@
+#include "France1Textures.h"
 #include "DustPlume.h"
 #include "CurvedRoad.h"
 #include "SceneryPack.h"
@@ -733,6 +734,7 @@ BYTE Race_LoadSelectedStage(void)
     else
         Graphics_ReserveCubeMapsAndLoadEnvironment(CFrontend::m_stringDest, 1, Race_GetLoadedStageFile(), 0x40);
     RallyData_DrawLoadingProgress(0xf, 1, 0xff);
+    France1Textures_Begin((GenericFile*)StageTiming_GetStageFile3(),(const char*)GameMenu_GetChampionshipTransitionState());
     Race_ResolveStageTexturesAndPalettes();
     Race_LoadStageLightPlacement();
     CurvedRoad_Begin((GenericFile*)StageTiming_GetStageFile3(),(const char*)GameMenu_GetChampionshipTransitionState());

@@ -136,3 +136,29 @@ not private restored RGB. Low variants are unverified and
 remain original. Native Mac appearance/performance remain pending. Private
 restored texture RGB is not reproducible from this source-only patcher
 without its private restoration inputs. No derived artwork is included in Git.
+
+
+## France1 road texture test (experimental)
+
+`--textures france1` prepares2xfiltered `t_1a/b` high/low original textures with
+full mip chains. `--textures original` or no flag retains original texture
+selection. Exact supported DDS bytes and original France1 C3D are required;
+other stages stay original. This is interpolation, not new/restored detail.
+No generic filtering is applied to foliage, people, UI, fonts or other atlases.
+Run the binary with your existing data/profile selection, for example:
+
+```sh
+opencmr2 --data /path/to/owned/game --textures france1 --prepare-only
+opencmr2 --data /path/to/owned/game --textures france1 --roads curved --trees crossed --spectators animated
+```
+
+The second command combines opt-in tests; curved geometry currently supports
+only the exact high-detailFrance1 quartet. Low-detailFrance1 geometry remains
+original. The texture choice covers its own high+low DDS identities separately.
+Private caches are versioned, source/output-hash checked and never replace old
+packs. Source directories, saved driver and original texture dimensions remain
+unchanged; renderer replacement is removed at stage teardown. Python with Pillow
+must already exist; this texture helper does not install anything. A complete
+playable installation is needed for visual comparison. Linux tests and upload
+readback do not establish native Mac appearance, sampler seam quality or frame
+time. Hedge/bank depth is a separate experiment, not included in this option.
