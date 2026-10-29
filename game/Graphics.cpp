@@ -1,3 +1,4 @@
+#include "France1Textures.h"
 #include "SceneryPack.h"
 #include "DustPlume.h"
 #include "WorldDust.h"
@@ -2164,6 +2165,7 @@ void Graphics_ReloadAllTextures(void)
             } else {
                 CGraphics::LoadDDSTexture((DDSFile *)pData, pTexture);
             }
+            France1Textures_Apply(pTexture,pData,CGenericFileLoader::GetGenericFileSize());
         }
     }
     for (i = 0; i < CGraphics::m_unk0x0065fa28; i++)
@@ -6059,9 +6061,9 @@ Texture *CGraphics::LoadDDSThenTGATexture(char *name, unsigned int flags)
     pTexture->flags |= flags;
     if ((pTexture->flags & 0x20) && (g_pGraphics->field913_0x3bc & 0x10))
         return LoadTGABumpMap((BYTE *)pData, pTexture);
-    if (isDDS)
-        return LoadDDSTexture((DDSFile *)pData, pTexture);
-    return LoadTGATexture((BYTE *)pData, pTexture);
+    Texture *loaded=isDDS ? LoadDDSTexture((DDSFile *)pData,pTexture) : LoadTGATexture((BYTE *)pData,pTexture);
+    France1Textures_Apply(loaded,pData,CGenericFileLoader::GetGenericFileSize());
+    return loaded;
 }
 
 // Converts a TGA image into a texture: the pixels (read through

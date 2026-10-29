@@ -1,3 +1,4 @@
+#include "France1Textures.h"
 #include <stdio.h>
 #include <string.h>
 #include "Texture.h"
@@ -47,6 +48,7 @@ Texture* CTexture::FindLoadTexture(GenericFile* pFile, char* textureName, bool *
             if(pSize)*pSize=sourceSize;
             pTexture->pArchive = pFile;
             SceneryPack_RegisterSource(pTexture,pData,sourceSize);
+            France1Textures_Apply(pTexture,pData,sourceSize);
             return pTexture;
         }
     }

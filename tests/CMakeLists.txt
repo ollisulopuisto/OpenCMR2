@@ -432,3 +432,12 @@ add_executable(camera_operator_runtime_test camera_operator_runtime.cpp ${PROJEC
 target_include_directories(camera_operator_runtime_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src)
 target_compile_options(camera_operator_runtime_test PRIVATE "SHELL:-include ${PROJECT_SOURCE_DIR}/src/port/types.h" -fms-extensions)
 add_test(NAME camera_operator_runtime COMMAND camera_operator_runtime_test)
+add_executable(france1_textures_test france1_textures.cpp
+ ${PROJECT_SOURCE_DIR}/game/France1Textures.cpp ${PROJECT_SOURCE_DIR}/src/render/gfx_core.cpp ${PROJECT_SOURCE_DIR}/src/diagnostics/observer.cpp)
+target_include_directories(france1_textures_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src)
+target_compile_options(france1_textures_test PRIVATE "SHELL:-include ${PROJECT_SOURCE_DIR}/src/port/types.h" -fms-extensions)
+target_link_libraries(france1_textures_test PRIVATE SDL3::SDL3)
+add_test(NAME france1_textures COMMAND france1_textures_test)
+if(Python3_Interpreter_FOUND)
+ add_test(NAME france1_prepare_recipe COMMAND ${Python3_EXECUTABLE} -m unittest test_france1_prepare test_road_periodic WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tools/scenery-patch)
+endif()

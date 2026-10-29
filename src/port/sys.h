@@ -118,6 +118,7 @@ BOOL Sys_HasSceneryDirectory(void);
 const char *Sys_GetCarDisplayName(int archiveSlot, BOOL brief);
 SysFile *Sys_OpenSceneryFile(const char *relative);
 const char *Sys_GetRoadDirectory(void);
+const char *Sys_GetTextureDirectory(void);
 // Game path of the last file Sys_OpenFile could not open for reading.
 const char *Sys_GetLastMissingFile(void);
 void Sys_CloseFile(SysFile *file);

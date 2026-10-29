@@ -4,16 +4,17 @@
 #include <string>
 #include <map>
 struct EnhancementOptions {
-    std::string trees, spectators, names, cars, modsDir, carNames, roads;
+    std::string trees, spectators, names, cars, modsDir, carNames, roads, textures;
     bool installDependencies=false,prepareOnly=false;
     std::map<std::string,int> overrides;
     bool Consume(int &i,int argc,char **argv,std::string &error) {
         std::string key=argv[i];
         if(key=="--prepare-only"){prepareOnly=true;return true;}
         if(key=="--install-enhancement-deps"){installDependencies=true;return true;}
-        if(key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect")return false;
+        if(key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect")return false;
         if(i+1>=argc){error="Missing value for "+key;return true;}
         std::string value=argv[++i];
+        if(key=="--textures"){if(value!="original"&&value!="france1")error="--textures expects original or france1";else textures=value;}
         if(key=="--roads"){if(value!="original"&&value!="curved")error="--roads expects original or curved";else roads=value;}
         if(key=="--tree-wind"){if(value!="on"&&value!="off")error="--tree-wind expects on or off";else overrides["video.tree_wind"]=value=="on";}
         if(key=="--car-names"){if(value!="original"&&value!="skin")error="--car-names expects original or skin";else carNames=value;}
@@ -54,6 +55,9 @@ inline const char *EnhancementHelp(){return
 "                              Prepare/cache selected experimental tree mode\n"
 "                              Only3high-source mappings; shell is tiered;\n"
 "                              crossed is fixed cutouts, not full3Dtrees\n"
+"  --textures original|france1 Exact-source France1 opaque road2x filter\n"
+"                              Only t_1a/b high+low; not restored detail\n"
+"                              Other stages stay original; native unverified\n"
 "  --roads original|curved      Experimental Ballon paired render/contact curve\n"
 "                              Exact original source only; others stay original\n"
 "                              FIN barriers unchanged; native handling unverified\n"
