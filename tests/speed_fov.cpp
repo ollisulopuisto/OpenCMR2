@@ -5,6 +5,7 @@ static int fails;
 #define CHECK(c) do{ if(!(c)){ std::printf("FAIL %d: %s\n", __LINE__, #c); ++fails; } }while(0)
 int main(){
     CHECK(SpeedFov_Target(0)==0);
+    CHECK(SpeedFov_HeldRatio(0.f,1)==1.f&&SpeedFov_HeldRatio(0.37f,0)==0.37f&&SpeedFov_HeldRatio(0.37f,1)==1.f);   // tunnel hold only forces the ratio
     {   // Projection maths, same formulas as View_SetPlayerProjection (FixedPoint.cpp) and CGraphics::SetProjection (scale 0.5):
         // fovY = FixMul(0x2147a, FixMul(zoom, fovScale)); _22 = 0.5 * fovY. A car of height h at a fixed camera distance d
         // spans _22*h/d of the half screen, so its pixel size scales with _22 and the vertical angle is 2*atan(1/_22).
