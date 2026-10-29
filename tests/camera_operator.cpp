@@ -43,6 +43,19 @@ int main(){
  }
  auto saved=hill.position;hill.ConstrainTerrain(drive,.04,[](V3,float&){return false;});
  CHECK(std::isfinite(hill.position.y)); // unknown samples do not invent ground
+ // Route-derived right bend chooses left, mirrored bend chooses right.
+ V3 nodes[5]={{0,0,-10},{0,0,10},{10,0,20},{25,0,25},{40,0,25}};
+ auto preview=PreviewRoad({0,0,0},1,5,false,[&](int i){return nodes[i];});CHECK(preview.valid&&preview.bend>.3f);
+ State rightBend,leftBend;auto mirrored=preview;mirrored.bend=-preview.bend;mirrored.near.x=-preview.near.x;mirrored.far.x=-preview.far.x;
+ for(int i=0;i<120;i++){rightBend.Step({0,0,0},-.5f,0,1.5,6.5,2,.04,&preview);leftBend.Step({0,0,0},.5f,0,1.5,6.5,2,.04,&mirrored);}
+ CHECK(rightBend.position.x<-2.f);CHECK(leftBend.position.x>2.f);
+ CHECK(!PreviewRoad({0,0,0},-1,5,false,[&](int i){return nodes[i];}).valid);
+ CHECK(!PreviewRoad(nodes[4],4,5,false,[&](int i){return nodes[i];}).valid);
+ // Degenerate, far-away and finish previews fail closed to original inertia.
+ CHECK(!PreviewRoad({1000,0,1000},1,5,false,[&](int i){return nodes[i];}).valid);
+ CHECK(!PreviewRoad({},0,5,false,[](int){return V3{};}).valid);
+ V3 loopNodes[5]={{0,0,0},{0,0,20},{20,0,20},{20,0,0},{10,0,0}};
+ CHECK(PreviewRoad({15,0,0},4,5,true,[&](int i){return loopNodes[i];}).valid);
  a.Step(car,NAN,0,1,6.5,2,.04);CHECK(!a.ready);
  a.Step(car,0,0,1,6.5,2,0);CHECK(!a.ready);
  puts("world camera position/orbit inertia, steering lens, settling, determinism/reset pass");

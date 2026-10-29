@@ -1,9 +1,12 @@
 #include "CameraOperator.h"
 #include "CameraRecord.h"
 #include "Car.h"
+#include "RallyRoute.h"
 #include "port/sys.h"
 static CameraOperator::State states[8];
 bool Track_CameraGroundHeight(FixVector*,int*);
+int RallyData_GetActiveCarRaceRecordField0(Car*);
+int RallyData_GetRouteAdditionalState();
 extern BYTE g_playerCameraMode[8];
 bool CameraOperator_Enabled(const CameraRecord*record){
  return record && record->index<8 && g_playerCameraMode[record->index]==4 && Sys_GetOption("video.camera_operator",0);
@@ -17,10 +20,13 @@ void CameraOperator_Update(CameraRecord*record,const FixMatrix*reference,const F
  if(!std::isfinite(x)||!std::isfinite(z)||x*x+z*z<.25f){state.Reset();return;}
  state.pitch=(pitch-0x2d)*(6.28318530718f/4096.f);
  auto&p=reference->position;
+ CameraOperator::V3 world={p.x/65536.f,p.y/65536.f,p.z/65536.f};
+ auto road=CameraOperator::PreviewRoad(world,RallyData_GetActiveCarRaceRecordField0(car),g_routeNodes?g_routeNodeCount:0,
+  RallyData_GetRouteAdditionalState()!=0,[](int i){auto&p=g_routeNodes[i].position;return CameraOperator::V3{p.x/65536.f,0,p.z/65536.f};});
  // Remove last terrain lift before advancing free world inertia.
  if(state.ready)state.position.y-=state.terrainLift;
  state.Step({p.x/65536.f,p.y/65536.f,p.z/65536.f},std::atan2(x,z),car->steeringInput/65536.f,car->speed/65536.f,
-  offset?std::abs(offset->z/65536.f):6.5f,offset?offset->y/65536.f:1.5f,g_physicsTimeStep/(65536.f*25.f));
+  offset?std::abs(offset->z/65536.f):6.5f,offset?offset->y/65536.f:1.5f,g_physicsTimeStep/(65536.f*25.f),&road);
  state.ConstrainTerrain({p.x/65536.f,p.y/65536.f,p.z/65536.f},g_physicsTimeStep/(65536.f*25.f),[](CameraOperator::V3 point,float&y){
   FixVector fixed={(int)std::lround(point.x*65536),(int)std::lround(point.y*65536),(int)std::lround(point.z*65536)};int height;
   if(!Track_CameraGroundHeight(&fixed,&height))return false;y=height/65536.f;return true;

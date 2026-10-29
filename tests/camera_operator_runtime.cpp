@@ -2,10 +2,14 @@
 #include "CameraOperator.h"
 #include "CameraRecord.h"
 #include "Car.h"
+#include "RallyRoute.h"
 #include "port/sys.h"
 #include <cstring>
 #include <cstdio>
 BYTE g_playerCameraMode[8]={};int g_physicsTimeStep=65536;static Car car={};static bool enabled=true;
+RallyRouteNode*g_routeNodes=nullptr;int g_routeNodeCount=0;
+int RallyData_GetActiveCarRaceRecordField0(Car*){return 1;}
+int RallyData_GetRouteAdditionalState(){return 0;}
 bool Track_CameraGroundHeight(FixVector*,int*){return false;}
 Car*Car_Get(int i){return i==0?&car:nullptr;}
 extern "C" int Sys_GetOption(const char*,int){return enabled;}
@@ -24,6 +28,13 @@ int main(){
  auto level=record;CameraOperator_Update(&record,&body,nullptr,0x5a);CameraOperator_Apply(&record);
  CHECK(record.matrix.forward.y!=level.matrix.forward.y);
  CHECK(std::abs(record.matrix.right.x/65536.f*record.matrix.forward.x/65536.f+record.matrix.right.z/65536.f*record.matrix.forward.z/65536.f)<.001f);
+ // Actual runtime wiring reads route progress, not just the pure math fixture.
+ RallyRouteNode nodes[5]={};const int coords[5][2]={{0,-10},{0,10},{10,20},{25,25},{40,25}};
+ for(int i=0;i<5;i++){nodes[i].position.x=coords[i][0]*65536;nodes[i].position.z=coords[i][1]*65536;}
+ g_routeNodes=nodes;g_routeNodeCount=5;CameraOperator_Reset(0);body.right.x=-32768;body.right.z=56756;
+ for(int i=0;i<150;i++)CameraOperator_Update(&record,&body);
+ CameraOperator_Apply(&record);CHECK(record.matrix.position.x < -2*65536);
+ g_routeNodes=nullptr;g_routeNodeCount=0;
  enabled=false;auto off=record;CameraOperator_Apply(&record);CHECK(!memcmp(&record,&off,sizeof record));CameraOperator_Update(&record,&body);
  enabled=true;CameraOperator_Apply(&record);CHECK(!memcmp(&record,&off,sizeof record)); // not ready until next simulation step
  g_playerCameraMode[0]=3;CameraOperator_Apply(&record);CHECK(!memcmp(&record,&off,sizeof record));

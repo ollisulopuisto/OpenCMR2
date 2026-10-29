@@ -15,23 +15,58 @@ struct V3 {
  float Length()const{return std::sqrt(x*x+y*y+z*z);}
 };
 inline V3 Unit(V3 v){float n=v.Length();return n>.0001f?v*(1/n):V3{0,0,1};}
+struct RoadPreview {bool valid=false;V3 tangent,near,far;float bend=0;};
+// Pure bounded route preview. Node positions are stage data, not body heading.
+// `next` is the race-progress segment end, so no global nearest-road search
+// can jump to a different leg of a hairpin or a parallel road.
+template<class Point> RoadPreview PreviewRoad(V3 car,int next,int count,bool loop,Point point){
+ RoadPreview out;if(count<2||next<0||next>=count)return out;
+ V3 previous=point(next>0?next-1:loop?count-1:0),end=point(next);
+ V3 segment=end-previous;segment.y=0;float length=segment.Length();
+ if(length<.1f||!std::isfinite(length)||((car-previous).Length()>80.f&&(car-end).Length()>80.f))return out;
+ out.tangent=Unit(segment);V3 from=car-previous;
+ float t=Clamp((from.x*segment.x+from.z*segment.z)/(length*length),0.f,1.f);
+ V3 start=previous+segment*t;float along=0;bool gotNear=false,gotFar=false;
+ for(int i=0;i<16;i++){
+  int node=next+i;if(loop)node%=count;else if(node>=count)break;
+  V3 target=point(node),delta=target-start;delta.y=0;float len=delta.Length();
+  if(len>.01f){
+   if(!gotNear&&along+len>=12){out.near=start+delta*((12-along)/len);gotNear=true;}
+   if(!gotFar&&along+len>=30){out.far=start+delta*((30-along)/len);gotFar=true;break;}
+   along+=len;start=target;
+  }
+ }
+ if(!gotNear)return out;if(!gotFar)out.far=start;
+ V3 ahead=out.far-out.near;ahead.y=0;if(ahead.Length()<1.f)return out;
+ ahead=Unit(ahead);out.bend=Clamp(out.tangent.z*ahead.x-out.tangent.x*ahead.z,-1.f,1.f);
+ out.valid=true;return out;
+}
 struct State{
- bool ready=false;V3 position,velocity,aim,aimVelocity,lastCar;
+ bool ready=false;V3 position,velocity,aim,aimVelocity,lastCar,roadAhead;bool hasRoad=false;
  float terrainLift=0;
  float heading=0,headingRate=0,lastHeading=0,turn=0,zoom=1.7f,zoomRate=0,pitch=0;
  void Reset(){*this=State{};}
- void Step(V3 car,float carHeading,float steering,float speed,float distance,float height,float dt){
+ void Step(V3 car,float carHeading,float steering,float speed,float distance,float height,float dt,const RoadPreview*road=nullptr){
   if(!std::isfinite(steering)||!std::isfinite(speed)||!std::isfinite(distance)||!std::isfinite(height)||!std::isfinite(carHeading)||!std::isfinite(dt)||dt<=0||dt>.2f||!std::isfinite(car.x)||!std::isfinite(car.y)||!std::isfinite(car.z)){Reset();return;}
   distance=Clamp(distance*1.5f,9.f,14.f);height=Clamp(height*3.f,7.f,10.f);
+  bool roadValid=road&&road->valid;
+  float orbitHeading=roadValid?std::atan2(road->tangent.x,road->tangent.z):carHeading;
   float delta=ready?Wrap(carHeading-lastHeading):0;
   if(ready&&((car-lastCar).Length()>25.f||std::abs(delta)>.8f)){Reset();delta=0;}
-  if(!ready){ready=true;heading=lastHeading=carHeading;lastCar=car;position=car+V3{-std::sin(heading)*distance,height,-std::cos(heading)*distance};aim=car+V3{0,1,0};velocity={};}
+  if(!ready){ready=true;heading=orbitHeading;lastHeading=carHeading;lastCar=car;position=car+V3{-std::sin(heading)*distance,height,-std::cos(heading)*distance};aim=car+V3{0,1,0};velocity={};}
+  hasRoad=roadValid;if(roadValid)roadAhead=road->far;
   float measured=delta/dt;lastHeading=carHeading;
   turn+=(Clamp(std::abs(measured)*1.8f+std::abs(steering)*.8f,0.f,1.f)-turn)*(1-std::exp(-dt/.3f));
   // Independent trailing orbit heading: car can rotate without rotating camera.
-  float accel=Clamp(3.f*Wrap(carHeading-heading)-3.f*headingRate,-.7f,.7f);
+  float accel=Clamp(3.f*Wrap(orbitHeading-heading)-3.f*headingRate,-.7f,.7f);
   headingRate=Clamp(headingRate+accel*dt,-.65f,.65f);heading=Wrap(heading+headingRate*dt);
   V3 desired=car+V3{-std::sin(heading)*distance,height,-std::cos(heading)*distance};
+  if(roadValid){
+   // Outside the upcoming bend opens the view. Right-hand bend -> left of
+   // route, even while the car is sliding with the opposite body heading.
+   V3 right={road->tangent.z,0,-road->tangent.x};
+   desired=desired+right*(-Clamp(road->bend*9.f,-6.f,6.f));
+  }
   // Second-order world-space chase. Never re-add car position at draw time.
   V3 acceleration=(desired-position)*4.f-velocity*4.f;
   float magnitude=acceleration.Length();if(magnitude>35.f)acceleration=acceleration*(35.f/magnitude);
@@ -41,6 +76,7 @@ struct State{
   V3 away=position-car;float separation=away.Length();
   if(separation>distance*1.3f){position=car+away*(distance*1.3f/separation);}
   V3 target=car+V3{std::sin(carHeading)*Clamp(speed*3.f,2.f,5.f),1.2f,std::cos(carHeading)*Clamp(speed*3.f,2.f,5.f)};
+  if(roadValid){target=road->near;target.y=car.y+1.2f;}
   V3 aimAcceleration=(target-aim)*12.f-aimVelocity*5.5f;
   aimVelocity=aimVelocity+aimAcceleration*dt;aim=aim+aimVelocity*dt;
   // Steering can widen before the body turns. Lens is actual projection zoom,
@@ -80,7 +116,7 @@ struct State{
      if(ground(point,y)&&std::isfinite(y))lift=Max(lift,(y+1.2f-point.y)/t);
     }
    };
-   corridor(car+V3{0,1.2f,0});corridor(aim);
+   corridor(car+V3{0,1.2f,0});corridor(aim);if(hasRoad)corridor(roadAhead);
    float floor;V3 predictive=camera+velocity*.35f;
    if(ground(predictive,floor)&&std::isfinite(floor))lift=Max(lift,floor+2.f-camera.y);
    return Max(0.f,lift);
