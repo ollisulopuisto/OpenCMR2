@@ -81,3 +81,17 @@ workflow execution remains unverified. Existing credential cannot write workflow
 files, so this change is a user-applied patch on a separate branch/PR, not a
 published workflow. Windows portability repairs remain separate PRs. Revert
 this one commit through a PR if the execution policy needs to be rolled back.
+
+
+## Current requested steering
+
+Claim: feat/wiper-w-toggle. User requests stronger people/tree motion, all-track
+rounding, W wiper toggle and actual in-app remapping. Wiper change is isolated:
+physical W default, saved explicit key retained, rising-edge continuous toggle
+independent of dirt strength. Does not clear any driving bindings. W may conflict
+with user WASD presets; current source-only review cannot inspect their saved
+controller file. In-app original driving reconfiguration exists through Controls
+and device configuration, but wiper is outside its nine actions. Native menu
+visibility and W conflict handling remain open before publishing this change.
+All-track rounding remains source-gated Ballon only until paired source/layout
+and FIN/native validation can extend safely. No arbitrary object animation.

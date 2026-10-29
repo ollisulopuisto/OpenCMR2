@@ -6078,6 +6078,7 @@ static void CameraEffects_DrawOverlays(short *pRect)
     // ---- windscreen wipers --------------------------------------------------
     if (Sys_GetOption("video.windscreen_wipers", 1) != 0) {
         for (int view = 0; view < 8; view++) {
+            g_windscreenWipers[view].active = 1;
             float pos = WindscreenWiper_Sweep(view);
             if (pos < 0.0f)
                 continue;

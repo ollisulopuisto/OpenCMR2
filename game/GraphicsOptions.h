@@ -370,10 +370,10 @@ inline void WindscreenWiper_ClearDirt(int view, float pos)
 }
 
 // OpenCMR2: windscreen wiper action button. `video.windscreen_wiper_key`
-// holds a DIK key code; pressing it triggers one wiper sweep that clears dirt
-// in its path. Defaults to INPUT_KEY_F3 (0x3D), which the original game does
-// not use for driving.
-#define WINDSREEN_WIPER_KEY_DEFAULT 0x3D  // DIK_F3
+// holds a DIK physical key code; each rising edge toggles continuous wiping.
+// Explicit saved keys are retained. Default W is SDL_SCANCODE_W on every port.
+#define WINDSREEN_WIPER_KEY_DEFAULT 0x11  // DIK_W
+inline bool WindscreenWiper_Toggle(bool enabled, bool pressed) { return pressed ? !enabled : enabled; }
 
 // Returns 1 when the wiper key was just pressed this frame (edge trigger),
 // 0 otherwise. Defined in RallyData.cpp.

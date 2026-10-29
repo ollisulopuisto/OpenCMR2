@@ -17,6 +17,9 @@ static void Check(bool ok, const char *what)
 
 int main(void)
 {
+    Check(WINDSREEN_WIPER_KEY_DEFAULT == 0x11, "wiper default is physical W");
+    Check(WindscreenWiper_Toggle(false,true) && !WindscreenWiper_Toggle(true,true), "wiper edges toggle both ways");
+    Check(!WindscreenWiper_Toggle(false,false) && WindscreenWiper_Toggle(true,false), "no edge preserves state");
     // The draw distance clamps to a sane range of the stage's far plane.
     Check(View_ClampDrawDistancePercent(-100) == 25, "clamp(-100) = 25");
     Check(View_ClampDrawDistancePercent(24) == 25, "clamp(24) = 25");
