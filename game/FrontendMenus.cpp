@@ -548,8 +548,11 @@ int FrontendControls_IsSelectedAxisBound(Menu *pMenu)
 // entry under the cursor and unfreezes the menu.
 // match 77%: below the 90% bar; kept as FUNCTION on purpose so reccmp measures it (see CONVENCIONES)
 // FUNCTION: CMR2 0x004fc070
+void FrontendControls_UpdateWiperBinding(Menu*,int);
+bool FrontendControls_IsCapturingWiper();
 void FrontendControls_UpdateBindingCapture(Menu *pMenu)
 {
+    if(FrontendControls_IsCapturingWiper()){FrontendControls_UpdateWiperBinding(pMenu,0);return;}
     DeviceInfo *pDevice;
     int *pPosition;
     int *pReference;
@@ -1013,12 +1016,13 @@ int FrontendControls_GetCalibrationState(void)
 // Separate extension control: do not enlarge the original packed nine-key record.
 static bool g_wiperBindingCapture = false, g_wiperBindingReleased = false;
 static bool g_wiperBindingConflict = false;
+bool FrontendControls_IsCapturingWiper(){return g_wiperBindingCapture;}
 static bool FrontendControls_WiperConflicts(int key)
 {
     // Include live device keys (CLI overrides) as well as saved configurations.
     for (int device=0;device<6;device++)
         for(int action=0;action<9;action++)
-            if(CInput::m_controllerInfo[device].field_0x13e[action] == key)
+            if(CInput::m_controllerInfo[device].field_0x13e[action] == key || g_controlsCopy[device].field_0x13e[action] == key)
                 return true;
     for(int device=0;device<CInput::CountAttachedInputDevices();device++) {
         DeviceInfo *info=CInput::GetAvailableDeviceRecord(device);
@@ -1103,11 +1107,7 @@ void FrontendControls_DrawDeviceList(Menu *pMenu)
                 Sprite_Queue((SpriteRect *)&CFrontend::m_pAr640DTexture->field_0x11c, (SpriteRect *)icon,
                              CFrontend::m_pAr640DTexture, 1, 0, NULL, NULL, g_colourText0x0052496c, 8);
             }
-            if (i == 2)
-                snprintf(CFrontend::m_stringDest, 128, "Wiper: %s",
-                    g_wiperBindingCapture ? (g_wiperBindingConflict ? "Key in use; choose another" : "Press key (Esc cancels)") :
-                    Input_GetKeyName(Sys_GetOption("video.windscreen_wiper_key",WINDSREEN_WIPER_KEY_DEFAULT)));
-            else if (i < 2)
+            if (i < 2)
                 snprintf(CFrontend::m_stringDest, 128, "Player %d driving controls", i + 1);
             else
                 sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x67));
@@ -1183,7 +1183,7 @@ void FrontendControls_DrawDeviceBindings(Menu *pMenu)
     for (i = 0; i < pMenu->itemCount; i++) {
         pItem = &pMenu->items[i];
         if (pItem->enabled) {
-            icon[1] = (int)(g_pGraphics->resY * 20) / 480 + y0 + (int)(g_pGraphics->resY * 36) / 480 * row
+            icon[1] = (int)(g_pGraphics->resY * 20) / 480 + y0 + (int)(g_pGraphics->resY * 32) / 480 * row
                       - CFrontend::m_pAr640ATexture->height / 2;
             if (pMenu->cursor == i) {
                 pShadow = g_colourWhite0x00524968;
@@ -1194,7 +1194,11 @@ void FrontendControls_DrawDeviceBindings(Menu *pMenu)
                 pColour = g_colourText0x0052496c;
                 Sprite_Queue((SpriteRect *)&CFrontend::m_pAr640DTexture->field_0x11c, (SpriteRect *)icon, CFrontend::m_pAr640DTexture, 1, 0, NULL, NULL, pColour, 8);
             }
-            if (i >= 10) {
+            if (i == 10) {
+                snprintf(CFrontend::m_stringDest,128,"wipers: %s",g_wiperBindingCapture ?
+                    (g_wiperBindingConflict ? "key in use; choose another" : "press key (esc cancels)") :
+                    Input_GetKeyName(Sys_GetOption("video.windscreen_wiper_key",WINDSREEN_WIPER_KEY_DEFAULT)));
+            } else if (i > 10) {
                 snprintf(CFrontend::m_stringDest, 128, "%s", pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
             } else {
                 if (FrontendControls_GetBindingCaptureState() != 0 && pMenu->cursor == i) {
@@ -1212,7 +1216,7 @@ void FrontendControls_DrawDeviceBindings(Menu *pMenu)
                 pLineColour = g_colourText0x0052496c;
                 pLineShadow = g_colourShadowText0x00524978;
             }
-            line[1] = (int)(g_pGraphics->resY * 36) / 480 * (row + 1) + y0;
+            line[1] = (int)(g_pGraphics->resY * 32) / 480 * (row + 1) + y0;
             Sprite_FillRect(&g_pGraphics->field309_0x150, line, pLineShadow, 1);
             line[1]++;
             Sprite_FillRect(&g_pGraphics->field309_0x150, line, pLineColour, 1);
@@ -3624,9 +3628,8 @@ void FrontendMenu_BuildControls(void)
     Menu_Init(&g_menu0x00828c80, 0, 0x18, 0, FrontendMenu_GetOptions(), NULL, 1, 0, 1);
     Menu_AddItemType2(&g_menu0x00828c80, 0, -1, &g_menu0x00829140, (MenuItemAction)FrontendControls_SelectDevice, 0);
     Menu_AddItemType2(&g_menu0x00828c80, 0, -1, &g_menu0x00829140, (MenuItemAction)FrontendControls_SelectDevice, 0);
-    Menu_AddItemType4(&g_menu0x00828c80, (char *)"Wiper key", -1, FrontendControls_BeginWiperBinding, 0);
     Menu_AddItemType1(&g_menu0x00828c80, 0, 0x67, 0, 0);
-    Menu_SetCallbacks(&g_menu0x00828c80, (MenuCallback)FrontendControls_ShowBindingEntries, FrontendControls_UpdateWiperBinding, (MenuCallback)FrontendControls_DrawDeviceList, NULL);
+    Menu_SetCallbacks(&g_menu0x00828c80, (MenuCallback)FrontendControls_ShowBindingEntries, NULL, (MenuCallback)FrontendControls_DrawDeviceList, NULL);
     Menu_ValidateCursor(&g_menu0x00828c80, 0);
 }
 
@@ -3648,6 +3651,7 @@ void FrontendMenu_BuildDeviceBindings(void)
         Menu_AddItemType4(&g_menu0x008288c0, 0, i + 0x6b, (MenuItemAction)FrontendControls_BeginBindingCapture, i);
         i++;
     } while (i < 10);
+    Menu_AddItemType4(&g_menu0x008288c0, (char *)"wipers", -1, FrontendControls_BeginWiperBinding, 0);
     Menu_AddItemType2(&g_menu0x008288c0, (char *)"Save bindings", -1, &g_menu0x00828c80, 0, 0);
     Menu_SetCallbacks(&g_menu0x008288c0, (MenuCallback)FrontendControls_EnterDeviceBindings, (MenuCallback)FrontendControls_UpdateBindingCapture,
                       (MenuCallback)FrontendControls_DrawDeviceBindings, (MenuCallback)FrontendControls_LeaveDeviceBindings);

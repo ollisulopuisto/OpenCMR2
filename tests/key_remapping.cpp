@@ -43,10 +43,12 @@ int main(){
  // an occupied driving key is refused; Escape leaves both settings and keys alone.
  const int oldWiper=Sys_GetOption("video.windscreen_wiper_key",17);
  CInput::m_controllerInfo[0].field_0x13e[0]=0x11;
+ g_controlsCopy[0].field_0x13e[1]=0x13; // unsaved driving edit must also be reserved
  FrontendControls_BeginWiperBinding(&menu,nullptr);
  FrontendControls_UpdateWiperBinding(&menu,0);CHECK(!menu.flag2);
  memset(CInput::m_keyboardState,0,256);FrontendControls_UpdateWiperBinding(&menu,0);
  CInput::m_keyboardState[0x11]=0x80;FrontendControls_UpdateWiperBinding(&menu,0);CHECK(!menu.flag2);
+ memset(CInput::m_keyboardState,0,256);CInput::m_keyboardState[0x13]=0x80;FrontendControls_UpdateWiperBinding(&menu,0);CHECK(!menu.flag2);
  memset(CInput::m_keyboardState,0,256);CInput::m_keyboardState[1]=0x80;FrontendControls_UpdateWiperBinding(&menu,0);CHECK(menu.flag2);
  CHECK(Sys_GetOption("video.windscreen_wiper_key",17)==oldWiper);CHECK(CInput::m_controllerInfo[0].field_0x13e[0]==0x11);
  puts("key remapping: parsing, swaps, duplicates, two keyboards, menu context, capture cancel and bounded labels pass");return 0;

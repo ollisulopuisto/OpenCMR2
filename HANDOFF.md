@@ -244,3 +244,16 @@ pixels inspected (world trajectory and lens1.46turn vs1.85straight fixture), NOT
 native game/terrain/collision/feel proof. Steering is an input cue before body
 rotation, not route knowledge or guaranteed anticipation of an unseen corner.
 Native rejection remains open until owner tests this distinct architecture.
+## Wiper binding beside driving actions
+Claim: feat/wiper-driving-control-row. Move shared wiper-key row from Controls
+landing page into the actual driving bindings list beside camera/look-back.
+Retain extension INI key, never enlarge nine-key packed save layout. Both player
+binding pages expose same global wiper binding; not independent new per-player
+wiper actions. Preserve release-before-capture, Escape/conflict behavior and
+actual merged cockpit update. Include current unsaved driving edits in conflict
+checks. Tighten list spacing32 vs36 to retain Save row, verify actual draw layout.
+Verified actual Menu_Update selection into W capture from both player pages,
+release-before-capture, unsaved edited driving-key rejection, Escape, preserved
+nine-key tables. 88/88 Linux tests pass. Actual draw-call layout fixture confirms
+keyboard11rows+joystick12rows fit480p at32px spacing (last baseline442 for12).
+Synthetic preview inspected; native atlas/Mac pixels still acceptance gate.
