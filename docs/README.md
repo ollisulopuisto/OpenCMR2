@@ -10,6 +10,7 @@ These guides describe the maintained workflow and current project scope.
 | [Baseline capture](BASELINE.md) | Stage capture, replay and profiling. |
 | [Original reference](ORIGINAL_REFERENCE.md) | Original + SilentPatch recordings and comparison workflow. |
 | [Physics parity](PHYSICS_PARITY.md) | Corrected six-cadence Finland fixture, timing and coverage limits. |
+| [Project principle](PRINCIPLES.md) | Audio-visuals and feel only: no physics or gameplay changes, named exceptions. |
 | [Raw-access audit](64bit-raw-access.md) | Generated i386/x86-64 layout review and remaining unresolved accesses. |
 | [Network play](NETWORK.md) | LAN, VPN and internet setup, protocol and tests. |
 | [Video](VIDEO.md) | Bink decoder scope and validation. |

@@ -95,6 +95,15 @@ are built in as well:
 * High and variable frame rates without changing the game speed or the
   physics, verified against the original game
 
+## Project principle
+
+> [!IMPORTANT]
+> We do not change the **physics** or the **gameplay**. We add to the **audio-visuals**
+> and the **feel**. Original modes, cameras and controls stay available next to
+> anything new. The only named exceptions are curved roads (visual upgrade, the drive
+> line must stay the same) and, at low priority, breakable trees.
+> Details: [docs/PRINCIPLES.md](docs/PRINCIPLES.md).
+
 ## Approach
 
 The game code in `game/` comes from CMR2Decomp and is kept as close to the
