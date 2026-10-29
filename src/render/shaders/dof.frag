@@ -6,7 +6,8 @@ layout(std140, set = 3, binding = 0) uniform DoFUniforms {
     float focalDistance;
     float focalRange;
     float maxBlur;
-    float pad;
+    float tunnel;  // 0..1 speed-driven tunnel vision (0 = off, identical to the old pass)
+    vec4 extra;    // x aspect ratio
 };
 void main()
 {
@@ -15,6 +16,16 @@ void main()
     vec4 center = texture(sceneTex, uv);
     float depth = texture(depthTex, uv).r;
     float coc = smoothstep(0.0, max(focalRange, 0.001), abs(depth - focalDistance));
+    // Tunnel vision: blur grows with distance from the screen centre, and the sharp circle
+    // closes as speed rises. The car sits low in the frame (r about 0.5) and stays sharp.
+    if (tunnel > 0.0) {
+        vec2 centered = (uv - 0.5) * 2.0;
+        centered.x *= extra.x;
+        float edge = length(centered);
+        float inner = mix(1.4, 0.7, tunnel);
+        float peripheral = smoothstep(inner, inner + 0.8, edge) * tunnel;
+        coc = max(coc, peripheral);
+    }
     float radius = coc * max(maxBlur, 0.0);
     if (radius < 0.25) { outColor = center; return; }
     // Golden-angle disk: smoother defocus than a box, with foreground rejection

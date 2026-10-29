@@ -289,6 +289,8 @@ struct Executor : GfxExecutor {
     int dofFocalDistance = 50;   // 0..100, focus plane depth
     int dofFocalRange = 50;      // 0..100, in-focus band width
     int dofMaxBlur = 30;         // 0..100, max blur radius
+    float speedFocusTarget = 0.0f, speedFocusSmooth = 0.0f; // 0..1 tunnel vision; smoothed per frame
+    Uint64 speedFocusTicks = 0;
     // OpenCMR2: god rays state.
     bool godRaysEnabled = false;
     int godRaysIntensity = 100;
@@ -769,6 +771,11 @@ struct Executor : GfxExecutor {
         dofFocalDistance = focalDistance < 0 ? 0 : focalDistance > 100 ? 100 : focalDistance;
         dofFocalRange = focalRange < 0 ? 0 : focalRange > 100 ? 100 : focalRange;
         dofMaxBlur = maxBlur < 0 ? 0 : maxBlur > 100 ? 100 : maxBlur;
+    }
+
+    void SetSpeedFocus(float speed) override
+    {
+        speedFocusTarget = !(speed > 0.0f) ? 0.0f : speed > 1.0f ? 1.0f : speed;
     }
 
     // OpenCMR2: god rays / volumetric lighting. `enabled` turns it on/off,
@@ -2492,8 +2499,18 @@ struct Executor : GfxExecutor {
         SDL_GPUSampler *depthSampler = Sampler(depthStage);
         if (dofEnabled && sampledDepth && dofFocalRange > 0 && dofMaxBlur > 0 &&
             dofBuf1 != nullptr && backDepth != nullptr && DofPipeline() != nullptr) {
-            float uniforms[4] = { dofFocalDistance / 100.0f, dofFocalRange / 100.0f,
-                                  dofMaxBlur / 100.0f * 4.0f, 0.0f };
+            // Smooth the speed in real time (about 0.8 s) so tunnel vision never pops.
+            Uint64 nowTicks = SDL_GetTicksNS();
+            float dtSeconds = speedFocusTicks ? (float)(nowTicks - speedFocusTicks) * 1e-9f : 0.0f;
+            speedFocusTicks = nowTicks;
+            if (dtSeconds > 0.25f) dtSeconds = 0.25f;
+            speedFocusSmooth += (speedFocusTarget - speedFocusSmooth) * (1.0f - std::exp(-dtSeconds / 0.8f));
+            float aspect = backHeight ? (float)backWidth / (float)backHeight : 1.0f;
+            // x focus distance, y focus range (shallower with speed), z max blur, w tunnel strength 0..1
+            float uniforms[8] = { dofFocalDistance / 100.0f,
+                                  dofFocalRange / 100.0f * (1.0f - 0.5f * speedFocusSmooth),
+                                  dofMaxBlur / 100.0f * 4.0f, speedFocusSmooth,
+                                  aspect, 0.0f, 0.0f, 0.0f };
             SDL_GPUTextureSamplerBinding bindings[2] = {
                 { presentSource, linearSampler }, { backDepth, depthSampler }
             };

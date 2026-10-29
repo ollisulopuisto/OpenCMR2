@@ -4670,6 +4670,14 @@ void Race_UpdateFrameEffects(int param_1)
     Particle_Interpolate(param_1);
     StageObject_InterpolateSecondaryRampRecords(param_1);
     Dash_Interpolate(param_1);
+    // OpenCMR2: speed-driven tunnel vision (visual only; reads speed, changes nothing in the sim).
+    {
+        float speedUnits = (float)Car_Get(0)->speed / 65536.0f / 1.5f;
+        int strength = Sys_GetOption("video.tunnel_vision", 100); // 0..100, adjustable; 0 = off
+        if (strength < 0) strength = 0;
+        if (strength > 100) strength = 100;
+        Gfx_SetSpeedFocus(speedUnits * (float)strength / 100.0f);
+    }
     // OpenCMR2: windscreen dirt accumulates while driving; faster = more dirt.
     if (Sys_GetOption("video.windscreen_dirt", 40) != 0) {
         Car *pPlayer = Car_Get(0);
