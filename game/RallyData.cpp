@@ -6065,6 +6065,7 @@ int TuningPanel_ToggleKey(void)
     result = ok ? key : kTuningToggleDefault;
     return result;
 }
+extern "C" double Sys_GetTicksPrecise(void);
 void TuningPanel_Update(void)
 {
     ++g_tuneFrame;
@@ -6072,7 +6073,14 @@ void TuningPanel_Update(void)
     const TuningRow *rows = Tuning_Rows(count);
     if (g_tuneEdges.Edge(0, Input_IsKeyDown(TuningPanel_ToggleKey()) != 0)) g_tuneOpen = !g_tuneOpen;
     bool pressed[7];
-    for (int i = 0; i < 7; ++i) pressed[i] = g_tuneEdges.Edge(1 + i, Input_IsKeyDown(kTuningKeys[i]) != 0);
+    static TuningRepeat repeat;
+    double nowMs = Sys_GetTicksPrecise();
+    for (int i = 0; i < 7; ++i) {
+        bool down = Input_IsKeyDown(kTuningKeys[i]) != 0;
+        bool edge = g_tuneEdges.Edge(1 + i, down);
+        // Row and value keys (1..4) repeat while held; reset, reset all and save stay single presses.
+        pressed[i] = i < 4 ? repeat.Fire(i, down, nowMs) : edge;
+    }
     if (!g_tuneOpen) return;
     bool prevRow = pressed[0], nextRow = pressed[1], down = pressed[2], up = pressed[3], resetRow = pressed[4], resetAll = pressed[5], save = pressed[6];
     if (!g_tuneSnapshotTaken) {

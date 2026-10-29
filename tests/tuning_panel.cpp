@@ -38,6 +38,12 @@ int main(){
     for (bool d : seq) fires += e.Edge(2, d);
     CHECK(fires == 3);
     CHECK(!e.Edge(3, false));
+    // Hold-to-repeat: press fires once, nothing before the delay, then one trigger per interval, release re-arms.
+    { TuningRepeat r; int n = 0; double t = 1000;
+      CHECK(r.Fire(2, true, t)); for (t = 1010; t < 1000 + kTuningRepeatDelayMs; t += 10) n += r.Fire(2, true, t); CHECK(n == 0);
+      CHECK(r.Fire(2, true, 1000 + kTuningRepeatDelayMs)); CHECK(!r.Fire(2, true, 1000 + kTuningRepeatDelayMs + 30));
+      CHECK(r.Fire(2, true, 1000 + kTuningRepeatDelayMs + 61));
+      CHECK(!r.Fire(2, false, 2000)); CHECK(r.Fire(2, true, 2010)); CHECK(!r.Fire(3, false, 2010)); }
     if (!fails) std::puts("tuning_panel ok");
     return fails;
 }

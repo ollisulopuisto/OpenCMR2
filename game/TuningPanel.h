@@ -60,4 +60,18 @@ struct TuningEdges {
     bool prev[8] = {};
     bool Edge(int slot, bool down) { bool e = down && !prev[slot]; prev[slot] = down; return e; }
 };
+// Hold-to-repeat for the row and value keys: one trigger on the press, then after kTuningRepeatDelayMs one trigger every
+// kTuningRepeatIntervalMs while the key stays down. Time is wall-clock milliseconds, so it behaves the same in a race tick and a pause tick.
+static const double kTuningRepeatDelayMs = 350.0, kTuningRepeatIntervalMs = 60.0;
+struct TuningRepeat {
+    bool held[8] = {};
+    double nextMs[8] = {};
+    bool Fire(int slot, bool down, double nowMs)
+    {
+        if (!down) { held[slot] = false; return false; }
+        if (!held[slot]) { held[slot] = true; nextMs[slot] = nowMs + kTuningRepeatDelayMs; return true; }
+        if (nowMs >= nextMs[slot]) { nextMs[slot] = nowMs + kTuningRepeatIntervalMs; return true; }
+        return false;
+    }
+};
 #endif
