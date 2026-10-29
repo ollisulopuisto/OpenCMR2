@@ -58,5 +58,15 @@ int main(){
  CHECK(PreviewRoad({15,0,0},4,5,true,[&](int i){return loopNodes[i];}).valid);
  a.Step(car,NAN,0,1,6.5,2,.04);CHECK(!a.ready);
  a.Step(car,0,0,1,6.5,2,0);CHECK(!a.ready);
+ {
+  // Speed-dependent distance: slow pulls back, fast flies closer, and it is smoothed.
+  State slow,fast;
+  for(int i=0;i<400;i++){slow.Step({0,0,i*.0f},0,0,0,6.5,2,.04);fast.Step({0,0,i*.0f},0,0,1.5,6.5,2,.04);}
+  CHECK(slow.pullback>1.25f);CHECK(fast.pullback<.85f);
+  State change;for(int i=0;i<200;i++)change.Step({0,0,0},0,0,0,6.5,2,.04);
+  float before=change.pullback;change.Step({0,0,0},0,0,1.5,6.5,2,.04);
+  CHECK(std::abs(change.pullback-before)<.02f); // one step cannot jump
+  CHECK(change.pullback>=.8f&&change.pullback<=1.3f);
+ }
  puts("world camera position/orbit inertia, steering lens, settling, determinism/reset pass");
 }

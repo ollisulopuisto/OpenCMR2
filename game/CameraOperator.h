@@ -43,12 +43,20 @@ template<class Point> RoadPreview PreviewRoad(V3 car,int next,int count,bool loo
 }
 struct State{
  bool ready=false;V3 position,velocity,aim,aimVelocity,lastCar,roadAhead;bool hasRoad=false;
- float terrainLift=0,curveLift=0;
+ float terrainLift=0,curveLift=0,pullback=1.f; // pullback: smoothed speed-dependent distance scale
+ bool pullbackReady=false;
  float heading=0,headingRate=0,lastHeading=0,turn=0,zoom=1.7f,zoomRate=0,pitch=0;
  void Reset(){*this=State{};}
  void Step(V3 car,float carHeading,float steering,float speed,float distance,float height,float dt,const RoadPreview*road=nullptr){
   if(!std::isfinite(steering)||!std::isfinite(speed)||!std::isfinite(distance)||!std::isfinite(height)||!std::isfinite(carHeading)||!std::isfinite(dt)||dt<=0||dt>.2f||!std::isfinite(car.x)||!std::isfinite(car.y)||!std::isfinite(car.z)){Reset();return;}
   distance=Clamp(distance*1.5f,9.f,14.f);height=Clamp(height*3.f,7.f,10.f);
+  // Speed-dependent distance: pull back at low speed to show scenery, fly closer at
+  // speed. Smoothed (about 1.3 s) so it never pumps; steering/physics are untouched.
+  float speedUnit=Clamp(speed/1.5f,0.f,1.f);
+  float wantedPull=1.3f-.5f*speedUnit;
+  if(!pullbackReady){pullback=wantedPull;pullbackReady=true;}
+  pullback+=(wantedPull-pullback)*(1-std::exp(-dt/1.3f));
+  distance=Clamp(distance*pullback,7.f,17.f);height=Clamp(height*(1.f+.2f*(pullback-1.f)),6.f,11.f);
   bool roadValid=road&&road->valid;
   // Actual upcoming route geometry, not steering or car yaw, raises the
   // operator before a corner. Descend more slowly when preview straightens.

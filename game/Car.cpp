@@ -1,4 +1,5 @@
 #include "CameraOperator.h"
+#include "port/sys.h"
 #include <math.h>
 #include "FloatToInt.h"
 #include <stddef.h>
@@ -5555,12 +5556,25 @@ int View_GetCameraSpotIndex(unsigned int view);
 
 // Next free view-mode slot (0..0xa) of a player's view record.
 // FUNCTION: CMR2 0x004218d0
+extern BYTE g_droneVariant[8], g_dronePairDone[8];
+extern signed char g_droneOverride[8];
 int View_FindFreeModeSlot(unsigned char view)
 {
     int mode;
     int found;
 
     mode = g_viewRecords[(BYTE)(g_activeViewRecord[view & 0xff] + (char)view * 2)].type;
+    // OpenCMR2: the drone camera is a second stop on the original chase view (type 5),
+    // so every original mode stays in the cycle. Shown only when video.camera_operator is on.
+    if (mode == 5 && Sys_GetOption("video.camera_operator", 0) != 0) {
+        BYTE activeRecord = (BYTE)(g_activeViewRecord[view & 0xff] + (char)view * 2);
+        BYTE nextRecord = (BYTE)((char)view * 2 - g_activeViewRecord[view & 0xff] + 1);
+        if (activeRecord < 8 && nextRecord < 8 && g_dronePairDone[activeRecord] == 0) {
+            g_droneOverride[nextRecord] = g_droneVariant[activeRecord] ? 0 : 1;
+            View_SwitchCamera(view, 5, 0xffff, View_GetActiveCameraFlags(view), 1);
+            return 5;
+        }
+    }
     do {
         mode++;
         if (mode == 0xb)

@@ -1,4 +1,5 @@
 #include "CameraOperator.h"
+#include "port/sys.h"
 #include <stdio.h>
 #include "FloatToInt.h"
 #include <stdlib.h>
@@ -716,6 +717,13 @@ void ChaseCamera_SetOffset(BYTE index, FixVector *pOffset);
 void ChaseCamera_SetPitch(BYTE index, short value);
 void ChaseCamera_SetLag(BYTE index, int value);
 extern BYTE g_playerCameraMode[8];
+// OpenCMR2 drone camera: an additional variant of the original chase view (camera
+// type 5). Per view record. The original chase camera is unchanged when the variant is 0.
+BYTE g_droneVariant[8];
+// Set by the camera cycle just before it restarts type 5: next variant (0/1), -1 none.
+signed char g_droneOverride[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+// 1 once the cycle has shown both variants for this record, so the next press moves on.
+BYTE g_dronePairDone[8];
 
 
 // Chase camera pitch of each player, and from index 2 the copy reduced with
@@ -876,6 +884,21 @@ void ChaseCamera_Start(CameraRecord *param_1, FixMatrix *param_2, int param_3)
     CameraOperator_Reset(pSettings->index);
     index = pSettings->view;
     g_playerCameraMode[pSettings->index] = (BYTE)param_3;
+    if (pSettings->index < 8) {
+        if (param_3 != 4) {
+            g_droneVariant[pSettings->index] = 0;
+            g_dronePairDone[pSettings->index] = 0;
+        } else if (g_droneOverride[pSettings->index] >= 0) {
+            g_droneVariant[pSettings->index] = (BYTE)g_droneOverride[pSettings->index];
+            g_dronePairDone[pSettings->index] = 1;
+            g_droneOverride[pSettings->index] = -1;
+        } else {
+            // Not from the cycle (menu, saved selection): keep the old behaviour, drone
+            // when the option is on.
+            g_droneVariant[pSettings->index] = Sys_GetOption("video.camera_operator", 0) != 0;
+            g_dronePairDone[pSettings->index] = 0;
+        }
+    }
     if (pSettings->car >= (BYTE)RallyDataState()) {
         RallyData_GetDriverCameraOffsets(&offset, &heading, &param_3, 0);
         ChaseCamera_SetOffset(index, &offset);

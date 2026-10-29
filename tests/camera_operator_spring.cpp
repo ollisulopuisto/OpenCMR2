@@ -12,6 +12,7 @@
 extern void Scene_InitFixedMathTables();
 extern void ChaseCamera_Update(CameraRecord*,FixMatrix*,int);
 extern BYTE g_playerCameraMode[8];
+extern BYTE g_droneVariant[8];
 extern FixVector g_chaseCameraOffsets[6],g_chaseCameraViewOffsets[6];
 extern int g_chaseCameraLag[4],g_physicsTimeStep;
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line%d %s\n",__LINE__,#x);return 1;}}while(0)
@@ -22,7 +23,7 @@ int main(){
  Car car={};g_cars[0]=&car;car.surfaceNoise=65536;car.speed=0;
  FixMatrix body={};body.right.z=body.up.y=65536;body.forward.x=-65536;car.pWorld=&body;
  CameraRecord record={};record.index=record.view=record.car=0;
- g_playerCameraMode[0]=4;g_physicsTimeStep=65536;g_chaseCameraLag[0]=0xe0000;
+ g_playerCameraMode[0]=4;g_droneVariant[0]=1;g_physicsTimeStep=65536;g_chaseCameraLag[0]=0xe0000;
  Sys_SetOption("video.camera_effects",0);Sys_SetOption("video.camera_operator",1);
  g_chaseCameraOffsets[2]={0,65536,0};g_chaseCameraViewOffsets[2]={65536,0,0};
  ChaseCamera_Update(&record,&body,0);

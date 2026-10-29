@@ -6,7 +6,7 @@
 #include "port/sys.h"
 #include <cstring>
 #include <cstdio>
-BYTE g_playerCameraMode[8]={};int g_physicsTimeStep=65536;static Car car={};static bool enabled=true;
+BYTE g_playerCameraMode[8]={};BYTE g_droneVariant[8]={1,1,1,1,1,1,1,1};int g_physicsTimeStep=65536;static Car car={};static bool enabled=true;
 RallyRouteNode*g_routeNodes=nullptr;int g_routeNodeCount=0;
 int RallyData_GetActiveCarRaceRecordField0(Car*){return 1;}
 int RallyData_GetRouteAdditionalState(){return 0;}
@@ -37,6 +37,7 @@ int main(){
  g_routeNodes=nullptr;g_routeNodeCount=0;
  enabled=false;auto off=record;CameraOperator_Apply(&record);CHECK(!memcmp(&record,&off,sizeof record));CameraOperator_Update(&record,&body);
  enabled=true;CameraOperator_Apply(&record);CHECK(!memcmp(&record,&off,sizeof record)); // not ready until next simulation step
- g_playerCameraMode[0]=3;CameraOperator_Apply(&record);CHECK(!memcmp(&record,&off,sizeof record));
+ g_droneVariant[0]=0;CameraOperator_Apply(&record);CHECK(!memcmp(&record,&off,sizeof record)); // classic chase variant: untouched
+ g_droneVariant[0]=1;g_playerCameraMode[0]=3;CameraOperator_Apply(&record);CHECK(!memcmp(&record,&off,sizeof record));
  puts("actual operator world position/zoom apply, turn inertia, repeated draws and off reset pass");
 }
