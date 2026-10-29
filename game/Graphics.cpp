@@ -5566,6 +5566,7 @@ void Particle_Interpolate(int t)
 // match 40%: below the 90% bar; kept as FUNCTION on purpose so reccmp measures it (see CONVENCIONES)
 #define DRAW_PARTICLE (*(Particle *)(pb - offsetof(Particle, field0x55)))
 // FUNCTION: CMR2 0x004b0480
+static unsigned g_speedMotesDrawn=0,g_speedMotesSpawned=0,g_speedMotesBudgetSkipped=0,g_speedMotesNoGround=0;
 void Particle_DrawAll(SceneNode *pCamera, BYTE view)
 {
     BillboardDef def;
@@ -5651,6 +5652,7 @@ void Particle_DrawAll(SceneNode *pCamera, BYTE view)
             if(pType==&g_particleTypes[DUST_PLUME_TYPE])def.a=(BYTE)Effect_Scale(def.a,Sys_GetOption("video.dust_amount",100));
             def.shade = DRAW_PARTICLE.field0x54;
             Billboard_Add(&def, texture);
+            if (g_particleTypeCount > SPEED_MOTE_TYPE && pType == &g_particleTypes[SPEED_MOTE_TYPE]) ++g_speedMotesDrawn;
         }
     }
     // Camera-facing cloud sheets are fallback only. Original chips/spray are
@@ -7063,9 +7065,26 @@ void SpeedMote_Spawn(FixVector *world)
         if (g_particles[i].pType == &g_particleTypes[SPEED_MOTE_TYPE]) ++motes;
     }
     // Never evict original particles: Particle_Spawn reuses the oldest slot when the pool is full.
-    if (!SpeedMote_HasBudget(active, motes, g_particleCount)) return;
+    if (!SpeedMote_HasBudget(active, motes, g_particleCount)) { ++g_speedMotesBudgetSkipped; return; }
     FixVector still = {0,0,0};
     Particle_Spawn(SPEED_MOTE_TYPE, world, &still, world->y, NULL, NULL, 0, NULL, 1);
+    ++g_speedMotesSpawned;
+}
+
+void SpeedMote_NoteSkippedGround(void) { ++g_speedMotesNoGround; }
+
+void SpeedMote_LogStats(float speedRatio, int stepsElapsed)
+{
+    static int steps = 0;
+    steps += stepsElapsed > 0 ? 1 : 0;
+    if (steps < 125) return; // about 5 s of 25 Hz steps
+    steps = 0;
+    int live = 0;
+    if (g_particles && g_particleTypes && g_particleTypeCount > SPEED_MOTE_TYPE)
+        for (int i = 0; i < g_particleCount; ++i)
+            if (g_particles[i].active && g_particles[i].pType == &g_particleTypes[SPEED_MOTE_TYPE]) ++live;
+    Sys_Log("speed motes: speed_ratio=%.2f spawned=%u budget_skipped=%u no_ground_height=%u live=%d billboards_submitted=%u (cumulative, billboards = draw submissions)",
+        speedRatio, g_speedMotesSpawned, g_speedMotesBudgetSkipped, g_speedMotesNoGround, live, g_speedMotesDrawn);
 }
 
 void DustPlume_Emit(FixVector *world, FixVector *velocity, BYTE *colour, BYTE shade, BYTE viewMask)

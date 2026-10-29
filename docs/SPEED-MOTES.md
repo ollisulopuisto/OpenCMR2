@@ -6,10 +6,9 @@ how many. It is a visual speed cue only.
 
 What it does
 - Starts above about 40 percent of the speed the tunnel-vision ramp calls full, and ramps up to full speed.
-- Every sim step it may spawn a mote 30 to 70 units ahead of the car and 5 to 16 units to the left or right of its heading,
-  0.3 to 3 units above the ground (Track_CameraGroundHeight, falls back to the car height). The central strip is skipped so
+- Every sim step it may spawn a mote ahead of the car and 4 to 14 units to the left or right of its heading, 0.3 to 3.5 units above the ground (Track_CameraGroundHeight, falls back to the car height). The distance ahead is the car's speed per step times 18 to 36 steps, so the car reaches the mote in 0.7 to 1.4 s whatever the world-unit scale (minimum 12 units). The central strip is skipped so
   the car and the next bend stay readable.
-- Each mote is world-fixed (it never follows the car or camera), lives 40 sim steps and fades in and out. Colour is a pale
+- Each mote is world-fixed (it never follows the car or camera), lives 48 sim steps and fades in and out. Colour is a pale
   tan, size is small. It reuses the game's soft smoke texture.
 - Budget: at most 64 motes, and it never fills the last 64 slots of the 400-particle pool, so motes never take the last 64 slots. If the pool is full anyway, any other particle spawn takes a mote slot before it evicts an original (Particle_SpawnTagged). Originals can still fill the pool earlier with motes on (about 336 originals plus up to 64 motes) and then evict each other as before; whether that happens was not measured. Purely visual, but it is not 'no effect on original particles' while motes are on.
 
@@ -28,3 +27,9 @@ Unverified
 Try it: run your usual launch line with `--effect speed_motes=on` and compare with the same line without it (or `=off`), at
 high speed on a straight. With `--attract-capture` (see docs/ATTRACT-CAPTURE.md) the AI demo drives; check the speed_raw column
 is high enough (above about 0.4 * 1.5 * 65536).
+
+## Revision after the first native run
+
+The first prototype was not identifiable in native screenshots. From source: it spawned 30 to 70 units ahead with a 40-step life, so at speed most motes faded out before the car reached them, and the billboard was about 0.28 units wide (a few pixels at that distance) with at most 35 percent alpha. This revision places each mote by arrival time (18 to 36 steps, life 48), makes the billboard about 0.5 units wide, and raises peak alpha to about 59 percent. These are guesses chosen from that arithmetic, not measured in game.
+
+Diagnostics: while motes are on and the car is above the speed threshold, about every 5 s of simulation the game logs `speed motes: speed_ratio=... spawned=... budget_skipped=... no_ground_height=... live=... billboards_submitted=...` (spawned, skipped and submitted counts are cumulative). `billboards_submitted` counts draw submissions, not visible pixels. Visibility, placement and performance are still unverified natively. The motes are camera-facing billboards of the soft smoke texture, not stretched streaks.

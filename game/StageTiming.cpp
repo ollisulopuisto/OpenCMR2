@@ -6436,7 +6436,7 @@ void StageTiming_InitEffectParticleTypes(void)
   ParticleEdit_SetMotion(SPEED_MOTE_LIFE << 16, 0, 0, 0, 0, 0, 0);
   ParticleEdit_SetAlphaRamp(0, 0, 0, 0);
   ParticleEdit_SetColour(0xe0,0xd8,0xc4,1);
-  ParticleEdit_SetSizeRamp(0x2400,0x2400,0);
+  ParticleEdit_SetSizeRamp(0x4000,0x4000,0);
   ParticleEdit_SetSpread(0,0,0,0);
   ParticleEdit_SetCallbacks(0,SpeedMote_Update,0,0,0);
   ParticleEdit_CommitCurrentType();

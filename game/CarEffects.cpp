@@ -1826,15 +1826,19 @@ void SpeedMotes_Step(int step16_16)
     int guard = 4;
     while (carry >= 1.f && guard-- > 0) {
         carry -= 1.f;
-        float ahead = 30.f + 40.f * unit();
-        float side = (5.f + 11.f * unit()) * (unit() < 0.5f ? -1.f : 1.f); // stays out of the central sightline
+        // Place the mote so the car reaches it in 18 to 36 steps (0.7 to 1.4 s): distance = speed per step * steps, which is
+        // independent of the world-unit scale. Life (48 steps) always outlasts the approach, so it passes the camera.
+        float stepsToReach = 18.f + 18.f * unit();
+        float ahead = std::max(12.f, car->speed / 65536.f * stepsToReach);
+        float side = (4.f + 10.f * unit()) * (unit() < 0.5f ? -1.f : 1.f); // stays out of the central sightline
         float x = car->position.x / 65536.f + fx * ahead + rx * side;
         float z = car->position.z / 65536.f + fz * ahead + rz * side;
         FixVector p = { (int)std::lround(x * 65536.f), car->position.y, (int)std::lround(z * 65536.f) };
         int ground;
-        if (Track_CameraGroundHeight(&p, &ground)) p.y = ground;
-        p.y += (int)((0.3f + 2.7f * unit()) * 65536.f);
+        if (Track_CameraGroundHeight(&p, &ground)) p.y = ground; else SpeedMote_NoteSkippedGround();
+        p.y += (int)((0.3f + 3.2f * unit()) * 65536.f);
         SpeedMote_Spawn(&p);
     }
     if (carry > 4.f) carry = 4.f;
+    SpeedMote_LogStats(ratio, step16_16);
 }

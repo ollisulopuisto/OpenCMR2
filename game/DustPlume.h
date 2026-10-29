@@ -43,7 +43,7 @@ inline bool DustPlume_HasBudget(int active, int clouds, int capacity) {
 // collision world, the road line or the global rand stream. Separate from the rain/weather switch.
 constexpr int SPEED_MOTE_TYPE = 0x21;
 constexpr int SPEED_MOTE_MAX = 64;
-constexpr int SPEED_MOTE_LIFE = 40; // 25 Hz steps
+constexpr int SPEED_MOTE_LIFE = 48; // 25 Hz steps
 inline void SpeedMote_Step(Particle &p) {
     p.position.x = p.position.y = p.position.z = 0; // world-fixed: it never follows the car or the camera
     p.vector0x28 = p.sourceVector;
@@ -53,13 +53,16 @@ inline void SpeedMote_Step(Particle &p) {
     int fadeIn = elapsed < 6 ? elapsed : 6, fadeOut = SPEED_MOTE_LIFE - elapsed;
     if (fadeOut > 10) fadeOut = 10;
     p.type0x52 = p.type0x56;
-    p.type0x56 = (BYTE)(90 * fadeIn * fadeOut / 60);
+    p.type0x56 = (BYTE)(150 * fadeIn * fadeOut / 60);
 }
 inline bool SpeedMote_HasBudget(int active, int motes, int capacity) {
     return capacity > 64 && motes < SPEED_MOTE_MAX && active < capacity - 64;
 }
 void SpeedMote_Update(Particle *, ParticleType *, SceneNode *);
 void SpeedMote_Spawn(FixVector *world);
+// Diagnostics (log only): counts spawned / budget-skipped / drawn motes and logs one line about every 5 s while motes are on.
+void SpeedMote_NoteSkippedGround(void);
+void SpeedMote_LogStats(float speedRatio,int stepsElapsed);
 void SpeedMotes_Step(int step16_16);
 void DustPlume_AdvanceWorld(int step16_16);
 void DustPlume_Update(Particle *, ParticleType *, SceneNode *);
