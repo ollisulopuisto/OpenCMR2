@@ -6520,6 +6520,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             int tv=Sys_GetOption("video.tunnel_vision",100);
             bool gl=Gfx_IsOpenGL()!=0,dofOn=!gl&&dof.reason==5;
             if(gl)snprintf(text,sizeof text,"DoF pass: n/a (OpenGL backend)");
+            else if(dofOn&&dof.blur<=0.0f)snprintf(text,sizeof text,"DoF pass: encoded for tunnel vision only (depth blur 0)");
             else if(dofOn)snprintf(text,sizeof text,"DoF pass: encoded, range %.2f blur %.1f",dof.range,dof.blur);
             else snprintf(text,sizeof text,"DoF pass: off (%s)",dofWhy[dof.reason>=0&&dof.reason<6?dof.reason:0]);
             line(text,dofOn?lit:dim);

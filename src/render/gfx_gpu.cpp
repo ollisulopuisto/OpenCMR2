@@ -1,3 +1,4 @@
+#include "render/dof_gate.h"
 #include "shadow_caster.h"
 #include "cloud_uniforms.h"
 #include "temporal_uniforms.h"
@@ -2553,9 +2554,10 @@ struct Executor : GfxExecutor {
         depthStage.address = GFX_ADDRESS_CLAMP;
         SDL_GPUSampler *linearSampler = Sampler(linearStage);
         SDL_GPUSampler *depthSampler = Sampler(depthStage);
-        dofStatus={!dofEnabled?1:!sampledDepth||!backDepth?2:dofFocalRange<=0||dofMaxBlur<=0?3:4,
-            speedFocusTarget,0.0f,0.0f,0.0f};
-        if (dofEnabled && sampledDepth && dofFocalRange > 0 && dofMaxBlur > 0 &&
+        // Tunnel vision is independent of the depth blur (see render/dof_gate.h): it still runs with DoF off or dof_blur 0.
+        DofGate dofGate = Dof_Gate(dofEnabled, dofFocalRange, dofMaxBlur, speedFocusTarget, speedFocusSmooth, sampledDepth && backDepth);
+        dofStatus={dofGate.reason,speedFocusTarget,0.0f,0.0f,0.0f};
+        if (dofGate.runPass &&
             dofBuf1 != nullptr && backDepth != nullptr && DofPipeline() != nullptr) {
             // Smooth the speed in real time (about 0.8 s) so tunnel vision never pops.
             Uint64 nowTicks = SDL_GetTicksNS();
@@ -2568,7 +2570,7 @@ struct Executor : GfxExecutor {
             // x focus distance, y focus range (shallower with speed), z max blur, w tunnel strength 0..1
             float uniforms[8] = { dofFocalDistance / 100.0f,
                                   dofFocalRange / 100.0f * (1.0f - 0.5f * speedFocusSmooth),
-                                  dofMaxBlur / 100.0f * (float)(Sys_GetOption("video.dof_blur_max_px", 4) < 1 ? 1 : Sys_GetOption("video.dof_blur_max_px", 4) > 40 ? 40 : Sys_GetOption("video.dof_blur_max_px", 4)), speedFocusSmooth,
+                                  !dofGate.depthBlur ? 0.0f : dofMaxBlur / 100.0f * (float)(Sys_GetOption("video.dof_blur_max_px", 4) < 1 ? 1 : Sys_GetOption("video.dof_blur_max_px", 4) > 40 ? 40 : Sys_GetOption("video.dof_blur_max_px", 4)), speedFocusSmooth,
                                   aspect, 0.014f * (float)backHeight, sceneNear, sceneFar };
             SDL_GPUTextureSamplerBinding bindings[2] = {
                 { presentSource, linearSampler }, { backDepth, depthSampler }
