@@ -7098,6 +7098,15 @@ void SpeedMote_Spawn(FixVector *world)
     ++g_speedMotesSpawned;
 }
 
+void SpeedMote_GetStats(int *live, unsigned *drawn)
+{
+    int n = 0;
+    if (g_particles && g_particleTypes && g_particleTypeCount > SPEED_MOTE_TYPE)
+        for (int i = 0; i < g_particleCount; ++i)
+            if (g_particles[i].active && g_particles[i].pType == &g_particleTypes[SPEED_MOTE_TYPE]) ++n;
+    *live = n; *drawn = g_speedMotesDrawn;
+}
+
 void SpeedMote_NoteSkippedGround(void) { ++g_speedMotesNoGround; }
 
 void SpeedMote_LogStats(float speedRatio, int stepsElapsed)

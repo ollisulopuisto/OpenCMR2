@@ -6189,6 +6189,8 @@ void StageTiming_DrawClockAndCountdown(void);
 void View_SetPlayerProjection(unsigned int player);
 void View_GetEffectiveProjection(unsigned int view, int *zoom, int *fovY, int *fovSetting);
 void AttractCapture_ViewSignature(int view, int *type, int *drone);
+void SpeedFov_GetStatus(int view, int *pct, int *shown);
+void SpeedMote_GetStats(int *live, unsigned *drawn);
 void StageObject_ApplyInterpolatedNodeMatrices(int param1);
 void Race_DrawPlayerCallSlots(unsigned int player, int *pViewRect);
 void Dash_Draw(int player, int *pViewRect);
@@ -6388,7 +6390,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         BYTE colour[4] = {240, 246, 255, 255};
         unsigned long long tick=0;unsigned frame=0,changes=0;
         bool spectator=SceneryPack_GetAnimationStatus(&tick,&frame,&changes);
-        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?4:3)+11+5);
+        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?4:3)+11+5+2);
         short panel[4] = {(short)layout.x,(short)layout.y,(short)layout.width,(short)layout.height};
         Sprite_FillRect(NULL, panel, background, 1);
         char text[96];
@@ -6446,6 +6448,12 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             snprintf(text,sizeof text,"Camera: type %d%s (live, view %d)",viewType,drone?" drone":"",(int)param2);
             line(text);
             snprintf(text,sizeof text,"FOV setting %d deg; zoom x%.2f, proj scale %.2f (scales)",fovSet,zoomRaw/65536.0,fovYRaw/65536.0);
+            line(text);
+            int sfPct=0,sfShown=0;SpeedFov_GetStatus((int)param2,&sfPct,&sfShown);
+            int moteLive=0;unsigned moteDrawn=0;SpeedMote_GetStats(&moteLive,&moteDrawn);
+            snprintf(text,sizeof text,"Speed FOV %d%% (eased speed %d%%) | motes %s stretch %d",sfPct,sfShown*100/65536,Sys_GetOption("video.speed_motes",0)?"on":"off",Sys_GetOption("video.speed_motes_stretch",0));
+            line(text);
+            snprintf(text,sizeof text,"Speed motes live %d | drawn total %u",moteLive,moteDrawn);
             line(text);
         }
         line("enc=encoded; skip=requested, not encoded");

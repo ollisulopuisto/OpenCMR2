@@ -37,3 +37,9 @@ Diagnostics: while motes are on and the car is above the speed threshold, about 
 ## Optional streak look (video.speed_motes_stretch)
 
 `[video] speed_motes_stretch` (0 to 100, default 0 = round dots, INI only) stretches each mote's billboard along the screen-space direction from the view axis to the mote. A world-fixed point moves outward along that line as the car approaches it, so the stretch reads as passing speed lines. The long axis is 2x the width at rest and up to 9x at full speed at stretch 100 (scaled down linearly below that). The billboard rotation uses the game's own 12-bit angle (derived from Billboard_Draw: the long axis is right*cos(a) + up*sin(a)). Motes closer than 3 units fade out and are full strength from 9 units, so a near streak never fills the screen. Pure maths is covered by tests/speed_mote_streak.cpp; how it looks, and whether the rotation direction matches the renderer on screen, is not verified natively. Streaks reuse the soft smoke texture (a stretched blur, not a hard line). They need `speed_motes=on` and do nothing otherwise.
+
+## Command line, overlay and test preset
+
+Per-launch flags (they win over opencmr2.ini and are never saved): `--speed-fov 0..40`, `--speed-motes-stretch 0..100`, `--speed-motes-amount 0..300`, plus `--effect speed_motes=on`.
+`--test-preset overdo` is an exaggerated diagnostic look (motes on at 300% with full streaks, speed FOV 40, DoF on with the largest blur, tunnel vision 100, motion blur on at 60). Any explicit flag overrides a preset value. It is for finding out what the effects do, not a recommended setting, and nothing is saved.
+The startup log line `effective speed-feel settings: ...` shows the values the game actually uses. The debug overlay adds `Speed FOV N% (eased speed M%)`, mote state, and `Speed motes live N | drawn total N` so a missing effect can be told apart from a setting that never reached the game. Native look is unverified.
