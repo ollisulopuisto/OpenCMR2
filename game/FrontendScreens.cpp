@@ -12607,7 +12607,7 @@ void EnterAmounts(Menu*m,int){
   int fallback=rows[i].initial;
   if(i==9||i==11)fallback=Sys_GetOption("video.camera_effects",1);
   int v=Sys_GetOption(rows[i].key,fallback);
-  if(i==16)v=v<=0?0:v<=64?1:v<=128?2:3;
+  if(!strcmp(rows[i].key,"video.reflection_resolution"))v=v<=0?0:v<=64?1:v<=128?2:3;
   m->items[i].max=EffectSettings::Clamp(v,0,rows[i].count-1);
  }
 }
@@ -12615,7 +12615,7 @@ void ApplyAmounts(Menu*m,MenuItem*){
  int n;const auto*rows=EffectAmount_Rows(n);
  for(int i=0;i<n;i++){
   int v=m->items[i].max;
-  if(i==16){static const int sizes[]={0,64,128,256};v=sizes[v%4];}
+  if(!strcmp(rows[i].key,"video.reflection_resolution")){static const int sizes[]={0,64,128,256};v=sizes[v%4];}
   Sys_SetOption(rows[i].key,v);
  }
  EffectSettings::Apply();

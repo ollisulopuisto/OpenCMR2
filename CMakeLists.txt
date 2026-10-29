@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 3.24)
 project(OpenCMR2 LANGUAGES C CXX)
 
+# Desktop CI installs scenery dependencies in this existing environment.
+# FindPython otherwise prefers newer Homebrew/framework Python over PATH.
+# Respect an explicitly selected interpreter; never install packages here.
+if(DEFINED ENV{GITHUB_ACTIONS} AND NOT DEFINED Python3_EXECUTABLE)
+    if(EXISTS "${CMAKE_SOURCE_DIR}/.ci-python/bin/python")
+        set(Python3_EXECUTABLE "${CMAKE_SOURCE_DIR}/.ci-python/bin/python" CACHE FILEPATH "CI Python with scenery dependencies")
+    endif()
+endif()
+
 # Targets (see CMakePresets.json):
 #  - linux-x86: 32-bit x86, the reference build. The game's data structures
 #    have the original's layout there, which the golden tests compare against.

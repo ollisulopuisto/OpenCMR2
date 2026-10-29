@@ -9,7 +9,7 @@ assert 'SDL_GPUDepthStencilTargetInfo' not in r
 assert s.count('SDL_BeginGPURenderPass(')==2
 b=s[s.index('SDL_GPURenderPass *BeginPass('):s.index('void Execute(')]
 assert 'if (!color.texture || !depth.texture) return nullptr' in b
-sh=s[s.index('if (shadowType != 0 && shadowMap != NULL'):s.index('for (size_t i = 0; i < frame.commands.size(); i++)')]
+sh=s[s.index('if (shadowType != 0 && shadowMap != NULL'):s.index('size_t worldEnd=frame.commands.size();')]
 assert 'depth.texture = shadowDepth' in sh
 print('all render-pass attachment sites audited; native Metal acceptance remains open')
 
