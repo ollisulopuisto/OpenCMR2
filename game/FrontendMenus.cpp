@@ -441,7 +441,7 @@ void FrontendControls_ShowBindingEntries(Menu *pMenu, int param)
     int i;
 
     Input_RescanChangedJoysticks();   // PORT
-    i = 8;
+    i = pMenu->itemCount;
     pItem = pMenu->items;
     do {
         i--;
@@ -1010,6 +1010,44 @@ int FrontendControls_GetCalibrationState(void)
     return g_controlsCalibrationState;
 }
 
+// Separate extension control: do not enlarge the original packed nine-key record.
+static bool g_wiperBindingCapture = false, g_wiperBindingReleased = false;
+static bool g_wiperBindingConflict = false;
+static bool FrontendControls_WiperConflicts(int key)
+{
+    // Include live device keys (CLI overrides) as well as saved configurations.
+    for (int device=0;device<6;device++)
+        for(int action=0;action<9;action++)
+            if(CInput::m_controllerInfo[device].field_0x13e[action] == key)
+                return true;
+    for(int device=0;device<CInput::CountAttachedInputDevices();device++) {
+        DeviceInfo *info=CInput::GetAvailableDeviceRecord(device);
+        if(info && info->field_0x0==1)
+            for(int action=0;action<9;action++)
+                if((&info->keyboard.field_0x468)[action] == key)return true;
+    }
+    return false;
+}
+void FrontendControls_BeginWiperBinding(Menu *menu, MenuItem *)
+{
+    g_wiperBindingCapture=true;g_wiperBindingReleased=false;g_wiperBindingConflict=false;
+    Input_ClearKeyPressQueue();Menu_SetFlags(menu,0,0,0,0);
+}
+void FrontendControls_UpdateWiperBinding(Menu *menu, int)
+{
+    if(!g_wiperBindingCapture)return;
+    Menu_SetFlags(menu,0,0,0,0);
+    int key=CInput::GetFirstPressedKey();
+    if(!g_wiperBindingReleased){if(key==-1)g_wiperBindingReleased=true;return;}
+    if(key==-1)return;
+    if(key!=INPUT_KEY_ESCAPE && FrontendControls_WiperConflicts(key)) {
+        g_wiperBindingConflict=true;return; // Never steal acceleration or steering.
+    }
+    if(key!=INPUT_KEY_ESCAPE)Sys_SetOption("video.windscreen_wiper_key",key);
+    g_wiperBindingCapture=false;g_wiperBindingConflict=false;
+    Input_ClearKeyPressQueue();Menu_SetFlags(menu,1,1,1,1);
+}
+
 // Draw callback of the controls menu: title, one row (icon + name) per
 // visible entry, separators around the selected row, and the carousel.
 // FUNCTION: CMR2 0x004fccb0
@@ -1065,7 +1103,11 @@ void FrontendControls_DrawDeviceList(Menu *pMenu)
                 Sprite_Queue((SpriteRect *)&CFrontend::m_pAr640DTexture->field_0x11c, (SpriteRect *)icon,
                              CFrontend::m_pAr640DTexture, 1, 0, NULL, NULL, g_colourText0x0052496c, 8);
             }
-            if (i < 2)
+            if (i == 2)
+                snprintf(CFrontend::m_stringDest, 128, "Wiper: %s",
+                    g_wiperBindingCapture ? (g_wiperBindingConflict ? "Key in use; choose another" : "Press key (Esc cancels)") :
+                    Input_GetKeyName(Sys_GetOption("video.windscreen_wiper_key",WINDSREEN_WIPER_KEY_DEFAULT)));
+            else if (i < 2)
                 sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(100), i + 1);
             else
                 sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x67));
@@ -3582,8 +3624,9 @@ void FrontendMenu_BuildControls(void)
     Menu_Init(&g_menu0x00828c80, 0, 0x18, 0, FrontendMenu_GetOptions(), NULL, 1, 0, 1);
     Menu_AddItemType2(&g_menu0x00828c80, 0, -1, &g_menu0x00829140, (MenuItemAction)FrontendControls_SelectDevice, 0);
     Menu_AddItemType2(&g_menu0x00828c80, 0, -1, &g_menu0x00829140, (MenuItemAction)FrontendControls_SelectDevice, 0);
+    Menu_AddItemType4(&g_menu0x00828c80, (char *)"Wiper key", -1, FrontendControls_BeginWiperBinding, 0);
     Menu_AddItemType1(&g_menu0x00828c80, 0, 0x67, 0, 0);
-    Menu_SetCallbacks(&g_menu0x00828c80, (MenuCallback)FrontendControls_ShowBindingEntries, NULL, (MenuCallback)FrontendControls_DrawDeviceList, NULL);
+    Menu_SetCallbacks(&g_menu0x00828c80, (MenuCallback)FrontendControls_ShowBindingEntries, FrontendControls_UpdateWiperBinding, (MenuCallback)FrontendControls_DrawDeviceList, NULL);
     Menu_ValidateCursor(&g_menu0x00828c80, 0);
 }
 

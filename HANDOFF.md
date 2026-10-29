@@ -91,7 +91,9 @@ physical W default, saved explicit key retained, rising-edge continuous toggle
 independent of dirt strength. Does not clear any driving bindings. W may conflict
 with user WASD presets; current source-only review cannot inspect their saved
 controller file. In-app original driving reconfiguration exists through Controls
-and device configuration, but wiper is outside its nine actions. Native menu
-visibility and W conflict handling remain open before publishing this change.
+and device configuration, but wiper is outside its nine actions. Controls now adds a separate wiper-key capture row, with release-before-capture,
+Escape cancel and refusal of driving-key conflicts. Implicit W is disabled when
+active keyboard driving uses W, rather than stealing acceleration; explicit saved
+choices are retained. Native menu pixels/navigation remain unverified.
 All-track rounding remains source-gated Ballon only until paired source/layout
 and FIN/native validation can extend safely. No arbitrary object animation.

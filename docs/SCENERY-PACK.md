@@ -136,3 +136,17 @@ not private restored RGB. Low variants are unverified and
 remain original. Native Mac appearance/performance remain pending. Private
 restored texture RGB is not reproducible from this source-only patcher
 without its private restoration inputs. No derived artwork is included in Git.
+
+
+## Wiper and driving-key remapping
+
+Options > Controls now has a separate Wiper key row. Select it, release the
+confirm key, then press a new physical key. Escape cancels. Keys already used
+by driving are refused instead of erasing acceleration/steering bindings.
+This option saves separately from the original nine-key Controller.rcf record.
+Driving keys stay on the selected controller's configuration/bindings page.
+The default is physical W (DIK17); an explicit saved wiper key is retained.
+If an active keyboard uses W for driving and no explicit wiper key is saved,
+the implicit W shortcut is suppressed. Choose an unused key in Controls.
+A rising edge toggles continuous wiping, even with dirt strength zero.
+Native menu rendering and navigation still require verification on real game data.
