@@ -26,6 +26,7 @@ void CameraOperator_Update(CameraRecord*record,const FixMatrix*reference,const F
   RallyData_GetRouteAdditionalState()!=0,[](int i){auto&p=g_routeNodes[i].position;return CameraOperator::V3{p.x/65536.f,0,p.z/65536.f};});
  // Remove last terrain lift before advancing free world inertia.
  if(state.ready)state.position.y-=state.terrainLift;
+ {int pct=Sys_GetOption("video.drone_speed_lens",100);if(pct<-150)pct=-150;if(pct>100)pct=100;state.lensSpeedGain=.3f*pct/100.f;} // visual lens only; 100 = previous behaviour, negative = wider at speed
  state.Step({p.x/65536.f,p.y/65536.f,p.z/65536.f},std::atan2(x,z),car->steeringInput/65536.f,car->speed/65536.f,
   offset?std::abs(offset->z/65536.f):6.5f,offset?offset->y/65536.f:1.5f,g_physicsTimeStep/(65536.f*25.f),&road);
  state.ConstrainTerrain({p.x/65536.f,p.y/65536.f,p.z/65536.f},g_physicsTimeStep/(65536.f*25.f),[](CameraOperator::V3 point,float&y){

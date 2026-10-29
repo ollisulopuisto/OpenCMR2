@@ -45,7 +45,7 @@ struct State{
  bool ready=false;V3 position,velocity,aim,aimVelocity,lastCar,roadAhead;bool hasRoad=false;
  float terrainLift=0,curveLift=0,pullback=1.f; // pullback: smoothed speed-dependent distance scale
  bool pullbackReady=false;
- float heading=0,headingRate=0,lastHeading=0,turn=0,zoom=1.7f,zoomRate=0,pitch=0;
+ float heading=0,headingRate=0,lastHeading=0,turn=0,zoom=1.7f,zoomRate=0,pitch=0,lensSpeedGain=.3f; // lensSpeedGain: zoom change at full speed (+ = tighter lens, - = wider lens)
  void Reset(){*this=State{};}
  void Step(V3 car,float carHeading,float steering,float speed,float distance,float height,float dt,const RoadPreview*road=nullptr){
   if(!std::isfinite(steering)||!std::isfinite(speed)||!std::isfinite(distance)||!std::isfinite(height)||!std::isfinite(carHeading)||!std::isfinite(dt)||dt<=0||dt>.2f||!std::isfinite(car.x)||!std::isfinite(car.y)||!std::isfinite(car.z)){Reset();return;}
@@ -98,7 +98,7 @@ struct State{
   // Steering can widen before the body turns. Lens is actual projection zoom,
   // independent of viewpoint distance. Never random or an FOV pulse per frame.
   float speedRatio=Clamp(speed/1.5f,0.f,1.f);
-  float wanted=1.55f+.3f*speedRatio-.4f*turn;
+  float wanted=1.55f+lensSpeedGain*speedRatio-.4f*turn;
   zoomRate+=(8.f*(wanted-zoom)-5.f*zoomRate)*dt;
   zoom=Clamp(zoom+zoomRate*dt,1.15f,1.9f);lastCar=car;
  }

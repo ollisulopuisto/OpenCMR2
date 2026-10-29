@@ -68,5 +68,11 @@ int main(){
   CHECK(std::abs(change.pullback-before)<.02f); // one step cannot jump
   CHECK(change.pullback>=.8f&&change.pullback<=1.3f);
  }
+ {
+  // Speed lens: positive gain tightens, negative widens, both smooth and bounded.
+  State tight,wide;wide.lensSpeedGain=-.3f;
+  for(int i=0;i<400;i++){tight.Step({0,0,0},0,0,1.5,6.5,2,.04);wide.Step({0,0,0},0,0,1.5,6.5,2,.04);}
+  CHECK(tight.zoom>1.7f);CHECK(wide.zoom<1.4f);CHECK(wide.zoom>=1.15f&&tight.zoom<=1.9f);
+ }
  puts("world camera position/orbit inertia, steering lens, settling, determinism/reset pass");
 }
