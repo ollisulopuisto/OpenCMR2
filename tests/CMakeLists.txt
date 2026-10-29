@@ -490,3 +490,7 @@ endif()
 add_executable(temporal_uniforms_test temporal_uniforms.cpp)
 target_include_directories(temporal_uniforms_test PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/src/render)
 add_test(NAME temporal_uniforms COMMAND temporal_uniforms_test)
+
+add_executable(projection_vote_test projection_vote.cpp)
+target_include_directories(projection_vote_test PRIVATE ${PROJECT_SOURCE_DIR}/src)
+add_test(NAME projection_vote COMMAND projection_vote_test)
