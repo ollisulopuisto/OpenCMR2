@@ -31,8 +31,9 @@ void main()
     if (tunnel > 0.0) {
         vec2 centered = (uv - 0.5) * 2.0;
         centered.x *= extra.x;
+        centered.y *= 0.5; // mirrors kTunnelVerticalScale: bonnet and car (low, centred) stay sharp, the sides blur
         float edge = length(centered);
-        float inner = mix(1.4, 0.7, tunnel);
+        float inner = mix(1.4, 0.5, tunnel);
         float peripheral = smoothstep(inner, inner + 0.8, edge) * tunnel;
         coc = max(coc, peripheral);
         tunnelRadius = peripheral * extra.y;

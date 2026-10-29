@@ -1,4 +1,5 @@
 #include "render/dof_gate.h"
+#include "render/tunnel_vision.h"
 #include "render/dof_focus.h"
 #include "render/projection_vote.h"
 #include "shadow_caster.h"
@@ -2655,7 +2656,7 @@ struct Executor : GfxExecutor {
             float uniforms[8] = { focusPos,
                                   dofFocalRange / 100.0f * (1.0f - 0.5f * speedFocusSmooth),
                                   !dofGate.depthBlur ? 0.0f : dofMaxBlur / 100.0f * (float)(Sys_GetOption("video.dof_blur_max_px", 4) < 1 ? 1 : Sys_GetOption("video.dof_blur_max_px", 4) > 40 ? 40 : Sys_GetOption("video.dof_blur_max_px", 4)), speedFocusSmooth,
-                                  aspect, 0.014f * (float)backHeight, sceneNear, sceneFar };
+                                  aspect, kTunnelRadiusPerHeight * (float)backHeight, sceneNear, sceneFar };
             SDL_GPUTextureSamplerBinding bindings[2] = {
                 { presentSource, linearSampler }, { backDepth, depthSampler }
             };
