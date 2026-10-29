@@ -1,5 +1,6 @@
 #include "shadow_caster.h"
 #include "cloud_uniforms.h"
+#include "temporal_uniforms.h"
 // The SDL_GPU executor: runs a recorded frame (gfx_core.cpp) with one set of
 // shaders that emulate Direct3D 7's fixed-function pipeline.
 
@@ -207,6 +208,13 @@ struct Executor : GfxExecutor {
     SDL_GPUGraphicsPipeline *cloudPipeline=nullptr;
     SDL_GPUTexture *cloudTarget=nullptr;
     bool cloudLogged=false;
+    // OpenCMR2: opt-in temporal AA (partial stage: camera reprojection only).
+    SDL_GPUShader *fsTemporal=nullptr;
+    SDL_GPUGraphicsPipeline *temporalPipeline=nullptr;
+    SDL_GPUTexture *taaTex[2]={nullptr,nullptr};
+    int taaIndex=0;
+    TemporalTracker temporalTracker;
+    bool temporalLogged=false;
     SDL_GPUShader *fsSpatialAA = nullptr;
     SDL_GPUGraphicsPipeline *spatialAAPipeline = nullptr;
     SDL_GPUTexture *spatialAATarget = nullptr;
@@ -337,6 +345,7 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUTexture(device, dustVolumeTarget);
         dustVolumeTarget = nullptr;
         SDL_ReleaseGPUTexture(device,cloudTarget);cloudTarget=nullptr;
+        for(auto &t:taaTex){SDL_ReleaseGPUTexture(device,t);t=nullptr;}temporalTracker.Reset();
         SDL_ReleaseGPUTexture(device, spatialAATarget);
         SDL_ReleaseGPUTexture(device, backColor);
         SDL_ReleaseGPUTexture(device, backDepth);
@@ -368,6 +377,8 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUShader(device, fsLensGrime);
         SDL_ReleaseGPUShader(device, fsDoF);
         SDL_ReleaseGPUShader(device,fsClouds);
+        SDL_ReleaseGPUShader(device,fsTemporal);
+        SDL_ReleaseGPUGraphicsPipeline(device,temporalPipeline);
         SDL_ReleaseGPUGraphicsPipeline(device,cloudPipeline);
         SDL_ReleaseGPUShader(device, fsGodRays);
         SDL_ReleaseGPUShader(device, fsColorGrading);
@@ -562,6 +573,7 @@ struct Executor : GfxExecutor {
             SDL_ReleaseGPUTexture(device, dustVolumeTarget);
             dustVolumeTarget = nullptr;
             SDL_ReleaseGPUTexture(device,cloudTarget);cloudTarget=nullptr;
+            for(auto &t:taaTex){SDL_ReleaseGPUTexture(device,t);t=nullptr;}temporalTracker.Reset();
         SDL_ReleaseGPUTexture(device, spatialAATarget);
             spatialAATarget = nullptr;
             SDL_ReleaseGPUTexture(device, backColor);
@@ -1659,7 +1671,8 @@ struct Executor : GfxExecutor {
     }
 
     void FillVertexUniforms(const GfxCommand &cmd, const GfxDrawState &s, int targetW, int targetH,
-                            const GfxViewport &viewport, bool scaled, VertexUniforms &u)
+                            const GfxViewport &viewport, bool scaled, VertexUniforms &u,
+                            float jitterX = 0.0f, float jitterY = 0.0f)
     {
         memset(&u, 0, sizeof(u));
         Multiply(s.world, s.view, u.worldView);
@@ -1719,6 +1732,9 @@ struct Executor : GfxExecutor {
         // Direct3D 7's half-pixel offset of the viewport transform.
         u.target[2] = viewport.width ? 1.0f / viewport.width : 0.0f;
         u.target[3] = viewport.height ? -1.0f / viewport.height : 0.0f;
+        // Temporal AA sub-pixel jitter in NDC (2 per viewport extent), world 3D only.
+        if (viewport.width) u.target[2] += 2.0f * jitterX / viewport.width;
+        if (viewport.height) u.target[3] -= 2.0f * jitterY / viewport.height;
         (void)cmd;
     }
 
@@ -2035,6 +2051,9 @@ struct Executor : GfxExecutor {
         const GfxDrawState *vertexUniformState = NULL;
         int vertexUniformW = 0, vertexUniformH = 0;
         bool vertexUniformScaled = false;
+        bool vertexUniformJitter = false;
+        TemporalFrame tf;
+        bool temporalJitterOn = false;
         FragmentUniforms fragmentUniforms;
         bool fragmentUniformsSet = false;
 
@@ -2203,16 +2222,19 @@ struct Executor : GfxExecutor {
                        viewport.minZ, viewport.maxZ };
             SDL_Rect scissor = { (int)viewport.x, (int)viewport.y, (int)viewport.width, (int)viewport.height };
             SetViewport(pass, bound, vp, scissor);
+            const bool jitterDraw = temporalJitterOn && target == NULL && !c.transformed;
             if (vertexUniformState == NULL || vertexUniformW != targetW || vertexUniformH != targetH ||
-                vertexUniformScaled != scaled ||
+                vertexUniformScaled != scaled || vertexUniformJitter != jitterDraw ||
                 (vertexUniformState != &s && !SameVertexUniforms(*vertexUniformState, s))) {
                 VertexUniforms vu;
-                FillVertexUniforms(c, s, targetW, targetH, viewport, scaled, vu);
+                FillVertexUniforms(c, s, targetW, targetH, viewport, scaled, vu,
+                                   jitterDraw ? tf.jitterX : 0.0f, jitterDraw ? tf.jitterY : 0.0f);
                 SDL_PushGPUVertexUniformData(cmd, 0, &vu, sizeof(vu));
                 vertexUniformState = &s;
                 vertexUniformW = targetW;
                 vertexUniformH = targetH;
                 vertexUniformScaled = scaled;
+                vertexUniformJitter = jitterDraw;
             }
             FragmentUniforms fu;
             FillFragmentUniforms(s, target == NULL && !c.transformed, fu);
@@ -2250,7 +2272,15 @@ struct Executor : GfxExecutor {
         if (pass != NULL) { SDL_EndGPURenderPass(pass); pass=nullptr; }
 
         };
+        if (worldEffects && raceWorld && sampledDepth && worldEnd < frame.commands.size() &&
+            Sys_GetOption("video.temporal_aa", 0) != 0 &&
+            temporalTracker.Prepare(frame.commands[worldEnd], frame.states[frame.commands[worldEnd].state], backWidth, backHeight, tf))
+            temporalJitterOn = true;
+        else
+            temporalTracker.Reset();
         drawCommands(0,worldEffects?worldEnd:frame.commands.size());
+        temporalJitterOn = false;
+        vertexUniformState = NULL;
 
         if (!present) {
             SDL_SubmitGPUCommandBuffer(cmd);
@@ -2279,6 +2309,40 @@ struct Executor : GfxExecutor {
         unsigned encoded=(shadowEncoded?64:0)|(precipitationEncoded?128:0);
         SDL_GPUTexture *presentSource = backColor;
         if(worldEffects) {
+        // OpenCMR2: opt-in temporal AA resolve (PARTIAL: camera-matrix reprojection,
+        // 3x3 clamp, no per-object velocity). Runs first so later passes see its output.
+        if (tf.active) {
+            bool temporalOK = false;
+            if (!fsTemporal)
+                fsTemporal = Shader(SHADER_CODE(temporal_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 3, 1);
+            if (!temporalPipeline && fsTemporal)
+                temporalPipeline = PostProcessPipeline(vsMotionBlur, fsTemporal);
+            for (auto &t : taaTex)
+                if (!t && temporalPipeline)
+                    t = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, backWidth, backHeight, 1, 1,
+                                      SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
+            if (temporalPipeline && taaTex[0] && taaTex[1]) {
+                int cur = taaIndex, prev = 1 - taaIndex;
+                GfxStageState linear;
+                linear.address = GFX_ADDRESS_CLAMP;
+                linear.minFilter = linear.magFilter = GFX_FILTER_LINEAR;
+                GfxStageState point = linear;
+                point.minFilter = point.magFilter = GFX_FILTER_POINT;
+                SDL_GPUTextureSamplerBinding tb[3] = { { backColor, Sampler(linear) }, { backDepth, Sampler(point) },
+                                                       { taaTex[prev], Sampler(linear) } };
+                if (PostProcessPass(cmd, temporalPipeline, taaTex[cur], tb, 3, &tf.u, sizeof(tf.u))) {
+                    presentSource = taaTex[cur];
+                    taaIndex = prev;
+                    temporalTracker.Commit(tf);
+                    temporalOK = true;
+                    if (!temporalLogged) {
+                        Sys_Log("options: temporal AA encoded (PARTIAL stage: camera reprojection + clamp, no object velocity; not MetalFX temporal); native pixels unverified");
+                        temporalLogged = true;
+                    }
+                }
+            }
+            if (!temporalOK) temporalTracker.Reset();
+        }
         // OpenCMR2: AA is not an upscaler or a temporal reconstruction method.
         // HUD/menu draws follow this world-only chain.
         if (spatialAA) {
@@ -2294,7 +2358,7 @@ struct Executor : GfxExecutor {
                 GfxStageState stage;
                 stage.minFilter = stage.magFilter = GFX_FILTER_LINEAR;
                 stage.address = GFX_ADDRESS_CLAMP;
-                SDL_GPUTextureSamplerBinding binding = { backColor, Sampler(stage) };
+                SDL_GPUTextureSamplerBinding binding = { presentSource, Sampler(stage) };
                 float uniforms[4] = { 1.0f / backWidth, 1.0f / backHeight, 0.0f, 0.0f };
                 if (binding.sampler != nullptr &&
                     PostProcessPass(cmd, spatialAAPipeline, spatialAATarget, &binding, 1,
