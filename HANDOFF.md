@@ -257,3 +257,26 @@ release-before-capture, unsaved edited driving-key rejection, Escape, preserved
 nine-key tables. 88/88 Linux tests pass. Actual draw-call layout fixture confirms
 keyboard11rows+joystick12rows fit480p at32px spacing (last baseline442 for12).
 Synthetic preview inspected; native atlas/Mac pixels still acceptance gate.
+
+## Tracking-drone framing and terrain follow-up
+
+The optional human-operator camera still has its independent world position,
+velocity, orbit heading and steering-sensitive lens. It now follows closer
+(9-14 nominal units, height 7-10, 1.3x transient tether), aims ahead, and keeps
+normal-projection player framing near the lower third. Saved custom pitch/FOV
+can intentionally change that framing. Other camera modes and saved settings
+are not changed.
+
+Simulation update checks collision-ground height along two 24-sample corridors
+(player to camera and forward aim to camera), plus the predicted camera point.
+A bank can pull the camera closer along its inertial direction before requiring
+more altitude. Rise clearance is immediate, descent limited to 2 units/second.
+Grounded corridor endpoints prevent a forward aim buried in a crest from
+creating runaway altitude. Previous lift is removed before advancing the free
+world spring, then reapplied as a constraint. Draws never advance it.
+
+This is heightfield terrain avoidance, not a general scene raycast. Off-mesh
+samples are unknown, not a clear-view certificate. Very thin geometry, vertical
+faces and tree/hedge billboards outside collision terrain are not guaranteed.
+Native Mac validation on the user's bank/crest/fast-curve case remains required.
+The synthetic framing probe is a diagnostic, not game footage.

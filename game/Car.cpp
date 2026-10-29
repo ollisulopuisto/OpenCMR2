@@ -1,3 +1,4 @@
+#include "CameraOperator.h"
 #include <math.h>
 #include "FloatToInt.h"
 #include <stddef.h>
@@ -8033,6 +8034,8 @@ void Camera_Update(CameraRecord *pRecord)
         View_UpdateTracksideZoomAndShake(pRecord, Car_GetCameraReferenceMatrix(car));
         break;
     }
+    // Operator camera constrains its own world position, including replay.
+    if(CameraOperator_Enabled(pRecord)){pRecord->clearance=0;return;}
     if (View_IsPlaybackCameraActive() == 0 && check != 0) {
         FixMatrix_GetPosition(&position, &pRecord->matrix);
         tri = 0;

@@ -18,6 +18,31 @@ int main(){
   CHECK(a.position.x==b.position.x&&a.zoom==b.zoom);CHECK(a.zoom>=1.15f&&a.zoom<=1.9f);
  }
  a.Step({1000,0,1000},.5,0,1,6.5,2,.04);CHECK((a.position-V3{1000,0,1000}).Length()<30);
+ // Ridge between camera and player: endpoints alone would miss it.
+ a.Reset();a.Step({0,0,0},0,0,0,6.5,2,.04);auto horizontal=a.position;
+ a.ConstrainTerrain({0,0,0},.04,[](V3 p,float&h){h=(p.z<-4&&p.z>-8)?5.f:0.f;return true;});
+ CHECK(a.position.y>horizontal.y+.1f||a.position.z>horizontal.z+1.f);CHECK((a.position-V3{0,0,0}).Length()<25.f);
+ // Flat steady-state car is around lower third: more frame ahead than behind.
+ State framed;for(int i=0;i<300;i++)framed.Step({0,0,i*.25f},0,0,1.5,6.5,2,.04);
+ V3 f=framed.FramedForward(),r=Unit({f.z,0,-f.x}),up={-f.y*r.z, f.z*r.x-f.x*r.z,-f.y*r.x};
+ V3 delta=framed.lastCar+V3{0,1,0}-framed.position;
+ auto dot=[](V3 x,V3 y){return x.x*y.x+x.y*y.y+x.z*y.z;};
+ float y=.5f-.5f*1.3f*framed.zoom*dot(delta,up)/dot(delta,f);
+ CHECK(y>.62f&&y<.69f);CHECK((framed.position-framed.lastCar).Length()<17.f);
+ float lift=a.terrainLift; a.position.y-=lift;
+ a.ConstrainTerrain({0,0,0},.04,[](V3,float&h){h=-100;return true;});CHECK(a.terrainLift>=lift-.081f);
+ // Repeated hill/raised-road passes must not accumulate previous lift or
+ // mistake an aim point buried in the next crest for a 100m obstruction.
+ State hill;V3 drive;
+ for(int i=0;i<600;i++){
+  drive.z+=.25f;drive.y=4.f*std::exp(-(drive.z-42)*(drive.z-42)/50.f);
+  if(hill.ready)hill.position.y-=hill.terrainLift;
+  hill.Step(drive,0,0,1.5,6.5,2,.04);
+  hill.ConstrainTerrain(drive,.04,[](V3 p,float&h){h=4.f*std::exp(-(p.z-42)*(p.z-42)/50.f);return true;});
+  CHECK(std::isfinite(hill.position.y));CHECK(hill.terrainLift<8.f);CHECK((hill.position-drive).Length()<25.f);
+ }
+ auto saved=hill.position;hill.ConstrainTerrain(drive,.04,[](V3,float&){return false;});
+ CHECK(std::isfinite(hill.position.y)); // unknown samples do not invent ground
  a.Step(car,NAN,0,1,6.5,2,.04);CHECK(!a.ready);
  a.Step(car,0,0,1,6.5,2,0);CHECK(!a.ready);
  puts("world camera position/orbit inertia, steering lens, settling, determinism/reset pass");

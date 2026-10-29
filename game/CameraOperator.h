@@ -1,8 +1,10 @@
 #ifndef OPENCMR2_CAMERA_OPERATOR_H
 #define OPENCMR2_CAMERA_OPERATOR_H
 #include <cmath>
+
 namespace CameraOperator {
 inline const char* Label(bool enabled){return enabled?"human operator: on":"human operator: off";}
+inline float Max(float a,float b){return a>b?a:b;}
 inline float Clamp(float x,float a,float b){return x<a?a:x>b?b:x;}
 inline float Wrap(float x){return std::atan2(std::sin(x),std::cos(x));}
 struct V3 {
@@ -15,11 +17,12 @@ struct V3 {
 inline V3 Unit(V3 v){float n=v.Length();return n>.0001f?v*(1/n):V3{0,0,1};}
 struct State{
  bool ready=false;V3 position,velocity,aim,aimVelocity,lastCar;
+ float terrainLift=0;
  float heading=0,headingRate=0,lastHeading=0,turn=0,zoom=1.7f,zoomRate=0,pitch=0;
  void Reset(){*this=State{};}
  void Step(V3 car,float carHeading,float steering,float speed,float distance,float height,float dt){
   if(!std::isfinite(steering)||!std::isfinite(speed)||!std::isfinite(distance)||!std::isfinite(height)||!std::isfinite(carHeading)||!std::isfinite(dt)||dt<=0||dt>.2f||!std::isfinite(car.x)||!std::isfinite(car.y)||!std::isfinite(car.z)){Reset();return;}
-  distance=Clamp(distance*2.8f,16.f,32.f);height=Clamp(height*2.f,5.f,10.f);
+  distance=Clamp(distance*1.5f,9.f,14.f);height=Clamp(height*3.f,7.f,10.f);
   float delta=ready?Wrap(carHeading-lastHeading):0;
   if(ready&&((car-lastCar).Length()>25.f||std::abs(delta)>.8f)){Reset();delta=0;}
   if(!ready){ready=true;heading=lastHeading=carHeading;lastCar=car;position=car+V3{-std::sin(heading)*distance,height,-std::cos(heading)*distance};aim=car+V3{0,1,0};velocity={};}
@@ -36,8 +39,8 @@ struct State{
   // Keep framing safe on very long high-speed transients, but do not rigidly
   // rotate the position offset with the car. This is a tether, not attachment.
   V3 away=position-car;float separation=away.Length();
-  if(separation>distance*2.5f){position=car+away*(distance*2.5f/separation);}
-  V3 target=car+V3{0,1,0};
+  if(separation>distance*1.3f){position=car+away*(distance*1.3f/separation);}
+  V3 target=car+V3{std::sin(carHeading)*Clamp(speed*3.f,2.f,5.f),1.2f,std::cos(carHeading)*Clamp(speed*3.f,2.f,5.f)};
   V3 aimAcceleration=(target-aim)*12.f-aimVelocity*5.5f;
   aimVelocity=aimVelocity+aimAcceleration*dt;aim=aim+aimVelocity*dt;
   // Steering can widen before the body turns. Lens is actual projection zoom,
@@ -47,6 +50,63 @@ struct State{
   zoomRate+=(8.f*(wanted-zoom)-5.f*zoomRate)*dt;
   zoom=Clamp(zoom+zoomRate*dt,1.15f,1.9f);lastCar=car;
  }
+ // Look direction keeps the player in the lower third while allowing the
+ // independent aim to pan horizontally. Projection uses original 2.080*fov
+ // times .625 base zoom. Custom FOV/tilt may intentionally alter this.
+ V3 FramedForward()const{
+  V3 f=Unit(aim-position),toCar=lastCar+V3{0,1.f,0}-position;
+  float horizontal=std::sqrt(toCar.x*toCar.x+toCar.z*toCar.z);
+  float carElevation=std::atan2(toCar.y,horizontal);
+  float lookElevation=std::asin(Clamp(f.y,-1.f,1.f));
+  float target=carElevation+std::atan(.30f/(1.3f*zoom));
+  lookElevation=Clamp(lookElevation,target-.015f,target+.015f);
+  float carYaw=std::atan2(toCar.x,toCar.z),aimYaw=std::atan2(f.x,f.z);
+  float yaw=carYaw+Clamp(Wrap(aimYaw-carYaw),-.16f,.16f);
+  V3 flat={std::sin(yaw),0,std::cos(yaw)};
+  return {flat.x*std::cos(lookElevation),std::sin(lookElevation),flat.z*std::cos(lookElevation)};
+ }
+ // Ground-height constrained sight corridor, not generic object collision.
+ // Query samples current/near-future camera footpoints and car->camera rays.
+ template<class Query> void ConstrainTerrain(V3 car,float dt,Query ground){
+  if(!ready||dt<=0||dt>.2f)return;
+  V3 original=position,base=position;float required=0;
+  auto liftFor=[&](V3 camera){
+   float lift=0;
+   auto corridor=[&](V3 target){
+    float targetFloor;
+    if(ground(target,targetFloor)&&std::isfinite(targetFloor))target.y=Max(target.y,targetFloor+1.8f);
+    for(int i=1;i<=24;i++){
+     float t=i/24.f;V3 point=target+(camera-target)*t;float y;
+     if(ground(point,y)&&std::isfinite(y))lift=Max(lift,(y+1.2f-point.y)/t);
+    }
+   };
+   corridor(car+V3{0,1.2f,0});corridor(aim);
+   float floor;V3 predictive=camera+velocity*.35f;
+   if(ground(predictive,floor)&&std::isfinite(floor))lift=Max(lift,floor+2.f-camera.y);
+   return Max(0.f,lift);
+  };
+  required=liftFor(base);
+  // A tall bank should pull the drone in, not send it to TV-helicopter height.
+  // Test bounded alternatives along the existing inertial direction. This is
+  // a safety correction only, not a new car-attached nominal camera path.
+  if(required>3.f){
+   float cost=required;
+   for(int alternative=1;alternative<=3;alternative++){
+    float fraction=1.f-.2f*alternative;
+    V3 candidate=car+(original-car)*fraction;candidate.y=original.y;
+    if((candidate-car).Length()<5.f)continue;
+    float lift=liftFor(candidate),score=lift+(candidate-original).Length()*.35f;
+    if(score<cost){cost=score;base=candidate;required=lift;}
+   }
+  }
+  position=base;
+  // Rise before collision if possible; never ease through known terrain.
+  // Fall slowly after a crest so camera doesn't track every car bump.
+  terrainLift=required>terrainLift?required:Max(required,terrainLift-dt*2.f);
+  position.y+=terrainLift;
+  if(terrainLift>0&&velocity.y<0)velocity.y=0;
+ }
+
 };
 }
 struct CameraRecord;struct FixMatrix;struct FixVector;
