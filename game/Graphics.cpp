@@ -1,3 +1,4 @@
+#include "EffectAmounts.h"
 #include "render/effect_settings.h"
 #include "France1Textures.h"
 #include "SceneryPack.h"
@@ -5579,6 +5580,7 @@ void Particle_DrawAll(SceneNode *pCamera, BYTE view)
     GfxDustLobe lobes[32]={};int lobeCount=0;
     bool volume=Sys_GetOption("video.dust_volume",1)!=0;
     lobeCount=worldDust.Sample(lobes,32);
+    for(int i=0;i<lobeCount;i++)lobes[i].colourDensity[3]*=Effect_Clamp(Sys_GetOption("video.dust_amount",100))/100.f;
     bool volumeQueued=volume && lobeCount && Gfx_DrawDustVolume(lobes,lobeCount);
     // Never draw the camera-facing cloud sheets over a successful world-volume
     // submission. Original wheel chips/spray remain separate.
@@ -5642,6 +5644,7 @@ void Particle_DrawAll(SceneNode *pCamera, BYTE view)
             def.g = DRAW_PARTICLE.colour[1];
             def.b = DRAW_PARTICLE.colour[2];
             def.a = DRAW_PARTICLE.type0x53;
+            if(pType==&g_particleTypes[DUST_PLUME_TYPE])def.a=(BYTE)Effect_Scale(def.a,Sys_GetOption("video.dust_amount",100));
             def.shade = DRAW_PARTICLE.field0x54;
             Billboard_Add(&def, texture);
         }

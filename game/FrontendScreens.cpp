@@ -1,5 +1,6 @@
 #include "render/effect_settings.h"
 #include "SettingsPage.h"
+#include "EffectAmounts.h"
 #include "SavedGame.h"
 #include "port/sys.h"
 #include "ChampionshipDriver.h"
@@ -643,6 +644,19 @@ void FrontendMenu_DrawAdvancedGraphicsOptions(Menu *pMenu)
                          NULL, pColour, 8);
         }
         switch (pItem->value) {
+        case 0x40:case 0x41:case 0x42:case 0x43:case 0x44:case 0x45:
+        case 0x46:case 0x47:case 0x48:case 0x49:case 0x4a:case 0x4b:
+        case 0x4c:case 0x4d:case 0x4e:case 0x4f:case 0x50: {
+            const char* choice=nullptr;
+            if(pItem->value==0x44){static const char* a[]={"512","1024","2048"};choice=a[pItem->max%3];}
+            if(pItem->value==0x50){static const char* a[]={"Stage","64","128","256"};choice=a[pItem->max%4];}
+            if(pItem->min==2)choice=pItem->max?"On":"Off";
+            if(choice)snprintf(CFrontend::m_stringDest,sizeof CFrontend::m_stringDest,"%s < %s >",pItem->text,choice);
+            else snprintf(CFrontend::m_stringDest,sizeof CFrontend::m_stringDest,"%s < %d >",pItem->text,pItem->max);
+            Font_DrawText(1,CFrontend::m_stringDest,x,(int)(g_pGraphics->resY*24)/480+g_frontendDrawRect[1],(int*)pColour,0x11);break;
+        }
+        case 0x30:
+            Font_DrawText(1,pItem->text,x,(int)(g_pGraphics->resY*24)/480+g_frontendDrawRect[1],(int*)pColour,0x11);break;
         case 8:
             strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(pItem->id));
             Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
@@ -4056,7 +4070,7 @@ void FrontendMenu_EnterAdvancedGraphicsOptions(Menu *pMenu, int param)
     // OpenCMR2: breakable trees default on; off restores solid scenery.
     Menu_GetItem(pMenu, 0xf)->max = Sys_GetOption("video.tree_break", 1) != 0 ? 1 : 0;
     // OpenCMR2: camera effects on by default; off restores the original look.
-    Menu_GetItem(pMenu, 0x10)->max = Sys_GetOption("video.camera_effects", 1) != 0 ? 1 : 0;
+    Menu_GetItem(pMenu, 0x10)->max = Sys_GetOption("video.camera_shake",Sys_GetOption("video.camera_effects",1)) != 0 ? 1 : 0;
     // OpenCMR2: animated scenery on by default — idle crowds and trees cycle.
     Menu_GetItem(pMenu, 0x11)->max = Sys_GetOption("video.animated_scenery", 1) != 0 ? 1 : 0;
     // Both renderers implement these options. Read without mutating saved choices.
@@ -4126,7 +4140,7 @@ void FrontendMenu_ApplyAdvancedGraphicsOptions(Menu *pMenu, int param)
     // OpenCMR2: breakable trees on by default; off restores solid scenery.
     Sys_SetOption("video.tree_break", Menu_GetItem(pMenu, 0xf)->max);
     // OpenCMR2: camera effects on/off.
-    Sys_SetOption("video.camera_effects", Menu_GetItem(pMenu, 0x10)->max);
+    Sys_SetOption("video.camera_shake", Menu_GetItem(pMenu, 0x10)->max);
     // OpenCMR2: animated scenery on/off.
     Sys_SetOption("video.animated_scenery", Menu_GetItem(pMenu, 0x11)->max);
     // Both renderers consume the same settings reader below.
@@ -12583,4 +12597,35 @@ char *FrontendMenu_GetScreenOptionsLabel(void)
 {
     sprintf(CFrontend::m_stringDest, g_strEllipsisFormat, ScreenOptions_Text(SCREEN_TEXT_TITLE));
     return CFrontend::m_stringDest;
+}
+
+namespace {
+Menu effectAmounts;
+void EnterAmounts(Menu*m,int){
+ int n;const auto*rows=EffectAmount_Rows(n);
+ for(int i=0;i<n;i++){
+  int fallback=rows[i].initial;
+  if(i==9||i==11)fallback=Sys_GetOption("video.camera_effects",1);
+  int v=Sys_GetOption(rows[i].key,fallback);
+  if(i==16)v=v<=0?0:v<=64?1:v<=128?2:3;
+  m->items[i].max=EffectSettings::Clamp(v,0,rows[i].count-1);
+ }
+}
+void ApplyAmounts(Menu*m,MenuItem*){
+ int n;const auto*rows=EffectAmount_Rows(n);
+ for(int i=0;i<n;i++){
+  int v=m->items[i].max;
+  if(i==16){static const int sizes[]={0,64,128,256};v=sizes[v%4];}
+  Sys_SetOption(rows[i].key,v);
+ }
+ EffectSettings::Apply();
+}
+}
+Menu* FrontendMenu_GetEffectAmounts(Menu*parent){
+ Menu_Init(&effectAmounts,(char*)"Effect amounts",-1,0,parent,NULL,1,0,1);
+ int n;const auto*rows=EffectAmount_Rows(n);
+ for(int i=0;i<n;i++)Menu_AddItemType3(&effectAmounts,(char*)rows[i].label,-1,rows[i].count,0,0,0,0,0x40+i);
+ Menu_AddItemType1(&effectAmounts,0,0x67,ApplyAmounts,0xe);
+ Menu_SetCallbacks(&effectAmounts,EnterAmounts,NULL,(MenuCallback)FrontendMenu_DrawAdvancedGraphicsOptions,NULL);
+ Menu_ValidateCursor(&effectAmounts,0);return &effectAmounts;
 }
