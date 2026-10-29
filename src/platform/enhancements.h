@@ -147,7 +147,7 @@ inline const char *EnhancementHelp(){return
 "  --speed-motes-amount 0..300 Percent of the normal mote spawn rate (live cap 64 at 100, up to 192 at 300)\n"
 "  --speed-motes-size 50..800  Mote size in percent (default 100)\n"
 "  --dof-blur-max-px 1..40     Blur radius in pixels when dof_blur is 100 (default 4)\n"
-"  --camera-move -200..200  Chase and cockpit cameras: move the camera along its forward axis, + forward / - back, 0.05 model units per step (default 0; visual only)\n"
+"  --camera-move -200..200  Chase, cockpit, bonnet and bumper cameras: move the camera along its forward axis, + forward / - back, 0.05 model units per step (default 0; visual only)\n"
 "  --cockpit-eye-shift -100..100  Cockpit camera: move the eye along its forward axis as the view widens (default 0 = off; sign tuned natively; visual only)\n"
 "  --test-preset overdo        Exaggerated diagnostic look for speed lines/streak, FOV, DoF, tunnel vision (legacy motes off; add --effect speed_motes=on)\n"
 "                              and motion blur. Explicit flags override it; nothing is saved\n"

@@ -6571,7 +6571,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
              if(viewType>=4&&viewType<=6){snprintf(text,sizeof text,"FOV dolly %d%%: view widened x%.2f vs saved, camera distance x%.2f (visual only, chase cameras)",Sys_GetOption("video.fov_dolly",150),widening/65536.0,dollyScale/65536.0);}
              else{snprintf(text,sizeof text,"FOV dolly %d%%: not applied to camera type %d (chase types 4-6 only)",Sys_GetOption("video.fov_dolly",150),viewType);}
              line(text);
-             {int mv=Sys_GetOption("video.camera_move",0);snprintf(text,sizeof text,"Camera move %d steps = %+.2f model units along camera forward (+ forward, - back; chase and cockpit)",mv,mv*0.05);line(text);}
+             {int mv=Sys_GetOption("video.camera_move",0);snprintf(text,sizeof text,"Camera move %d steps = %+.2f model units along camera forward (+ forward, - back; chase, cockpit, bonnet and bumper views)",mv,mv*0.05);line(text);}
              if(viewType==3){int cw=0,cs=0;View_GetCockpitShift(param2,&cw,&cs);snprintf(text,sizeof text,"Cockpit eye shift setting %d: view widened x%.2f, eye moved %+.3f model units along camera forward (0.2 = driver mount height)",Sys_GetOption("video.cockpit_eye_shift",0),cw/65536.0,cs/65536.0);line(text);}}
         }
         line("enc=encoded; skip=requested, not encoded");

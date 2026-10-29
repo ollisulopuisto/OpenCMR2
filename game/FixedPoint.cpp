@@ -1281,6 +1281,15 @@ void View_PositionFromCarProfile(CameraRecord *pObj, FixMatrix *pRef)
     pos.y += off.y;
     pos.z += off.z;
     FixMatrix_SetPosition(&pos, pM);
+    {   // OpenCMR2 debug camera move (video.camera_move) for the car-mounted views (types 1, 2, 10: bonnet, bumper...). The position is rebuilt above every call, so this never accumulates.
+        int move = Sys_GetOption("video.camera_move", 0);
+        if (move != 0) {
+            int step = move * 0xCCC;   // 0.05 model units per step
+            pM->position.x += FixMul(pM->forward.x, step);
+            pM->position.y += FixMul(pM->forward.y, step);
+            pM->position.z += FixMul(pM->forward.z, step);
+        }
+    }
 
     base = g_viewCarLift[pObj->index];
     pObj->zoom = 0xa000;
