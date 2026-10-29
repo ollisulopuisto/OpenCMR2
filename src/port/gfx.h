@@ -360,6 +360,8 @@ void Gfx_SetRenderTarget(GfxTexture *target);
    scenery dissolves into what lies behind it before the far plane cuts it. end <= start turns
    the fade off. */
 void Gfx_CaptureBackdrop(void);
+/* OpenCMR2: save the next presented frame (HUD and overlay included) as a PNG at `path`. */
+void Gfx_RequestCapture(const char *path);
 void Gfx_SetDistanceFade(float start, float end);
 
 /* ---- fixed-function state -------------------------------------------------- */

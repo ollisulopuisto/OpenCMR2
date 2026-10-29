@@ -3,7 +3,9 @@
 #define OPENCMR2_ENHANCEMENTS_H
 #include <string>
 #include <map>
+#include <cstdlib>
 struct EnhancementOptions {
+    std::string captureDir;int captureInterval=5,captureCount=7;
     std::string trees, spectators, names, cars, modsDir, carNames, roads, textures;
     bool installDependencies=false,prepareOnly=false;
     std::map<std::string,int> overrides;
@@ -14,7 +16,7 @@ struct EnhancementOptions {
         if(equal!=key.npos){inlineValue=key.substr(equal+1);key.resize(equal);}
         if(equal==key.npos && key=="--prepare-only"){prepareOnly=true;return true;}
         if(equal==key.npos && key=="--install-enhancement-deps"){installDependencies=true;return true;}
-        if(key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect")return false;
+        if(key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect"&&key!="--attract-capture"&&key!="--capture-interval"&&key!="--capture-count")return false;
         if(equal==std::string::npos && i+1>=argc){error="Missing value for "+key;return true;}
         std::string value=equal==std::string::npos?argv[++i]:inlineValue;
         if(key=="--textures"){if(value!="original"&&value!="france1")error="--textures expects original or france1";else textures=value;}
@@ -30,6 +32,12 @@ struct EnhancementOptions {
             bool known=false;for(auto key:allowed)if(name==key)known=true;
             if(!known||(v!="on"&&v!="off"))error="--effect expects a listed NAME=on/off";
             else overrides["video."+name]=v=="on";
+        }
+        if(key=="--attract-capture"){if(value.empty())error="--attract-capture needs an output folder";else captureDir=value;}
+        if(key=="--capture-interval"||key=="--capture-count"){
+            char *end=nullptr;long n=strtol(value.c_str(),&end,10);bool interval=key=="--capture-interval";
+            if(value.empty()||*end||n<1||n>(interval?60:120))error=key+(interval?" expects 1..60 seconds":" expects 1..120 shots");
+            else (interval?captureInterval:captureCount)=(int)n;
         }
         if(key=="--cars"){if(value.empty())error="--cars needs a nonempty alternative list";else cars=value;}
         if(key=="--mods-dir"){if(value.empty())error="--mods-dir needs a folder";else modsDir=value;}
@@ -90,6 +98,10 @@ inline const char *EnhancementHelp(){return
 "                              Requested is not proof of backend support;\n"
 "                              see runtime log. temporal_aa = PARTIAL stage (SDL_GPU only,\n"
 "                              camera reprojection, no object velocity), default off.\n"
+"  --attract-capture DIR       Start the attract demo at once, save PNGs of the frame at\n"
+"                              stage-clock 0, N, 2N... s into DIR (+ capture.csv), then quit\n"
+"  --capture-interval SEC      Seconds of stage clock between shots (1..60, default 5)\n"
+"  --capture-count N           Number of shots (1..120, default 7 = 0..30 s)\n"
 "  --prepare-only              Prepare/validate selections, then exit\n"
 "  --help, --help-enhancements  Show this list without starting the game\n"
 "Car alternatives (slot replacement, NOT native-tested):\n"

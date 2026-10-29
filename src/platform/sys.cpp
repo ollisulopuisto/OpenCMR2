@@ -1349,6 +1349,12 @@ extern "C" int Sys_GetOption(const char *name, int fallback)
     return it==s_enhancements.overrides.end()?Platform_GetSettingInt(name, fallback):it->second;
 }
 
+extern "C" const char *Sys_GetCaptureDir(int *intervalSeconds,int *count){
+ if(intervalSeconds)*intervalSeconds=s_enhancements.captureInterval;
+ if(count)*count=s_enhancements.captureCount;
+ return s_enhancements.captureDir.empty()?NULL:s_enhancements.captureDir.c_str();
+}
+extern "C" void Sys_RequestQuit(void){SDL_Event e;SDL_zero(e);e.type=SDL_EVENT_QUIT;SDL_PushEvent(&e);}
 extern "C" const char *Sys_GetLaunchSummary(int line){
  static std::string summary;
  auto choice=[](const std::string&v){return v.empty()?"default":v.c_str();};

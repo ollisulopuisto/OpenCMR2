@@ -156,6 +156,9 @@ const char *Sys_GetInstallSetting(const char *name);
 int Sys_GetOption(const char *name, int fallback);
 /* Sanitized launch choices, never paths or full command line. */
 const char *Sys_GetLaunchSummary(int line);
+/* --attract-capture: output folder (NULL when off) plus interval seconds and shot count. */
+const char *Sys_GetCaptureDir(int *intervalSeconds, int *count);
+void Sys_RequestQuit(void);
 /* The option's text, or fallback when it is not set. */
 const char *Sys_GetOptionText(const char *name, const char *fallback);
 /* Changes an option and saves it to opencmr2.ini, keeping the rest of the

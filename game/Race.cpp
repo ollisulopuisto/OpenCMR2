@@ -849,6 +849,7 @@ int g_unk0x00537198[2];
 
 #include "Car.h"
 #include "RallyRouteNode.h"
+#include "AttractCapture.h"
 int RallyData_GetActiveCarRaceRecordField0(Car *p);
 
 // Stores the player's route position twice and frees the first five race slots.
@@ -4661,6 +4662,7 @@ void StageObject_InterpolateHeadlightGlows(int t);
 // Per-frame race update: advances the stage timing, the particle and dash
 // effects and the debris, then refreshes them once the frame gate opens.
 // FUNCTION: CMR2 0x0041d060
+int StageTiming_GetClockTime(void);
 void Race_UpdateFrameEffects(int param_1)
 {
     Car_InterpolateRenderTransforms();
@@ -4670,6 +4672,9 @@ void Race_UpdateFrameEffects(int param_1)
     Particle_Interpolate(param_1);
     StageObject_InterpolateSecondaryRampRecords(param_1);
     Dash_Interpolate(param_1);
+    // OpenCMR2: --attract-capture reads the stage clock only (no sim input).
+    if (AttractCapture::Started())
+        AttractCapture::Tick(StageTiming_GetClockTime(), (BYTE)RallyDataCountryIndex(), (BYTE)RallyDataStageIndex(), Car_Get(0)->speed);
     // OpenCMR2: speed-driven tunnel vision (visual only; reads speed, changes nothing in the sim).
     {
         float speedUnits = (float)Car_Get(0)->speed / 65536.0f / 1.5f;
