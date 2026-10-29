@@ -1387,6 +1387,9 @@ struct Executor : GfxExecutor {
         BindFramebuffer(presentFbo);
         unsigned requested=(Sys_GetOption("video.spatial_aa",0)?1:0)|(bloomOn?2:0)|(motionOn?4:0)|(dofOn?8:0)|(raysOn?16:0)|((grade[0]||grade[1]||grade[2]!=1||grade[3]!=1)?32:0)|(shadowType?64:0)|(weatherType&&weatherAmount?128:0);
         // GL error check means accepted commands, never GPU completion or pixels.
+        Gfx_SetRaysStatus(!raysOn?GFX_RAYS_OFF:encodedEffects&16?GFX_RAYS_ENCODED:
+            !worldEffectsApplied?GFX_RAYS_NO_WORLD:!sunVisible?GFX_RAYS_NO_SUN:
+            !backDepth?GFX_RAYS_NO_DEPTH:raysAmount<=0?GFX_RAYS_ZERO_AMOUNT:GFX_RAYS_RESOURCE);
         Gfx_SetEffectStatus(requested,encodedEffects,gl.GetError()==GL_NO_ERROR?1:0,-1);
 
         // A minimised or hidden window is not shown: waiting for the display's

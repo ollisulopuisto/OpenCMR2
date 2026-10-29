@@ -305,6 +305,11 @@ void Gfx_PresentStretched(BOOL vsync);
 typedef struct GfxEffectStatus {unsigned requested,encoded;int submitted;int metalFX;} GfxEffectStatus;
 void Gfx_SetEffectStatus(unsigned requested,unsigned encoded,int submitted,int metalFX);
 GfxEffectStatus Gfx_GetEffectStatus(void);
+// Previous submitted frame rays gate, independent of the user's request.
+enum {GFX_RAYS_UNKNOWN, GFX_RAYS_OFF, GFX_RAYS_ENCODED, GFX_RAYS_NO_WORLD,
+      GFX_RAYS_NO_SUN, GFX_RAYS_NO_DEPTH, GFX_RAYS_ZERO_AMOUNT, GFX_RAYS_RESOURCE};
+void Gfx_SetRaysStatus(int reason);
+int Gfx_GetRaysStatus(void);
 DWORD Gfx_GetFrameDrawCalls(void);
 DWORD Gfx_GetFrameVertices(void);
 DWORD Gfx_GetFrameIndices(void);

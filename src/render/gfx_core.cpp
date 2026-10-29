@@ -1379,3 +1379,7 @@ extern "C" void Gfx_SetShadowQuality(int resolution,int softness) {
 static GfxEffectStatus effectStatus={0,0,-1,-1};
 extern "C" void Gfx_SetEffectStatus(unsigned requested,unsigned encoded,int submitted,int metalFX){effectStatus={requested,encoded,submitted,metalFX};}
 extern "C" GfxEffectStatus Gfx_GetEffectStatus(){return effectStatus;}
+
+static int raysStatus=GFX_RAYS_UNKNOWN;
+extern "C" void Gfx_SetRaysStatus(int reason){raysStatus=reason;}
+extern "C" int Gfx_GetRaysStatus(void){return raysStatus;}

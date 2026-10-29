@@ -2530,6 +2530,9 @@ struct Executor : GfxExecutor {
             Sys_Log("effects: SDL_GPU command submission=%s (accepted is not completed/pixel verification)%s",submitted?"accepted":"FAILED",submitted?"":SDL_GetError());
             lastSubmission=submitted;
         }
+        Gfx_SetRaysStatus(!godRaysEnabled?GFX_RAYS_OFF:encoded&16?GFX_RAYS_ENCODED:
+            !worldEffects?GFX_RAYS_NO_WORLD:!sunVisible?GFX_RAYS_NO_SUN:
+            !sampledDepth||!backDepth?GFX_RAYS_NO_DEPTH:godRaysIntensity<=0?GFX_RAYS_ZERO_AMOUNT:GFX_RAYS_RESOURCE);
         Gfx_SetEffectStatus(requested,encoded,submitted?1:0,metalFXStatus);
         HashFrame();
     }
