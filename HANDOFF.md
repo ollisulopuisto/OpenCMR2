@@ -303,3 +303,6 @@ MetalFX remains fallback on unsupported/downscaling presentations. Grounded
 native case 2214x1440 -> 1280x832 is a downscale, not an upscale success.
 GL executor/controls are a separate upcoming patch, not claimed by this one.
 Native Mac stage/gameplay and frame time still require owner test.
+
+Actual generated fullscreen vertex UV test catches quarter-image sampling:
+old p*.5 did not span source. Fixed to p; GL-translated real shader test passes.
