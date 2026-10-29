@@ -206,3 +206,21 @@ changing static member mangling. Use existing public SetGameHDPath, same save
 assertions. Explicit string headers repair wiper and camera Windows tests.
 Both human-merged camera/wiper and dust notes retained above. Native CI pending;
 no merges, dispatches or reruns performed.
+
+## Accepted graphics CLI options follow-through
+Claim: fix/graphics-cli-options. User command used --textures=france1, silently
+passed through rather than selecting texture preparation. Accept equals syntax
+for recognized valued enhancement flags, preserving separate-token form. AA
+CLI overrides were accepted/logged but GPU constructor read saved-only settings;
+use the same override-aware startup selector in constructor and runtime tests.
+No saved defaults/profile change. Test full user's combined flags with synthetic
+helpers, not proprietary artwork or a claimed native renderer acceptance.
+Validation87/87Linuxpass: full user's combined argument form through actual binary
+with isolated synthetic helper outputs dispatches textures/roads/scenery/cars.
+Invalid/empty equals values fail. Actual Platform_Init per-launch AA request feeds
+same GPUStartupOptions::Read used by GPU constructor, saved-only reader stays0,
+INI remains byte-identical and subsequent no-flag launch restores saved0.
+No native frame or active AA/MetalFX success claim. MetalFX still needs compatible
+upscale/extension and reports encoded/fallback; input render above output is not
+an upscale recommendation. Font174/174 vectorized log covers existing glyph cells,
+not proof of uppercase code coverage; native lowercase label check remains open.

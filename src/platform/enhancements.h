@@ -9,11 +9,14 @@ struct EnhancementOptions {
     std::map<std::string,int> overrides;
     bool Consume(int &i,int argc,char **argv,std::string &error) {
         std::string key=argv[i];
-        if(key=="--prepare-only"){prepareOnly=true;return true;}
-        if(key=="--install-enhancement-deps"){installDependencies=true;return true;}
+        auto equal=key.find('=');
+        std::string inlineValue;
+        if(equal!=key.npos){inlineValue=key.substr(equal+1);key.resize(equal);}
+        if(equal==key.npos && key=="--prepare-only"){prepareOnly=true;return true;}
+        if(equal==key.npos && key=="--install-enhancement-deps"){installDependencies=true;return true;}
         if(key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect")return false;
-        if(i+1>=argc){error="Missing value for "+key;return true;}
-        std::string value=argv[++i];
+        if(equal==std::string::npos && i+1>=argc){error="Missing value for "+key;return true;}
+        std::string value=equal==std::string::npos?argv[++i]:inlineValue;
         if(key=="--textures"){if(value!="original"&&value!="france1")error="--textures expects original or france1";else textures=value;}
         if(key=="--roads"){if(value!="original"&&value!="curved")error="--roads expects original or curved";else roads=value;}
         if(key=="--tree-wind"){if(value!="on"&&value!="off")error="--tree-wind expects on or off";else overrides["video.tree_wind"]=value=="on";}
@@ -48,6 +51,7 @@ struct EnhancementOptions {
 };
 inline const char *EnhancementHelp(){return
 "OpenCMR2 options (per launch, no saved selection changes):\n"
+"  Valued enhancement flags accept --name value or --name=value.\n"
 "  --data PATH                 Owned installed PC game data\n"
 "  --user-dir PATH             Explicit DIFFERENT saves/settings profile\n"
 "  --scenery-dir PATH          Existing read-only sidecar pack\n"
