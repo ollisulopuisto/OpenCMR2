@@ -4,6 +4,8 @@
 #include "port/sys.h"
 #include "render/gfx_internal.h"
 
+#include <algorithm>
+
 using namespace BinkTest;
 struct SysFile { size_t position = 0; };
 static std::vector<uint8_t> data;

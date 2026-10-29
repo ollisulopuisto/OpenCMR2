@@ -1,5 +1,7 @@
 #include "CameraOperator.h"
 #include <cstdio>
+#include <algorithm>
+#include <cmath>
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line%d: %s\n",__LINE__,#x);return 1;}}while(0)
 int main(){
  using namespace CameraOperator;State a,b;
