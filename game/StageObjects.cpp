@@ -303,6 +303,8 @@ void StageObject_UpdateRevCounterTextures(int index);
 void CarInterior_UpdateGearDigitTexture(Texture *pTexture, int state, int cacheBase, int index);
 void StageObject_BuildCarNodeOrientation(CameraRecord *object, int *src);
 void StageObject_BuildCarMountWorldMatrix(CameraRecord *object, void *unused);
+int View_CurrentWidening(unsigned int view);
+#include "CockpitEyeShift.h"
 void StageObject_ResetBodyTextureCaches(void);
 void CarLight_ResetTextureState(int index);
 void CarLight_CacheBodyTextures(int car, int unused1, int unused2, BYTE flag);
@@ -8617,6 +8619,17 @@ void StageObject_BuildCarMountWorldMatrix(CameraRecord *object, void *unused)
                        &g_carInteriorNodeRows[object->car].driverPoseNode->current);
     FixMatrix_Multiply(&object->matrix, &combined,
                        Car_Get(object->car)->pBodyMatrix);
+    {   // OpenCMR2 cockpit eye shift (visual only, default 0 = unchanged): moves the eye along the camera's forward axis by the view's widening.
+        // Positive = forward axis, negative = the other way; which sign hides the model edges is to be tuned natively.
+        int shiftPct = Sys_GetOption("video.cockpit_eye_shift", 0);
+        if (shiftPct != 0) {
+            int widening = View_CurrentWidening(object->index);
+            int step = CockpitEyeShift_Amount(widening, shiftPct);
+            object->matrix.position.x += FixMul(object->matrix.forward.x, step);
+            object->matrix.position.y += FixMul(object->matrix.forward.y, step);
+            object->matrix.position.z += FixMul(object->matrix.forward.z, step);
+        }
+    }
     object->liftPitch = 0;
     object->field_0x50 = 0;
     object->carLift = 0x10000;
