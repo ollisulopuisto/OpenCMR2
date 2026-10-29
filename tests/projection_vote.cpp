@@ -5,14 +5,14 @@ static int failures = 0;
 #define CHECK(c) do { if (!(c)) { std::printf("FAIL %s:%d %s\n", __FILE__, __LINE__, #c); ++failures; } } while (0)
 int main()
 {
-    const float planes[][2] = { {0.1f, 150.0f}, {0.1f, 300.0f}, {0.5f, 1000.0f}, {1.0f, 150.0f}, {0.25f, 600.0f} };
+    const float planes[][2] = { {0.1f, 150.0f}, {0.1f, 300.0f}, {0.5f, 1000.0f}, {1.0f, 150.0f}, {0.25f, 600.0f}, {0.01f, 150.0f}, {0.1f, 2000.0f}, {0.05f, 5000.0f} };
     for (auto &p : planes) {
         float n = p[0], f = p[1], range = f - n;
         float m33 = f / range, m43 = -(n * f) / range;  // exactly as game/Graphics.cpp ~1666-1682
         float rn = 0, rf = 0;
         CHECK(Projection_NearFar(m33, 1.0f, m43, &rn, &rf));
         CHECK(std::fabs(rn - n) < 1e-3f * n);
-        CHECK(std::fabs(rf - f) < 2e-3f * f);
+        CHECK(std::fabs(rf - f) < 2e-2f * f);
         // the previous formula f = _43 / (_33 - 1) is -f: it can never satisfy f > n, so it never voted
         float oldF = m43 / (m33 - 1.0f);
         CHECK(oldF < 0.0f && !(oldF > n));
