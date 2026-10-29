@@ -964,7 +964,7 @@ void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef)
     // camera position, scaled by car speed and impact strength
     // ([video] video.camera_effects). The camera drifts like a handheld
     // operator instead of jumping randomly every frame.
-    if (Sys_GetOption("video.camera_shake",Sys_GetOption("video.camera_effects",1)) != 0 && !(g_playerCameraMode[index]==4 && Sys_GetOption("video.camera_operator",0))) {
+    if (Sys_GetOption("video.camera_shake",Sys_GetOption("video.camera_effects",1)) != 0 && !CameraOperator_Enabled(pObj)) {
         extern BYTE g_viewObjectCarIndices[16];
         int carIx = g_viewObjectCarIndices[pObj->index];
         Car *pCar = Car_Get(carIx);

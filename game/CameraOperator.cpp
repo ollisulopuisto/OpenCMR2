@@ -8,8 +8,9 @@ bool Track_CameraGroundHeight(FixVector*,int*);
 int RallyData_GetActiveCarRaceRecordField0(Car*);
 int RallyData_GetRouteAdditionalState();
 extern BYTE g_playerCameraMode[8];
+extern BYTE g_droneVariant[8];
 bool CameraOperator_Enabled(const CameraRecord*record){
- return record && record->index<8 && g_playerCameraMode[record->index]==4 && Sys_GetOption("video.camera_operator",0);
+ return record && record->index<8 && g_playerCameraMode[record->index]==4 && g_droneVariant[record->index] && Sys_GetOption("video.camera_operator",0);
 }
 void CameraOperator_Reset(unsigned i){if(i<8)states[i].Reset();}
 void CameraOperator_Update(CameraRecord*record,const FixMatrix*reference,const FixVector*offset,short pitch){
