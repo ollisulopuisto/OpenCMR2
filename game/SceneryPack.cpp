@@ -1,3 +1,4 @@
+#include "SceneryMotion.h"
 #include "SceneryPack.h"
 #include "CrowdSelection.h"
 #include "ScenerySHA256.h"
@@ -212,16 +213,14 @@ static bool DrawReplacement(StageObject *object,const float *billboard,unsigned 
         // advance it. Stable placement phase does not consume physics RNG.
         unsigned phase=((unsigned)object->position.x*1664525u)^(unsigned)object->position.z;
         unsigned frame=Frame(animationTime,asset->entry.ticks,(unsigned)asset->frames.size(),phase);
-        // Finland pairs: oneperson in65%ofcards gives aboutone-thirdpeople.
-        // Identity routing above must already have reached an authored4pose
-        // recipe in a supported source archive. Others keep original behavior.
-        bool selected=asset->frames.size()!=4||(asset->entry.archive!="finhit.bfl"&&asset->entry.archive!="finlot.bfl")||
-            CrowdSelection::Articulate(object->position.x,object->position.z);
+        // Every identity-verified supported card moves, including neighbours on
+        // multi-person atlases. Authored limb poses remain in addition to sway.
+        bool selected=true; // Requested full supported placement coverage.
         if(!selected)frame=0;
         PackTexture *t=asset->frames[frame];std::vector<GfxVertex> vertices;
         for(int i=0;i<mesh->triangleCount;i++)for(int j=0;j<3;j++){
             unsigned ix=mesh->pTriangles[i].vertexIndex[j];if(ix>=(unsigned)mesh->field_0x10)return false;
-            auto &p=v[ix];vertices.push_back({p.x,p.y,p.z,p.nx,p.ny,p.nz,p.diffuseColour,p.specularColour,p.textureCoordinates[0][0],p.textureCoordinates[0][1],0,0});}
+            auto &p=v[ix];vertices.push_back({p.x+SceneryMotion::Offset(p.y,bottom,height,animationTime,phase,false),p.y,p.z,p.nx,p.ny,p.nz,p.diffuseColour,p.specularColour,p.textureCoordinates[0][0],p.textureCoordinates[0][1],0,0});}
         if(!spectatorLogged){Sys_Log("options: spectator sidecar active (first successful override draw)");spectatorLogged=true;}
         State(*(const GfxMatrix*)billboard);Gfx_SetTexture(0,t->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,vertices.data(),vertices.size());Gfx_PopState();
         if(selected&&(!diagnosticObject||(asset->frames.size()==4&&!diagnosticArticulated))){diagnosticObject=object;diagnosticFrame=frame;diagnosticChanges=0;diagnosticArticulated=asset->frames.size()==4;}
@@ -268,8 +267,15 @@ static bool DrawReplacement(StageObject *object,const float *billboard,unsigned 
         f.position.x/65536.f,f.position.y/65536.f,f.position.z/65536.f,1};
     if(!treeLogged){Sys_Log("options: tree sidecar active (source-fitted successful override draw)");treeLogged=true;}
     State(m);
+    unsigned phase=((unsigned)object->position.x*1664525u)^(unsigned)object->position.z;
     for(auto &p:fitted->second){
-        Gfx_SetTexture(0,p.texture->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,p.vertices.data(),p.vertices.size());
+        // Bend fitted replacement, too. The accepted source-fit tree shape is
+        // unchanged at rest and original/fitted buffers are never rewritten.
+        if(Sys_GetOption("video.tree_wind",0)) {
+            auto moved=p.vertices;
+            for(auto &q:moved)q.x+=SceneryMotion::Offset(q.y,bottom,height,animationTime,phase,true);
+            Gfx_SetTexture(0,p.texture->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,moved.data(),moved.size());
+        } else {Gfx_SetTexture(0,p.texture->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,p.vertices.data(),p.vertices.size());}
     }
     Gfx_PopState();return true;
 }
@@ -301,12 +307,12 @@ bool SceneryPack_Draw(StageObject *object,const float *billboard){
     for(int i=0;i<mesh->field_0x10;i++){bottom=std::min(bottom,vertices[i].y);top=std::max(top,vertices[i].y);}
     float height=top-bottom;if(!std::isfinite(height)||height<=0)return false;
     float phase=((unsigned)object->position.x^(unsigned)object->position.z)%6283*.001f;
-    float sway=std::sin(float(animationTime/65536.0/25.0)*1.2f+phase)*height*.015f;
+
     std::vector<GfxVertex> out;
     for(int i=0;i<mesh->triangleCount;i++)for(int j=0;j<3;j++){
         unsigned ix=mesh->pTriangles[i].vertexIndex[j];if(ix>=(unsigned)mesh->field_0x10)return false;
-        auto &v=vertices[ix];float weight=(v.y-bottom)/height;weight*=weight;
-        out.push_back({v.x+sway*weight,v.y,v.z,v.nx,v.ny,v.nz,v.diffuseColour,v.specularColour,v.textureCoordinates[0][0],v.textureCoordinates[0][1],0,0});
+        auto &v=vertices[ix];float motion=SceneryMotion::Offset(v.y,bottom,height,animationTime,(unsigned)(phase*1000),true);
+        out.push_back({v.x+motion,v.y,v.z,v.nx,v.ny,v.nz,v.diffuseColour,v.specularColour,v.textureCoordinates[0][0],v.textureCoordinates[0][1],0,0});
     }
     State(*(const GfxMatrix*)billboard);Gfx_SetTexture(0,source->pSurface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,out.data(),out.size());Gfx_PopState();
     ++treeWindDraws;
