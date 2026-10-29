@@ -6,9 +6,7 @@
 #include <cstdio>
 #include <cstdarg>
 #include <cstring>
-#define private public
 #include "Graphics.h"
-#undef private
 #include "SceneryPack.h"
 #include "CrowdSelection.h"
 #include "ScenerySHA256.h"
@@ -24,6 +22,9 @@
 static bool separate=false,legacy=false,windEnabled=true;static std::string base; static unsigned draws; static GfxMatrix world;static GfxTexture *bound;static std::vector<GfxVertex> captured;
 D3DTextureManager* CGraphics::m_pTextureManager=nullptr;
 unsigned int CGraphics::m_textureCount=0;
+struct SceneryPackTestAccess {
+ static void Set(D3DTextureManager *manager,unsigned count){CGraphics::m_pTextureManager=manager;CGraphics::m_textureCount=count;}
+};
 struct SysFile { FILE *file; };
 extern "C" SysFile *Sys_OpenFile(const char *p,int){FILE *f=fopen(p,"rb");
  if(f&&legacy&&std::string(p).find("tree.obj")!=std::string::npos){
@@ -68,7 +69,7 @@ if(argc<2)return 0;base=argv[1];legacy=argc>2&&!strcmp(argv[2],"legacy");separat
    std::ofstream wind(temporary/"tree-wind-identities.tsv");wind<<"frahit.bfl/tre_unknown.dds\t3\t"<<SceneryIdentity::SHA256("ghi",3)<<"\n";wind.close();
    std::ofstream ids(temporary/"source-identities.tsv");ids<<"frahit.bfl/tre_md1.dds\t3\t"<<SceneryIdentity::SHA256("abc",3)<<"\nfrahit.bfl/spc_mn9a.dds\t3\t"<<SceneryIdentity::SHA256("def",3)<<"\n";ids.close();
  }
- D3DTextureManager manager={};CGraphics::m_pTextureManager=&manager;CGraphics::m_textureCount=1;
+ D3DTextureManager manager={};SceneryPackTestAccess::Set(&manager,1);
  Texture source={};source.width=source.height=256;strcpy(source.name,"C:\\textures\\TRE_MD1.TGA");GenericFile archive={};source.pArchive=&archive;manager.textureBuffer[0]=&source;
  MeshTriangle triangle={};triangle.vertexIndex[1]=1;triangle.vertexIndex[2]=2;MeshVertexF verts[3]={};verts[1].y=2;verts[2].x=1;verts[0].textureCoordinates[0][1]=1;verts[2].textureCoordinates[0][0]=1;verts[2].textureCoordinates[0][1]=1;Mesh mesh={};mesh.flags=2;mesh.pTriangles=&triangle;mesh.triangleCount=1;mesh.pVertexData=(DWORD*)verts;mesh.field_0x10=3;
  StageObject object={};object.pMesh=&mesh;object.matrix.right.x=object.matrix.up.y=object.matrix.forward.z=65536;object.matrix.position.x=3*65536;
