@@ -2,8 +2,9 @@
 
 This patch adds `spatial_aa = 1` in `[video]` to the SDL_GPU renderer, including
 its Metal backend. The default is `0`, preserving the existing render path.
-Restart the game after changing it. `graphics_api = opengl` retains its existing
-output and ignores this option.
+Restart the game after changing it. The OpenGL 3.3 executor now uses the same
+translated fragment shader before bloom and other effects. This is a port, not
+a Metal or OpenGL hardware restriction. Both backends keep the default off.
 
 This is single-frame edge smoothing, not MetalFX, temporal AA, a resolution
 upscaler, or an FPS optimization. It can soften small text and thin features.

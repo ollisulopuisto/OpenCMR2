@@ -281,7 +281,8 @@ struct Executor : GfxExecutor {
     GLuint effectFbo[4] = {}, effectTex[4] = {}, effectUbo = 0, effectVao = 0;
     GLuint historyTex = 0; bool historyValid = false;
     unsigned encodedEffects = 0;
-    GLuint effectPrograms[8] = {};
+    GLuint effectPrograms[9] = {};
+    bool spatialAA = false;
     GLuint shadowFbo = 0, shadowMap = 0, shadowDepth = 0, shadowProgram = 0;
     int shadowSize = 1024, shadowSoftness = 25; bool shadowReady = false;
     struct WeatherParticle { float x,y,vx,vy,sx,sy,life; };
@@ -393,6 +394,7 @@ struct Executor : GfxExecutor {
             Sys_Log("gfx: OpenGL 3.3 is needed");
             return false;
         }
+        spatialAA = Sys_GetOption("video.spatial_aa",0)==1;
         anisotropy = Platform_GetSettingInt("video.anisotropy", 8);
         smoothScaling = Platform_GetSettingInt("video.smooth_scaling", 1);
         bcSupported = HasExtension("GL_EXT_texture_compression_s3tc");
