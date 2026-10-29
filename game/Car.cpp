@@ -1,5 +1,6 @@
 #include "CameraOperator.h"
 #include "port/sys.h"
+#include "SpeedFov.h"
 #include <math.h>
 #include "FloatToInt.h"
 #include <stddef.h>
@@ -8386,16 +8387,12 @@ static int View_SpeedFovZoom(BYTE view, int zoom)
     if (pct > 40) pct = 40;
     if (g_playerCameraMode[view] == 4 && g_droneVariant[view] && Sys_GetOption("video.camera_operator", 0)) return zoom;
     Car *car = Car_Get(view);
-    float ratio = car ? car->speed / 65536.f / 1.5f : 0.f;
-    ratio = ratio < 0.f ? 0.f : ratio > 1.f ? 1.f : ratio;
-    int target = (int)(ratio * 65536.f);
+    int target = SpeedFov_Target(car ? car->speed : 0);
     int now = CMain::GetFrameTime();
     int elapsed = now - lastMs[view];
     lastMs[view] = now;
-    if (elapsed < 0 || elapsed > 250) shown[view] = target;
-    else shown[view] += (int)((long long)(target - shown[view]) * elapsed / (elapsed + 400));
-    long long gain = (long long)pct * shown[view] / 100; // 16.16 fraction of widening
-    return (int)((long long)zoom * 65536 / (65536 + gain));
+    shown[view] = SpeedFov_Ease(shown[view], target, elapsed);
+    return SpeedFov_Zoom(zoom, pct, shown[view]);
 }
 
 // FUNCTION: CMR2 0x00422140
