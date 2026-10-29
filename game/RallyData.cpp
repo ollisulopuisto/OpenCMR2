@@ -6573,7 +6573,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             int viewType=0,drone=0,zoomRaw=0,fovYRaw=0,fovSet=70;
             AttractCapture_ViewSignature((int)param2,&viewType,&drone);
             View_GetEffectiveProjection(param2,&zoomRaw,&fovYRaw,&fovSet);
-            snprintf(text,sizeof text,"Camera: type %d%s (live, view %d)",viewType,drone?" drone":"",(int)param2);
+            snprintf(text,sizeof text,"Camera: type %d%s (live, view %d)",viewType,(drone&&viewType==5)?" drone":"",(int)param2);
             line(text);
             snprintf(text,sizeof text,"video.fov number %d (legacy scale, 70 original, higher = wider; not an angle); zoom x%.2f (camera base x%.2f), proj scale %.2f",fovSet,zoomRaw/65536.0,g_viewZooms[param2&1]/65536.0,fovYRaw/65536.0);
             line(text);
@@ -6612,11 +6612,11 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         snprintf(big[3], 96, "Camera vs car: FWD/BACK %+.2f  side %+.2f  up %+.2f  (dist %.2f)", cf, cs, cu, cd);
         snprintf(big[4], 96, "+ ahead, - behind. Manual move %+.2f", eff / 65536.0);
         int bigFont = std::clamp((int)g_pGraphics->resY / 32, 20, 44), bigLine = bigFont + bigFont / 3, pad = bigFont / 2;
-        int bw = (int)g_pGraphics->resX * 72 / 100, bx = ((int)g_pGraphics->resX - bw) / 2, by = (int)g_pGraphics->resY * 2 / 100;
+        int bw = (int)g_pGraphics->resX * 56 / 100, bx = (int)g_pGraphics->resX * 2 / 100, by = (int)g_pGraphics->resY * 52 / 100;
         short bp[4] = {(short)bx, (short)by, (short)bw, (short)(5 * bigLine + 2 * pad)};
         BYTE bbg[4] = {0, 0, 0, 215}, bfg[4] = {255, 236, 90, 255}, bwhite[4] = {255, 255, 255, 255};
-        Sprite_FillRect(NULL, bp, bbg, 1);
-        for (int k = 0; k < 5; ++k) Font_DrawTextScaled(1, big[k], bx + pad, by + pad + k * bigLine, bigFont, bw - 2 * pad, k == 0 ? bfg : bwhite);
+        Sprite_FillRect(NULL, bp, bbg, 4);
+        for (int k = 0; k < 5; ++k) Font_DrawTextScaled(1, big[k], bx + pad, by + pad + k * bigLine, bigFont, bw - 2 * pad, k == 0 ? bfg : bwhite, 4);
     }
     CarDamage_UpdateOrderedCarsOffRoadState(pOrder, (short)orderCount, g_viewScreenRect, maskedView);
     if (CGameInfo::GetGameModeOptionBit19() != 0) {

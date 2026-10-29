@@ -385,7 +385,7 @@ int Font_Unused(char *unused1, int unused2)
 }
 
 void Font_DrawTextScaled(BYTE index, const char *text, int x, int y, int pixelHeight,
-                         int maxWidth, const BYTE *colour)
+                         int maxWidth, const BYTE *colour, int layer)
 {
     if (!g_fonts || index >= g_fontCount || !g_fonts[index].loaded || !text ||
         pixelHeight <= 0 || maxWidth <= 0) return;
@@ -413,7 +413,7 @@ void Font_DrawTextScaled(BYTE index, const char *text, int x, int y, int pixelHe
         if (width > 0 && height > 0) {
             SpriteRect dst = {(short)(x+left), (short)y, (short)width, (short)height};
             int centre[3] = {dst.x+width/2, y+height/2, 0};
-            Sprite_Queue((SpriteRect *)&g, &dst, font.pTexture, 1, 0, centre, NULL, (BYTE *)colour, 8);
+            Sprite_Queue((SpriteRect *)&g, &dst, font.pTexture, layer, 0, centre, NULL, (BYTE *)colour, 8);
         }
         int advance = font.pHeader->charSpacing;
         for (int k=0; k<g.kernCount; ++k)
