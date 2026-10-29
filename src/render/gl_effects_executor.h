@@ -107,7 +107,8 @@ bool EffectPass(int effect, int target, GLuint source, GLuint second, const void
     }
     // std140 blocks are padded, including shaders whose public argument is one float.
     if(effect==6){gl.ActiveTexture(GL_TEXTURE0+2);gl.BindTexture(GL_TEXTURE_2D,cloudMask?cloudMask:white2D);gl.BindSampler(2,Sampler(linear));}
-    unsigned char block[sizeof(CloudUniforms)] = {};
+    // SpeedStreakUniforms is 992 bytes (trail data the GL path never fills): keep the zeroed buffer at least that large so the block is never read out of range. Zero depth info = trails off.
+    unsigned char block[sizeof(CloudUniforms) > 1024 ? sizeof(CloudUniforms) : 1024] = {};
     if (bytes > sizeof(block)) { ForgetEffectState(); return false; }
     memcpy(block, data, bytes);
     gl.BindBuffer(GL_UNIFORM_BUFFER, effectUbo);
