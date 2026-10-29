@@ -34,6 +34,16 @@ inline int Tuning_Select(int index, int dir, int count) { return count <= 0 ? 0 
 // the keyboard state the game reads, so they never also drive the car or a menu.
 static const int kTuningToggleDefault = 0x44;                       // F10
 static const int kTuningKeys[7] = {0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}; // 1 prev row, 2 next row, 3 down, 4 up, 5 reset row, 6 reset all, 7 save
+// A toggle key is refused when it is a default driving/menu key (arrows, space, [ ], C, numpad arrows, Return, Escape, F1, F2),
+// one of the tuning digit keys, or outside 1..255. The caller also refuses keys bound to driving actions in the player's controls.
+inline bool Tuning_ToggleKeyAllowed(int key)
+{
+    if (key < 1 || key > 255) return false;
+    static const int unsafe[] = {0x01, 0x1c, 0x9c, 0x39, 0x1a, 0x1b, 0x2e, 0x3b, 0x3c, 0xc8, 0xcb, 0xcd, 0xd0, 0x4b, 0x4d, 0x48, 0x50};
+    for (int u : unsafe) if (key == u) return false;
+    for (int t : kTuningKeys) if (key == t) return false;
+    return true;
+}
 inline void Tuning_FilterKeys(unsigned char keys[256], bool open, int toggleKey)
 {
     if (toggleKey > 0 && toggleKey < 256) keys[toggleKey] = 0;

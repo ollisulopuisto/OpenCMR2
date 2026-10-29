@@ -28,6 +28,11 @@ int main(){
     // No tuning key is a default driving key (arrows, space, [ ], C, numpad).
     static const int driving[] = {0xcb, 0xcd, 0xc8, 0xd0, 0x39, 0x1b, 0x1a, 0x2e, 0x4b, 0x4d};
     for (int d : driving) { for (int t : kTuningKeys) CHECK(d != t); CHECK(d != kTuningToggleDefault); }
+    // Toggle key validation: default F10 is fine; driving/menu keys, digits and out-of-range values are refused.
+    CHECK(Tuning_ToggleKeyAllowed(kTuningToggleDefault) && Tuning_ToggleKeyAllowed(0x43) && Tuning_ToggleKeyAllowed(0x0F));
+    for (int d : driving) CHECK(!Tuning_ToggleKeyAllowed(d));
+    for (int t : kTuningKeys) CHECK(!Tuning_ToggleKeyAllowed(t));
+    CHECK(!Tuning_ToggleKeyAllowed(0) && !Tuning_ToggleKeyAllowed(256) && !Tuning_ToggleKeyAllowed(-3) && !Tuning_ToggleKeyAllowed(0x1c) && !Tuning_ToggleKeyAllowed(0x01));
     // Edge detection: one trigger per press, held key does not repeat, release re-arms.
     TuningEdges e; int fires = 0;
     bool seq[] = {0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1};

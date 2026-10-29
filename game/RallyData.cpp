@@ -6037,7 +6037,7 @@ int g_windscreenWiperManualFrames = 0;
 
 // ---- Live effect tuning (visual only) ---------------------------------------------------------
 // F10 (video.tuning_key, a DirectInput scancode) opens a panel on the right. Digit keys 1/2 pick a row, 3/4 change it, 5 resets
-// the row and 6 resets all rows to the values this launch started with, 7 saves the shown values to opencmr2.ini. Changes are
+// the row and 6 resets all rows to the values they had when the panel was first opened this launch (after any menu edits), 7 saves the shown values to opencmr2.ini. Changes are
 // per launch until saved. While open, these keys are removed from the game's keyboard state (see CInput::ReadKeyboardState).
 static bool g_tuneOpen = false, g_tuneSnapshotTaken = false;
 static int g_tuneRow = 0, g_tuneSnapshot[16];
@@ -6046,8 +6046,21 @@ static TuningEdges g_tuneEdges;
 bool TuningPanel_IsOpen(void) { return g_tuneOpen; }
 int TuningPanel_ToggleKey(void)
 {
+    static int checked = -1, result = kTuningToggleDefault;
     int key = Sys_GetOption("video.tuning_key", kTuningToggleDefault);
-    return key > 0 && key < 256 ? key : kTuningToggleDefault;
+    if (key == checked) return result;
+    checked = key;
+    bool ok = Tuning_ToggleKeyAllowed(key);
+    // Also refuse a key the player has bound to a driving action on any attached keyboard device.
+    for (int device = 0; ok && device < CInput::CountAttachedInputDevices(); device++) {
+        DeviceInfo *info = CInput::GetAvailableDeviceRecord(device);
+        if (info && info->field_0x0 == 1)
+            for (int action = 0; action < 9; action++)
+                if ((&info->keyboard.field_0x468)[action] == key) ok = false;
+    }
+    if (!ok) Sys_Log("tuning panel: video.tuning_key=%d is a driving/menu key or invalid; using F10 (68)", key);
+    result = ok ? key : kTuningToggleDefault;
+    return result;
 }
 void TuningPanel_Update(void)
 {
@@ -6096,7 +6109,7 @@ void TuningPanel_Draw(void)
         snprintf(text, sizeof text, "%s %s: %d", i == g_tuneRow ? ">" : " ", rows[i].label, Sys_GetOption(rows[i].key, rows[i].fallback));
         Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, i == g_tuneRow ? lit : colour);
     }
-    snprintf(text, sizeof text, "5 row reset  6 all reset  7 save");
+    snprintf(text, sizeof text, "5 row reset  6 all to opening  7 save");
     Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
     snprintf(text, sizeof text, g_tuneSavedStamp && g_tuneFrame - g_tuneSavedStamp < 100 ? "saved to opencmr2.ini; F10 closes" : "F10 closes; per launch until saved");
     Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
