@@ -22,6 +22,6 @@ assert "RunStateUpdateCallbacks" not in b, "this branch skips the state callback
 assert b.index("InRaceMenu_UpdateStateMachineFrame") < b.index("TuningPanel_Update();") < b.index("InRaceMenu_AdvanceScreenEntries"), "panel update must follow the menu input read and precede the draw"
 assert "View_RefreshForTuning();" in b
 assert "Race_ApplySpeedEffectParams();" in b, "tunnel/streak/vapor targets are only set in the race step: refresh them while paused"
-assert "Gfx_SetRaceWorld(CGameInfo::IsInRaceMenuOpen()==0 || (TuningPanel_IsOpen()" in rd, "the Esc menu turns every race effect off in the renderer unless the panel is open"
+assert "Gfx_SetRaceWorld(CGameInfo::IsInRaceMenuOpen()==0 || (TuningPanel_PreviewActive()" in rd, "the Esc menu turns every race effect off in the renderer unless the panel is open"
 assert "Race_ApplySpeedEffectParams();" in body or "Race_ApplySpeedEffectParams(); }" in body
 print("tuning pause wiring ok")

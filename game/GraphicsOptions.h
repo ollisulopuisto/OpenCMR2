@@ -394,6 +394,8 @@ void Race_ApplySpeedEffectParams(void);
 void TuningPanel_Draw(void);
 void TuningPanel_DrawPaused(void);
 bool TuningPanel_IsOpen(void);
+bool TuningPanel_PreviewActive(void);
+bool TuningPanel_InfoShown(void);
 int TuningPanel_ToggleKey(void);
 
 // OpenCMR2: motion blur between frames. `video.motion_blur` is 0 (off) to

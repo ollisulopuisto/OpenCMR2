@@ -6042,11 +6042,18 @@ int g_windscreenWiperManualFrames = 0;
 // the row and 6 resets all rows to the values they had when the panel was first opened this launch (after any menu edits), 7 saves the shown values to opencmr2.ini. Changes are
 // per launch until saved. While open, these keys are removed from the game's keyboard state (see CInput::ReadKeyboardState).
 static bool g_tuneOpen = false, g_tuneSnapshotTaken = false;
+// F10 cycles 0 = debug info only (the start), 1 = debug info and adjustments, 2 = nothing. g_tuneOpen means "adjustments shown" (mode 1) and is what
+// captures the adjustment keys. g_tuneEngaged is separate: once F10 was pressed, the tuned look stays live (paused scene too) in every mode, so both
+// overlays can be hidden to judge the effects.
+static int g_tuneMode = 0;
+static bool g_tuneEngaged = false;
 static int g_tuneRow = 0, g_tuneSnapshot[16];
 static unsigned g_tuneSavedStamp = 0, g_tuneFrame = 0;
 static bool g_tuneDrawn = false;  // set by every TuningPanel_Draw; the paused-scene draw skips when another path already drew this frame
 static TuningEdges g_tuneEdges;
 bool TuningPanel_IsOpen(void) { return g_tuneOpen; }
+bool TuningPanel_PreviewActive(void) { return g_tuneEngaged; }
+bool TuningPanel_InfoShown(void) { return g_tuneMode != 2; }
 int TuningPanel_ToggleKey(void)
 {
     static int checked = -1, result = kTuningToggleDefault;
@@ -6071,7 +6078,7 @@ void TuningPanel_Update(void)
     ++g_tuneFrame;
     int count = 0;
     const TuningRow *rows = Tuning_Rows(count);
-    if (g_tuneEdges.Edge(0, Input_IsKeyDown(TuningPanel_ToggleKey()) != 0)) g_tuneOpen = !g_tuneOpen;
+    if (g_tuneEdges.Edge(0, Input_IsKeyDown(TuningPanel_ToggleKey()) != 0)) { g_tuneMode = (g_tuneMode + 1) % 3; g_tuneOpen = g_tuneMode == 1; g_tuneEngaged = true; }
     bool pressed[7];
     static TuningRepeat repeat;
     double nowMs = Sys_GetTicksPrecise();
@@ -6123,7 +6130,7 @@ void TuningPanel_Draw(void)
     }
     snprintf(text, sizeof text, "5 row reset  6 all to opening  7 save");
     Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
-    snprintf(text, sizeof text, g_tuneSavedStamp && g_tuneFrame - g_tuneSavedStamp < 100 ? "saved to opencmr2.ini; F10 closes" : "F10 closes; per launch until saved");
+    snprintf(text, sizeof text, g_tuneSavedStamp && g_tuneFrame - g_tuneSavedStamp < 100 ? "saved to opencmr2.ini; F10: next view" : "F10: nothing next; per launch until saved");
     Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
 }
 // The paused scene (render callback of Race_UpdatePauseState) never reaches the per-view overlay that normally draws the panel.
@@ -6483,7 +6490,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
     Graphics_SetShadowGeometryState(!CGameInfo::IsRecordFlagSet(0xf));
     View_SetPlayerProjection(param2);
     TuningPanel_Draw();
-    if (Graphics_DebugDrawWanted()) {
+    if (Graphics_DebugDrawWanted() && TuningPanel_InfoShown()) {
         if(Sys_GetOption("video.debug_draw",OPENCMR2_DEBUG_DRAW_DEFAULT)==1){
             char text[32];snprintf(text,sizeof text,"FPS %.1f",Graphics_GetFrameRate());BYTE color[4]={240,246,255,255};
             BYTE background[4]={12,16,22,220};short panel[4]={8,8,128,22};
@@ -8382,7 +8389,7 @@ void RallyData_DrawViewEndFrameOverlay(CallbackStateMachine *pKey, int view)
     // OpenCMR2: the in-race (Esc) menu marks the frame as not a race world, which switches every race effect off in the renderer (depth of field,
     // tunnel vision, speed streak, vapor trails, motion blur, particles, clouds). With the debug tuning panel open they stay on, so the settings can
     // be seen while paused. The car setup editor keeps its preview as it was.
-    Gfx_SetRaceWorld(CGameInfo::IsInRaceMenuOpen()==0 || (TuningPanel_IsOpen() && InRaceMenu_IsPlayerEditingCarSetup(view)==0));
+    Gfx_SetRaceWorld(CGameInfo::IsInRaceMenuOpen()==0 || (TuningPanel_PreviewActive() && InRaceMenu_IsPlayerEditingCarSetup(view)==0));
     Game_DrawSceneViewport(RallyData_GetChallengeRenderState(), g_viewNodes[view], g_viewScreenRect, view, 1);
     Gfx_SetRaceWorld(FALSE);
     RallyData_NotifyAdjacentMenuKeyValue(pKey, view);
