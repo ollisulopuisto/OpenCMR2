@@ -1,3 +1,4 @@
+#include "CameraMove.h"
 #include "CameraOperator.h"
 #include "port/sys.h"
 #include "SpeedFov.h"
@@ -8446,11 +8447,10 @@ int View_SpeedFovMagnification(BYTE view)
 int View_CameraMoveStep(int cameraType, int view)
 {
     const char *key = (cameraType >= 4 && cameraType <= 6) ? "video.camera_move_chase" : cameraType == 3 ? "video.camera_move_cockpit" : "video.camera_move_car";
-    int setting = Sys_GetOption(key, 0);
-    {   // a per-type value (--camera-move-type N=V, video.camera_move_type<N>) replaces the family value for that type when it is not 0
+    int setting;
+    {   // a per-type value (--camera-move-type N=V, F10 row, video.camera_move_type<N>) replaces the family value for that type, also when it is an explicit 0
         char tk[40]; snprintf(tk, sizeof tk, "video.camera_move_type%d", cameraType);
-        int perType = Sys_GetOption(tk, 0);
-        if (perType != 0) setting = perType;
+        setting = CameraMove_Effective(Sys_GetOption(tk, kCamMoveUnset), Sys_GetOption(key, 0));
     }
     if (setting == 0) return 0;
     Car *car = Car_Get(view & 1);

@@ -1,3 +1,4 @@
+#include "CameraMove.h"
 #include "EffectAmounts.h"
 #include "TuningPanel.h"
 #include "FovPreview.h"
@@ -6047,7 +6048,23 @@ static bool g_tuneOpen = false, g_tuneSnapshotTaken = false;
 // overlays can be hidden to judge the effects.
 static int g_tuneMode = 0;
 static bool g_tuneEngaged = false;
-static int g_tuneRow = 0, g_tuneSnapshot[16];
+static int g_tuneRow = 0, g_tuneSnapshot[16], g_camMoveSnapshot[16];   // the camera move row edits one camera type: the snapshot holds every type's raw per-type value (kCamMoveUnset = no override)
+void AttractCapture_ViewSignature(int view, int *type, int *drone);
+static bool TuneIsCamMove(const TuningRow &r) { return !strcmp(r.key, "video.camera_move_active"); }
+static int TuneCamType(void) { int vt = 0, dr = 0; AttractCapture_ViewSignature(0, &vt, &dr); return vt < 0 || vt > 15 ? 0 : vt; }
+static void TuneCamKey(int type, char *buf, size_t n) { snprintf(buf, n, "video.camera_move_type%d", type); }
+// The value shown and stepped: for the camera row, the per-type value of the camera in use, else its family value.
+static int TuneGet(const TuningRow &r)
+{
+    if (!TuneIsCamMove(r)) return Sys_GetOption(r.key, r.fallback);
+    char k[40]; int t = TuneCamType(); TuneCamKey(t, k, sizeof k);
+    return CameraMove_Effective(Sys_GetOption(k, kCamMoveUnset), Sys_GetOption(CameraMove_FamilyKey(t), 0));
+}
+static void TuneSet(const TuningRow &r, int v)
+{
+    if (!TuneIsCamMove(r)) { Sys_SetOptionTemporary(r.key, v); return; }
+    char k[40]; TuneCamKey(TuneCamType(), k, sizeof k); Sys_SetOptionTemporary(k, v);
+}
 static unsigned g_tuneSavedStamp = 0, g_tuneFrame = 0;
 static bool g_tuneDrawn = false;  // set by every TuningPanel_Draw; the paused-scene draw skips when another path already drew this frame
 static TuningEdges g_tuneEdges;
@@ -6092,6 +6109,7 @@ void TuningPanel_Update(void)
     bool prevRow = pressed[0], nextRow = pressed[1], down = pressed[2], up = pressed[3], resetRow = pressed[4], resetAll = pressed[5], save = pressed[6];
     if (!g_tuneSnapshotTaken) {
         for (int i = 0; i < count; ++i) g_tuneSnapshot[i] = Sys_GetOption(rows[i].key, rows[i].fallback);
+        for (int t = 0; t < 16; ++t) { char k[40]; TuneCamKey(t, k, sizeof k); g_camMoveSnapshot[t] = Sys_GetOption(k, kCamMoveUnset); }
         g_tuneSnapshotTaken = true;
     }
     bool changed = false;
@@ -6099,13 +6117,22 @@ void TuningPanel_Update(void)
     if (nextRow) g_tuneRow = Tuning_Select(g_tuneRow, 1, count);
     if (down || up) {
         const TuningRow &r = rows[g_tuneRow];
-        Sys_SetOptionTemporary(r.key, Tuning_Step(r, Sys_GetOption(r.key, r.fallback), up ? 1 : -1));
+        TuneSet(r, Tuning_Step(r, TuneGet(r), up ? 1 : -1));
         changed = true;
     }
-    if (resetRow) { Sys_SetOptionTemporary(rows[g_tuneRow].key, g_tuneSnapshot[g_tuneRow]); changed = true; }
-    if (resetAll) { for (int i = 0; i < count; ++i) Sys_SetOptionTemporary(rows[i].key, g_tuneSnapshot[i]); changed = true; }
+    if (resetRow) {
+        if (TuneIsCamMove(rows[g_tuneRow])) TuneSet(rows[g_tuneRow], g_camMoveSnapshot[TuneCamType()]);   // back to this camera's opening state (override or none)
+        else Sys_SetOptionTemporary(rows[g_tuneRow].key, g_tuneSnapshot[g_tuneRow]);
+        changed = true;
+    }
+    if (resetAll) {
+        for (int i = 0; i < count; ++i) if (!TuneIsCamMove(rows[i])) Sys_SetOptionTemporary(rows[i].key, g_tuneSnapshot[i]);
+        for (int t = 0; t < 16; ++t) { char k[40]; TuneCamKey(t, k, sizeof k); Sys_SetOptionTemporary(k, g_camMoveSnapshot[t]); }
+        changed = true;
+    }
     if (save) {
-        for (int i = 0; i < count; ++i) if (strcmp(rows[i].key, "video.fov_preview")) Sys_SetOption(rows[i].key, Sys_GetOption(rows[i].key, rows[i].fallback));   // the FOV preview is a per-launch debug view, never saved
+        for (int i = 0; i < count; ++i) if (strcmp(rows[i].key, "video.fov_preview") && !TuneIsCamMove(rows[i])) Sys_SetOption(rows[i].key, Sys_GetOption(rows[i].key, rows[i].fallback));   // the FOV preview is a per-launch debug view, never saved
+        for (int t = 0; t < 16; ++t) { char k[40]; TuneCamKey(t, k, sizeof k); int v = Sys_GetOption(k, kCamMoveUnset); if (v != kCamMoveUnset) Sys_SetOption(k, v); }   // only camera types that have an override
         g_tuneSavedStamp = g_tuneFrame;
     }
     if (changed) EffectSettings::Apply();
@@ -6119,19 +6146,23 @@ void TuningPanel_Draw(void)
     DebugOverlayLayout layout = DebugOverlayLayout::For(g_pGraphics->resX, g_pGraphics->resY, count + 3);
     short panel[4] = {(short)(g_pGraphics->resX - layout.width - layout.x), (short)(g_pGraphics->resY * 23 / 100), (short)layout.width, (short)layout.height};
     BYTE background[4] = {12, 16, 22, 220}, colour[4] = {240, 246, 255, 255}, lit[4] = {110, 255, 140, 255};
-    Sprite_FillRect(NULL, panel, background, 1);
+    Sprite_FillRect(NULL, panel, background, 4);
     char text[96];
     int tx = panel[0] + layout.pad, ty = panel[1] + layout.pad, row = 0;
     snprintf(text, sizeof text, "TUNING  1/2 row  3/4 value");
-    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
+    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour, 4);
     for (int i = 0; i < count; ++i) {
+        if (TuneIsCamMove(rows[i])) {
+            char k[40]; int t = TuneCamType(); TuneCamKey(t, k, sizeof k);
+            snprintf(text, sizeof text, "%s Camera type %d move (%s) 0.05 units: %d", i == g_tuneRow ? ">" : " ", t, Sys_GetOption(k, kCamMoveUnset) == kCamMoveUnset ? "family" : "own", TuneGet(rows[i]));
+        } else
         snprintf(text, sizeof text, "%s %s: %d", i == g_tuneRow ? ">" : " ", rows[i].label, Sys_GetOption(rows[i].key, rows[i].fallback));
-        Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, i == g_tuneRow ? lit : colour);
+        Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, i == g_tuneRow ? lit : colour, 4);
     }
     snprintf(text, sizeof text, "5 row reset  6 all to opening  7 save");
-    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
+    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour, 4);
     snprintf(text, sizeof text, g_tuneSavedStamp && g_tuneFrame - g_tuneSavedStamp < 100 ? "saved to opencmr2.ini; F10: next view" : "F10: nothing next; per launch until saved");
-    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
+    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour, 4);
 }
 // The paused scene (render callback of Race_UpdatePauseState) never reaches the per-view overlay that normally draws the panel.
 void TuningPanel_DrawPaused(void)
@@ -6587,7 +6618,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
              if(viewType>=4&&viewType<=6){snprintf(text,sizeof text,"FOV dolly %d%%: view widened x%.2f vs saved, camera distance x%.2f (visual only, chase cameras)",Sys_GetOption("video.fov_dolly",150),widening/65536.0,dollyScale/65536.0);}
              else{snprintf(text,sizeof text,"FOV dolly %d%%: not applied to camera type %d (chase types 4-6 only)",Sys_GetOption("video.fov_dolly",150),viewType);}
              line(text);
-             {int eff=View_CameraMoveStep(viewType,(int)param2);const char*k=(viewType>=4&&viewType<=6)?"video.camera_move_chase":viewType==3?"video.camera_move_cockpit":"video.camera_move_car";int mv=Sys_GetOption(k,0);snprintf(text,sizeof text,"Camera move (%s) %d steps at full speed; now %+.2f model units along camera forward (0 standing still; + forward, - back)",k+6,mv,eff/65536.0);line(text);}
+             {int eff=View_CameraMoveStep(viewType,(int)param2);const char*k=(viewType>=4&&viewType<=6)?"video.camera_move_chase":viewType==3?"video.camera_move_cockpit":"video.camera_move_car";char tk2[40];snprintf(tk2,sizeof tk2,"video.camera_move_type%d",viewType);int mv=CameraMove_Effective(Sys_GetOption(tk2,kCamMoveUnset),Sys_GetOption(k,0));snprintf(text,sizeof text,"Camera move (%s) %d steps at full speed; now %+.2f model units along camera forward (0 standing still; + forward, - back)",k+6,mv,eff/65536.0);line(text);}
              if(viewType==3){int cw=0,cs=0;View_GetCockpitShift(param2,&cw,&cs);snprintf(text,sizeof text,"Cockpit eye shift setting %d: view widened x%.2f, eye moved %+.3f model units along camera forward (0.2 = driver mount height)",Sys_GetOption("video.cockpit_eye_shift",0),cw/65536.0,cs/65536.0);line(text);}}
         }
         line("enc=encoded; skip=requested, not encoded");

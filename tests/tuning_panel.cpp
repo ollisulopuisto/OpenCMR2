@@ -1,13 +1,16 @@
 #include "TuningPanel.h"
+#include "CameraMove.h"
 #include <cstdio>
 #include <cstring>
 static int fails;
 #define CHECK(c) do{ if(!(c)){ std::printf("FAIL %d: %s\n", __LINE__, #c); ++fails; } }while(0)
 int main(){
     int n; const TuningRow *r = Tuning_Rows(n);
-    CHECK(n == 18);
+    CHECK(n == 16);
     { int bi = -1; for (int i = 0; i < n; ++i) if (!std::strcmp(r[i].key, "video.blur_mode")) bi = i; CHECK(bi >= 0 && r[bi].lo == 0 && r[bi].hi == 1 && r[bi].fallback == 0); }
     for (int i = 0; i < n; ++i) { CHECK(r[i].lo < r[i].hi); CHECK(r[i].step > 0); CHECK(r[i].fallback >= r[i].lo && r[i].fallback <= r[i].hi); CHECK(!std::strncmp(r[i].key, "video.", 6)); }
+    CHECK(CameraMove_Effective(kCamMoveUnset, 30) == 30 && CameraMove_Effective(0, 30) == 0 && CameraMove_Effective(-5, 30) == -5);   // an explicit 0 is an override, absent is not
+    CHECK(!std::strcmp(CameraMove_FamilyKey(5), "video.camera_move_chase") && !std::strcmp(CameraMove_FamilyKey(3), "video.camera_move_cockpit") && !std::strcmp(CameraMove_FamilyKey(2), "video.camera_move_car"));
     CHECK(Tuning_Step(r[0], 0, -1) == 0);          // speed fov clamps at 0
     CHECK(Tuning_Step(r[0], 149, 1) == 150);       // and at 150 (101..150 is the testing range)
     CHECK(Tuning_Step(r[0], 12, 1) == 14);
