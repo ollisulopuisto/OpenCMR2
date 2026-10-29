@@ -22,4 +22,6 @@ assert frag.index('alphaTest.z != 0') > frag.index('alphaTest.x != 0') and 'u.al
 # player slot comes from the active camera record's car, +1 like objectId
 assert 'Gfx_SetPlayerObject((unsigned)View_GetActiveCameraFlags((BYTE)bit) + 1)' in game
 assert 'c.playerObject=s_playerObject' in core and '"debug_object_mask"' in enh
+assert 'if(worldEffects && !maskBypassPost) {' in gpu and 'maskBypassPost = true;' in gpu  # post chain skipped only after the debug pass ran
+assert gpu.count('maskBypassPost = true') == 1
 print('object mask wiring ok')

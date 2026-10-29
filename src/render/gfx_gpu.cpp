@@ -2354,6 +2354,7 @@ struct Executor : GfxExecutor {
         drawCommands(0,worldEffects?worldEnd:frame.commands.size());
         temporalJitterOn = false;
         vertexUniformState = NULL;
+        bool maskBypassPost = false; // debug_object_mask only: the post chain would soften/recolor the magenta
         // Debug object mask (opt-in, video.debug_object_mask): repaint the followed car's own draws magenta, depth tested.
         if (worldEffects && raceWorld && worldEnd < frame.commands.size() && frame.commands[worldEnd].playerObject != 0 &&
             Sys_GetOption("video.debug_object_mask", 0) != 0) {
@@ -2361,8 +2362,9 @@ struct Executor : GfxExecutor {
             fragmentUniformsSet = false; vertexUniformState = NULL;
             drawCommands(0, worldEnd);
             maskDraw = false; target = NULL; pass = NULL; fragmentUniformsSet = false; vertexUniformState = NULL;
+            maskBypassPost = true;
             static bool loggedMask = false;
-            if (!loggedMask) { loggedMask = true; Sys_Log("options: debug object mask repainted draws with objectId %u (car slot+1) in magenta, depth tested; native pixels unverified", maskObject); }
+            if (!loggedMask) { loggedMask = true; Sys_Log("options: debug object mask repainted draws with objectId %u (car slot+1) in magenta, depth tested; AA/bloom/motion blur/DoF/tunnel/grade are bypassed while this debug option is on; native pixels unverified", maskObject); }
         }
 
         if (!present) {
@@ -2392,7 +2394,7 @@ struct Executor : GfxExecutor {
         unsigned encoded=(shadowEncoded?64:0)|(precipitationEncoded?128:0);
         dofStatus={0,speedFocusTarget,0.0f,0.0f,0.0f};
         SDL_GPUTexture *presentSource = backColor;
-        if(worldEffects) {
+        if(worldEffects && !maskBypassPost) {
         // OpenCMR2: opt-in temporal AA resolve (PARTIAL: camera-matrix reprojection,
         // 3x3 clamp, no per-object velocity). Runs first so later passes see its output.
         if (tf.active) {
