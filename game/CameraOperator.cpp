@@ -27,6 +27,7 @@ void CameraOperator_Update(CameraRecord*record,const FixMatrix*reference,const F
  // Remove last terrain lift before advancing free world inertia.
  if(state.ready)state.position.y-=state.terrainLift;
  {int pct=Sys_GetOption("video.drone_speed_lens",100);if(pct<-150)pct=-150;if(pct>100)pct=100;state.lensSpeedGain=.3f*pct/100.f;} // visual lens only; 100 = previous behaviour, negative = wider at speed
+ {int pct=Sys_GetOption("video.drone_shake",100);if(pct<0)pct=0;if(pct>300)pct=300;state.shakeAmount=pct/100.f;}
  state.Step({p.x/65536.f,p.y/65536.f,p.z/65536.f},std::atan2(x,z),car->steeringInput/65536.f,car->speed/65536.f,
   offset?std::abs(offset->z/65536.f):6.5f,offset?offset->y/65536.f:1.5f,g_physicsTimeStep/(65536.f*25.f),&road);
  state.ConstrainTerrain({p.x/65536.f,p.y/65536.f,p.z/65536.f},g_physicsTimeStep/(65536.f*25.f),[](CameraOperator::V3 point,float&y){
@@ -44,7 +45,7 @@ void CameraOperator_Apply(CameraRecord*record){
  // Keep the saved custom tilt adjustment relative to its original default.
  float c=std::cos(s.pitch),sn=std::sin(s.pitch);auto oldForward=f;
  f=f*c+u*sn;u=u*c-oldForward*sn;
- m.position=fixed(s.position);m.forward=fixed(f);m.right=fixed(r);m.up=fixed(u);
+ m.position=fixed(s.position+r*s.shakeRight+u*s.shakeUp);m.forward=fixed(f);m.right=fixed(r);m.up=fixed(u);
  record->zoom=std::lround(0xa000*s.zoom);
  record->lookDistance=std::lround((s.aim-s.position).Length()*65536);
  record->field_0x50=record->lookDistance-0x10000;
