@@ -5,7 +5,7 @@ static int fails;
 #define CHECK(c) do{ if(!(c)){ std::printf("FAIL %d: %s\n", __LINE__, #c); ++fails; } }while(0)
 int main(){
     int n; const TuningRow *r = Tuning_Rows(n);
-    CHECK(n == 12);
+    CHECK(n == 13);
     for (int i = 0; i < n; ++i) { CHECK(r[i].lo < r[i].hi); CHECK(r[i].step > 0); CHECK(r[i].fallback >= r[i].lo && r[i].fallback <= r[i].hi); CHECK(!std::strncmp(r[i].key, "video.", 6)); }
     CHECK(Tuning_Step(r[0], 0, -1) == 0);          // speed fov clamps at 0
     CHECK(Tuning_Step(r[0], 39, 1) == 40);         // and at 40
