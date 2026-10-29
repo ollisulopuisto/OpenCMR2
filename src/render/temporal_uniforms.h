@@ -62,7 +62,7 @@ public:
         f.jitterX=j.x;f.jitterY=j.y;
         f.hasHistory=have;
         memcpy(f.u.previous,have?prevVP:f.vp,sizeof(f.u.previous));
-        f.u.params[0]=have?0.9f:0.f;f.u.params[1]=0.02f;f.u.params[2]=f.u.params[3]=0.f;
+        f.u.params[0]=have?0.9f:0.f;f.u.params[1]=0.02f;f.u.params[2]=0.15f;f.u.params[3]=0.f;
         f.u.target[0]=1.f/bw;f.u.target[1]=1.f/bh;f.u.target[2]=f.u.target[3]=0.f;
         f.active=true;
         return true;

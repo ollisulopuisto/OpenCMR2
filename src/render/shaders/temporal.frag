@@ -7,10 +7,11 @@ layout(location = 0) out vec4 outColor;
 layout(set = 2, binding = 0) uniform sampler2D scene;
 layout(set = 2, binding = 1) uniform sampler2D depthTex;
 layout(set = 2, binding = 2) uniform sampler2D history;
+layout(set = 2, binding = 3) uniform sampler2D previousDepthTex;
 layout(std140, set = 3, binding = 0) uniform TemporalUniforms {
     mat4 inverseViewProjection;
     mat4 previousViewProjection;
-    vec4 params; // x history weight (0 = no valid history), y clamp slack
+    vec4 params; // x history weight (0 = no valid history), y clamp slack, z depth tolerance
     vec4 target; // reciprocal width, reciprocal height
     vec4 carCenter[8]; // xyz world position, w gating radius (0 = unused)
     vec4 carDelta[8];  // xyz translation since last frame, w 1 = has history
@@ -62,6 +63,15 @@ void main()
         vec2 n = q.xy / q.w;
         vec2 puv = vec2(n.x * 0.5 + 0.5, 0.5 - n.y * 0.5);
         if (puv.x < 0.0 || puv.y < 0.0 || puv.x > 1.0 || puv.y > 1.0) continue;
+        // Disocclusion: the history pixel must have been at the depth this world point
+        // had in the previous frame. 1 - depth is roughly proportional to 1/viewZ for
+        // a forward-Z projection, so compare it relatively. Mismatch means something
+        // else (e.g. a car that has since moved) was visible there: reject.
+        float expected = q.z / q.w;
+        float previousDepth = texture(previousDepthTex, puv).r;
+        float a = 1.0 - expected;
+        float b = 1.0 - previousDepth;
+        if (abs(a - b) > params.z * max(max(a, b), 1e-5) + 1e-5) continue;
         vec3 hk = texture(history, puv).rgb;
         float err = dot(hk - c, hk - c);
         if (err < bestError) { bestError = err; h = hk; found = true; }
