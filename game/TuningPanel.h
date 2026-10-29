@@ -19,6 +19,7 @@ inline const TuningRow *Tuning_Rows(int &count)
         {"Radial speed lines (0/1)", "video.speed_lines", 0, 1, 1, 1},
         {"Speed streak %", "video.speed_streak", 0, 100, 10, 0},
         {"FOV preview, video.fov number (0 off)", "video.fov_preview", 0, 150, 5, 0},   // absolute video.fov, debug only, a legacy scale number not an angle, below 20 acts as 20; Speed FOV % is separate
+        {"Camera forward(+)/back(-), 0.05 units per step", "video.camera_move", -200, 200, 5, 0},
     };
     count = (int)(sizeof(rows) / sizeof(*rows));
     return rows;

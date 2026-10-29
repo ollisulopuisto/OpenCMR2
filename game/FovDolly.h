@@ -5,7 +5,7 @@
 // Visual only: it scales the chase camera's offset from the car and never touches the car, its physics or the road.
 // Pure maths, no game state. Magnifications are 16.16: 65536 = same view as the saved setting, above = wider view (smaller things).
 #include <stdint.h>
-static const int kFovDollyMinScale = 0x5999;   // never closer than 0.35 of the saved distance, so the camera cannot reach the car body (was 0.45)
+static const int kFovDollyMinScale = 0xB333;   // never closer than 0.70 of the saved distance. Native evidence: 0.35 put the camera inside the car body at x1.86 widening; 0.71 (speed FOV 40, dolly 100) showed no clipping. 0.70 is the closest value with that evidence.
 static const int kFovDollyMaxPct = 250;     // 100 = the car keeps its screen size; above 100 the car grows as the view widens (a dolly zoom)
 // Total widening from the saved view: speed FOV widening times effective/saved video.fov (a higher number is a wider view).
 inline int FovDolly_Widening(int speedMag16, int savedFov, int effectiveFov)

@@ -6286,6 +6286,7 @@ void View_GetMeasuredFov(unsigned int view, double *vertDeg, double *horzDeg);
 void AttractCapture_ViewSignature(int view, int *type, int *drone);
 void SpeedFov_GetStatus(int view, int *pct, int *shown);
 void View_GetFovDolly(unsigned int view, int *scale, int *widening);
+void View_GetCockpitShift(unsigned int view, int *widening, int *step);
 void StageObject_ApplyInterpolatedNodeMatrices(int param1);
 void Race_DrawPlayerCallSlots(unsigned int player, int *pViewRect);
 void Dash_Draw(int player, int *pViewRect);
@@ -6566,7 +6567,12 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             int sfPct=0,sfShown=0;SpeedFov_GetStatus((int)param2,&sfPct,&sfShown);
             snprintf(text,sizeof text,"Speed FOV %d%% (eased speed %d%%%s)",sfPct,sfShown*100/65536,Sys_GetOption("video.speed_fov_hold",0)?", HELD at full speed for FOV and tunnel (overdo test)":"");
             line(text);
-            {int dollyScale=0,widening=0;View_GetFovDolly(param2,&dollyScale,&widening);snprintf(text,sizeof text,"FOV dolly %d%%: view widened x%.2f vs saved, camera distance x%.2f (visual only, chase cameras)",Sys_GetOption("video.fov_dolly",100),widening/65536.0,dollyScale/65536.0);line(text);}
+            {int dollyScale=0,widening=0;View_GetFovDolly(param2,&dollyScale,&widening);
+             if(viewType>=4&&viewType<=6){snprintf(text,sizeof text,"FOV dolly %d%%: view widened x%.2f vs saved, camera distance x%.2f (visual only, chase cameras)",Sys_GetOption("video.fov_dolly",150),widening/65536.0,dollyScale/65536.0);}
+             else{snprintf(text,sizeof text,"FOV dolly %d%%: not applied to camera type %d (chase types 4-6 only)",Sys_GetOption("video.fov_dolly",150),viewType);}
+             line(text);
+             {int mv=Sys_GetOption("video.camera_move",0);snprintf(text,sizeof text,"Camera move %d steps = %+.2f model units along camera forward (+ forward, - back; chase and cockpit)",mv,mv*0.05);line(text);}
+             if(viewType==3){int cw=0,cs=0;View_GetCockpitShift(param2,&cw,&cs);snprintf(text,sizeof text,"Cockpit eye shift setting %d: view widened x%.2f, eye moved %+.3f model units along camera forward (0.2 = driver mount height)",Sys_GetOption("video.cockpit_eye_shift",0),cw/65536.0,cs/65536.0);line(text);}}
         }
         line("enc=encoded; skip=requested, not encoded");
         line("Previous frame; encoded is not pixel proof");

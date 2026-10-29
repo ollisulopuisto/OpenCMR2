@@ -8315,6 +8315,17 @@ void View_UpdateCamera(BYTE view)
     *pTimer -= g_physicsTimeStep;
 }
 
+// OpenCMR2: rebuilds view 0's camera from the frozen car while the race is paused, so live camera tuning (F10 panel) shows at once.
+// Visual only: no simulation step. Skipped while a camera transition blend runs.
+void View_RefreshForTuning(void)
+{
+    BYTE index = 0;
+    if (g_unk0x00538d20[index] >= 0) return;
+    CameraRecord *pActive = VIEW_RECORD(g_activeViewRecord[index] + index * 2);
+    Camera_Update(pActive);
+    CameraState_Copy(VIEW_STATE(index), pActive);
+}
+
 // Resets the cameras of a view to their records (after a restart).
 // FUNCTION: CMR2 0x00421d80
 void View_ResetCameras(int view)

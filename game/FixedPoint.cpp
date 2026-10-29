@@ -1045,6 +1045,15 @@ void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef)
     FixMatrix_SetPosition(&pos, pM);
     if (g_playerCameraMode[index] == 4)
         FixMatrix_RotateAboutRight(pM, (unsigned short)g_chaseCameraPitch[2 + pObj->view]);
+    {   // OpenCMR2 debug camera move (visual only, video.camera_move): signed move along the final look direction, + forward, - back, 0.05 model units per step.
+        int move = Sys_GetOption("video.camera_move", 0);
+        if (move != 0 && pObj->type >= 4 && pObj->type <= 6 && !CameraOperator_Enabled(pObj)) {
+            int step = move * 0xCCC;   // 0.05 in 16.16
+            pObj->matrix.position.x += FixMul(pObj->matrix.forward.x, step);
+            pObj->matrix.position.y += FixMul(pObj->matrix.forward.y, step);
+            pObj->matrix.position.z += FixMul(pObj->matrix.forward.z, step);
+        }
+    }
 
     // OpenCMR2: human-operator camera shake — smoothed random jitter on the chase
     // camera position, scaled by car speed and impact strength

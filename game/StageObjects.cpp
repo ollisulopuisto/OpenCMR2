@@ -8588,6 +8588,10 @@ BYTE *Replay_LoadValidatedBuffer(char *path)
 
 void FixMatrix_RotateAboutRight(FixMatrix *pOut, unsigned short angle);
 
+// OpenCMR2 cockpit eye shift diagnostics (16.16): latest widening and eye displacement along the camera forward axis, per view.
+static int g_lastCockpitWidening[8] = {65536, 65536, 65536, 65536, 65536, 65536, 65536, 65536}, g_lastCockpitStep[8];
+void View_GetCockpitShift(unsigned int view, int *widening, int *step) { *widening = g_lastCockpitWidening[view & 7]; *step = g_lastCockpitStep[view & 7]; }
+
 // GLOBAL: CMR2 0x0051c9b0
 short g_carMountRightRotationAngle = 0x71;
 
@@ -8622,9 +8626,23 @@ void StageObject_BuildCarMountWorldMatrix(CameraRecord *object, void *unused)
     {   // OpenCMR2 cockpit eye shift (visual only, default 0 = unchanged): moves the eye along the camera's forward axis by the view's widening.
         // Positive = forward axis, negative = the other way; which sign hides the model edges is to be tuned natively.
         int shiftPct = Sys_GetOption("video.cockpit_eye_shift", 0);
+        {   // diagnostics: what this view's eye actually did on its latest build, for the F10 overlay
+            int widening0 = View_CurrentWidening(object->index);
+            g_lastCockpitWidening[object->index & 7] = widening0;
+            g_lastCockpitStep[object->index & 7] = CockpitEyeShift_Amount(widening0, shiftPct);
+        }
         if (shiftPct != 0) {
             int widening = View_CurrentWidening(object->index);
             int step = CockpitEyeShift_Amount(widening, shiftPct);
+            object->matrix.position.x += FixMul(object->matrix.forward.x, step);
+            object->matrix.position.y += FixMul(object->matrix.forward.y, step);
+            object->matrix.position.z += FixMul(object->matrix.forward.z, step);
+        }
+    }
+    {   // OpenCMR2 debug camera move (video.camera_move), same signed axis and unit as the chase camera: + forward, - back, 0.05 model units per step.
+        int move = Sys_GetOption("video.camera_move", 0);
+        if (move != 0) {
+            int step = move * 0xCCC;
             object->matrix.position.x += FixMul(object->matrix.forward.x, step);
             object->matrix.position.y += FixMul(object->matrix.forward.y, step);
             object->matrix.position.z += FixMul(object->matrix.forward.z, step);

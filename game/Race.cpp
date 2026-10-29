@@ -3992,6 +3992,7 @@ void Race_UpdatePauseState(CallbackStateMachine *p, BYTE index)
     // The race logic step (which normally runs the live tuning panel) does not run while paused: tune from here, once per pause tick.
     // Visual settings only; the simulation is not advanced. Panel keys are already filtered out of the keyboard state read above.
     TuningPanel_Update();
+    if (TuningPanel_IsOpen()) View_RefreshForTuning();
     Input_TranslatePedalsToMenuKeys();
     pDev = CInput::GetAvailableDeviceRecord(0);
     Input_MergeAssignedJoystickButtons(0, pDev);
