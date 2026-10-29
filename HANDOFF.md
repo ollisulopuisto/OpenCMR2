@@ -306,3 +306,17 @@ Native Mac stage/gameplay and frame time still require owner test.
 
 Actual generated fullscreen vertex UV test catches quarter-image sampling:
 old p*.5 did not span source. Fixed to p; GL-translated real shader test passes.
+
+## Route-aware lateral drone refinement
+Native feedback likes base inertia but requests physically moving outside a bend
+for road visibility, including left of car in supplied right bends. Read actual
+selected-stage .cat route and each car's race-progress segment. Preview12/30units
+ahead across at most16nodes; don't nearest-search across hairpin legs or use
+body yaw during a slide. Upcoming bend drives bounded6unit lateral target in the
+existing world spring, route tangent steers orbit, route point steers damped aim.
+Ground corridor also checks farther route point. Missing/degenerate/far/stage-end
+preview falls back to existing inertia. No always-left rule, rigid attachment,
+route rewriting or car physics change. Mirrored bends, drift-opposite-heading,
+loops/finish/missing data and actual runtime matrix wiring covered.89/89Linux
+pass; synthetic projection inspected, native road/vegetation visibility remains
+acceptance gate. Route is coarse and not a full render-geometry visibility solver.
