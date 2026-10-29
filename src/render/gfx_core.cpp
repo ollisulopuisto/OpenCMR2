@@ -430,6 +430,7 @@ static bool DustVolumeStateSupported()
 extern "C" void Gfx_SetBodyDirt(float amount,float red,float green,float blue){
  s_state.bodyDirt[0]=std::clamp(amount,0.f,1.f);s_state.bodyDirt[1]=red;s_state.bodyDirt[2]=green;s_state.bodyDirt[3]=blue;Touch();
 }
+extern "C" void Gfx_SetObjectId(unsigned id){s_state.objectId=id;Touch();}
 static bool s_raceWorld=false;
 static float s_clouds[8]={};
 extern "C" void Gfx_SetCloudEnvironment(float coverage,float base,float x,float y,float z){

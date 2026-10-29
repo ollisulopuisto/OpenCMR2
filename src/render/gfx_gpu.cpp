@@ -212,9 +212,11 @@ struct Executor : GfxExecutor {
     SDL_GPUShader *fsTemporal=nullptr;
     SDL_GPUGraphicsPipeline *temporalPipeline=nullptr;
     SDL_GPUTexture *taaTex[2]={nullptr,nullptr};
+    SDL_GPUTexture *taaPrevDepth=nullptr; // depth of the previous world pass, for disocclusion
     int taaIndex=0;
     TemporalTracker temporalTracker;
     bool temporalLogged=false;
+    bool taaPrevDepthValid=false;
     SDL_GPUShader *fsSpatialAA = nullptr;
     SDL_GPUGraphicsPipeline *spatialAAPipeline = nullptr;
     SDL_GPUTexture *spatialAATarget = nullptr;
@@ -347,7 +349,7 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUTexture(device, dustVolumeTarget);
         dustVolumeTarget = nullptr;
         SDL_ReleaseGPUTexture(device,cloudTarget);cloudTarget=nullptr;
-        for(auto &t:taaTex){SDL_ReleaseGPUTexture(device,t);t=nullptr;}temporalTracker.Reset();
+        for(auto &t:taaTex){SDL_ReleaseGPUTexture(device,t);t=nullptr;}SDL_ReleaseGPUTexture(device,taaPrevDepth);taaPrevDepth=nullptr;taaPrevDepthValid=false;temporalTracker.Reset();
         SDL_ReleaseGPUTexture(device, spatialAATarget);
         SDL_ReleaseGPUTexture(device, backColor);
         SDL_ReleaseGPUTexture(device, backDepth);
@@ -575,7 +577,7 @@ struct Executor : GfxExecutor {
             SDL_ReleaseGPUTexture(device, dustVolumeTarget);
             dustVolumeTarget = nullptr;
             SDL_ReleaseGPUTexture(device,cloudTarget);cloudTarget=nullptr;
-            for(auto &t:taaTex){SDL_ReleaseGPUTexture(device,t);t=nullptr;}temporalTracker.Reset();
+            for(auto &t:taaTex){SDL_ReleaseGPUTexture(device,t);t=nullptr;}SDL_ReleaseGPUTexture(device,taaPrevDepth);taaPrevDepth=nullptr;taaPrevDepthValid=false;temporalTracker.Reset();
         SDL_ReleaseGPUTexture(device, spatialAATarget);
             spatialAATarget = nullptr;
             SDL_ReleaseGPUTexture(device, backColor);
@@ -2282,9 +2284,15 @@ struct Executor : GfxExecutor {
         if (worldEffects && raceWorld && sampledDepth && worldEnd < frame.commands.size() &&
             Sys_GetOption("video.temporal_aa", 0) != 0 &&
             temporalTracker.Prepare(frame.commands[worldEnd], frame.states[frame.commands[worldEnd].state], backWidth, backHeight, tf))
+        {
             temporalJitterOn = true;
-        else
-            temporalTracker.Reset();
+            for (const GfxCommand &oc : frame.commands)
+                if (oc.type == GFX_CMD_DRAW && oc.target == NULL && !oc.transformed) {
+                    const GfxDrawState &os = frame.states[oc.state];
+                    if (os.objectId) { float p[3] = { os.world._41, os.world._42, os.world._43 }; temporalTracker.AddObject(tf, os.objectId, p); }
+                }
+        }
+        else { temporalTracker.Reset(); taaPrevDepthValid = false; }
         drawCommands(0,worldEffects?worldEnd:frame.commands.size());
         temporalJitterOn = false;
         vertexUniformState = NULL;
@@ -2321,34 +2329,46 @@ struct Executor : GfxExecutor {
         if (tf.active) {
             bool temporalOK = false;
             if (!fsTemporal)
-                fsTemporal = Shader(SHADER_CODE(temporal_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 3, 1);
+                fsTemporal = Shader(SHADER_CODE(temporal_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 4, 1);
             if (!temporalPipeline && fsTemporal)
                 temporalPipeline = PostProcessPipeline(vsMotionBlur, fsTemporal);
             for (auto &t : taaTex)
                 if (!t && temporalPipeline)
                     t = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, backWidth, backHeight, 1, 1,
                                       SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
-            if (temporalPipeline && taaTex[0] && taaTex[1]) {
+            if (!taaPrevDepth && temporalPipeline)
+                taaPrevDepth = CreateTexture(SDL_GPU_TEXTURETYPE_2D, depthFormat, backWidth, backHeight, 1, 1,
+                                             SDL_GPU_TEXTUREUSAGE_SAMPLER);
+            // No previous depth yet (first frame after create/resize): no history.
+            if (taaPrevDepth && !taaPrevDepthValid) { tf.u.params[0] = 0.f; }
+            if (temporalPipeline && taaTex[0] && taaTex[1] && taaPrevDepth) {
                 int cur = taaIndex, prev = 1 - taaIndex;
                 GfxStageState linear;
                 linear.address = GFX_ADDRESS_CLAMP;
                 linear.minFilter = linear.magFilter = GFX_FILTER_LINEAR;
                 GfxStageState point = linear;
                 point.minFilter = point.magFilter = GFX_FILTER_POINT;
-                SDL_GPUTextureSamplerBinding tb[3] = { { backColor, Sampler(linear) }, { backDepth, Sampler(point) },
-                                                       { taaTex[prev], Sampler(linear) } };
-                if (PostProcessPass(cmd, temporalPipeline, taaTex[cur], tb, 3, &tf.u, sizeof(tf.u))) {
+                SDL_GPUTextureSamplerBinding tb[4] = { { backColor, Sampler(linear) }, { backDepth, Sampler(point) },
+                                                       { taaTex[prev], Sampler(linear) }, { taaPrevDepth, Sampler(point) } };
+                if (PostProcessPass(cmd, temporalPipeline, taaTex[cur], tb, 4, &tf.u, sizeof(tf.u))) {
                     presentSource = taaTex[cur];
                     taaIndex = prev;
                     temporalTracker.Commit(tf);
                     temporalOK = true;
+                    if (SDL_GPUCopyPass *dcopy = SDL_BeginGPUCopyPass(cmd)) {
+                        SDL_GPUTextureLocation dsrc = {}, ddst = {};
+                        dsrc.texture = backDepth; ddst.texture = taaPrevDepth;
+                        SDL_CopyGPUTextureToTexture(dcopy, &dsrc, &ddst, backWidth, backHeight, 1, false);
+                        SDL_EndGPUCopyPass(dcopy);
+                        taaPrevDepthValid = true;
+                    } else taaPrevDepthValid = false;
                     if (!temporalLogged) {
                         Sys_Log("options: temporal AA encoded (PARTIAL stage: camera reprojection + clamp, no object velocity; not MetalFX temporal); native pixels unverified");
                         temporalLogged = true;
                     }
                 }
             }
-            if (!temporalOK) temporalTracker.Reset();
+            if (!temporalOK) { temporalTracker.Reset(); taaPrevDepthValid = false; }
         }
         // OpenCMR2: AA is not an upscaler or a temporal reconstruction method.
         // HUD/menu draws follow this world-only chain.
