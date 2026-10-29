@@ -5,6 +5,8 @@
 #include "port/sys.h"
 #include "render/presentation.h"
 
+#include <algorithm>
+
 #include <string>
 
 using namespace BinkTest;
