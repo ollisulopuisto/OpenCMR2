@@ -2,6 +2,7 @@
 #include "Font.h"
 #include "DebugOverlayLayout.h"
 #include "Sprite.h"
+#include "port/gfx.h"
 #include <cstdio>
 #include <cstring>
 #include <utility>
@@ -53,6 +54,15 @@ int main(int argc, char **argv) {
         }
     }
 
+    for(auto size:{std::pair<int,int>{640,480},{1280,960},{2940,1912}}){
+      auto l=DebugOverlayLayout::For(size.first,size.second,13);
+      if(l.y+l.height>size.second*3/4||l.x+l.width>size.first)++fail;
+      const char* rows[]={"Trees:shell crowd:animated wind:on","Roads:curved textures:france1 names:real","Car skins:selected | CLI effects:2","AA:enc bloom:enc blur:enc","DoF:enc rays:skip grade:enc","Shadows:enc submit:OK","MetalFX:fallback","enc=encoded; skip=requested, not encoded","Previous frame; not completed-pixel proof"};
+      for(int row=0;row<9;row++){g_spriteCount1=0;Font_DrawTextScaled(0,(char*)rows[row],l.x+l.pad,l.y+l.pad+row*l.line,l.font,l.width-2*l.pad,white);
+       for(unsigned i=0;i<g_spriteCount1;i++){auto r=g_spriteLayer1[i].dst;if(r.x+r.w>l.x+l.width-l.pad||r.y+r.h>l.y+l.height)++fail;}
+      }
+    }
+    Gfx_SetEffectStatus(63,31,1,0);auto status=Gfx_GetEffectStatus();if(status.requested!=63||status.encoded!=31||status.submitted!=1||status.metalFX!=0)++fail;
     if(layoutOut)fclose(layoutOut);
     g_fonts=saved;g_fontCount=savedCount;
     printf("diagnostic font: %s, bounded10px glyphs and width clip\n",fail?"FAIL":"pass");return fail?1:0;

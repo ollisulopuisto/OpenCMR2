@@ -379,6 +379,7 @@ extern "C" BOOL Gfx_SetVideoMode(int width, int height, BOOL fullscreen)
     }
     s_width = width;
     s_height = height;
+    Gfx_SetEffectStatus(0,0,-1,-1);
     if (!s_executor->SetVideoMode(width, height, fullscreen != 0)) {
         Sys_Log("gfx: could not set %dx%d", width, height);
         return FALSE;
@@ -1367,3 +1368,7 @@ extern "C" void Gfx_SetSunScreenPosition(float x,float y,BOOL visible) {
 extern "C" void Gfx_SetShadowQuality(int resolution,int softness) {
  if(s_executor)s_executor->SetShadowQuality(resolution,softness);
 }
+
+static GfxEffectStatus effectStatus={0,0,-1,-1};
+extern "C" void Gfx_SetEffectStatus(unsigned requested,unsigned encoded,int submitted,int metalFX){effectStatus={requested,encoded,submitted,metalFX};}
+extern "C" GfxEffectStatus Gfx_GetEffectStatus(){return effectStatus;}

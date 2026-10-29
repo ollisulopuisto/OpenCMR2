@@ -154,6 +154,8 @@ const char *Sys_GetInstallSetting(const char *name);
 
 /* OpenCMR2 options (opencmr2.ini, "section.key", e.g. "video.fullscreen"). */
 int Sys_GetOption(const char *name, int fallback);
+/* Sanitized launch choices, never paths or full command line. */
+const char *Sys_GetLaunchSummary(int line);
 /* The option's text, or fallback when it is not set. */
 const char *Sys_GetOptionText(const char *name, const char *fallback);
 /* Changes an option and saves it to opencmr2.ini, keeping the rest of the

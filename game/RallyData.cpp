@@ -6374,13 +6374,17 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
     Graphics_SetShadowGeometryState(!CGameInfo::IsRecordFlagSet(0xf));
     View_SetPlayerProjection(param2);
     if (Graphics_DebugDrawWanted()) {
+        if(Sys_GetOption("video.debug_draw",OPENCMR2_DEBUG_DRAW_DEFAULT)==1){
+            char text[32];snprintf(text,sizeof text,"FPS %.1f",Graphics_GetFrameRate());BYTE color[4]={240,246,255,255};
+            Font_DrawTextScaled(1,text,12,12,14,120,color);
+        }else{
         // Compact single-view diagnostics: left edge, away from central pace
         // notes and the right-hand race timer. Real glyph height controls scale.
         BYTE background[4] = {12, 16, 22, 220};
         BYTE colour[4] = {240, 246, 255, 255};
         unsigned long long tick=0;unsigned frame=0,changes=0;
         bool spectator=SceneryPack_GetAnimationStatus(&tick,&frame,&changes);
-        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,spectator?4:3);
+        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?4:3)+9);
         short panel[4] = {(short)layout.x,(short)layout.y,(short)layout.width,(short)layout.height};
         Sprite_FillRect(NULL, panel, background, 1);
         char text[96];
@@ -6396,6 +6400,18 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         SceneryPack_GetTreeStatus(&treeDraws,&windDraws,&originalTrees);
         snprintf(text,sizeof(text),"Tree draws %u | wind %u | original %u",treeDraws,windDraws,originalTrees);
         Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?3:2)*layout.line,layout.font,layout.width-2*layout.pad,colour);
+        int row=spectator?4:3;
+        auto line=[&](const char*s){Font_DrawTextScaled(1,(char*)s,layout.x+layout.pad,layout.y+layout.pad+row++*layout.line,layout.font,layout.width-2*layout.pad,colour);};
+        for(int i=0;i<3;i++)line(Sys_GetLaunchSummary(i));
+        GfxEffectStatus status=Gfx_GetEffectStatus();
+        auto effect=[&](unsigned bit){return status.submitted<0?"?":!(status.requested&bit)?"off":status.encoded&bit?"enc":"skip";};
+        snprintf(text,sizeof text,"AA:%s bloom:%s blur:%s",effect(1),effect(2),effect(4));line(text);
+        snprintf(text,sizeof text,"DoF:%s rays:%s grade:%s",effect(8),effect(16),effect(32));line(text);
+        snprintf(text,sizeof text,"Shadow:%s rain/snow:%s submit:%s",effect(64),effect(128),status.submitted<0?"?":status.submitted?"OK":"FAIL");line(text);
+        snprintf(text,sizeof text,"MetalFX:%s",status.metalFX<0?"off/unknown":status.metalFX?"encoded":"fallback");line(text);
+        line("enc=encoded; skip=requested, not encoded");
+        line("Previous frame; not completed-pixel proof");
+        }
     }
     CarDamage_UpdateOrderedCarsOffRoadState(pOrder, (short)orderCount, g_viewScreenRect, maskedView);
     if (CGameInfo::GetGameModeOptionBit19() != 0) {
