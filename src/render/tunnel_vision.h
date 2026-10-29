@@ -7,4 +7,7 @@
 // which a native test could not tell from tunnel vision off. Taps are sparse above about 60 px, so keep this below 0.04.
 constexpr float kTunnelRadiusPerHeight = 0.03f;
 constexpr float kTunnelInnerFull = 0.5f;
+// The clear circle is squashed vertically (distance uses y * this, orientation free so Metal and GL agree), so the bonnet at the
+// bottom centre and a chase car low in the frame stay sharp while the left and right edges blur.
+constexpr float kTunnelVerticalScale = 0.5f;
 #endif
