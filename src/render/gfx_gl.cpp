@@ -13,6 +13,8 @@
 #include "platform/platform.h"
 #include "port/sys.h"
 #include "render/presentation.h"
+#include "render/dof_focus.h"
+#include "render/projection_vote.h"
 #include "render/gfx_internal.h"
 
 #include "shaders_spirv.h"
@@ -282,6 +284,7 @@ struct Executor : GfxExecutor {
     bool motionOn = false, bloomOn = false, dofOn = false, raysOn = false;
     float speedFocusTarget = 0.0f, speedFocusSmooth = 0.0f; std::chrono::steady_clock::time_point speedFocusTime{}; bool speedFocusTimed = false; // tunnel vision, same easing as SDL_GPU
     float speedStreakTarget = 0.0f, speedStreakSmooth = 0.0f; std::chrono::steady_clock::time_point speedStreakTime{}; bool speedStreakTimed = false;
+    float glCarFocusRaw = -1.0f, glCarDepth = 0.0f;   // dof_focus_car: raw GL depth of the followed car this frame (-1 none)
     bool effectsRaceFrame = true; // set per frame before ApplyEffects: depth blur is a race effect, never run on menu/preview frames
     int motionMix = 0, bloomAmount = 0, dofFocus = 50, dofRange = 30, dofBlur = 0, raysAmount = 0;
     float grade[4] = {0, 0, 1, 1}, grime[4] = {};
@@ -1295,6 +1298,19 @@ struct Executor : GfxExecutor {
                     if(c.raceWorld)RenderWeather();
                     else {weather.clear();weatherTicks=0;weatherCarry=0;historyValid=false;}
                     effectsRaceFrame=c.raceWorld;
+                    glCarFocusRaw=-1.0f;glCarDepth=0.0f;
+                    if(c.raceWorld&&c.playerObject!=0&&Sys_GetOption("video.dof_focus_car",0)!=0){   // same car-depth rule as SDL_GPU
+                        DofFocusAccum acc;float vn=0,vf=0;bool haveProj=false;
+                        for(const GfxCommand &oc:frame.commands)
+                            if(oc.type==GFX_CMD_DRAW&&oc.target==NULL&&!oc.transformed){
+                                const GfxDrawState &os=frame.states[oc.state];
+                                if(os.objectId!=c.playerObject)continue;
+                                float p[3]={os.world._41,os.world._42,os.world._43};acc.Add(&os.view._11,p);
+                                if(!haveProj)haveProj=Projection_NearFar(os.projection._33,os.projection._34,os.projection._43,&vn,&vf);
+                            }
+                        float z;
+                        if(haveProj&&acc.Depth(&z)){float raw=DofFocus_GlRawDepth(z,vn,vf);if(raw>=0.0f){glCarFocusRaw=raw;glCarDepth=z;}}
+                    }
                     GLuint output=ApplyEffects();
                     if(!c.raceWorld)historyValid=false;
                     if(output!=backFramebuffer){

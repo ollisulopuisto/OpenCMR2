@@ -9,4 +9,7 @@ need('os.objectId == frame.commands[worldEnd].playerObject' in g,'only the follo
 need(re.search(r'float uniforms\[8\] = \{ focusPos,',g),'uniform x uses resolved focus')
 need('{"video.dof_focus_car",1}' in e,'overdo sets it')
 need('focus on car' in r,'overlay shows it')
+gl=open('src/render/gfx_gl.cpp').read(); ex=open('src/render/gl_effects_executor.h').read()
+need('glCarFocusRaw=raw' in gl and 'os.objectId!=c.playerObject' in gl,'GL computes the car focus')
+need('float u[8] = {focusRaw,' in ex,'GL uniform uses car focus')
 sys.exit(0 if ok else 1)

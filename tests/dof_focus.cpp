@@ -35,5 +35,9 @@ int main(){
     }
     // With the old fixed plane (0.5, z about 15.8) a car at z=6 or 40 is well defocused: this is what the option removes.
     {float fp; DofFocus_Position(6.0f,1,250,&fp); float x=fabsf(fp-0.5f)/0.5f; CHECK(x*x*(3-2*x)*16.0f>3.0f);}
+    // GL raw depth, matches the readback with the production projection (z=6 -> d_gl 0.91834, z=15.8 -> 0.97024, n=1 f=250).
+    CHECK(fabsf(DofFocus_GlRawDepth(6.0f,1,250)-0.91834f)<1e-4f);
+    CHECK(fabsf(DofFocus_GlRawDepth(15.8f,1,250)-0.97024f)<1e-4f);
+    CHECK(DofFocus_GlRawDepth(0.5f,1,250)<0.0f&&DofFocus_GlRawDepth(10.0f,0,0)<0.0f);
     if(!fails)printf("dof_focus ok\n"); return fails;
 }

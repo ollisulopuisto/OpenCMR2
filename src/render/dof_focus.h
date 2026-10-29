@@ -14,6 +14,15 @@ inline bool DofFocus_Position(float z, float nearP, float farP, float *out)
     *out = t < 0.0f ? 0.0f : t > 1.0f ? 1.0f : t;
     return true;
 }
+// OpenGL: the game's D3D-style projection gives a [0,1] depth, but GL's default clip control stores 0.5 * d + 0.5 (checked by readback
+// with the production projection maths; no glClipControl in the GL backend). The GL depth blur compares this raw stored depth.
+inline float DofFocus_GlRawDepth(float z, float nearP, float farP)
+{
+    if (!(nearP > 0.0f) || !(farP > nearP) || !(z > nearP)) return -1.0f;
+    float d = farP / (farP - nearP) * (1.0f - nearP / z);
+    d = 0.5f * d + 0.5f;
+    return d > 1.0f ? 1.0f : d;
+}
 struct DofFocusAccum {
     double sum = 0.0; int count = 0;
     void Add(const float *view, const float p[3]) { float z = DofFocus_ViewDepth(view, p); if (z > 0.0f) { sum += z; ++count; } }
