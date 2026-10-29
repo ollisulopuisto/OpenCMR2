@@ -129,9 +129,21 @@ GLuint ApplyEffects()
         speedStreakSmooth += (speedStreakTarget - speedStreakSmooth) * (1.0f - std::exp(-dt / 0.4f));
         if (!effectsRaceFrame) speedStreakSmooth = 0.0f;
     }
+    {   // tunnel vision easing (0.8 s), the same time constant and race-frame gate as the SDL_GPU path
+        auto now = std::chrono::steady_clock::now();
+        float dt = speedFocusTimed ? std::chrono::duration<float>(now - speedFocusTime).count() : 0.0f;
+        speedFocusTime = now; speedFocusTimed = true;
+        if (dt > 0.25f) dt = 0.25f;
+        speedFocusSmooth += (speedFocusTarget - speedFocusSmooth) * (1.0f - std::exp(-dt / 0.8f));
+        if (!effectsRaceFrame) speedFocusSmooth = 0.0f;
+    }
+    bool depthBlurOn = effectsRaceFrame && dofOn && dofRange > 0 && dofBlur > 0;
+    bool tunnelOn = effectsRaceFrame && (speedFocusTarget > 0.0f || speedFocusSmooth > 0.001f);
+    // Overlay status, same codes as SDL_GPU: 1 off, 3 nothing to do, 5 encoded (set below), 6 not a race frame.
+    Gfx_SetDofStatus(GfxDofStatus{!effectsRaceFrame ? 6 : (depthBlurOn || tunnelOn) ? 4 : dofOn ? 3 : 1, speedFocusTarget, speedFocusSmooth, 0.0f, 0.0f});
     bool streakOn = speedStreakSmooth > 0.01f && effectsRaceFrame;
     bool active = streakOn || cloudsValid || spatialAA || bloomOn && bloomAmount > 0 || motionOn && motionMix > 0 ||
-        effectsRaceFrame && dofOn && dofRange > 0 && dofBlur > 0 || raysOn && raysAmount > 0 && sunVisible ||
+        depthBlurOn || tunnelOn || raysOn && raysAmount > 0 && sunVisible ||
         grade[0] || grade[1] || grade[2] != 1 || grade[3] != 1 || grime[0] || grime[1] || grime[2];
     if (!active) { historyValid = false; return backFramebuffer; }
     if (!EffectTargets()) return backFramebuffer;
@@ -190,9 +202,14 @@ GLuint ApplyEffects()
         ForgetEffectState();
     } else historyValid = false;
     if (grime[0] || grime[1] || grime[2]) run(4, 0, grime, sizeof(grime));
-    if (effectsRaceFrame && dofOn && dofRange > 0 && dofBlur > 0) {
-        float u[4] = {dofFocus / 100.0f, dofRange / 100.0f, dofBlur * 0.04f, 0};
-        run(5, backDepth, u, sizeof(u));
+    if (depthBlurOn || tunnelOn) {
+        // Same 8-float DoFUniforms layout as SDL_GPU. Depth blur keeps the existing GL look (raw depth, no near/far recovery);
+        // tunnel vision adds the speed-driven peripheral blur with its own radius (0.014 x height px at full strength).
+        float aspect = backHeight ? (float)backWidth / (float)backHeight : 1.0f;
+        float u[8] = {dofFocus / 100.0f, dofRange / 100.0f * (1.0f - 0.5f * speedFocusSmooth), depthBlurOn ? dofBlur * 0.04f : 0.0f,
+                      speedFocusSmooth, aspect, 0.014f * (float)backHeight, 0.0f, 0.0f};
+        if (run(5, backDepth, u, sizeof(u)))
+            Gfx_SetDofStatus(GfxDofStatus{5, speedFocusTarget, speedFocusSmooth, u[1], u[2]});
     }
     if (raysOn && raysAmount > 0 && sunVisible) {
         float u[4] = {raysAmount / 255.0f, sunX, sunY, 0};

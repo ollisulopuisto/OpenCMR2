@@ -6518,7 +6518,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             GfxDofStatus dof=Gfx_GetDofStatus();
             const char *dofWhy[]={"unknown","depth_of_field off","no sampled depth","range or blur is 0","pass unavailable","encoded","not a race frame"};
             int tv=Sys_GetOption("video.tunnel_vision",100);
-            bool gl=Gfx_IsOpenGL()!=0,dofOn=!gl&&dof.reason==5;
+            bool gl=false,dofOn=dof.reason==5;   // both backends report this status now
             if(gl)snprintf(text,sizeof text,"DoF pass: n/a (OpenGL backend)");
             else if(dofOn&&dof.blur<=0.0f)snprintf(text,sizeof text,"DoF pass: encoded for tunnel vision only (depth blur 0)");
             else if(dofOn)snprintf(text,sizeof text,"DoF pass: encoded, range %.2f blur %.1f",dof.range,dof.blur);

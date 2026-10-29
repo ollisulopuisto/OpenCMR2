@@ -280,6 +280,7 @@ struct Executor : GfxExecutor {
     }
 
     bool motionOn = false, bloomOn = false, dofOn = false, raysOn = false;
+    float speedFocusTarget = 0.0f, speedFocusSmooth = 0.0f; std::chrono::steady_clock::time_point speedFocusTime{}; bool speedFocusTimed = false; // tunnel vision, same easing as SDL_GPU
     float speedStreakTarget = 0.0f, speedStreakSmooth = 0.0f; std::chrono::steady_clock::time_point speedStreakTime{}; bool speedStreakTimed = false;
     bool effectsRaceFrame = true; // set per frame before ApplyEffects: depth blur is a race effect, never run on menu/preview frames
     int motionMix = 0, bloomAmount = 0, dofFocus = 50, dofRange = 30, dofBlur = 0, raysAmount = 0;
@@ -564,6 +565,7 @@ struct Executor : GfxExecutor {
     void SetDepthOfField(BOOL on, int focus, int range, int blur) override {
         dofOn = on != 0; dofFocus = std::clamp(focus, 0, 100); dofRange = std::clamp(range, 0, 100); dofBlur = std::clamp(blur, 0, 100);
     }
+    void SetSpeedFocus(float speed) override { speedFocusTarget = !(speed > 0.0f) ? 0.0f : speed > 1.0f ? 1.0f : speed; }
     void SetSpeedStreak(float strength) override { speedStreakTarget = !(strength > 0.0f) ? 0.0f : strength > 1.0f ? 1.0f : strength; }
     void SetGodRays(BOOL on, int amount) override { raysOn = on != 0; raysAmount = std::clamp(amount, 0, 255); }
     void SetColorGrading(int temp, int tint, int saturation, int contrast) override {
