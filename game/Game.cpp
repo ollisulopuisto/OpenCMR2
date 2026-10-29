@@ -2916,6 +2916,7 @@ int Game_DrawSceneViewport(SceneNode *pRoot, SceneNode *pCamera, void *pRect, in
         Gfx_FlushDustVolume(); // completed world depth/projection, before HUD
     }
     Flare_SampleVisibility(NULL, NULL, 0);
+    Gfx_EndWorldEffects(); // world FX precede HUD/menu/OSD layers 3/2/1
     CGraphics::SetZWriteEnable(0);
     CGraphics::SetZEnable(0);
     CGraphics::SetCachedSourceDestinationBlend(5, 6);

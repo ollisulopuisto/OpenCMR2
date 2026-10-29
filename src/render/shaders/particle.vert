@@ -15,7 +15,9 @@ void main()
         vec2(-1.0, -1.0), vec2(1.0, -1.0), vec2(-1.0, 1.0),
         vec2(-1.0, 1.0), vec2(1.0, -1.0), vec2(1.0, 1.0)
     );
-    vec2 o = offsets[gl_VertexIndex];
+    // One batched draw contains six vertices per particle. The vertex ID is
+    // global across the whole batch, not restarted for each quad.
+    vec2 o = offsets[gl_VertexIndex % 6];
     vec2 p = inPosition + o * inSize;
     // Normalised screen space (y=0 top) to Vulkan clip space (y=1 top).
     gl_Position = vec4(p.x * 2.0 - 1.0, 1.0 - p.y * 2.0, 0.0, 1.0);

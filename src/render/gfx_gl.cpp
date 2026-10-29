@@ -234,6 +234,7 @@ struct Executor : GfxExecutor {
     float lightViewProj[16];  // lightProj * lightView, for shadow mapping
     int swapInterval = -2;          // as last set
     int presentWidth = 0, presentHeight = 0;
+    bool worldEffectsApplied = false;
     // The back buffer read of the last presented frame (the lens flare test),
     // into a pixel buffer, collected when the game reads it.
     GLuint readbackBuffer = 0;
@@ -1270,9 +1271,24 @@ struct Executor : GfxExecutor {
         GfxTexture *target = NULL;
         int targetW = backWidth, targetH = backHeight;
         BindFramebuffer(backFramebuffer);
+        unsigned boundaries=0;for(const auto &c:frame.commands)if(c.type==GFX_CMD_WORLD_END)++boundaries;
+        worldEffectsApplied=false;
         GLintptr boundVertexOffset = -1, boundFragmentOffset = -1;
         for (size_t i = 0; i < frame.commands.size(); i++) {
             const GfxCommand &c = frame.commands[i];
+            if(c.type==GFX_CMD_WORLD_END){
+                if(present && boundaries==1 && !target){
+                    RenderWeather();GLuint output=ApplyEffects();
+                    if(output!=backFramebuffer){
+                        gl.Disable(GL_SCISSOR_TEST);
+                        gl.BindFramebuffer(GL_READ_FRAMEBUFFER,output);gl.BindFramebuffer(GL_DRAW_FRAMEBUFFER,backFramebuffer);
+                        gl.BlitFramebuffer(0,0,backWidth,backHeight,0,0,backWidth,backHeight,GL_COLOR_BUFFER_BIT,GL_NEAREST);
+                    }
+                    ForgetEffectState();BindFramebuffer(backFramebuffer);
+                    boundVertexOffset=boundFragmentOffset=-1;worldEffectsApplied=true;
+                }
+                continue;
+            }
             if (c.type == GFX_CMD_TARGET) {
                 target = c.target;
                 if (target == NULL) {
@@ -1346,7 +1362,6 @@ struct Executor : GfxExecutor {
     {
         // Read back before the frame is shown (the lens flare test), into a
         // pixel buffer collected when the game reads it.
-        RenderWeather();
         CollectReadback(readback);
         BindFramebuffer(backFramebuffer);
         if (readback.requested && readback.width > 0 && readback.height > 0) {
@@ -1363,7 +1378,9 @@ struct Executor : GfxExecutor {
             readback.requested = false;
         }
         HashFrame();
-        GLuint presentFbo = ApplyEffects();
+        // No boundary: UI/movie-only or multi-view, not an FX input.
+        if(!worldEffectsApplied) historyValid=false;
+        GLuint presentFbo = backFramebuffer;
         BindFramebuffer(presentFbo);
         unsigned requested=(Sys_GetOption("video.spatial_aa",0)?1:0)|(bloomOn?2:0)|(motionOn?4:0)|(dofOn?8:0)|(raysOn?16:0)|((grade[0]||grade[1]||grade[2]!=1||grade[3]!=1)?32:0)|(shadowType?64:0)|(weatherType&&weatherAmount?128:0);
         // GL error check means accepted commands, never GPU completion or pixels.

@@ -106,6 +106,7 @@ enum GfxCommandType {
     GFX_CMD_CLEAR,
     GFX_CMD_TARGET,
     GFX_CMD_DUST_VOLUME,
+    GFX_CMD_WORLD_END,          // explicit boundary before HUD/menu sprite layers
     GFX_CMD_BACKDROP            // copy the back buffer for the distance fade
 };
 
