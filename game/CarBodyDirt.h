@@ -1,6 +1,9 @@
 #ifndef OPENCMR2_CAR_BODY_DIRT_H
 #define OPENCMR2_CAR_BODY_DIRT_H
+#pragma push_macro("rand")
+#undef rand
 #include <algorithm>
+#pragma pop_macro("rand")
 #include <cmath>
 #include <cstring>
 #include <cctype>
