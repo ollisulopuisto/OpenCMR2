@@ -73,11 +73,11 @@ GLuint EffectProgram(int effect)
     if (effectPrograms[effect]) return effectPrograms[effect];
     static const unsigned char *sources[] = {g_brightpass_frag_glsl, g_blur_frag_glsl,
         g_composite_frag_glsl, g_motionblur_frag_glsl, g_lens_grime_frag_glsl,
-        g_dof_frag_glsl, g_godRays_frag_glsl, g_colorGrading_frag_glsl};
+        g_dof_frag_glsl, g_godRays_frag_glsl, g_colorGrading_frag_glsl, g_spatial_aa_frag_glsl};
     static const char *blocks[] = {"BrightPassUniforms", "BlurUniforms", "CompositeUniforms",
-        "MotionBlurUniforms", "LensGrimeUniforms", "DoFUniforms", "GodRaysUniforms", "ColorGradingUniforms"};
-    static const char *samplers0[] = {"scene", "source", "scene", "current", "scene", "sceneTex", "scene", "scene"};
-    static const char *samplers1[] = {NULL, NULL, "bloom", "previous", NULL, "depthTex", "depthTex", NULL};
+        "MotionBlurUniforms", "LensGrimeUniforms", "DoFUniforms", "GodRaysUniforms", "ColorGradingUniforms", "SpatialAAUniforms"};
+    static const char *samplers0[] = {"scene", "source", "scene", "current", "scene", "sceneTex", "scene", "scene", "scene"};
+    static const char *samplers1[] = {NULL, NULL, "bloom", "previous", NULL, "depthTex", "depthTex", NULL, NULL};
     GLuint p = Link(glEffectsVertex, sources[effect]);
     if (p) {
         GLuint block = gl.GetUniformBlockIndex(p, blocks[effect]);
@@ -119,7 +119,7 @@ bool EffectPass(int effect, int target, GLuint source, GLuint second, const void
 }
 GLuint ApplyEffects()
 {
-    bool active = bloomOn && bloomAmount > 0 || motionOn && motionMix > 0 ||
+    bool active = spatialAA || bloomOn && bloomAmount > 0 || motionOn && motionMix > 0 ||
         dofOn && dofRange > 0 && dofBlur > 0 || raysOn && raysAmount > 0 && sunVisible ||
         grade[0] || grade[1] || grade[2] != 1 || grade[3] != 1 || grime[0] || grime[1] || grime[2];
     if (!active) { historyValid = false; return backFramebuffer; }
@@ -129,12 +129,16 @@ GLuint ApplyEffects()
         int target = source == effectTex[0] ? 1 : 0;
         if (EffectPass(effect, target, source, second, data, bytes)) {
             source = effectTex[target]; sourceFbo = effectFbo[target];
-            static const unsigned bits[]={0,0,2,4,0,8,16,32};
+            static const unsigned bits[]={0,0,2,4,0,8,16,32,1};
             encodedEffects |= bits[effect];
             return true;
         }
         return false;
     };
+    if(spatialAA){
+        float size[4]={1.0f/backWidth,1.0f/backHeight,0,0};
+        run(8,0,size,sizeof(size));
+    }
     if (bloomOn && bloomAmount > 0) {
         float bright[4] = {0.7f, 0.1f, 0, 0};
         bool ok = EffectPass(0, 2, source, 0, bright, sizeof(bright));

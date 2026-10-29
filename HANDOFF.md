@@ -346,3 +346,13 @@ remain limited. AA request honestly skips in GL, MetalFX not applicable.
 Actual synthetic runtime pixels inspected and tests pass forced GL3.3/GLSL330
 llvmpipe. Full Linux build/tests pass. Native Mac GL compile, game pixels and frame
 time remain acceptance gates, not inferred from software Linux tests.
+
+## GL spatial AA omission corrected
+The AA pass in PR69 was omitted, not impossible on OpenGL. Reuse generated
+spatial_aa.frag GLSL330 via existing post framework at effect8, before bloom.
+Read override-aware option at device creation, keep defaultoff. Separate target,
+linear clamp, reciprocal resolution and padded UBO; success sets encoded bit1.
+Failure retains source, never claim executed from request. Actual GL3.3 executor
+pixel tests cover changed edge pixels, alpha, exact flat colors, off identity,
+stacked effects/ordering, resize and normal draw state restoration. Full90tests
+pass. Native Mac output/performance acceptance remains open.

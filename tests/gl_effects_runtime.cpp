@@ -35,6 +35,16 @@ int main(int argc, char **argv)
         auto upload=[&]() {gl.ActiveTexture(GL_TEXTURE0);gl.BindTexture(GL_TEXTURE_2D,e.backColor);gl.TexSubImage2D(GL_TEXTURE_2D,0,0,0,w,h,GL_RGBA,GL_UNSIGNED_BYTE,scene.data());e.ForgetEffectState();};
         auto read=[&](GLuint fbo) {std::vector<unsigned char> out(scene.size());gl.BindFramebuffer(GL_FRAMEBUFFER,fbo);gl.ReadPixels(0,0,w,h,GL_RGBA,GL_UNSIGNED_BYTE,out.data());e.ForgetEffectState();return out;};
         upload(); require(read(e.ApplyEffects())==scene,"disabled effects exact identity");
+        e.spatialAA=true;e.encodedEffects=0;upload();auto aa=read(e.ApplyEffects());
+        require(aa!=scene && (e.encodedEffects&1),"AA actual pixels and encoded status");
+        for(size_t i=3;i<scene.size();i+=4)require(aa[i]==scene[i],"AA preserves alpha");
+        auto saved=scene;for(size_t i=0;i<scene.size();i+=4){scene[i]=53;scene[i+1]=111;scene[i+2]=190;scene[i+3]=73;}
+        upload();require(read(e.ApplyEffects())==scene,"AA flat color and alpha exact");
+        for(int y=0;y<h;y++)for(int x=0;x<w;x++){size_t i=(y*w+x)*4;scene[i]=scene[i+1]=scene[i+2]=x;}
+        upload();require(read(e.ApplyEffects())==scene,"AA low contrast gradient identity");
+        for(int y=0;y<h;y++)for(int x=0;x<w;x++){size_t i=(y*w+x)*4;scene[i]=scene[i+1]=scene[i+2]=x==w-1?255:0;}
+        upload();auto border=read(e.ApplyEffects());for(int y=0;y<h;y++)require(border[y*w*4]==0,"AA border clamps without wrap");
+        e.spatialAA=false;scene=saved;upload();require(read(e.ApplyEffects())==scene,"AA toggle disabled identity");
         e.SetColorGrading(25,0,110,100); auto grade=read(e.ApplyEffects()); require(grade!=scene,"grade changes pixels"); require(e.encodedEffects&32,"grade status follows executed pass");
         require(grade[0]==0 && grade[(h-1)*w*4+1]>180,"whole-source UV/no vertical flip");
         e.SetColorGrading(0,0,100,100); e.SetMotionBlur(true,128); upload();e.encodedEffects=0;
@@ -85,21 +95,21 @@ int main(int argc, char **argv)
         e.ForgetEffectState();require(center==1,"alpha-tested foliage excluded from opaque shadow pass");
         e.SetShadows(0,5);
         // All passes stacked must use distinct source/target, and leave alpha.
-        e.SetBloom(true,100);e.SetMotionBlur(true,80);e.SetDepthOfField(true,20,10,80);
+        e.spatialAA=true;e.SetBloom(true,100);e.SetMotionBlur(true,80);e.SetDepthOfField(true,20,10,80);
         e.SetGodRays(true,120);e.SetSunScreenPosition(.7f,.1f,true);e.SetColorGrading(10,-5,105,103);
         upload();auto stacked=read(e.ApplyEffects());require(stacked!=scene,"stacked effects execute");
         for(size_t i=3;i<scene.size();i+=4) require(stacked[i]==scene[i],"stacked effects preserve alpha");
-        e.SetBloom(false,0);e.SetMotionBlur(false,0);e.SetDepthOfField(false,20,10,80);e.SetGodRays(false,0);e.SetColorGrading(0,0,100,100);
+        e.spatialAA=false;e.SetBloom(false,0);e.SetMotionBlur(false,0);e.SetDepthOfField(false,20,10,80);e.SetGodRays(false,0);e.SetColorGrading(0,0,100,100);
 
         e.SetParticles(1,255);e.RenderWeather();SDL_Delay(30);e.RenderWeather();require(!e.weather.empty(),"weather emits");
         e.SetParticles(0,0);e.RenderWeather();require(e.weather.empty(),"weather clears on disable");
         e.SetMotionBlur(true,128);e.ApplyEffects();require(e.SetVideoMode(80,60,false),"resize");require(!e.historyValid&&!e.effectTex[0],"resize invalidates targets/history");
         require(gl.GetError()==GL_NO_ERROR,"no GL errors");
         if(argc>1) {
-            FILE *f=fopen(argv[1],"wb");fprintf(f,"P6\n%d %d\n255\n",w,h*6);
-            for(auto *arr : {&old,&grade,&scene,&bloom,&dof,&stacked}) for(int i=0;i<w*h;i++) fwrite(arr->data()+i*4,1,3,f);
+            FILE *f=fopen(argv[1],"wb");fprintf(f,"P6\n%d %d\n255\n",w,h*7);
+            for(auto *arr : {&old,&aa,&grade,&scene,&bloom,&dof,&stacked}) for(int i=0;i<w*h;i++) fwrite(arr->data()+i*4,1,3,f);
             fclose(f);
         }
     }
-    SDL_DestroyWindow(testWindow);SDL_Quit();puts("PASS actual GL executor: identity, orientation, history, bloom, depth blur, sun visibility/rays, shadow caster/exclusion, stacked alpha, particles, resize");
+    SDL_DestroyWindow(testWindow);SDL_Quit();puts("PASS actual GL executor: spatial AA flat/gradient/border/alpha/toggle, identity, orientation, history, bloom, depth blur, sun visibility/rays, shadow caster/exclusion, stacked alpha, particles, resize");
 }
