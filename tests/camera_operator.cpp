@@ -82,5 +82,10 @@ int main(){
    if(i>0)maxJump=std::max(maxJump,std::abs(fast.shakeRight-last));last=fast.shakeRight;}
   CHECK(maxRest<1e-6f);CHECK(maxFast>.02f&&maxFast<=.081f);CHECK(maxOff<1e-6f);CHECK(maxJump<.03f);
  }
+ {
+  State base,close,far;close.distanceScale=.5f;far.distanceScale=1.5f;
+  for(int i=0;i<400;i++){base.Step({0,0,0},0,0,0,6.5,2,.04);close.Step({0,0,0},0,0,0,6.5,2,.04);far.Step({0,0,0},0,0,0,6.5,2,.04);}
+  CHECK(close.usedDistance<base.usedDistance*.6f&&far.usedDistance>base.usedDistance*1.4f&&close.usedDistance>=4.f&&far.usedDistance<=26.f);
+ }
  puts("world camera position/orbit inertia, steering lens, settling, determinism/reset pass");
 }

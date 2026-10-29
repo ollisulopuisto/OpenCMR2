@@ -45,7 +45,7 @@ struct State{
  bool ready=false;V3 position,velocity,aim,aimVelocity,lastCar,roadAhead;bool hasRoad=false;
  float terrainLift=0,curveLift=0,pullback=1.f; // pullback: smoothed speed-dependent distance scale
  bool pullbackReady=false;
- float heading=0,headingRate=0,lastHeading=0,turn=0,zoom=1.7f,zoomRate=0,pitch=0,lensSpeedGain=.3f,shakeAmount=1.f,shakePhase=0,shakeRight=0,shakeUp=0; // lensSpeedGain: zoom change at full speed (+ = tighter lens, - = wider lens)
+ float heading=0,headingRate=0,lastHeading=0,turn=0,zoom=1.7f,zoomRate=0,pitch=0,lensSpeedGain=.3f,shakeAmount=1.f,shakePhase=0,shakeRight=0,shakeUp=0,distanceScale=1.f,usedDistance=0; // lensSpeedGain: zoom change at full speed (+ = tighter lens, - = wider lens)
  void Reset(){*this=State{};}
  void Step(V3 car,float carHeading,float steering,float speed,float distance,float height,float dt,const RoadPreview*road=nullptr){
   if(!std::isfinite(steering)||!std::isfinite(speed)||!std::isfinite(distance)||!std::isfinite(height)||!std::isfinite(carHeading)||!std::isfinite(dt)||dt<=0||dt>.2f||!std::isfinite(car.x)||!std::isfinite(car.y)||!std::isfinite(car.z)){Reset();return;}
@@ -56,7 +56,8 @@ struct State{
   float wantedPull=1.3f-.5f*speedUnit;
   if(!pullbackReady){pullback=wantedPull;pullbackReady=true;}
   pullback+=(wantedPull-pullback)*(1-std::exp(-dt/1.3f));
-  distance=Clamp(distance*pullback,7.f,17.f);height=Clamp(height*(1.f+.2f*(pullback-1.f)),6.f,11.f);
+  distance=Clamp(distance*pullback,7.f,17.f)*distanceScale; // distanceScale: user knob, 1 = default
+  distance=Clamp(distance,4.f,26.f);usedDistance=distance;height=Clamp(height*(1.f+.2f*(pullback-1.f)),6.f,11.f);
   bool roadValid=road&&road->valid;
   // Actual upcoming route geometry, not steering or car yaw, raises the
   // operator before a corner. Descend more slowly when preview straightens.
