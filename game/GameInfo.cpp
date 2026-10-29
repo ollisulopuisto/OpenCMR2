@@ -5454,6 +5454,7 @@ void InRaceMenu_EnterCameraOffsetOptions(Menu *pMenu, char unused)
 // FUNCTION: CMR2 0x004036c0
 void InRaceMenu_ResetCameraDefaults(Menu *pMenu, char unused)
 {
+    pMenu->items[4].max=0;
     g_cameraMenuLag = 0xe0000;
     g_cameraMenuPitch = 0x2d;
     g_cameraMenuOffset.y = 0x18000;

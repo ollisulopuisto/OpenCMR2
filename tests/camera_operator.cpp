@@ -13,6 +13,10 @@ int main(){
  CHECK(std::abs(a.rate)<.001f);CHECK(std::abs(a.angle)<.02f);
  a.Step(6,6,1,.04f);CHECK(!a.ready&&a.angle==0);a.Step(0,0,1,0);CHECK(!a.ready);
  a.Step(0,0,1,.04f);a.Step(NAN,0,1,.04f);CHECK(!a.ready);a.Reset();CHECK(a.angle==0&&!a.ready);
+ CameraOperator::State left,right;
+ for(int i=0;i<100;i++){left.Step(i*.012f,i*.012f,1,.04f);right.Step(-i*.012f,-i*.012f,1,.04f);}
+ CHECK(std::abs(left.angle+right.angle)<.0001f&&left.angle>0&&right.angle<0);
+ left.Reset();CHECK(left.angle==0&&right.angle<0); // independent views
  CameraOperator::State wrap;wrap.Step(3.13f,3.13f,1,.04f);wrap.Step(-3.13f,-3.13f,1,.04f);CHECK(wrap.ready&&std::abs(wrap.angle)<.01f);
  puts("camera operator: deterministic anticipation, deadband, slew/acceleration bounds, settling and reset pass");return 0;
 }
