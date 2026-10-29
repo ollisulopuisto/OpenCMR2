@@ -12607,7 +12607,7 @@ void EnterAmounts(Menu*m,int){
   int fallback=rows[i].initial;
   if(i==9||i==11)fallback=Sys_GetOption("video.camera_effects",1);
   int v=Sys_GetOption(rows[i].key,fallback);
-  if(!strcmp(rows[i].key,"video.reflection_resolution"))v=v<=0?0:v<=64?1:v<=128?2:3;
+  if(!strcmp(rows[i].key,"video.reflection_resolution")){v=ReflectionCube_Normalize(v);v=v<=0?0:v<=64?1:v<=128?2:3;}
   m->items[i].max=EffectSettings::Clamp(v,0,rows[i].count-1);
  }
 }

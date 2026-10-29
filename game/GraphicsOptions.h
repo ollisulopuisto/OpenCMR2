@@ -12,8 +12,17 @@
 
 // User-visible defaults; explicit saved Off still wins.
 #define OPENCMR2_DEBUG_DRAW_DEFAULT 1
+// Older menu builds saved the selector index (1..3 = 64/128/256, 0 = original)
+// instead of the size. No valid size lies in 1..63, so read those as indexes.
+inline int ReflectionCube_Normalize(int requested)
+{
+    static const int sizes[4] = { 0, 64, 128, 256 };
+    return requested >= 1 && requested <= 3 ? sizes[requested] : requested;
+}
+
 inline int ReflectionCube_Size(int requested, int original)
 {
+    requested = ReflectionCube_Normalize(requested);
     if (requested <= 0) return original; // preserve native resolution when requested
     if (requested <= 64) return 64;
     if (requested <= 128) return 128;
