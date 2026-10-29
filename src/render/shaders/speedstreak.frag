@@ -11,9 +11,12 @@ const float RAMP = 0.30;
 const float MAXLEN = 0.10;
 const int TAPS = 12;
 // Speed lines (mirrors src/render/speed_lines.h): thin rays that converge on the screen centre, drawn over the frame. Visual only.
-const float LINES_RAYS = 96.0;
+const float LINES_RAYS = 80.0;
 const float LINES_INNER = 0.34;      // clear zone radius (screen heights, aspect corrected), a little outside the streak's inner zone
 const float LINES_FADE = 0.22;       // width of the fade-in from clear to full
+const float LINES_ONSET = 0.25;      // streak strength (speed ratio x setting) where the lines start to appear
+const float LINES_FULL = 0.80;       // streak strength where the lines are fully shown
+const float LINES_OPACITY = 0.55;    // brightest a line gets
 float hash1(float n) { return fract(sin(n * 127.1 + 311.7) * 43758.5453); }
 float speedLines(vec2 pc, float time)
 {
@@ -24,7 +27,7 @@ float speedLines(vec2 pc, float time)
     float h = hash1(id);
     if (h < 0.45) return 0.0;                              // about half the rays are absent
     float local = abs(fract(f) - 0.5);                     // 0 on the ray's axis, 0.5 between rays
-    float halfWidth = mix(0.035, 0.11, clamp(r * 1.2, 0.0, 1.0)); // thin near the centre, wider outward
+    float halfWidth = mix(0.03, 0.09, clamp(r * 1.2, 0.0, 1.0)); // thin near the centre, wider outward
     float line = 1.0 - smoothstep(halfWidth * 0.35, halfWidth, local);
     float dash = fract(r * mix(2.2, 4.0, hash1(id + 9.0)) - time * (1.6 + 2.4 * h) + hash1(id + 3.0));  // segments run outward
     float seg = smoothstep(0.0, 0.18, dash) * (1.0 - smoothstep(0.55, 0.8, dash));
@@ -38,8 +41,9 @@ void main()
     vec2 c = uv - vec2(0.5);
     float r = length(c * vec2(settings.y, 1.0));
     float w = smoothstep(INNER, INNER + RAMP, r) * clamp(settings.x, 0.0, 1.0);
-    float lines = clamp(settings.w, 0.0, 1.0) > 0.0 ? speedLines(c * vec2(settings.y, 1.0), settings.z) * clamp(settings.w, 0.0, 1.0) : 0.0;
-    if (w <= 0.0) { outColor = vec4(mix(base.rgb, vec3(0.93, 0.95, 1.0), lines * 0.75), base.a); return; }
+    float linesAmount = smoothstep(LINES_ONSET, LINES_FULL, clamp(settings.w, 0.0, 1.0));
+    float lines = linesAmount > 0.0 ? speedLines(c * vec2(settings.y, 1.0), settings.z) * linesAmount * LINES_OPACITY : 0.0;
+    if (w <= 0.0) { outColor = vec4(mix(base.rgb, vec3(0.93, 0.95, 1.0), lines), base.a); return; }
     vec2 toCenter = -c * (w * MAXLEN);
     vec3 sum = base.rgb * 2.0;
     float total = 2.0;
@@ -49,5 +53,5 @@ void main()
         sum += texture(scene, uv + toCenter * t).rgb * k;
         total += k;
     }
-    outColor = vec4(mix(sum / total, vec3(0.93, 0.95, 1.0), lines * 0.75), base.a);
+    outColor = vec4(mix(sum / total, vec3(0.93, 0.95, 1.0), lines), base.a);
 }

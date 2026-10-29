@@ -2,6 +2,7 @@
 #include "EffectAmounts.h"
 #include "port/sys.h"
 #include "FovPreview.h"
+#include "FovDolly.h"
 #include "FloatToInt.h"
 #include "FixedPoint.h"
 #include "GraphicsOptions.h"
@@ -722,18 +723,32 @@ int RallyData_IsHeadToHeadRaceMode(void);
 // proportional to it (30 to 150).
 static int g_appliedFovSetting;   // OpenCMR2: the video.fov value the cached scale was built from (overlay shows this, not the live INI)
 static int g_previewFov;   // OpenCMR2 debug: the live video.fov_preview in force this frame (0 = off)
+// OpenCMR2: the fov number actually shown (16.16), eased once per frame toward the preview or the saved value. The projection and the dolly both read
+// it, so a manual preview change moves the lens and the camera together and smoothly.
+static int View_ShownFov16(int target)
+{
+    static int shown, lastTime;
+    int now = CMain::GetFrameTime();
+    if (now != lastTime || shown <= 0) {
+        shown = FovPreview_Ease(shown, target * 65536, now - lastTime);
+        lastTime = now;
+    }
+    return shown;
+}
 static int View_GetFovScale(void)
 {
     static int scale;
     int preview = Sys_GetOption("video.fov_preview", 0);
     g_previewFov = preview > 0 ? FovPreview_Effective(preview, 70) : 0;
-    if (g_previewFov) return FTOI(int, X87S_DIV(0x275c2 * 70.0, g_previewFov));   // not cached: follows the panel live
     if (scale == 0) {
         int fov = Sys_GetOption("video.fov", 70);
         fov = fov < 30 ? 30 : fov > 150 ? 150 : fov;
         g_appliedFovSetting = fov;
         scale = FTOI(int, X87S_DIV(0x275c2 * 70.0, fov));
     }
+    int shown = View_ShownFov16(g_previewFov ? g_previewFov : g_appliedFovSetting);
+    if (g_previewFov || shown != g_appliedFovSetting * 65536)   // preview on, or still easing back to the saved view
+        return FTOI(int, X87S_DIV(0x275c2 * 70.0 * 65536.0, (double)shown));
     return scale;
 }
 
@@ -942,6 +957,30 @@ void ChaseCamera_GetViewOffset(FixVector *pOut, CameraRecord *pSel);
 
 void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef);
 
+// OpenCMR2 FOV dolly (visual only, game/FovDolly.h): the chase camera moves toward the car by the amount its view is wider than the
+// saved video.fov (speed FOV and the FOV preview), so the car keeps about the same screen size. Chase types 4..6, not the drone.
+int View_SpeedFovMagnification(BYTE view);
+static int g_lastDollyScale[8] = {65536, 65536, 65536, 65536, 65536, 65536, 65536, 65536}, g_lastWidening[8] = {65536, 65536, 65536, 65536, 65536, 65536, 65536, 65536};
+static int View_FovDollyScale(CameraRecord *pObj)
+{
+    int view = pObj->index & 7;
+    int saved = g_appliedFovSetting ? g_appliedFovSetting : Sys_GetOption("video.fov", 70);
+    saved = saved < 30 ? 30 : saved > 150 ? 150 : saved;
+    int preview = Sys_GetOption("video.fov_preview", 0);
+    int target = preview > 0 ? FovPreview_Effective(preview, 70) : saved;
+    int shown = View_ShownFov16(target);   // same eased value the projection uses this frame
+    int widening = FovDolly_Widening(View_SpeedFovMagnification((BYTE)view), saved * 65536, shown);
+    int scale = FovDolly_Scale(widening, Sys_GetOption("video.fov_dolly", 100));
+    g_lastWidening[view] = widening;
+    g_lastDollyScale[view] = scale;
+    return scale;
+}
+void View_GetFovDolly(unsigned int view, int *scale, int *widening)
+{
+    *scale = g_lastDollyScale[view & 7];
+    *widening = g_lastWidening[view & 7];
+}
+
 // Caches the reference matrix's up and right basis vectors in the player's
 // camera slots, then builds the view object's matrix from them.
 // FUNCTION: CMR2 0x00447a00
@@ -971,6 +1010,10 @@ void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef)
 
     sel = pObj->index;
     ChaseCamera_GetViewOffset(&base, pObj);
+    if (pObj->type >= 4 && pObj->type <= 6 && !CameraOperator_Enabled(pObj)) {
+        int dolly = View_FovDollyScale(pObj);
+        if (dolly != 65536) { base.x = FixMul(base.x, dolly); base.y = FixMul(base.y, dolly); base.z = FixMul(base.z, dolly); }
+    }
     FixMatrix_Identity(&identity);
     FixMatrix_SetPosition(&base, &identity);
     index = sel & 0xff;

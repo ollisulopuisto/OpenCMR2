@@ -8404,6 +8404,15 @@ int View_SpeedFovZoom(BYTE view, int zoom)
     return SpeedFov_Zoom(zoom, pct, shown[view]);
 }
 
+// OpenCMR2: how much the speed FOV currently widens a view, 16.16 (65536 = not at all). The same eased value the projection uses.
+int View_SpeedFovMagnification(BYTE view)
+{
+    int pct = g_speedFovPct[view & 1];
+    if (pct <= 0 || view >= 2) return 65536;
+    if (pct > 40) pct = 40;
+    return 65536 + (int)((long long)pct * g_speedFovShown[view & 1] / 100);
+}
+
 // FUNCTION: CMR2 0x00422140
 void View_BlendCameraStates(BYTE view, int t)
 {
