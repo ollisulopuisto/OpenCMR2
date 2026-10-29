@@ -43,13 +43,20 @@ template<class Point> RoadPreview PreviewRoad(V3 car,int next,int count,bool loo
 }
 struct State{
  bool ready=false;V3 position,velocity,aim,aimVelocity,lastCar,roadAhead;bool hasRoad=false;
- float terrainLift=0;
+ float terrainLift=0,curveLift=0;
  float heading=0,headingRate=0,lastHeading=0,turn=0,zoom=1.7f,zoomRate=0,pitch=0;
  void Reset(){*this=State{};}
  void Step(V3 car,float carHeading,float steering,float speed,float distance,float height,float dt,const RoadPreview*road=nullptr){
   if(!std::isfinite(steering)||!std::isfinite(speed)||!std::isfinite(distance)||!std::isfinite(height)||!std::isfinite(carHeading)||!std::isfinite(dt)||dt<=0||dt>.2f||!std::isfinite(car.x)||!std::isfinite(car.y)||!std::isfinite(car.z)){Reset();return;}
   distance=Clamp(distance*1.5f,9.f,14.f);height=Clamp(height*3.f,7.f,10.f);
   bool roadValid=road&&road->valid;
+  // Actual upcoming route geometry, not steering or car yaw, raises the
+  // operator before a corner. Descend more slowly when preview straightens.
+  float bend=roadValid?std::abs(road->bend):0.f;
+  float wantedLift=Clamp((bend-.06f)/.64f,0.f,1.f)*4.f;
+  float liftTime=wantedLift>curveLift?.55f:1.7f;
+  curveLift+=(wantedLift-curveLift)*(1-std::exp(-dt/liftTime));
+  height+=curveLift;
   float orbitHeading=roadValid?std::atan2(road->tangent.x,road->tangent.z):carHeading;
   float delta=ready?Wrap(carHeading-lastHeading):0;
   if(ready&&((car-lastCar).Length()>25.f||std::abs(delta)>.8f)){Reset();delta=0;}
@@ -74,7 +81,8 @@ struct State{
   // Keep framing safe on very long high-speed transients, but do not rigidly
   // rotate the position offset with the car. This is a tether, not attachment.
   V3 away=position-car;float separation=away.Length();
-  if(separation>distance*1.3f){position=car+away*(distance*1.3f/separation);}
+  float tether=std::sqrt(distance*distance+height*height)*1.3f;
+  if(separation>tether){position=car+away*(tether/separation);}
   V3 target=car+V3{std::sin(carHeading)*Clamp(speed*3.f,2.f,5.f),1.2f,std::cos(carHeading)*Clamp(speed*3.f,2.f,5.f)};
   if(roadValid){target=road->near;target.y=car.y+1.2f;}
   V3 aimAcceleration=(target-aim)*12.f-aimVelocity*5.5f;
