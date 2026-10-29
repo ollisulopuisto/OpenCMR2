@@ -131,3 +131,32 @@ in `tools/raw_access/reviewed.json` retain source guards and automatic evidence.
 
 Before committing, review `git status --short`, `git diff --check` and the staged
 diff.
+
+## Actions execution policy
+
+The build workflow runs the complete existing native platform set on PRs,
+main pushes and version tags. Feature-branch pushes do not run a second copy
+beside their PR. A branch without a PR uses the explicit manual full-check path.
+Only documentation/Markdown/licence-only automatic changes are excluded; code,
+CMake, tests, scripts, assets and unknown paths still run the full matrix.
+Tag pushes are not path-filtered by GitHub and retain release dependencies.
+
+Obsolete PR runs cancel when a newer commit arrives on that same PR. Main,
+version-tag and manually started checks are not cancelled by this policy. Jobs
+have finite limits(45minutes Linux,60Mac/Windows,90Android,10release), and each
+CTest has a120second ceiling to prevent a stuck test consuming the entire job.
+Timeout failures remain failures; no test or platform is hidden to make CI green.
+Revisit limits using actual failed logs if legitimate work exceeds them.
+
+For urgent/full validation, open Actions > build > Run workflow and select the
+branch. This runs all checks without creating a version tag or publishing a
+release. It is not a bypass; a version tag still needs every platform job before
+release publication. Branches that require named checks may need this manual
+run for docs-only PRs, because path-filtered required checks can remain pending.
+This change does not alter repository branch protection or permissions.
+
+No new cache, artifact retention, upload or billing setting is introduced.
+Artifacts and tag releases keep their existing policy. This removes duplicate
+execution and queue pressure, not a claim of measured billed savings.
+Run `python3 -m unittest discover -s tools/ci -v` with PyYAML installed and
+`actionlint` when editing this policy.

@@ -2,15 +2,32 @@ name: build
 
 on:
   push:
+    branches: [main]
+    tags: ['v*']
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - 'LICENSE*'
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - 'LICENSE*'
+  # Explicit full native checks, including docs-only revisions, without tagging.
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# Cancel obsolete PR checks, never a main/tag/manual run or release.
+concurrency:
+  group: build-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   # 32-bit x86 reference build on the same Ubuntu LTS as native Linux.
   linux-x86:
+    timeout-minutes: 45
     runs-on: ubuntu-24.04
     env:
       PKG_CONFIG_LIBDIR: /usr/lib/i386-linux-gnu/pkgconfig:/usr/share/pkgconfig
@@ -28,7 +45,7 @@ jobs:
       # Ubuntu 24.04 has no SDL3 package: compile it for i386 too.
       - run: cmake --preset linux-x86 -DOPENCMR2_VENDORED_SDL=ON
       - run: cmake --build --preset linux-x86
-      - run: ctest --preset linux-x86
+      - run: ctest --timeout 120 --preset linux-x86
       - name: Package
         run: |
           python3 tools/package_release.py --binary build/linux-x86/src/opencmr2 \
@@ -42,6 +59,7 @@ jobs:
           if-no-files-found: error
 
   linux:
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -61,7 +79,7 @@ jobs:
       # Ubuntu 24.04 has no SDL3 package: the build fetches it.
       - run: cmake --preset linux -DOPENCMR2_VENDORED_SDL=ON
       - run: cmake --build --preset linux
-      - run: ctest --preset linux
+      - run: ctest --timeout 120 --preset linux
       - name: Package
         run: |
           python3 tools/package_release.py --binary build/linux/src/opencmr2 \
@@ -75,6 +93,7 @@ jobs:
           if-no-files-found: error
 
   macos:
+    timeout-minutes: 60
     runs-on: macos-14
     steps:
       - run: brew install ninja glslang
@@ -82,7 +101,7 @@ jobs:
       # Builds SDL3, shipped in the release, and spirv-cross for the Metal shaders.
       - run: cmake --preset macos -DOPENCMR2_VENDORED_SDL=ON
       - run: cmake --build --preset macos
-      - run: ctest --preset macos
+      - run: ctest --timeout 120 --preset macos
       - name: Package
         run: |
           python3 tools/package_release.py --binary build/macos/src/opencmr2 \
@@ -96,6 +115,7 @@ jobs:
           if-no-files-found: error
 
   windows:
+    timeout-minutes: 60
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
@@ -114,7 +134,7 @@ jobs:
       # clang++ from Visual Studio's LLVM component; SDL3 is fetched.
       - run: cmake --preset windows-x64 -DOPENCMR2_VENDORED_SDL=ON
       - run: cmake --build --preset windows-x64
-      - run: ctest --preset windows-x64
+      - run: ctest --timeout 120 --preset windows-x64
       - name: Package
         shell: pwsh
         run: |
@@ -130,6 +150,7 @@ jobs:
           if-no-files-found: error
 
   android:
+    timeout-minutes: 90
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -174,6 +195,7 @@ jobs:
           if-no-files-found: error
 
   release:
+    timeout-minutes: 10
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [linux-x86, linux, macos, windows, android]
     runs-on: ubuntu-24.04

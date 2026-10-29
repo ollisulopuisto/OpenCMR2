@@ -67,3 +67,15 @@ cmake --preset macos -DOPENCMR2_SHADERS_MSL=OFF -DOPENCMR2_RENDERER_GL=ON
 cmake --build build/macos -j 8
 ctest --test-dir build/macos
 ```
+
+## CI execution efficiency handoff
+
+Claim: ci/deduplicate-native-checks-final. Preserve six native build targets,
+existing tag release dependencies and artifacts. Remove feature-push/PR duplicate
+execution, ignore docs-only automatic changes, cancel obsolete PR checks only,
+and bound jobs/individual CTests. Manual full checks remain available. No new
+cache/storage/upload permissions. Six policy tests and actionlint pass; revised
+workflow execution remains unverified. Existing credential cannot write workflow
+files, so this change is a user-applied patch on a separate branch/PR, not a
+published workflow. Windows portability repairs remain separate PRs. Revert
+this one commit through a PR if the execution policy needs to be rolled back.
