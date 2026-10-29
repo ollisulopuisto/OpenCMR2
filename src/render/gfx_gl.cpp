@@ -23,6 +23,7 @@
 #include <SDL3/SDL_opengl.h>
 
 #include <math.h>
+#include <chrono>
 #include <cmath>
 #include "render/gl_effects_sources.h"
 #include <string.h>
@@ -279,6 +280,7 @@ struct Executor : GfxExecutor {
     }
 
     bool motionOn = false, bloomOn = false, dofOn = false, raysOn = false;
+    float speedStreakTarget = 0.0f, speedStreakSmooth = 0.0f; std::chrono::steady_clock::time_point speedStreakTime{}; bool speedStreakTimed = false;
     bool effectsRaceFrame = true; // set per frame before ApplyEffects: depth blur is a race effect, never run on menu/preview frames
     int motionMix = 0, bloomAmount = 0, dofFocus = 50, dofRange = 30, dofBlur = 0, raysAmount = 0;
     float grade[4] = {0, 0, 1, 1}, grime[4] = {};
@@ -286,7 +288,7 @@ struct Executor : GfxExecutor {
     GLuint effectFbo[4] = {}, effectTex[4] = {}, effectUbo = 0, effectVao = 0;
     GLuint historyTex = 0; bool historyValid = false;
     unsigned encodedEffects = 0;
-    GLuint effectPrograms[10] = {};
+    GLuint effectPrograms[11] = {};
     CloudUniforms cloudUniforms={};
     bool cloudsValid=false,cloudLogged=false;
     GLuint cloudMask=0,cloudMaskTexture=0,cloudMaskFbo=0;
@@ -562,6 +564,7 @@ struct Executor : GfxExecutor {
     void SetDepthOfField(BOOL on, int focus, int range, int blur) override {
         dofOn = on != 0; dofFocus = std::clamp(focus, 0, 100); dofRange = std::clamp(range, 0, 100); dofBlur = std::clamp(blur, 0, 100);
     }
+    void SetSpeedStreak(float strength) override { speedStreakTarget = !(strength > 0.0f) ? 0.0f : strength > 1.0f ? 1.0f : strength; }
     void SetGodRays(BOOL on, int amount) override { raysOn = on != 0; raysAmount = std::clamp(amount, 0, 255); }
     void SetColorGrading(int temp, int tint, int saturation, int contrast) override {
         grade[0] = std::clamp(temp, -100, 100) / 100.0f; grade[1] = std::clamp(tint, -100, 100) / 100.0f;

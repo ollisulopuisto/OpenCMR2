@@ -73,11 +73,11 @@ GLuint EffectProgram(int effect)
     if (effectPrograms[effect]) return effectPrograms[effect];
     static const unsigned char *sources[] = {g_brightpass_frag_glsl, g_blur_frag_glsl,
         g_composite_frag_glsl, g_motionblur_frag_glsl, g_lens_grime_frag_glsl,
-        g_dof_frag_glsl, g_godRays_frag_glsl, g_colorGrading_frag_glsl, g_spatial_aa_frag_glsl,g_clouds_frag_glsl};
+        g_dof_frag_glsl, g_godRays_frag_glsl, g_colorGrading_frag_glsl, g_spatial_aa_frag_glsl,g_clouds_frag_glsl,g_speedstreak_frag_glsl};
     static const char *blocks[] = {"BrightPassUniforms", "BlurUniforms", "CompositeUniforms",
-        "MotionBlurUniforms", "LensGrimeUniforms", "DoFUniforms", "GodRaysUniforms", "ColorGradingUniforms", "SpatialAAUniforms","CloudUniforms"};
-    static const char *samplers0[] = {"scene", "source", "scene", "current", "scene", "sceneTex", "scene", "scene", "scene", "scene"};
-    static const char *samplers1[] = {NULL, NULL, "bloom", "previous", NULL, "depthTex", "depthTex", NULL, NULL,"depthTex"};
+        "MotionBlurUniforms", "LensGrimeUniforms", "DoFUniforms", "GodRaysUniforms", "ColorGradingUniforms", "SpatialAAUniforms","CloudUniforms","SpeedStreakUniforms"};
+    static const char *samplers0[] = {"scene", "source", "scene", "current", "scene", "sceneTex", "scene", "scene", "scene", "scene", "scene"};
+    static const char *samplers1[] = {NULL, NULL, "bloom", "previous", NULL, "depthTex", "depthTex", NULL, NULL,"depthTex", NULL};
     GLuint p = Link(glEffectsVertex, sources[effect]);
     if (p) {
         GLuint block = gl.GetUniformBlockIndex(p, blocks[effect]);
@@ -121,7 +121,16 @@ bool EffectPass(int effect, int target, GLuint source, GLuint second, const void
 }
 GLuint ApplyEffects()
 {
-    bool active = cloudsValid || spatialAA || bloomOn && bloomAmount > 0 || motionOn && motionMix > 0 ||
+    {   // speed streak easing (0.4 s), race frames only; mirrors the SDL_GPU path
+        auto now = std::chrono::steady_clock::now();
+        float dt = speedStreakTimed ? std::chrono::duration<float>(now - speedStreakTime).count() : 0.0f;
+        speedStreakTime = now; speedStreakTimed = true;
+        if (dt > 0.25f) dt = 0.25f;
+        speedStreakSmooth += (speedStreakTarget - speedStreakSmooth) * (1.0f - std::exp(-dt / 0.4f));
+        if (!effectsRaceFrame) speedStreakSmooth = 0.0f;
+    }
+    bool streakOn = speedStreakSmooth > 0.01f && effectsRaceFrame;
+    bool active = streakOn || cloudsValid || spatialAA || bloomOn && bloomAmount > 0 || motionOn && motionMix > 0 ||
         effectsRaceFrame && dofOn && dofRange > 0 && dofBlur > 0 || raysOn && raysAmount > 0 && sunVisible ||
         grade[0] || grade[1] || grade[2] != 1 || grade[3] != 1 || grime[0] || grime[1] || grime[2];
     if (!active) { historyValid = false; return backFramebuffer; }
@@ -132,7 +141,7 @@ GLuint ApplyEffects()
         int target = source == effectTex[0] ? 1 : 0;
         if (EffectPass(effect, target, source, second, data, bytes)) {
             source = effectTex[target]; sourceFbo = effectFbo[target];
-            static const unsigned bits[]={0,0,2,4,0,8,16,32,1,0};
+            static const unsigned bits[]={0,0,2,4,0,8,16,32,1,0,256};
             encodedEffects |= bits[effect];
             return true;
         }
@@ -188,6 +197,10 @@ GLuint ApplyEffects()
     if (raysOn && raysAmount > 0 && sunVisible) {
         float u[4] = {raysAmount / 255.0f, sunX, sunY, 0};
         run(6, backDepth, u, sizeof(u));
+    }
+    if (streakOn) {
+        float u[4] = {speedStreakSmooth, backHeight ? (float)backWidth / (float)backHeight : 1.0f, 0, 0};
+        run(10, 0, u, sizeof(u));
     }
     if (grade[0] || grade[1] || grade[2] != 1 || grade[3] != 1) run(7, 0, grade, sizeof(grade));
     return sourceFbo;
