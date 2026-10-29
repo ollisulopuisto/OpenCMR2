@@ -1,3 +1,4 @@
+#include "France1Textures.h"
 #include "SceneryPack.h"
 #include <stdlib.h>
 #include "FloatToInt.h"
@@ -309,6 +310,7 @@ BYTE Sector_FreeMeshPartLists(void)
     extern void AnimObject_ClearTable(void);
     AnimObject_ClearTable();
     SceneryPack_Clear();
+    France1Textures_Clear();
     extern void TreeFall_ClearTable(void);
     TreeFall_ClearTable();
 

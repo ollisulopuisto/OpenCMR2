@@ -424,3 +424,13 @@ if(OPENCMR2_TEST_ELF_WRAP)
   -Wl,--wrap=_ZN5CGame16RegisterCallbackEPvS0_
   -Wl,--wrap=_Z24Track_ResearchExactEdgesb)
 endif()
+
+add_executable(france1_textures_test france1_textures.cpp
+ ${PROJECT_SOURCE_DIR}/game/France1Textures.cpp ${PROJECT_SOURCE_DIR}/src/render/gfx_core.cpp ${PROJECT_SOURCE_DIR}/src/diagnostics/observer.cpp)
+target_include_directories(france1_textures_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src)
+target_compile_options(france1_textures_test PRIVATE "SHELL:-include ${PROJECT_SOURCE_DIR}/src/port/types.h" -fms-extensions)
+target_link_libraries(france1_textures_test PRIVATE SDL3::SDL3)
+add_test(NAME france1_textures COMMAND france1_textures_test)
+if(Python3_Interpreter_FOUND)
+ add_test(NAME france1_prepare_recipe COMMAND ${Python3_EXECUTABLE} -m unittest test_france1_prepare test_road_periodic WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tools/scenery-patch)
+endif()

@@ -27,6 +27,17 @@ Update the relevant lane with tests, blockers and next handoff as it changes.
 Do not overlap these claimed lanes silently or combine inactive experiments into
 a road follow-up. Changes to eligibility/defaults need their own reviewed scope.
 
+## France1 first asset test
+
+Claim: feat/france1-asset-test. User selected France1 first. Exact hi/lo quartets
+recovered and verified; hi matches existing Ballon hash, lo differs and currently
+fails old unique-contact-triplet converter guard. Keep lo road original, do not
+relax it. Opaque t_1a/b2x periodic-filter/mips only, exact four high/low source
+hashes, CLI --textures original|france1, stage-name+originalC3D gate, originals
+preserved. No restored detail claim. People/tree motion is now mergedPR54.
+Hedge/bank depth proposal accepted; regional strips are not
+yet bound to screenshot's actual mesh. Native appearance/performance unverified.
+
 ## Current request: full supported scenery motion
 
 Claim: feat/stronger-supported-scenery, based main7efec63. Keep accepted source-fit

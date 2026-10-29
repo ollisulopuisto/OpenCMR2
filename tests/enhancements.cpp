@@ -18,6 +18,7 @@ int main(){
  EnhancementOptions e;std::string error;
  {EnhancementOptions road;std::string a[]={"test","--roads","curved"};char*av[]={a[0].data(),a[1].data(),a[2].data()};int k=1;CHECK(road.Consume(k,3,av,error)&&error.empty()&&road.roads=="curved"&&!road.NeedsPack());road.Apply();CHECK(road.overrides.empty());a[2]="original";av[2]=a[2].data();k=1;CHECK(road.Consume(k,3,av,error)&&error.empty()&&road.roads=="original");a[2]="bad";av[2]=a[2].data();k=1;CHECK(road.Consume(k,3,av,error)&&!error.empty());error.clear();}
 
+ {EnhancementOptions texture;std::string a[]={"test","--textures","france1"};char*av[]={a[0].data(),a[1].data(),a[2].data()};int k=1;CHECK(texture.Consume(k,3,av,error)&&error.empty()&&texture.textures=="france1"&&!texture.NeedsPack());texture.Apply();CHECK(texture.overrides.empty());a[2]="wrong";av[2]=a[2].data();k=1;CHECK(texture.Consume(k,3,av,error)&&!error.empty());error.clear();}
  std::string args[]={"test","--trees","crossed","--spectators","original","--driver-names","real"};
  char *argv[7];for(int i=0;i<7;i++)argv[i]=args[i].data();
  for(int i=1;i<7;i++)CHECK(e.Consume(i,7,argv,error));

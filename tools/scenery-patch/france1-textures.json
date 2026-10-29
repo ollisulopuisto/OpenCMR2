@@ -1,0 +1,61 @@
+{
+  "schema": "france1-opaque-road-1",
+  "sources": [
+    {
+      "archive": "frahit.bfl",
+      "member": "t_1a.dds",
+      "sha256": "a57557d985545afa97514b5aa331484d77f30b666d2bf4e5e27f55755197c3ef",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        true,
+        true
+      ],
+      "output": "t_1a-frahit.rgba",
+      "output_sha256": "051308909c3ca51c24e4928010967a7b65acf3cd3bafd88c31b3edd0ca38e1f8"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "t_1b.dds",
+      "sha256": "662720d7930feaf071d6082a63cecf0d3fd5aebbdbebf7ce6de3d351f2a0393c",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        true,
+        true
+      ],
+      "output": "t_1b-frahit.rgba",
+      "output_sha256": "3f1eb6dcaa51a8b937f48234bcd2ee38a252d2677930e772ff51b24b9990ec32"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "t_1a.dds",
+      "sha256": "a78262840120f54a633e4e1896660da1065d0b70b58b0c246664f30f99087e98",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        true,
+        true
+      ],
+      "output": "t_1a-fralot.rgba",
+      "output_sha256": "b3516788fd0b1298f61b79735a3213edbe33257b4abef7f08776bd30ed134082"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "t_1b.dds",
+      "sha256": "91cac6cd95bbe2a726a19185d894732fa8553afa095a44bf6385a76ea91c4690",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        true,
+        true
+      ],
+      "output": "t_1b-fralot.rgba",
+      "output_sha256": "37b14fe40da04bc88cb023c3d073ed275c1e5d95c9d919411f9b47654c41c522"
+    }
+  ]
+}
