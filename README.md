@@ -512,3 +512,22 @@ This is experimental, not native acceptance: FIN barriers are unchanged and may
 not align with moved boundaries. Native Mac driving, culling and performance have
 not been verified. The source-only converter and cache require your owned data;
 no game artwork or stage bytes are included in this repository.
+
+### Volumetric cloud prototype
+
+The race-world pass adds a moving world-space density layer in Metal/SDL_GPU
+and OpenGL, using 48 view samples and six sunward extinction samples per occupied
+step. Stage weather selects coverage. Density is anchored in world coordinates
+and advects with a fixed wind. Opaque scene depth limits the view march. The
+rendered cloud transmission is also the god-ray mask, separate from brightness.
+Sun projection uses the race view/projection and no longer needs the old icon
+texture. The original textured sky remains as the background/fallback.
+
+Enabled by default; disable through **Effect amounts > Volumetric clouds**,
+`--effect volumetric_clouds=off`, or `[video] volumetric_clouds=0`. God rays keep
+their separate switch and amount. Menu/reflection/multiple-view and nonperspective
+paths skip this full-screen cloud pass. This is bounded single-scattering-style
+lighting, not weather simulation, ground cloud shadows or a full atmospheric model.
+
+Source-inspected, untested prototype. Native Mac appearance, alignment, sun
+projection and frame-time cost are not verified. Optimization is a later pass.

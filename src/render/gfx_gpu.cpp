@@ -1,4 +1,5 @@
 #include "shadow_caster.h"
+#include "cloud_uniforms.h"
 // The SDL_GPU executor: runs a recorded frame (gfx_core.cpp) with one set of
 // shaders that emulate Direct3D 7's fixed-function pipeline.
 
@@ -201,6 +202,10 @@ struct Executor : GfxExecutor {
     SDL_GPUShader *fsLensGrime = nullptr;
     SDL_GPUShader *fsDoF = nullptr, *fsGodRays = nullptr, *fsColorGrading = nullptr;
     // OpenCMR2: optional single-frame AA, with an independent non-aliasing target.
+    SDL_GPUShader *fsClouds=nullptr;
+    SDL_GPUGraphicsPipeline *cloudPipeline=nullptr;
+    SDL_GPUTexture *cloudTarget=nullptr;
+    bool cloudLogged=false;
     SDL_GPUShader *fsSpatialAA = nullptr;
     SDL_GPUGraphicsPipeline *spatialAAPipeline = nullptr;
     SDL_GPUTexture *spatialAATarget = nullptr;
@@ -330,6 +335,7 @@ struct Executor : GfxExecutor {
         dustCompositeTarget = nullptr;
         SDL_ReleaseGPUTexture(device, dustVolumeTarget);
         dustVolumeTarget = nullptr;
+        SDL_ReleaseGPUTexture(device,cloudTarget);cloudTarget=nullptr;
         SDL_ReleaseGPUTexture(device, spatialAATarget);
         SDL_ReleaseGPUTexture(device, backColor);
         SDL_ReleaseGPUTexture(device, backDepth);
@@ -360,6 +366,8 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUShader(device, fsParticle);
         SDL_ReleaseGPUShader(device, fsLensGrime);
         SDL_ReleaseGPUShader(device, fsDoF);
+        SDL_ReleaseGPUShader(device,fsClouds);
+        SDL_ReleaseGPUGraphicsPipeline(device,cloudPipeline);
         SDL_ReleaseGPUShader(device, fsGodRays);
         SDL_ReleaseGPUShader(device, fsColorGrading);
         SDL_ReleaseGPUShader(device, fsDustComposite);
@@ -494,7 +502,7 @@ struct Executor : GfxExecutor {
         fsComposite = Shader(SHADER_CODE(composite_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1);
         fsLensGrime = Shader(SHADER_CODE(lens_grime_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
         fsDoF = Shader(SHADER_CODE(dof_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1);
-        fsGodRays = Shader(SHADER_CODE(godRays_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1);
+        fsGodRays = Shader(SHADER_CODE(godRays_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 3, 1);
         fsColorGrading = Shader(SHADER_CODE(colorGrading_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
         vsParticle = Shader(SHADER_CODE(particle_vert), SDL_GPU_SHADERSTAGE_VERTEX, 0, 1);
         fsParticle = Shader(SHADER_CODE(particle_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
@@ -552,7 +560,8 @@ struct Executor : GfxExecutor {
             dustCompositeTarget = nullptr;
             SDL_ReleaseGPUTexture(device, dustVolumeTarget);
             dustVolumeTarget = nullptr;
-            SDL_ReleaseGPUTexture(device, spatialAATarget);
+            SDL_ReleaseGPUTexture(device,cloudTarget);cloudTarget=nullptr;
+        SDL_ReleaseGPUTexture(device, spatialAATarget);
             spatialAATarget = nullptr;
             SDL_ReleaseGPUTexture(device, backColor);
             SDL_ReleaseGPUTexture(device, backDepth);
@@ -2297,6 +2306,20 @@ struct Executor : GfxExecutor {
             if (!spatialAA)
                 Sys_Log("gfx: spatial AA unavailable; retaining original output");
         }
+        SDL_GPUTexture *cloudMask=white2D;
+        if(raceWorld && sampledDepth && Sys_GetOption("video.volumetric_clouds",1)!=0){
+            CloudUniforms u={};
+            if(CloudUniforms_Build(frame.commands[worldEnd],frame.states[frame.commands[worldEnd].state],backWidth,backHeight,u)){
+                if(!fsClouds)fsClouds=Shader(SHADER_CODE(clouds_frag),SDL_GPU_SHADERSTAGE_FRAGMENT,2,1);
+                if(!cloudPipeline&&fsClouds)cloudPipeline=PostProcessPipeline(vsMotionBlur,fsClouds);
+                if(!cloudTarget&&cloudPipeline)cloudTarget=CreateTexture(SDL_GPU_TEXTURETYPE_2D,colorFormat,backWidth,backHeight,1,1,SDL_GPU_TEXTUREUSAGE_COLOR_TARGET|SDL_GPU_TEXTUREUSAGE_SAMPLER);
+                GfxStageState sample;sample.address=GFX_ADDRESS_CLAMP;sample.minFilter=sample.magFilter=GFX_FILTER_LINEAR;
+                SDL_GPUTextureSamplerBinding cloudBindings[2]={{presentSource,Sampler(sample)},{backDepth,Sampler(sample)}};
+                if(cloudTarget&&cloudPipeline&&PostProcessPass(cmd,cloudPipeline,cloudTarget,cloudBindings,2,&u,sizeof(u))){presentSource=cloudTarget;cloudMask=cloudTarget;
+                    if(!cloudLogged){Sys_Log("options: volumetric clouds encoded (48 view / 6 sun samples), transmission coupled to rays; native pixels unverified");cloudLogged=true;}
+                }
+            }
+        }
         SDL_GPUTexture *sceneSource = presentSource;
 
         if (bloomEnabled && bloomIntensity > 0 && backColor != NULL && bloomBuf1 != NULL &&
@@ -2415,10 +2438,10 @@ struct Executor : GfxExecutor {
         if (godRaysEnabled && sunVisible && sampledDepth && godRaysIntensity > 0 &&
             godRaysBuf1 != nullptr && backDepth != nullptr && GodRaysPipeline() != nullptr) {
             float uniforms[4] = { godRaysIntensity / 255.0f, sunX, sunY, 0.0f };
-            SDL_GPUTextureSamplerBinding bindings[2] = {
-                { presentSource, linearSampler }, { backDepth, depthSampler }
+            SDL_GPUTextureSamplerBinding bindings[3] = {
+                { presentSource, linearSampler }, { backDepth, depthSampler },{cloudMask,linearSampler}
             };
-            if (PostProcessPass(cmd, GodRaysPipeline(), godRaysBuf1, bindings, 2,
+            if (PostProcessPass(cmd, GodRaysPipeline(), godRaysBuf1, bindings, 3,
                                 uniforms, sizeof(uniforms)))
                 {presentSource = godRaysBuf1;encoded|=16;}
         }

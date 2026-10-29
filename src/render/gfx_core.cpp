@@ -428,10 +428,25 @@ static bool DustVolumeStateSupported()
     return DustVolume_Inverse(vp,inverse)&&DustVolume_Inverse(s_state.view,inverse);
 }
 static bool s_raceWorld=false;
+static float s_clouds[8]={};
+extern "C" void Gfx_SetCloudEnvironment(float coverage,float base,float x,float y,float z){
+ s_clouds[0]=coverage;s_clouds[1]=base;s_clouds[2]=x;s_clouds[3]=y;s_clouds[4]=z;
+}
 extern "C" void Gfx_SetRaceWorld(BOOL enabled) { s_raceWorld=enabled!=0; }
 extern "C" void Gfx_EndWorldEffects(void)
 {
-    if (!s_target) { GfxCommand c={}; c.type=GFX_CMD_WORLD_END; c.raceWorld=s_raceWorld; s_frame.commands.push_back(c); }
+    if (!s_target) { GfxCommand c={}; c.type=GFX_CMD_WORLD_END; c.raceWorld=s_raceWorld; c.state=RecordState(); memcpy(c.clouds,s_clouds,sizeof(c.clouds)); c.clouds[5]=Sys_GetTicksPrecise()/1000.f;
+        if(s_raceWorld && s_executor){
+            // Direction has no translation. Project against the actual race
+            // view/projection, independent of the legacy flare/icon texture.
+            const float *v=&s_state.view._11,*p=&s_state.projection._11;
+            float eye[4]={},clip[4]={};
+            for(int col=0;col<4;col++)for(int k=0;k<3;k++)eye[col]+=s_clouds[k+2]*v[k*4+col];
+            for(int col=0;col<4;col++)for(int k=0;k<4;k++)clip[col]+=eye[k]*p[k*4+col];
+            bool front=clip[3]>.0001f;float x=front?.5f+.5f*clip[0]/clip[3]:-1.f,y=front?.5f-.5f*clip[1]/clip[3]:-1.f;
+            s_executor->SetSunScreenPosition(x,y,front&&x>=0&&x<=1&&y>=0&&y<=1);
+        }
+        s_frame.commands.push_back(c); }
 }
 extern "C" void Gfx_FlushDustVolume(void)
 {

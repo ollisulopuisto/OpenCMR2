@@ -7587,6 +7587,21 @@ int *RallyData_GetDriverSettingPair(int index);
 // match 79%: the two level loads stay in byte registers (cl) instead of being
 // zero-extended into 32-bit ones (bl/edx) as in the original
 // FUNCTION: CMR2 0x0046ef50
+// Stage-selected weather drives an added world-space density layer. The
+// legacy textured sky stays as a background/fallback, not the ray mask.
+void StageObject_PrepareVolumetricClouds(void)
+{
+    FixVector light={0,0x10000,0};
+    if(g_stageSkyNode)StageObject_GetRotatedStageLightVector(&light);
+    int *pair=RallyData_GetDriverSettingPair(RallyDataStageIndex());
+    int level=0;
+    if(pair && pair[0]>=0&&pair[0]<9&&pair[1]>=0&&pair[1]<9)
+        level=g_cloudLevels[pair[0]]>g_cloudLevels[pair[1]]?g_cloudLevels[pair[0]]:g_cloudLevels[pair[1]];
+    // The loaded light reference points toward the sun, not along its rays.
+    Gfx_SetCloudEnvironment(level>=2?.72f:level==1?.56f:.42f,450.f,
+        light.x/65536.f,light.y/65536.f,light.z/65536.f);
+}
+
 void StageObject_BuildCloudTexturePath(void)
 {
     int *pPair;

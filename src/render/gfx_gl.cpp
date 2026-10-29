@@ -1,4 +1,5 @@
 #include "shadow_caster.h"
+#include "cloud_uniforms.h"
 // The OpenGL 3.3 executor: runs a recorded frame (gfx_core.cpp) as the
 // SDL_GPU one does (gfx_gpu.cpp), with its shaders translated to GLSL 330
 // (src/CMakeLists.txt), on GPUs without Vulkan or Direct3D 12.
@@ -283,7 +284,10 @@ struct Executor : GfxExecutor {
     GLuint effectFbo[4] = {}, effectTex[4] = {}, effectUbo = 0, effectVao = 0;
     GLuint historyTex = 0; bool historyValid = false;
     unsigned encodedEffects = 0;
-    GLuint effectPrograms[9] = {};
+    GLuint effectPrograms[10] = {};
+    CloudUniforms cloudUniforms={};
+    bool cloudsValid=false,cloudLogged=false;
+    GLuint cloudMask=0,cloudMaskTexture=0,cloudMaskFbo=0;
     bool spatialAA = false;
     GLuint shadowFbo = 0, shadowMap = 0, shadowDepth = 0, shadowProgram = 0;
     int shadowSize = 1024, shadowSoftness = 25; bool shadowReady = false;
@@ -1279,6 +1283,7 @@ struct Executor : GfxExecutor {
             const GfxCommand &c = frame.commands[i];
             if(c.type==GFX_CMD_WORLD_END){
                 if(present && boundaries==1 && !target){
+                    cloudsValid=c.raceWorld && Sys_GetOption("video.volumetric_clouds",1)!=0 && CloudUniforms_Build(c,frame.states[c.state],backWidth,backHeight,cloudUniforms);
                     if(c.raceWorld)RenderWeather();
                     else {weather.clear();weatherTicks=0;weatherCarry=0;historyValid=false;}
                     GLuint output=ApplyEffects();
