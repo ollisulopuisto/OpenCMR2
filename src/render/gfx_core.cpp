@@ -427,9 +427,11 @@ static bool DustVolumeStateSupported()
     for(int r=0;r<4;r++)for(int c=0;c<4;c++){(&vp._11)[r*4+c]=0;for(int k=0;k<4;k++)(&vp._11)[r*4+c]+=(&s_state.view._11)[r*4+k]*(&s_state.projection._11)[k*4+c];}
     return DustVolume_Inverse(vp,inverse)&&DustVolume_Inverse(s_state.view,inverse);
 }
+static bool s_raceWorld=false;
+extern "C" void Gfx_SetRaceWorld(BOOL enabled) { s_raceWorld=enabled!=0; }
 extern "C" void Gfx_EndWorldEffects(void)
 {
-    if (!s_target) { GfxCommand c={}; c.type=GFX_CMD_WORLD_END; s_frame.commands.push_back(c); }
+    if (!s_target) { GfxCommand c={}; c.type=GFX_CMD_WORLD_END; c.raceWorld=s_raceWorld; s_frame.commands.push_back(c); }
 }
 extern "C" void Gfx_FlushDustVolume(void)
 {
@@ -567,6 +569,7 @@ extern "C" void Gfx_EndScene(void)
 
 static void Present(BOOL vsync, bool stretch)
 {
+    s_raceWorld=false;
     s_pendingDust.clear(); // never leak an unflushed view into a later frame
     if (FILE *trace = TraceFile())
         fprintf(trace, "F %u\n", s_traceFrame++);

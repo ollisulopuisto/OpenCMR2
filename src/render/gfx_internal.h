@@ -112,6 +112,7 @@ enum GfxCommandType {
 
 struct GfxCommand {
     GfxCommandType type;
+    bool raceWorld = false; // meaningful only at the world-end marker
     // draw
     int primitive;              // list/strip types only (fans are converted)
     bool transformed;           // GfxTLVertex data

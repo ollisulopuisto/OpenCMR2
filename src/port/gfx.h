@@ -32,6 +32,8 @@ BOOL Gfx_DrawDustVolume(const GfxDustLobe *lobes,int count);
 void Gfx_FlushDustVolume(void);
 // Mark the completed world before queued HUD/menu layers are drawn.
 void Gfx_EndWorldEffects(void);
+// Explicit race draw scope; menu/background scenes must never enable weather.
+void Gfx_SetRaceWorld(BOOL enabled);
 
 
 /* Row-vector matrix, Direct3D layout: v' = v * M, translation in _41.._43. */

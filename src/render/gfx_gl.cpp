@@ -1278,7 +1278,10 @@ struct Executor : GfxExecutor {
             const GfxCommand &c = frame.commands[i];
             if(c.type==GFX_CMD_WORLD_END){
                 if(present && boundaries==1 && !target){
-                    RenderWeather();GLuint output=ApplyEffects();
+                    if(c.raceWorld)RenderWeather();
+                    else {weather.clear();weatherTicks=0;weatherCarry=0;historyValid=false;}
+                    GLuint output=ApplyEffects();
+                    if(!c.raceWorld)historyValid=false;
                     if(output!=backFramebuffer){
                         gl.Disable(GL_SCISSOR_TEST);
                         gl.BindFramebuffer(GL_READ_FRAMEBUFFER,output);gl.BindFramebuffer(GL_DRAW_FRAMEBUFFER,backFramebuffer);
