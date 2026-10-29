@@ -327,6 +327,8 @@ enum {GFX_RAYS_UNKNOWN, GFX_RAYS_OFF, GFX_RAYS_ENCODED, GFX_RAYS_NO_WORLD,
 typedef struct GfxDofStatus {int reason;float target,smooth,range,blur;} GfxDofStatus;
 void Gfx_SetDofStatus(GfxDofStatus status);
 GfxDofStatus Gfx_GetDofStatus(void);
+/* Diagnostic read of the current draw state: out[0..9] = depthTest, depthWrite, depthFunc, alphaBlend, srcBlend, destBlend, alphaTest, alphaRef, fog, lighting. */
+void Gfx_GetBlendDepthState(int *out);
 void Gfx_SetRaysStatus(int reason);
 int Gfx_GetRaysStatus(void);
 DWORD Gfx_GetFrameDrawCalls(void);
