@@ -8391,7 +8391,7 @@ int View_SpeedFovZoom(BYTE view, int zoom)
     int pct = Sys_GetOption("video.speed_fov", 0);
     g_speedFovPct[view & 1] = pct;
     if (pct <= 0 || view >= 2) { shown[view & 1] = 0; return zoom; }
-    if (pct > 40) pct = 40;
+    if (pct > kSpeedFovMaxPct) pct = kSpeedFovMaxPct;
     if (g_playerCameraMode[view] == 4 && g_droneVariant[view] && Sys_GetOption("video.camera_operator", 0)) return zoom;
     Car *car = Car_Get(view);
     int target = SpeedFov_HeldTarget(SpeedFov_Target(car ? car->speed : 0), Sys_GetOption("video.speed_fov_hold", 0));
@@ -8409,7 +8409,7 @@ int View_SpeedFovMagnification(BYTE view)
 {
     int pct = g_speedFovPct[view & 1];
     if (pct <= 0 || view >= 2) return 65536;
-    if (pct > 40) pct = 40;
+    if (pct > kSpeedFovMaxPct) pct = kSpeedFovMaxPct;
     return 65536 + (int)((long long)pct * g_speedFovShown[view & 1] / 100);
 }
 

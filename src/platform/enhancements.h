@@ -37,7 +37,7 @@ struct EnhancementOptions {
         }
         if(key=="--speed-fov"||key=="--speed-motes-stretch"||key=="--speed-motes-amount"||key=="--speed-motes-size"||key=="--dof-blur-max-px"){
             char *end=nullptr;long n=strtol(value.c_str(),&end,10);
-            int hi=key=="--speed-fov"?40:key=="--speed-motes-stretch"?100:key=="--dof-blur-max-px"?40:key=="--speed-motes-size"?800:300,lo=key=="--dof-blur-max-px"?1:key=="--speed-motes-size"?50:0;
+            int hi=key=="--speed-fov"?100:key=="--speed-motes-stretch"?100:key=="--dof-blur-max-px"?40:key=="--speed-motes-size"?800:300,lo=key=="--dof-blur-max-px"?1:key=="--speed-motes-size"?50:0;
             if(value.empty()||*end||n<lo||n>hi)error=key+" expects "+std::to_string(lo)+".."+std::to_string(hi);
             else overrides[key=="--speed-fov"?"video.speed_fov":key=="--speed-motes-stretch"?"video.speed_motes_stretch":key=="--dof-blur-max-px"?"video.dof_blur_max_px":key=="--speed-motes-size"?"video.speed_motes_size":"video.speed_motes_amount"]=(int)n;
         }

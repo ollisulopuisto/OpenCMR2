@@ -35,11 +35,11 @@ int main(){
     CHECK(SpeedFov_Ease(1234,50000,-5)==50000);
     // roughly half a second to cover most of the gap
     s=0; for(int i=0;i<30;i++) s=SpeedFov_Ease(s,65536,16); CHECK(s>35000&&s<50000);
-    // zoom: off and at rest unchanged, full speed 20% widens, clamp at 40
+    // zoom: off and at rest unchanged, full speed 20% widens, clamp at the max
     CHECK(SpeedFov_Zoom(65536,0,65536)==65536);
     CHECK(SpeedFov_Zoom(65536,20,0)==65536);
     CHECK(SpeedFov_Zoom(65536,20,65536)==54613);
-    CHECK(SpeedFov_Zoom(65536,99,65536)==SpeedFov_Zoom(65536,40,65536));
+    CHECK(SpeedFov_Zoom(65536,999,65536)==SpeedFov_Zoom(65536,kSpeedFovMaxPct,65536) && SpeedFov_Zoom(65536,100,65536)==32768);
     CHECK(SpeedFov_Zoom(65536,20,65536)<65536);
     if(!fails) std::puts("speed_fov ok");
     return fails;

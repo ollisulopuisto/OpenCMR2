@@ -40,7 +40,7 @@ Diagnostics: while motes are on and the car is above the speed threshold, about 
 
 ## Command line, overlay and test preset
 
-Per-launch flags (they win over opencmr2.ini and are never saved): `--speed-fov 0..40`, `--speed-motes-stretch 0..100`, `--speed-motes-amount 0..300`, plus `--effect speed_motes=on`.
+Per-launch flags (they win over opencmr2.ini and are never saved): `--speed-fov 0..100`, `--speed-motes-stretch 0..100`, `--speed-motes-amount 0..300`, plus `--effect speed_motes=on`.
 `--test-preset overdo` is an exaggerated diagnostic look (motes on at 300% with full streaks, speed FOV 40, DoF on with the largest blur, tunnel vision 100, motion blur on at 60). Any explicit flag overrides a preset value. It is for finding out what the effects do, not a recommended setting, and nothing is saved.
 The startup log line `effective speed-feel settings: ...` shows the values the game actually uses. The debug overlay adds `Speed FOV N% (eased speed M%)`, mote state, and `Speed motes live N | queued ok total N (not pixels)` so a missing effect can be told apart from a setting that never reached the game. Native look is unverified.
 
