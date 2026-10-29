@@ -1,8 +1,8 @@
 #version 450
 // OpenCMR2: opt-in temporal anti-aliasing resolve (video.temporal_aa).
 // PARTIAL STAGE: camera-matrix reprojection from the depth buffer plus a 3x3
-// neighbourhood clamp. There is no per-object velocity, so moving objects rely
-// on the clamp and can still smear. This is not MetalFX temporal scaling.
+// neighbourhood clamp. Cars get a rigid-translation velocity (no rotation); everything else
+// moving relies on the clamp and can still smear. This is not MetalFX temporal scaling.
 layout(location = 0) out vec4 outColor;
 layout(set = 2, binding = 0) uniform sampler2D scene;
 layout(set = 2, binding = 1) uniform sampler2D depthTex;
@@ -12,6 +12,8 @@ layout(std140, set = 3, binding = 0) uniform TemporalUniforms {
     mat4 previousViewProjection;
     vec4 params; // x history weight (0 = no valid history), y clamp slack
     vec4 target; // reciprocal width, reciprocal height
+    vec4 carCenter[8]; // xyz world position, w gating radius (0 = unused)
+    vec4 carDelta[8];  // xyz translation since last frame, w 1 = has history
 };
 void main()
 {
@@ -33,7 +35,17 @@ void main()
     }
     float depth = texture(depthTex, uv).r;
     vec4 p = inverseViewProjection * vec4(uv.x * 2.0 - 1.0, 1.0 - uv.y * 2.0, depth, 1.0);
-    vec4 q = previousViewProjection * vec4(p.xyz / p.w, 1.0);
+    vec3 worldPos = p.xyz / p.w;
+    vec3 previousWorld = worldPos;
+    // Rigid-translation velocity for dynamic cars (rotation is not reprojected).
+    for (int i = 0; i < 8; ++i) {
+        if (carCenter[i].w > 0.0 && distance(worldPos, carCenter[i].xyz) < carCenter[i].w) {
+            if (carDelta[i].w < 0.5) { outColor = vec4(c, 1.0); return; }
+            previousWorld = worldPos - carDelta[i].xyz;
+            break;
+        }
+    }
+    vec4 q = previousViewProjection * vec4(previousWorld, 1.0);
     if (q.w <= 0.0) { outColor = vec4(c, 1.0); return; }
     vec2 n = q.xy / q.w;
     vec2 previousUv = vec2(n.x * 0.5 + 0.5, 0.5 - n.y * 0.5);
