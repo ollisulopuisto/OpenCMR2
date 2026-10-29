@@ -1,4 +1,6 @@
 #include "SceneryPack.h"
+#include "CarBodyDirt.h"
+#include "Car.h"
 #include "port/sys.h"
 #include "RaceCallbackStorage.h"
 #include "FloatToInt.h"
@@ -2093,6 +2095,7 @@ extern unsigned short g_unk0x0059be74[];
 // addressing for the material groups that need it.
 // match 74%: below the 90% bar; kept as FUNCTION on purpose so reccmp measures it (see CONVENCIONES)
 // FUNCTION: CMR2 0x0049c510
+void Graphics_BindCarPaintDirt(Texture *texture);
 void Game_DrawMeshTextureRuns(Mesh *pMesh)
 {
     int i;
@@ -2111,6 +2114,7 @@ void Game_DrawMeshTextureRuns(Mesh *pMesh)
             prev = texture;
             count = 0;
             CGraphics::ApplyTextureStageChange(0, CGraphics::m_pTextureManager->textureBuffer[texture]);
+            Graphics_BindCarPaintDirt(CGraphics::m_pTextureManager->textureBuffer[texture]);
         }
         g_unk0x0059be74[count++] = pTri->vertexIndex[0];
         g_unk0x0059be74[count++] = pTri->vertexIndex[1];
@@ -2133,6 +2137,21 @@ void Game_DrawMeshTextureRuns(Mesh *pMesh)
 
 void Graphics_DrawMeshLOD(Mesh *pMesh, int useParts, int clampTexture, int markTextures);
 
+// Resolve ownership from actual node ancestry, never mesh flag bits alone.
+static int CarPaintOwner(SceneNode *node){
+ if(!g_carBuffer)return -1;
+ for(SceneNode*p=node;p;p=p->pParent)for(int i=0;i<std::min(g_carCount,8);i++){
+  Car &c=g_carBuffer[i];
+  if(p==c.pSceneRoot||p==c.pBodyNode||p==c.pAlternateBodyNode)return i;
+ }
+ return -1;
+}
+static void DrawCarScopedLOD(SceneNode*node,Mesh*mesh){
+ int previous=CarBodyDirt::drawingCar;CarBodyDirt::drawingCar=CarPaintOwner(node);
+ Graphics_DrawMeshLOD(mesh,0,0,0);
+ Gfx_SetBodyDirt(0,0,0,0);CarBodyDirt::drawingCar=previous;
+}
+
 // Draws every mesh node of a node list whose view mask contains the given bit,
 // recursing into the children of the nodes that match.
 // FUNCTION: CMR2 0x0049ca50
@@ -2145,7 +2164,7 @@ void Game_DrawViewMaskNodes(SceneNode *pNode, int bit)
             if ((mask & pNode->viewMask) != 0) {
                 if (pMesh != NULL) {
                     Gfx_SetTransform(GFX_TRANSFORM_WORLD, (GfxMatrix *)pNode->worldF);
-                    Graphics_DrawMeshLOD(pMesh, 0, 0, 0);
+                    DrawCarScopedLOD(pNode,pMesh);
                 }
                 if ((pNode->viewMask & mask) != 0 && pNode->pFirstChild != NULL)
                     Game_DrawViewMaskNodes(pNode->pFirstChild, bit);
@@ -2165,7 +2184,7 @@ void Game_DrawViewMaskNode(SceneNode *pNode, int bit)
         if ((pNode->viewMask & (1 << bit)) != 0) {
             if (pMesh != NULL) {
                 Gfx_SetTransform(GFX_TRANSFORM_WORLD, (GfxMatrix *)pNode->worldF);
-                Graphics_DrawMeshLOD(pMesh, 0, 0, 0);
+                DrawCarScopedLOD(pNode,pMesh);
             }
         }
     }
@@ -2596,7 +2615,7 @@ void Game_DrawWorldMeshNodesAnd2DLayer(void)
             pMesh = (Mesh *)pNode->pObject;
             if (pNode->viewMask != 0 && pMesh != NULL) {
                 Gfx_SetTransform(GFX_TRANSFORM_WORLD, (GfxMatrix *)pNode->worldF);
-                Graphics_DrawMeshLOD(pMesh, 0, 0, 0);
+                DrawCarScopedLOD(pNode,pMesh);
             }
         }
     }

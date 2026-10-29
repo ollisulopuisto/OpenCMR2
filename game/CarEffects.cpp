@@ -1,5 +1,6 @@
 #include "port/sys.h"
 #include "DustPlume.h"
+#include "CarBodyDirt.h"
 #include "WheelParticleEmission.h"
 #include "CarInfo.h"
 #include "FloatToInt.h"
@@ -1540,10 +1541,10 @@ void CarEffects_EmitWheelDustParticle(int car, int wheel, FixVector *pPos, FixVe
 // stage's country pick the colours and kinds; the faster the wheel spins, the
 // more particles.
 // FUNCTION: CMR2 0x0045d540
-void CarEffect_UpdateWheelSurfaceParticles(int car)
+void CarEffect_UpdateWheelSurfaceParticles(int car, bool emitParticles)
 {
     Car *pCar;
-    BYTE colour[4];
+    BYTE colour[4]={0x6b,0x5c,0x42,0xff};
     int wheel;
     int surface;
     int water;
@@ -1729,8 +1730,20 @@ void CarEffect_UpdateWheelSurfaceParticles(int car)
         // Each grounded wheel supplies its own speed. The old rear-left proxy
         // hid front-only spin, leaked the count across wheels and rand()%4/4
         // could never emit a particle in the lower speed band.
-        count = WheelParticle_Count(Car_GetWheelSpeed(pCar, (BYTE)wheel, 0),
-            pCar->cornerOnGround[wheel] != 0, water != 0 || emit != 0, (unsigned)rand());
+        count = emitParticles ? WheelParticle_Count(Car_GetWheelSpeed(pCar, (BYTE)wheel, 0),
+            pCar->cornerOnGround[wheel] != 0, water != 0 || emit != 0, (unsigned)rand()) : 0;
+        // Physical wheel/surface exposure, independent of billboard budget,
+        // camera visibility and the airborne-particle toggle. Fixed effects
+        // stepping supplies time, rather than rendered-frame dirt growth.
+        int dustSpeed=Car_GetWheelSpeed(pCar,(BYTE)wheel,0);
+        if((dustSpeed>0xa0000||dustSpeed< -0xa0000) && DustPlume_Surface(dirt,gravel,water,snow,ice) &&
+           Sys_GetOption("video.body_dirt",1)!=0){
+            float red=colour[0]/255.f,green=colour[1]/255.f,blue=colour[2]/255.f;
+            DustPlume_SoilTint(red,green,blue);
+            float exposure=std::min(std::abs(dustSpeed/65536.f)/60.f,2.f)*.00012f;
+            CarBodyDirt::Deposit(car,exposure,red,green,blue);
+        }
+        if(!emitParticles)continue;
         // Default-on dry dust, separate from chips/water/snow. Explicit0 opts out. Existing per-wheel
         // contact/speed gating above supplies emission opportunity. Use a
         // stable per-wheel cadence, no extra global RNG/physics state changes.

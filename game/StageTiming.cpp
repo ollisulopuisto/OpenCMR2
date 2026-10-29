@@ -1,4 +1,5 @@
 #include "DustPlume.h"
+#include "CarBodyDirt.h"
 #include "AIReferenceRoute.h"
 #include "FloatToInt.h"
 #include "TyreWear.h"
@@ -1982,6 +1983,7 @@ BOOL Game_ReleaseSceneResourceBlocks(void);
 // FUNCTION: CMR2 0x00475f80
 void StageObject_InitCarSceneTables(void)
 {
+    CarBodyDirt::Reset();
     int i;
 
     g_carInteriorLoaded[0] = 0;
@@ -9099,7 +9101,7 @@ void CarEffect_UpdateExhaustSmokeAndBackfire(int car)
 
 int *StageObject_GetViewWeatherSlot(int i, int j);
 void CarEffects_SetSplashColour(int player, BYTE *pColour);
-void CarEffect_UpdateWheelSurfaceParticles(int car);
+void CarEffect_UpdateWheelSurfaceParticles(int car, bool emitParticles);
 void StageTiming_SpawnWheelParticles(int carIndex);
 void WheelSplash_Update(int player);
 void WheelSpray_Update(int player);
@@ -9115,8 +9117,11 @@ void StageTiming_UpdateCarWheelAndExhaustEffects(int car)
 
     if (index >= 8)
         return;
-    if (Car_Get(index)->isGhost != 0 || CGameInfo::GetGraphicsOptionBits25To26() == 2)
-        return;
+    if (Car_Get(index)->isGhost != 0)return;
+    bool particles=CGameInfo::GetGraphicsOptionBits25To26()!=2 && View_GetActiveCameraMode(index)!=3;
+    if (CGameInfo::GetGraphicsOptionBits25To26() == 2){
+        CarEffect_UpdateWheelSurfaceParticles(index,false);return;
+    }
     pColour = (BYTE *)StageObject_GetViewWeatherSlot(index, 0);
     if (pColour != NULL) {
         ((BYTE *)&car)[0] = pColour[0];
@@ -9125,8 +9130,8 @@ void StageTiming_UpdateCarWheelAndExhaustEffects(int car)
         ((BYTE *)&car)[3] = 0xff;
     }
     CarEffects_SetSplashColour(index, (BYTE *)&car);
+    CarEffect_UpdateWheelSurfaceParticles(index,particles);
     if (View_GetActiveCameraMode(index) != 3) {
-        CarEffect_UpdateWheelSurfaceParticles(index);
         StageTiming_SpawnWheelParticles(index);
         WheelSplash_Update(index);
         WheelSpray_Update(index);

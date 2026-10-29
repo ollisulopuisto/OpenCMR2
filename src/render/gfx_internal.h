@@ -96,6 +96,7 @@ struct GfxDrawState {
     int alphaFunc = GFX_CMP_ALWAYS;
     DWORD alphaRef = 0;
     DWORD textureFactor = 0xffffffff;
+    float bodyDirt[4] = {}; // amount, soil RGB; only explicitly qualified paint draws
     GfxStageState stages[2];
     GfxViewport viewport;
     int screenW = 0, screenH = 0;   // Gfx_SetVirtualScreen (0: the back buffer's size)

@@ -26,6 +26,7 @@ inline const EffectAmountRow* EffectAmount_Rows(int &count){
  {"Lens flare %","video.lens_flare_amount",100,101},
  {"Dust plume","video.dust_plume",1,2},
  {"Dust amount %","video.dust_amount",100,101},
+ {"Body paint dirt","video.body_dirt",1,2},
  {"World dust","video.dust_volume",1,2},
  {"Volumetric clouds","video.volumetric_clouds",1,2},
  {"Cube reflection size","video.reflection_resolution",128,4},
