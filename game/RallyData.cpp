@@ -6537,6 +6537,11 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             else if(tv<=0)snprintf(text,sizeof text,"Tunnel vision: off (video.tunnel_vision=0)");
             else snprintf(text,sizeof text,"Tunnel vision: %s %d%% (speed target %d%%)",tvOn?"encoded":"idle",(int)(dof.smooth*100.0f+0.5f),(int)(dof.target*100.0f+0.5f));
             line(text,tvOn?lit:dim);
+            if(Sys_GetOption("video.blur_mode",0)!=0){
+                if(dof.blurMode==1)snprintf(text,sizeof text,"Blur mode: whole scene except car; car rect u %.2f..%.2f v %.2f..%.2f (bounding rectangle + depth range, not a silhouette)",dof.carU0,dof.carU1,dof.carV0,dof.carV1);
+                else snprintf(text,sizeof text,"Blur mode: whole scene requested but %s: peripheral used",dofOn?"no car region (cockpit/hidden car) or backend without it":"DoF pass not encoded");
+            }else snprintf(text,sizeof text,"Blur mode: peripheral (video.blur_mode=0)");
+            line(text,dof.blurMode==1?lit:dim);
             bool mb=!gl&&(status.encoded&4)!=0;
             snprintf(text,sizeof text,"Motion blur (separate effect): %s",mb?"encoded":"off");
             line(text,mb?lit:dim);

@@ -8,7 +8,10 @@ layout(std140, set = 3, binding = 0) uniform DoFUniforms {
     float maxBlur;
     float tunnel;  // 0..1 speed-driven tunnel vision (0 = off, identical to the old pass)
     vec4 extra;    // x aspect ratio, y peripheral (tunnel) blur radius in pixels at full tunnel, z near plane, w far plane (0 = unknown)
+    vec4 carRect;  // car screen rectangle (uv, v downwards): x0 y0 x1 y1, from the car's own projected vertices; zeros when unused
+    vec4 carMode;  // x blur mode (0 peripheral = the old look, 1 whole scene except the car), y car depth min, z car depth max (log depth position), w feather
 };
+float edge01(float a, float b, float x) { float t = clamp((x - a) / (b - a), 0.0, 1.0); return t * t * (3.0 - 2.0 * t); }
 void main()
 {
     vec2 pixel = 1.0 / vec2(textureSize(sceneTex, 0));
@@ -35,6 +38,15 @@ void main()
         float edge = length(centered);
         float inner = mix(1.4, 0.5, tunnel);
         float peripheral = smoothstep(inner, inner + 0.8, edge) * tunnel;
+        if (carMode.x > 0.5) {
+            // Whole-scene mode: the same speed-driven tunnel strength, but blurring everywhere. The car is kept sharp by a rectangle from its own
+            // projected vertices intersected with its depth range, feathered. Not a per-pixel silhouette: the road around the car is also kept sharp.
+            float f = carMode.w, zp = 0.012;
+            float inU = edge01(carRect.x - f, carRect.x, uv.x) * (1.0 - edge01(carRect.z, carRect.z + f, uv.x));
+            float inV = edge01(carRect.y - f, carRect.y, uv.y) * (1.0 - edge01(carRect.w, carRect.w + f, uv.y));
+            float inZ = edge01(carMode.y - 2.0 * zp, carMode.y - zp, focusPos) * (1.0 - edge01(carMode.z + zp, carMode.z + 2.0 * zp, focusPos));
+            peripheral = tunnel * (1.0 - inU * inV * inZ);
+        }
         coc = max(coc, peripheral);
         tunnelRadius = peripheral * extra.y;
     }

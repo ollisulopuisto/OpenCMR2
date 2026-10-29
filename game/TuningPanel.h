@@ -10,6 +10,7 @@ inline const TuningRow *Tuning_Rows(int &count)
         {"DoF (0/1)", "video.depth_of_field", 0, 1, 1, 0},
         {"DoF blur %", "video.dof_blur", 0, 100, 10, 30},
         {"DoF max px at 100%", "video.dof_blur_max_px", 1, 40, 2, 4},
+        {"Blur mode (0 peripheral, 1 whole scene minus car)", "video.blur_mode", 0, 1, 1, 0},
         {"Tunnel vision %", "video.tunnel_vision", 0, 100, 10, 100},
         {"Motion blur (0/1)", "video.motion_blur", 0, 1, 1, 1},
         {"Motion blur %", "video.motion_blur_amount", 0, 100, 10, 16},

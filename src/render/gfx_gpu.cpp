@@ -1,6 +1,7 @@
 #include "render/dof_gate.h"
 #include "render/tunnel_vision.h"
 #include "render/dof_focus.h"
+#include "render/car_region.h"
 #include "render/projection_vote.h"
 #include "shadow_caster.h"
 #include "cloud_uniforms.h"
@@ -2653,17 +2654,50 @@ struct Executor : GfxExecutor {
                 float z, pos;
                 if (acc.Depth(&z) && DofFocus_Position(z, sceneNear, sceneFar, &pos)) { focusPos = pos; carDepth = z; }
             }
-            float uniforms[8] = { focusPos,
+            // Blur mode (video.blur_mode): 0 peripheral (default, the old look), 1 whole scene except the car. The car is located from its own
+            // projected vertices (bounding rectangle + depth range), so this is an approximate region, not a per-pixel mask. No car (cockpit) = peripheral.
+            int blurMode = Sys_GetOption("video.blur_mode", 0) != 0 ? 1 : 0, blurShown = 0;
+            CarRegion carRegion;
+            if (blurMode == 1 && sceneNear > 0.0f && worldEnd < frame.commands.size() && frame.commands[worldEnd].playerObject != 0) {
+                for (const GfxCommand &oc : frame.commands)
+                    if (oc.type == GFX_CMD_DRAW && oc.target == NULL && !oc.transformed) {
+                        const GfxDrawState &os = frame.states[oc.state];
+                        if (os.objectId != frame.commands[worldEnd].playerObject) continue;
+                        const GfxVertex *vs = NULL;
+                        if (oc.buffer != NULL) {
+                            size_t first = oc.firstVertexByte / sizeof(GfxVertex);
+                            if (first + oc.vertexCount <= oc.buffer->vertices.size()) vs = oc.buffer->vertices.data() + first;
+                        } else if ((size_t)oc.firstVertexByte + (size_t)oc.vertexCount * sizeof(GfxVertex) <= frame.vertices.size())
+                            vs = (const GfxVertex *)(frame.vertices.data() + oc.firstVertexByte);
+                        if (vs == NULL) continue;
+                        GfxViewport cv = ToTarget(os.viewport, os.screenW, os.screenH, true, backWidth, backHeight);
+                        for (uint32_t k = 0; k < oc.vertexCount; ++k) {
+                            float p[3] = { vs[k].x, vs[k].y, vs[k].z };
+                            CarRegion_Add(carRegion, &os.world._11, &os.view._11, &os.projection._11, p, (float)cv.x, (float)cv.y, (float)cv.width, (float)cv.height, (float)backWidth, (float)backHeight);
+                        }
+                    }
+            }
+            float carPosMin = 0.0f, carPosMax = 0.0f;
+            if (blurMode == 1 && carRegion.Valid() && DofFocus_Position(carRegion.zMin, sceneNear, sceneFar, &carPosMin) && DofFocus_Position(carRegion.zMax, sceneNear, sceneFar, &carPosMax)) blurShown = 1;
+            else blurMode = 0;
+            float uniforms[16] = { focusPos,
                                   dofFocalRange / 100.0f * (1.0f - 0.5f * speedFocusSmooth),
                                   !dofGate.depthBlur ? 0.0f : dofMaxBlur / 100.0f * (float)(Sys_GetOption("video.dof_blur_max_px", 4) < 1 ? 1 : Sys_GetOption("video.dof_blur_max_px", 4) > 40 ? 40 : Sys_GetOption("video.dof_blur_max_px", 4)), speedFocusSmooth,
-                                  aspect, kTunnelRadiusPerHeight * (float)backHeight, sceneNear, sceneFar };
+                                  aspect, kTunnelRadiusPerHeight * (float)backHeight, sceneNear, sceneFar,
+                                  carRegion.u0, carRegion.v0, carRegion.u1, carRegion.v1,
+                                  (float)blurShown, carPosMin, carPosMax, 0.02f };
+            if (!blurShown) for (int k = 8; k < 16; ++k) uniforms[k] = 0.0f;
+            static int blurLogCounter = 0;
+            if (Sys_GetOption("video.blur_mode", 0) != 0 && (blurLogCounter++ % 120) == 0)
+                Sys_Log("blur mode: whole scene except car requested, %s; car rect u %.3f..%.3f v %.3f..%.3f (0..1, v downwards), view depth %.2f..%.2f world units, %d vertices; native pixels unverified",
+                        blurShown ? "region found" : "NO car region, peripheral used", carRegion.u0, carRegion.u1, carRegion.v0, carRegion.v1, carRegion.zMin, carRegion.zMax, carRegion.count);
             SDL_GPUTextureSamplerBinding bindings[2] = {
                 { presentSource, linearSampler }, { backDepth, depthSampler }
             };
             if (PostProcessPass(cmd, DofPipeline(), dofBuf1, bindings, 2,
                                 uniforms, sizeof(uniforms)))
                 {presentSource = dofBuf1;encoded|=8;
-                 dofStatus={5,speedFocusTarget,speedFocusSmooth,uniforms[1],uniforms[2],focusPos,carDepth};}
+                 dofStatus={5,speedFocusTarget,speedFocusSmooth,uniforms[1],uniforms[2],focusPos,carDepth,Sys_GetOption("video.blur_mode", 0) != 0 ? (blurShown ? 1 : -1) : 0,carRegion.u0,carRegion.v0,carRegion.u1,carRegion.v1};}
         }
         if (godRaysEnabled && sunVisible && sampledDepth && godRaysIntensity > 0 &&
             godRaysBuf1 != nullptr && backDepth != nullptr && GodRaysPipeline() != nullptr) {
