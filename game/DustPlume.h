@@ -1,5 +1,6 @@
 #ifndef OPENCMR2_DUST_PLUME_H
 #define OPENCMR2_DUST_PLUME_H
+#include <cmath>
 struct Texture;
 #include "Particle.h"
 // One extra particle template, using the existing400particle pool. Up to96
@@ -60,6 +61,29 @@ inline bool SpeedMote_HasBudget(int active, int motes, int capacity) {
 }
 void SpeedMote_Update(Particle *, ParticleType *, SceneNode *);
 void SpeedMote_Spawn(FixVector *world);
+struct BillboardDef; struct SceneNode;
+void SpeedMote_ApplyStreak(BillboardDef *def, SceneNode *camera);
+void SpeedMote_SetRatio(float ratio);
+// Streak parameters for one mote (pure maths, see tests/speed_mote_streak.cpp). right/up/depth are the mote's offset from
+// the camera in the camera basis (world units). stretch is video.speed_motes_stretch (0 to 100), ratio the speed ratio 0..1.
+// Returns false when the mote is left as a round dot (stretch off, behind the camera, or on the view axis).
+// angle12 is the 12-bit billboard rotation about the view axis that points the long axis from the view axis to the mote.
+inline bool SpeedMote_StreakParams(float right, float up, float depth, float ratio, int stretch,
+                                   int *angle12, float *lengthMul, float *alphaMul) {
+    if (stretch <= 0 || depth <= 0.f) return false;
+    if (stretch > 100) stretch = 100;
+    if (ratio < 0.f) ratio = 0.f;
+    if (ratio > 1.f) ratio = 1.f;
+    if (right * right + up * up < 1e-6f) return false;
+    const float tau = 6.2831853f;
+    float turns = std::atan2(up, right) / tau;
+    if (turns < 0.f) turns += 1.f;
+    *angle12 = (int)std::floor(turns * 4096.f + 0.5f) & 0xfff;
+    *lengthMul = 1.f + (stretch / 100.f) * (1.f + 7.f * ratio);
+    float f = (depth - 3.f) / 6.f; // gone inside 3 units, full beyond 9
+    *alphaMul = f < 0.f ? 0.f : f > 1.f ? 1.f : f;
+    return true;
+}
 // Diagnostics (log only): counts spawned / budget-skipped / drawn motes and logs one line about every 5 s while motes are on.
 void SpeedMote_NoteSkippedGround(void);
 void SpeedMote_LogStats(float speedRatio,int stepsElapsed);
