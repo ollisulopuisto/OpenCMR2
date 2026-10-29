@@ -40,6 +40,8 @@ int main(){
   t=p;CHECK(run({"t","--test-preset","overdo","--speed-hold","0","--dof-focus-car","0"})&&e2.empty());t.Apply();CHECK(t.overrides["video.speed_fov_hold"]==0&&t.overrides["video.dof_focus_car"]==0);   // explicit flags beat the preset
   t=p;CHECK(run({"t","--test-preset","overdo"})&&e2.empty());t.Apply();CHECK(t.overrides["video.speed_fov_hold"]==1&&t.overrides["video.dof_focus_car"]==1);   // preset default unchanged except focus
   t=p;CHECK(run({"t","--speed-hold","1"})&&e2.empty());t.Apply();CHECK(t.overrides["video.speed_fov_hold"]==1&&!t.overrides.count("video.dof_focus_car"));   // without the preset only what was asked
+  t=p;CHECK(run({"t","--fov-preview","40"})&&e2.empty());t.Apply();CHECK(t.overrides["video.fov_preview"]==40);
+  CHECK(run({"t","--fov-preview","0"})&&e2.empty());CHECK(run({"t","--fov-preview","19"})&&!e2.empty());CHECK(run({"t","--fov-preview","151"})&&!e2.empty());CHECK(run({"t","--fov-preview","x"})&&!e2.empty());
   CHECK(run({"t","--speed-hold","2"})&&!e2.empty());CHECK(run({"t","--dof-focus-car","x"})&&!e2.empty());
   CHECK(run({"t","--speed-streak","101"})&&!e2.empty());CHECK(run({"t","--speed-streak","x"})&&!e2.empty());
   CHECK(run({"t","--speed-motes-size","250"})&&e2.empty()&&t.overrides["video.speed_motes_size"]==250);CHECK(run({"t","--speed-motes-size","49"})&&!e2.empty());CHECK(run({"t","--speed-motes-size","801"})&&!e2.empty());

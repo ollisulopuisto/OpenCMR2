@@ -773,7 +773,7 @@ static int View_GetShownFarPlane(BYTE view)
 }
 
 // OpenCMR2: last projection scale actually sent to the renderer, per view, for the debug overlay.
-static int g_lastProjZoom[8], g_lastProjFovY[8];
+static int g_lastProjZoom[8], g_lastProjFovY[8], g_lastProjFovX[8];
 void View_GetEffectiveProjection(unsigned int view, int *zoom, int *fovY, int *fovSetting)
 {
     *zoom = g_lastProjZoom[view & 7];
@@ -781,6 +781,13 @@ void View_GetEffectiveProjection(unsigned int view, int *zoom, int *fovY, int *f
     *fovSetting = g_previewFov ? g_previewFov : g_appliedFovSetting ? g_appliedFovSetting : Sys_GetOption("video.fov", 70);   // preview, else applied (cached) base, not a later INI edit
 }
 // Debug overlay: the live preview (0 = off) and the saved base the preview replaces.
+// Debug overlay: the field of view in degrees that the projection matrix really gives: the matrix has 0.5 * fov in elements _11 / _22 (CGraphics::SetProjection),
+// so the half angle is atan(1 / (0.5 * fov)). Horizontal and vertical, from the last values sent for the view.
+void View_GetMeasuredFov(unsigned int view, double *vertDeg, double *horzDeg)
+{
+    *vertDeg = FovPreview_MeasuredDegrees(g_lastProjFovY[view & 7] / 65536.0);
+    *horzDeg = FovPreview_MeasuredDegrees(g_lastProjFovX[view & 7] / 65536.0);
+}
 void View_GetFovPreview(int *preview, int *base)
 {
     *preview = g_previewFov;
@@ -803,6 +810,7 @@ void View_SetPlayerProjection(unsigned int player)
     int fovY = FixMul(0x2147a, FixMul(zoom, View_GetFovScale()));
     g_lastProjZoom[i & 7] = zoom;
     g_lastProjFovY[i & 7] = fovY;
+    g_lastProjFovX[i & 7] = fovX;
     // PORT: the far plane eases to the view distance (View_GetShownFarPlane).
     // OpenCMR2: the user's draw distance scales the far plane
     // ([video] video.draw_distance).
