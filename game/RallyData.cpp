@@ -6521,7 +6521,8 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             bool gl=false,dofOn=dof.reason==5;   // both backends report this status now
             if(gl)snprintf(text,sizeof text,"DoF pass: n/a (OpenGL backend)");
             else if(dofOn&&dof.blur<=0.0f)snprintf(text,sizeof text,"DoF pass: encoded for tunnel vision only (depth blur 0)");
-            else if(dofOn)snprintf(text,sizeof text,"DoF pass: encoded, range %.2f blur %.1f",dof.range,dof.blur);
+            else if(dofOn&&dof.carDepth>0.0f)snprintf(text,sizeof text,"DoF pass: encoded, range %.2f blur %.1f, focus on car %.1f m (pos %.2f)",dof.range,dof.blur,dof.carDepth,dof.focus);
+            else if(dofOn)snprintf(text,sizeof text,"DoF pass: encoded, range %.2f blur %.1f, fixed focus %.2f",dof.range,dof.blur,dof.focus);
             else snprintf(text,sizeof text,"DoF pass: off (%s)",dofWhy[dof.reason>=0&&dof.reason<7?dof.reason:0]);
             line(text,dofOn?lit:dim);
             bool tvOn=dofOn&&tv>0&&dof.smooth>0.02f;
