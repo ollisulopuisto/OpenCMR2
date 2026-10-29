@@ -268,6 +268,8 @@ void Gfx_SetDepthOfField(BOOL enabled, int focalDistance, int focalRange, int ma
 /* OpenCMR2: god rays / volumetric lighting. `enabled` turns it on/off,
    `intensity` (0..255) scales the effect strength. SDL_GPU only. */
 void Gfx_SetGodRays(BOOL enabled, int intensity);
+void Gfx_SetSunScreenPosition(float x, float y, BOOL visible);
+void Gfx_SetShadowQuality(int resolution, int softness);
 /* OpenCMR2: color grading. `temperature` (-100..100) cool->warm,
    `tint` (-100..100) green->magenta, `saturation` (0..200) color strength,
    `contrast` (0..200) contrast around middle gray. SDL_GPU only. */

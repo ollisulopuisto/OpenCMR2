@@ -10296,6 +10296,7 @@ void StageObject_DrawProjectedViewIcon(int *pViewRect, int param_2)
     icon.h = 0x10;
     icon.x = 0;
     icon.y = 0;
+    Gfx_SetSunScreenPosition(0,0,FALSE);
     if (g_unk0x00547ad0 == 0)
         return;
     uv.x = g_unk0x00547ad0->field_0x11c;
@@ -10311,6 +10312,8 @@ void StageObject_DrawProjectedViewIcon(int *pViewRect, int param_2)
     FixMatrix_ProjectWorldPointToView((int *)&vOut, &vR, view);
     vOut.x >>= 16;
     vOut.y >>= 16;
+    Gfx_SetSunScreenPosition(vOut.x/(float)g_pGraphics->resX,vOut.y/(float)g_pGraphics->resY,
+        vOut.x>=0 && vOut.y>=0 && vOut.x<g_pGraphics->resX && vOut.y<g_pGraphics->resY);
     icon.x = (short)(vOut.x - icon.w / 2);
     icon.y = (short)(vOut.y - icon.h / 2);
     StageObject_UpdateSunVisibility((short *)&icon);

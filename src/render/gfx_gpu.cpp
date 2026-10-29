@@ -19,6 +19,7 @@
 #endif
 
 #include <math.h>
+#include <cmath>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -276,6 +277,8 @@ struct Executor : GfxExecutor {
     // OpenCMR2: god rays state.
     bool godRaysEnabled = false;
     int godRaysIntensity = 100;
+    float sunX=.5f,sunY=.5f;bool sunVisible=false;
+    int shadowSize=1024;float shadowSoftness=1.f;
     // OpenCMR2: color grading state.
     float colorGradingTemperature = 0.0f; // -1..1 cool->warm
     float colorGradingTint = 0.0f;        // -1..1 green->magenta
@@ -663,6 +666,7 @@ struct Executor : GfxExecutor {
     // (0..255). Takes effect at the next present.
     void SetMotionBlur(BOOL enabled, int mix) override
     {
+        if(motionBlurEnabled!=(enabled!=0))motionBlurHasPrevious=false;
         motionBlurEnabled = enabled != 0;
         motionBlurMix = mix < 0 ? 0 : mix > 255 ? 255 : mix;
     }
@@ -696,10 +700,24 @@ struct Executor : GfxExecutor {
                 SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER)) {
             SDL_ReleaseGPUTexture(device, shadowMap);
             SDL_ReleaseGPUTexture(device, shadowDepth);
-            shadowMap = CreateTexture(SDL_GPU_TEXTURETYPE_2D, SDL_GPU_TEXTUREFORMAT_R32_FLOAT, 1024, 1024,
+            shadowMap = CreateTexture(SDL_GPU_TEXTURETYPE_2D, SDL_GPU_TEXTUREFORMAT_R32_FLOAT, shadowSize, shadowSize,
                                       1, 1, SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
-            shadowDepth = CreateTexture(SDL_GPU_TEXTURETYPE_2D, depthFormat, 1024, 1024,
+            shadowDepth = CreateTexture(SDL_GPU_TEXTURETYPE_2D, depthFormat, shadowSize, shadowSize,
                                         1, 1, SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET);
+        }
+    }
+
+    void SetSunScreenPosition(float x,float y,BOOL visible) override {
+        sunVisible=visible&&std::isfinite(x)&&std::isfinite(y)&&x>=0&&x<=1&&y>=0&&y<=1;
+        sunX=x;sunY=y;
+    }
+    void SetShadowQuality(int resolution,int softness) override {
+        int size=resolution<=512?512:resolution>=2048?2048:1024;
+        shadowSoftness=std::clamp(softness,0,100)*.04f;
+        if(size!=shadowSize){
+            shadowSize=size;SDL_ReleaseGPUTexture(device,shadowMap);SDL_ReleaseGPUTexture(device,shadowDepth);
+            shadowMap=shadowDepth=nullptr;
+            if(shadowType)SetShadows(shadowType,(int)(shadowBias*10000));
         }
     }
 
@@ -1762,6 +1780,7 @@ struct Executor : GfxExecutor {
             u.distanceFade[2] = 1.0f;
         }
         u.shadowParams[0] = shadowBias;
+        u.shadowParams[2] = shadowSoftness;
         u.shadowParams[1] = shadowType != 0 && shadowMap && shadowDepth && shadowPipeline && fade ? 1.0f : 0.0f;
     }
 
@@ -2006,6 +2025,7 @@ struct Executor : GfxExecutor {
         FragmentUniforms fragmentUniforms;
         bool fragmentUniformsSet = false;
 
+        bool shadowEncoded=false;
         // OpenCMR2: directional shadow map — render every shadow caster from
         // the sun's point of view into shadowMap depth, before the normal pass
         // samples it.
@@ -2027,8 +2047,8 @@ struct Executor : GfxExecutor {
                 SDL_GPURenderPass *spass = SDL_BeginGPURenderPass(cmd, &color, 1, &depth);
                 if (spass != NULL) {
                     SDL_BindGPUGraphicsPipeline(spass, ShadowPipeline());
-                    SDL_GPUViewport svp = { 0.0f, 0.0f, 1024.0f, 1024.0f, 0.0f, 1.0f };
-                    SDL_Rect sscissor = { 0, 0, 1024, 1024 };
+                    SDL_GPUViewport svp = { 0.0f, 0.0f, (float)shadowSize, (float)shadowSize, 0.0f, 1.0f };
+                    SDL_Rect sscissor = { 0, 0, shadowSize, shadowSize };
                     SDL_SetGPUViewport(spass, &svp);
                     SDL_SetGPUScissor(spass, &sscissor);
                     const GfxDrawState *svUniformState = NULL;
@@ -2063,7 +2083,7 @@ struct Executor : GfxExecutor {
                             SDL_DrawGPUPrimitives(spass, sc.vertexCount, 1, firstVertex, 0);
                         }
                     }
-                    SDL_EndGPURenderPass(spass);
+                    SDL_EndGPURenderPass(spass);shadowEncoded=true;
                 }
             }
 
@@ -2250,6 +2270,7 @@ struct Executor : GfxExecutor {
 
         // OpenCMR2: bloom (bright-pass extract, separable blur, additive
         // composite) followed by motion blur (previous-frame blend).
+        unsigned encoded=shadowEncoded?64:0;
         SDL_GPUTexture *presentSource = backColor;
         // OpenCMR2: AA is not an upscaler or a temporal reconstruction method.
         // This includes the HUD. Failure falls back to the original scene.
@@ -2271,7 +2292,7 @@ struct Executor : GfxExecutor {
                 if (binding.sampler != nullptr &&
                     PostProcessPass(cmd, spatialAAPipeline, spatialAATarget, &binding, 1,
                                     uniforms, sizeof(uniforms)))
-                    presentSource = spatialAATarget;
+                    {presentSource = spatialAATarget;encoded|=1;}
                 else
                     spatialAA = false;
             } else {
@@ -2298,21 +2319,22 @@ struct Executor : GfxExecutor {
             }
             // Separable blur: horizontal then vertical, two ping-pong iterations.
             for (int iteration = 0; bloomOK && iteration < 2; iteration++) {
-                float hUniforms[4] = { 1.0f, 0.0f, 1.0f, 0.0f };   // direction (1,0), offsetScale, samples
+                struct BlurUniform {float x,y,scale;int samples;float pad[4];};
+                BlurUniform hUniforms = {1,0,1,3,{}};   // direction (1,0), offsetScale, samples
                 SDL_GPUTextureSamplerBinding hBindings[2] = {
                     { bloomBuf1, Sampler(GfxStageState()) },
                     { white2D, Sampler(GfxStageState()) },
                 };
                 bloomOK = PostProcessPass(cmd, BloomBlurPipeline(), bloomBuf2, hBindings, 2,
-                                hUniforms, sizeof(hUniforms));
+                                &hUniforms, sizeof(hUniforms));
 
-                float vUniforms[4] = { 0.0f, 1.0f, 1.0f, 0.0f };   // direction (0,1)
+                BlurUniform vUniforms = {0,1,1,3,{}};   // direction (0,1)
                 SDL_GPUTextureSamplerBinding vBindings[2] = {
                     { bloomBuf2, Sampler(GfxStageState()) },
                     { white2D, Sampler(GfxStageState()) },
                 };
                 bloomOK = bloomOK && PostProcessPass(cmd, BloomBlurPipeline(), bloomBuf1, vBindings, 2,
-                                vUniforms, sizeof(vUniforms));
+                                &vUniforms, sizeof(vUniforms));
             }
             // Composite: scene + blurred bright pixels -> motionBlurTemp.
             {
@@ -2323,9 +2345,8 @@ struct Executor : GfxExecutor {
                 };
                 if (bloomOK && PostProcessPass(cmd, BloomCompositePipeline(), motionBlurTemp, bindings, 2,
                                     &intensity, sizeof(intensity)))
-                    presentSource = motionBlurTemp;
+                    {presentSource = motionBlurTemp;encoded|=2;}
             }
-            motionBlurHasPrevious = true;
         }
 
         // Motion blur: blend the current frame (plain or bloomed) with the
@@ -2338,7 +2359,12 @@ struct Executor : GfxExecutor {
                 { presentSource != NULL ? presentSource : white2D, Sampler(GfxStageState()) },
                 { motionBlurPrevious, Sampler(GfxStageState()) },
             };
-            if (PostProcessPass(cmd, MotionBlurPipeline(), output, bindings, 2, &mix, sizeof(mix))) {
+            if (!motionBlurHasPrevious) {
+                SDL_GPUCopyPass *copy=SDL_BeginGPUCopyPass(cmd);
+                if(copy){SDL_GPUTextureLocation src={},dst={};src.texture=presentSource;dst.texture=motionBlurPrevious;
+                    SDL_CopyGPUTextureToTexture(copy,&src,&dst,backWidth,backHeight,1,false);SDL_EndGPUCopyPass(copy);motionBlurHasPrevious=true;}
+            } else if (PostProcessPass(cmd, MotionBlurPipeline(), output, bindings, 2, &mix, sizeof(mix))) {
+                encoded|=4;
                 SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(cmd);
                 if (copy != nullptr) {
                     SDL_GPUTextureLocation src = {}, dst = {};
@@ -2350,7 +2376,7 @@ struct Executor : GfxExecutor {
                 }
                 presentSource = output;
             }
-        } else if (!bloomEnabled) {
+        } else {
             motionBlurHasPrevious = false;
         }
 
@@ -2388,17 +2414,17 @@ struct Executor : GfxExecutor {
             };
             if (PostProcessPass(cmd, DofPipeline(), dofBuf1, bindings, 2,
                                 uniforms, sizeof(uniforms)))
-                presentSource = dofBuf1;
+                {presentSource = dofBuf1;encoded|=8;}
         }
-        if (godRaysEnabled && sampledDepth && godRaysIntensity > 0 &&
+        if (godRaysEnabled && sunVisible && sampledDepth && godRaysIntensity > 0 &&
             godRaysBuf1 != nullptr && backDepth != nullptr && GodRaysPipeline() != nullptr) {
-            float uniforms[4] = { godRaysIntensity / 255.0f, 0.85f, 0.15f, 0.0f };
+            float uniforms[4] = { godRaysIntensity / 255.0f, sunX, sunY, 0.0f };
             SDL_GPUTextureSamplerBinding bindings[2] = {
                 { presentSource, linearSampler }, { backDepth, depthSampler }
             };
             if (PostProcessPass(cmd, GodRaysPipeline(), godRaysBuf1, bindings, 2,
                                 uniforms, sizeof(uniforms)))
-                presentSource = godRaysBuf1;
+                {presentSource = godRaysBuf1;encoded|=16;}
         }
         if ((colorGradingTemperature != 0 || colorGradingTint != 0 ||
              colorGradingSaturation != 100.0f || colorGradingContrast != 100.0f) &&
@@ -2408,7 +2434,7 @@ struct Executor : GfxExecutor {
             SDL_GPUTextureSamplerBinding binding = { presentSource, linearSampler };
             if (PostProcessPass(cmd, ColorGradingPipeline(), gradingTarget, &binding, 1,
                                 uniforms, sizeof(uniforms)))
-                presentSource = gradingTarget;
+                {presentSource = gradingTarget;encoded|=32;}
         }
 
         if (vsync != presentModeVsync) {
@@ -2455,10 +2481,25 @@ struct Executor : GfxExecutor {
             }
         }
 
-        if (reading)
+        static unsigned lastEncoded=~0u;
+        if(encoded!=lastEncoded){
+            Sys_Log("effects: SDL_GPU passes encoded this frame (GPU completion and pixels unverified): AA=%s bloom=%s motion-blur=%s depth-blur=%s sun-rays=%s grade=%s shadow-pass=%s",
+                encoded&1?"yes":spatialAA?"fallback":"off",encoded&2?"yes":bloomEnabled?"fallback":"off",
+                encoded&4?"yes":motionBlurEnabled?"seed/skipped/fallback":"off",encoded&8?"yes":dofEnabled?"fallback":"off",
+                encoded&16?"yes":godRaysEnabled?sunVisible?"fallback":"sun-offscreen/skipped":"off",
+                encoded&32?"yes":colorGradingTemperature||colorGradingTint||colorGradingSaturation!=100||colorGradingContrast!=100?"fallback":"off/neutral",encoded&64?"yes":shadowType?"fallback":"off");
+            lastEncoded=encoded;
+        }
+        bool submitted;
+        if (reading) {
             readbackFence = SDL_SubmitGPUCommandBufferAndAcquireFence(cmd);
-        else
-            SDL_SubmitGPUCommandBuffer(cmd);
+            submitted=readbackFence!=nullptr;
+        } else submitted=SDL_SubmitGPUCommandBuffer(cmd);
+        static int lastSubmission=-1;
+        if(lastSubmission!=(int)submitted){
+            Sys_Log("effects: SDL_GPU command submission=%s (accepted is not completed/pixel verification)%s",submitted?"accepted":"FAILED",submitted?"":SDL_GetError());
+            lastSubmission=submitted;
+        }
         HashFrame();
     }
 
