@@ -75,4 +75,11 @@ scale: 0 = near plane, 1 = far plane (`dof_focus` 50 = geometric mean of near an
 Behaviour change applies only when depth_of_field is on (off by default is unchanged); if no
 projection is recognised the old linear rule is used. Not natively verified. A sharp screen
 centre is not a car mask: the car is only sharp while it is within focus range and inside the clear tunnel zone.
-Sky or other draws with a larger far plane can override the recovered pair (widest far wins); unverified.
+Which projection feeds the pass: every back-buffer, untransformed draw that tests and writes depth votes
+with its recovered near/far pair; the pair with the most draws is used and Sys_Log reports the number of
+distinct pairs and the dominant share ("options: DoF projection from depth-writing draws"). If the log shows more than one
+pair (split screen, mirror, sky with its own projection), the linear depth is a candidate, not proven for the whole frame.
+The log-scale focus is a new mapping chosen here (no original intended focal distance was recovered): dof_focus/dof_range now
+mean positions on a near-to-far log scale instead of raw hardware depth, so existing saved values give a different look
+when depth_of_field is on. Math checks: depth/z round-trip for near 0.1/0.5/1.0 with far 150/400; dof_focus 50 lands at
+z of about 3.9 / 8.7 / 12.2 units (near 0.1/0.5/1.0, far 150). Nothing here is native verified.
