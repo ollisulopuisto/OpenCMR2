@@ -4690,9 +4690,9 @@ void Race_UpdateFrameEffects(int param_1)
     // OpenCMR2: speed-driven tunnel vision (visual only; reads speed, changes nothing in the sim).
     {
         float speedUnits = SpeedFov_HeldRatio((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0)); // hold: overdo test only
-        int strength = Sys_GetOption("video.tunnel_vision", 100); // 0..100, adjustable; 0 = off
+        int strength = Sys_GetOption("video.tunnel_vision", 100); // 0..150, adjustable; 0 = off; above 100 is the experimental overdrive
         if (strength < 0) strength = 0;
-        if (strength > 100) strength = 100;
+        if (strength > 150) strength = 150;
         Gfx_SetSpeedFocus(speedUnits * (float)strength / 100.0f);
     }
     // OpenCMR2: speed streak (visual only): directional radial streak, 0 = off (default). Same speed ratio and overdo hold as above.

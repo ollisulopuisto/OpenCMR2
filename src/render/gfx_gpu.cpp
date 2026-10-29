@@ -840,7 +840,7 @@ struct Executor : GfxExecutor {
 
     void SetSpeedFocus(float speed) override
     {
-        speedFocusTarget = !(speed > 0.0f) ? 0.0f : speed > 1.0f ? 1.0f : speed;
+        speedFocusTarget = !(speed > 0.0f) ? 0.0f : speed > kTunnelMaxStrength ? kTunnelMaxStrength : speed;
     }
 
     // OpenCMR2: god rays / volumetric lighting. `enabled` turns it on/off,
@@ -2683,7 +2683,7 @@ struct Executor : GfxExecutor {
             if (blurMode == 1 && carRegion.Valid() && DofFocus_Position(carRegion.zMin, sceneNear, sceneFar, &carPosMin) && DofFocus_Position(carRegion.zMax, sceneNear, sceneFar, &carPosMax)) blurShown = 1;
             else blurMode = 0;
             float uniforms[16] = { focusPos,
-                                  dofFocalRange / 100.0f * (1.0f - 0.5f * speedFocusSmooth),
+                                  dofFocalRange / 100.0f * (1.0f - 0.5f * std::min(speedFocusSmooth, 1.0f)),
                                   !dofGate.depthBlur ? 0.0f : dofMaxBlur / 100.0f * (float)(Sys_GetOption("video.dof_blur_max_px", 4) < 1 ? 1 : Sys_GetOption("video.dof_blur_max_px", 4) > 40 ? 40 : Sys_GetOption("video.dof_blur_max_px", 4)), speedFocusSmooth,
                                   aspect, kTunnelRadiusPerHeight * (float)backHeight, sceneNear, sceneFar,
                                   carRegion.u0, carRegion.v0, carRegion.u1, carRegion.v1,

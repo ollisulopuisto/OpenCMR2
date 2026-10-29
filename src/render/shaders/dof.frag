@@ -36,7 +36,7 @@ void main()
         centered.x *= extra.x;
         centered.y *= 0.5; // mirrors kTunnelVerticalScale: bonnet and car (low, centred) stay sharp, the sides blur
         float edge = length(centered);
-        float inner = mix(1.4, 0.5, tunnel);
+        float inner = max(mix(1.4, 0.5, tunnel), 0.1);   // mirrors kTunnelInnerMin; tunnel may exceed 1 (overdrive up to 1.5)
         float peripheral = smoothstep(inner, inner + 0.8, edge) * tunnel;
         if (carMode.x > 0.5) {
             // Whole-scene mode: the same speed-driven tunnel strength, but blurring everywhere. The car is kept sharp by a rectangle from its own

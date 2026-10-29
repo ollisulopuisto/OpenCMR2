@@ -10,4 +10,9 @@ constexpr float kTunnelInnerFull = 0.5f;
 // The clear circle is squashed vertically (distance uses y * this, orientation free so Metal and GL agree), so the bonnet at the
 // bottom centre and a chase car low in the frame stay sharp while the left and right edges blur.
 constexpr float kTunnelVerticalScale = 0.5f;
+// Experimental overdrive: video.tunnel_vision goes up to 150 (percent). The strength then reaches 1.5, the clear circle keeps closing past
+// kTunnelInnerFull (never below kTunnelInnerMin half-heights) and the blur radius grows with it (0.045 of the height at 150, 65 px at 1440 lines:
+// the 16 taps get sparse there). 100 and below look exactly as before. The depth-focus range still uses the strength capped at 1.
+constexpr float kTunnelMaxStrength = 1.5f;
+constexpr float kTunnelInnerMin = 0.1f;
 #endif
