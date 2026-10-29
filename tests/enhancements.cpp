@@ -1,3 +1,4 @@
+#include <vector>
 #include "platform/enhancements.h"
 #include "render/gpu_startup_options.h"
 #include "Input.h"
