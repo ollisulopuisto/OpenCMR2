@@ -197,6 +197,10 @@ struct GfxExecutor {
     // OpenCMR2: god rays / volumetric lighting. `enabled` turns it on/off,
     // `intensity` (0..255) scales the effect strength.
     virtual void SetGodRays(BOOL, int) {}
+    // Normalized top-left screen position of actual stage sun; false hides rays.
+    virtual void SetSunScreenPosition(float, float, BOOL) {}
+    // Map resolution 512/1024/2048; PCF softness 0..100 maps to radius 0..4 texels.
+    virtual void SetShadowQuality(int, int) {}
     // OpenCMR2: color grading. `temperature` (-100..100) cool->warm,
     // `tint` (-100..100) green->magenta, `saturation` (0..200) color strength,
     // `contrast` (0..200) contrast around middle gray.

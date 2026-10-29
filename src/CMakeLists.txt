@@ -124,7 +124,7 @@ endif()
 # Direct3D 12, takes GLSL 330 from the same SPIR-V: drawn upside down, so
 # that images keep Direct3D's rows, with the depth range of OpenGL.
 option(OPENCMR2_SHADERS_MSL "Also build Metal (MSL) shaders" ${APPLE})
-if(APPLE OR ANDROID)
+if(ANDROID)
     set(OPENCMR2_RENDERER_GL_DEFAULT OFF)
 else()
     set(OPENCMR2_RENDERER_GL_DEFAULT ON)

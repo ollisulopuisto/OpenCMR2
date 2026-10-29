@@ -280,3 +280,10 @@ samples are unknown, not a clear-view certificate. Very thin geometry, vertical
 faces and tree/hedge billboards outside collision terrain are not guaranteed.
 Native Mac validation on the user's bank/crest/fast-curve case remains required.
 The synthetic framing probe is a diagnostic, not game footage.
+## Shared graphics-strength interfaces (work in progress)
+MacOpenGL+Metal requested. GLexecutor owner uses existing effect setters plus
+SetSunScreenPosition(x,y,visible), normalized top-left screen coordinates, and
+SetShadowQuality(resolution,softness), softness0..100 maps PCFradius0..4texels.
+Sharedfixedshadowshader uses shadowParams.z as texelradius and sampler7.
+Mac builds now default OpenGL inclusion ON, Metal remains default primary.
+This interface step alone does not claim working new controls or Macnativeproof.

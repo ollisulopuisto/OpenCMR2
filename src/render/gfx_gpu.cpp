@@ -1762,6 +1762,7 @@ struct Executor : GfxExecutor {
             u.distanceFade[2] = 1.0f;
         }
         u.shadowParams[0] = shadowBias;
+        u.shadowParams[2] = 1.0f; // preserved existing PCF until quality control applies
         u.shadowParams[1] = shadowType != 0 && shadowMap && shadowDepth && shadowPipeline && fade ? 1.0f : 0.0f;
     }
 
