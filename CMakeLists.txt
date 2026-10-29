@@ -8,6 +8,13 @@ if(DEFINED ENV{GITHUB_ACTIONS} AND NOT DEFINED Python3_EXECUTABLE)
     if(EXISTS "${CMAKE_SOURCE_DIR}/.ci-python/bin/python")
         set(Python3_EXECUTABLE "${CMAKE_SOURCE_DIR}/.ci-python/bin/python" CACHE FILEPATH "CI Python with scenery dependencies")
     endif()
+    if(WIN32 AND NOT DEFINED Python3_EXECUTABLE)
+        # The workflow installs Pillow and numpy with `python -m pip`: use that same interpreter.
+        find_program(OPENCMR2_CI_PYTHON NAMES python python.exe NO_CMAKE_PATH NO_CMAKE_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+        if(OPENCMR2_CI_PYTHON)
+            set(Python3_EXECUTABLE "${OPENCMR2_CI_PYTHON}" CACHE FILEPATH "CI Python with scenery dependencies")
+        endif()
+    endif()
 endif()
 
 # Targets (see CMakePresets.json):

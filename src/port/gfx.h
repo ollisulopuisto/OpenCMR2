@@ -271,6 +271,10 @@ void Gfx_SetFilmGrain(int strength);
    is how wide the in-focus band is, `maxBlur` (0..100) is the blur radius.
    SDL_GPU only. */
 void Gfx_SetDepthOfField(BOOL enabled, int focalDistance, int focalRange, int maxBlur);
+/* OpenCMR2: speed-driven tunnel vision for the depth of field pass. `speed` is 0..1 (0 = standing,
+   1 = fast). With depth_of_field on, the sharp zone narrows toward the middle of the screen and the
+   focus band gets shallower as it rises. Purely visual. SDL_GPU only. */
+void Gfx_SetSpeedFocus(float speed);
 /* OpenCMR2: god rays / volumetric lighting. `enabled` turns it on/off,
    `intensity` (0..255) scales the effect strength. SDL_GPU only. */
 void Gfx_SetGodRays(BOOL enabled, int intensity);

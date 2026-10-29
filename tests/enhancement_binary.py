@@ -56,7 +56,7 @@ p=argparse.ArgumentParser();p.add_argument('--input-dir');p.add_argument('--cach
 ''' + ("raise SystemExit(7)\n" if fail else '''root=Path(a.cache_dir);out=root/('cars-test' if a.cars else 'scenery-test');out.mkdir(parents=True,exist_ok=True)
 (out/'manifest.tsv').write_text('synthetic')
 (out/'sub.cin').write_text('replacement car')
-(out/'car-names.tsv').write_text('OPENCMR2-CAR-NAMES-1'+chr(10)+'sub'+chr(9)+'Subaru Impreza 555 Spain 1996'+chr(9)+'Impreza 555 Spain 1996'+chr(10))
+(out/'car-names.tsv').write_bytes(('OPENCMR2-CAR-NAMES-1'+chr(10)+'sub'+chr(9)+'Subaru Impreza 555 Spain 1996'+chr(9)+'Impreza 555 Spain 1996'+chr(10)).encode())
 print(('OPENCMR2_CARS=' if a.cars else 'OPENCMR2_PACK=')+str(out))
 '''))
 
