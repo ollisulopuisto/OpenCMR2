@@ -6038,7 +6038,19 @@ int g_windscreenWiperManualFrames = 0;
 int WindscreenWiperKeyPressed(void)
 {
     int key = Sys_GetOption("video.windscreen_wiper_key", WINDSREEN_WIPER_KEY_DEFAULT);
-    int down = Input_IsKeyDown(key) != 0 ? 1 : 0;
+    int down = key>0 && key<256 && Input_IsKeyDown(key) != 0 ? 1 : 0;
+    // An implicit W must never also toggle the wiper when used to accelerate.
+    // Explicit saved choices remain the player's responsibility and are not changed.
+    if (!Sys_GetOptionText("video.windscreen_wiper_key", nullptr)) {
+        bool conflict=false;
+        for(int device=0;device<CInput::CountAttachedInputDevices();device++) {
+            DeviceInfo *info=CInput::GetAvailableDeviceRecord(device);
+            if(info && info->field_0x0==1)
+                for(int action=0;action<9;action++)
+                    if((&info->keyboard.field_0x468)[action]==key)conflict=true;
+        }
+        if(conflict)down=0;
+    }
     int pressed = down && !g_windscreenWiperKeyPrevState;
     g_windscreenWiperKeyPrevState = down;
     return pressed;
@@ -6078,6 +6090,7 @@ static void CameraEffects_DrawOverlays(short *pRect)
     // ---- windscreen wipers --------------------------------------------------
     if (Sys_GetOption("video.windscreen_wipers", 1) != 0) {
         for (int view = 0; view < 8; view++) {
+            g_windscreenWipers[view].active = 1;
             float pos = WindscreenWiper_Sweep(view);
             if (pos < 0.0f)
                 continue;

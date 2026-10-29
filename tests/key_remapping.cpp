@@ -11,6 +11,8 @@ struct ControlsDeviceSelection {unsigned short slots[8],lastDevice;};
 extern ControlsDeviceSelection g_controlsDeviceSelection;
 extern void FrontendControls_ClearDuplicateBinding(ControllerData*,int);
 extern void FrontendControls_UpdateBindingCapture(Menu*);
+extern void FrontendControls_BeginWiperBinding(Menu*,MenuItem*);
+extern void FrontendControls_UpdateWiperBinding(Menu*,int);
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line %d: %s\n",__LINE__,#x);return 1;}}while(0)
 bool parse(KeyRemappingOptions &opts,const char *value,std::string &error){char a[]="test",b[]="--bind-key";char *args[]={a,b,const_cast<char*>(value)};int i=1;return opts.Consume(i,3,args,error);}
 int main(){
@@ -37,5 +39,15 @@ int main(){
  g_controlsSelectedSlot=0;g_controlsDeviceSelection.slots[0]=0;device.field_0x0=1;g_controlsCopy[0]=data;auto before=g_controlsCopy[0];g_controlsBindingCaptureState=1;g_unk0x0082a7e0=-1;memset(CInput::m_keyboardState,0,256);CInput::m_keyboardState[1]=0x80;Menu menu={};menu.cursor=0;FrontendControls_UpdateBindingCapture(&menu);CHECK(g_controlsBindingCaptureState==0);CHECK(!memcmp(&before,&g_controlsCopy[0],sizeof before));
  // Capture a held supported key, not the last unrelated queued event.
  g_controlsBindingCaptureState=1;g_unk0x0082a7e0=-1;memset(CInput::m_keyboardState,0,256);CInput::m_keyboardState[0x11]=0x80;CInput::QueueVirtualKeyPress(0x2e);FrontendControls_UpdateBindingCapture(&menu);CHECK(g_controlsBindingCaptureState==0);CHECK(g_controlsCopy[0].field_0x13e[0]==0x11);CHECK(g_controlsCopy[0].keyNames[0][0]!='C');
+ // Extension capture is outside the packed driving keys. Confirm must release;
+ // an occupied driving key is refused; Escape leaves both settings and keys alone.
+ const int oldWiper=Sys_GetOption("video.windscreen_wiper_key",17);
+ CInput::m_controllerInfo[0].field_0x13e[0]=0x11;
+ FrontendControls_BeginWiperBinding(&menu,nullptr);
+ FrontendControls_UpdateWiperBinding(&menu,0);CHECK(!menu.flag2);
+ memset(CInput::m_keyboardState,0,256);FrontendControls_UpdateWiperBinding(&menu,0);
+ CInput::m_keyboardState[0x11]=0x80;FrontendControls_UpdateWiperBinding(&menu,0);CHECK(!menu.flag2);
+ memset(CInput::m_keyboardState,0,256);CInput::m_keyboardState[1]=0x80;FrontendControls_UpdateWiperBinding(&menu,0);CHECK(menu.flag2);
+ CHECK(Sys_GetOption("video.windscreen_wiper_key",17)==oldWiper);CHECK(CInput::m_controllerInfo[0].field_0x13e[0]==0x11);
  puts("key remapping: parsing, swaps, duplicates, two keyboards, menu context, capture cancel and bounded labels pass");return 0;
 }
