@@ -4680,16 +4680,7 @@ void Race_UpdateFrameEffects(int param_1)
             g_windscreenDirt[0] = WindscreenDirt_Accumulate(g_windscreenDirt[0], amount);
         }
     }
-    // Independent of dirt strength: W is an on/off control, not a one-shot.
-    if (WindscreenWiperKeyPressed()) {
-        int enabled = WindscreenWiper_Toggle(Sys_GetOption("video.windscreen_wipers", 1) != 0, true);
-        Sys_SetOption("video.windscreen_wipers", enabled);
-        g_windscreenWiperManualFrames = 0;
-        for (int view=0;view<8;view++) {
-            g_windscreenWipers[view].active = enabled;
-            if(enabled)g_windscreenWipers[view].phase = g_windscreenWipers[view].dir = 0;
-        }
-    }
+    WindscreenWiper_UpdateInput();
     if ((BYTE)RallyData_IsChampionshipFinalStage()) {
         StageObject_UpdateDebris(param_1);
     }
