@@ -8424,6 +8424,19 @@ int View_SpeedFovMagnification(BYTE view)
     return 65536 + (int)((long long)pct * g_speedFovShown[view & 1] / 100);
 }
 
+// OpenCMR2 debug camera move (visual only): each camera family has its own signed setting, the amount at full speed, and the move blends from 0 standing
+// still to that amount at full speed (the same 0..1 speed ratio as the speed FOV). Chase (types 4-6): video.camera_move_chase. Cockpit (3):
+// video.camera_move_cockpit. Car-mounted (1, 2, 10: bonnet, bumper): video.camera_move_car. Returns 16.16 model units; 0.05 per setting step.
+int View_CameraMoveStep(int cameraType, int view)
+{
+    const char *key = (cameraType >= 4 && cameraType <= 6) ? "video.camera_move_chase" : cameraType == 3 ? "video.camera_move_cockpit" : "video.camera_move_car";
+    int setting = Sys_GetOption(key, 0);
+    if (setting == 0) return 0;
+    Car *car = Car_Get(view & 1);
+    int ratio = SpeedFov_HeldTarget(SpeedFov_Target(car ? car->speed : 0), Sys_GetOption("video.speed_fov_hold", 0));
+    return (int)((long long)setting * 0xCCC * ratio / 65536);
+}
+
 // FUNCTION: CMR2 0x00422140
 void View_BlendCameraStates(BYTE view, int t)
 {

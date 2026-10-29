@@ -304,6 +304,7 @@ void CarInterior_UpdateGearDigitTexture(Texture *pTexture, int state, int cacheB
 void StageObject_BuildCarNodeOrientation(CameraRecord *object, int *src);
 void StageObject_BuildCarMountWorldMatrix(CameraRecord *object, void *unused);
 int View_CurrentWidening(unsigned int view);
+int View_CameraMoveStep(int cameraType, int view);
 #include "CockpitEyeShift.h"
 void StageObject_ResetBodyTextureCaches(void);
 void CarLight_ResetTextureState(int index);
@@ -8639,10 +8640,9 @@ void StageObject_BuildCarMountWorldMatrix(CameraRecord *object, void *unused)
             object->matrix.position.z += FixMul(object->matrix.forward.z, step);
         }
     }
-    {   // OpenCMR2 debug camera move (video.camera_move), same signed axis and unit as the chase camera: + forward, - back, 0.05 model units per step.
-        int move = Sys_GetOption("video.camera_move", 0);
-        if (move != 0) {
-            int step = move * 0xCCC;
+    {   // OpenCMR2 debug camera move (video.camera_move_cockpit), signed along the camera forward axis, + forward, - back, 0.05 model units per step, scaled by speed (0 standing still).
+        int step = View_CameraMoveStep(3, object->index);
+        if (step != 0) {
             object->matrix.position.x += FixMul(object->matrix.forward.x, step);
             object->matrix.position.y += FixMul(object->matrix.forward.y, step);
             object->matrix.position.z += FixMul(object->matrix.forward.z, step);
