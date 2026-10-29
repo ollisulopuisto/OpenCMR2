@@ -45,7 +45,7 @@ struct State{
  bool ready=false;V3 position,velocity,aim,aimVelocity,lastCar,roadAhead;bool hasRoad=false;
  float terrainLift=0,curveLift=0,pullback=1.f; // pullback: smoothed speed-dependent distance scale
  bool pullbackReady=false;
- float heading=0,headingRate=0,lastHeading=0,turn=0,zoom=1.7f,zoomRate=0,pitch=0;
+ float heading=0,headingRate=0,lastHeading=0,turn=0,zoom=1.7f,zoomRate=0,pitch=0,lensSpeedGain=.3f,shakeAmount=1.f,shakePhase=0,shakeRight=0,shakeUp=0,distanceScale=1.f,usedDistance=0; // lensSpeedGain: zoom change at full speed (+ = tighter lens, - = wider lens)
  void Reset(){*this=State{};}
  void Step(V3 car,float carHeading,float steering,float speed,float distance,float height,float dt,const RoadPreview*road=nullptr){
   if(!std::isfinite(steering)||!std::isfinite(speed)||!std::isfinite(distance)||!std::isfinite(height)||!std::isfinite(carHeading)||!std::isfinite(dt)||dt<=0||dt>.2f||!std::isfinite(car.x)||!std::isfinite(car.y)||!std::isfinite(car.z)){Reset();return;}
@@ -56,7 +56,8 @@ struct State{
   float wantedPull=1.3f-.5f*speedUnit;
   if(!pullbackReady){pullback=wantedPull;pullbackReady=true;}
   pullback+=(wantedPull-pullback)*(1-std::exp(-dt/1.3f));
-  distance=Clamp(distance*pullback,7.f,17.f);height=Clamp(height*(1.f+.2f*(pullback-1.f)),6.f,11.f);
+  distance=Clamp(distance*pullback,7.f,17.f)*distanceScale; // distanceScale: user knob, 1 = default
+  distance=Clamp(distance,4.f,26.f);usedDistance=distance;height=Clamp(height*(1.f+.2f*(pullback-1.f)),6.f,11.f);
   bool roadValid=road&&road->valid;
   // Actual upcoming route geometry, not steering or car yaw, raises the
   // operator before a corner. Descend more slowly when preview straightens.
@@ -98,7 +99,13 @@ struct State{
   // Steering can widen before the body turns. Lens is actual projection zoom,
   // independent of viewpoint distance. Never random or an FOV pulse per frame.
   float speedRatio=Clamp(speed/1.5f,0.f,1.f);
-  float wanted=1.55f+.3f*speedRatio-.4f*turn;
+  // Speed-linked handheld shake: small, smooth (two slow sines per axis, about 3-6 Hz), grows
+  // with speed squared so it is nearly absent when slow. Position offset only, applied after
+  // framing, never touches the car or the aim. shakeAmount 0 = off (1 = about 8 cm at full speed).
+  shakePhase+=dt;{float amp=shakeAmount*.08f*speedRatio*speedRatio;
+  shakeRight=amp*(.6f*std::sin(shakePhase*17.3f)+.4f*std::sin(shakePhase*29.1f+1.7f));
+  shakeUp=amp*.8f*(.6f*std::sin(shakePhase*21.7f+.5f)+.4f*std::sin(shakePhase*37.9f));}
+  float wanted=1.55f+lensSpeedGain*speedRatio-.4f*turn;
   zoomRate+=(8.f*(wanted-zoom)-5.f*zoomRate)*dt;
   zoom=Clamp(zoom+zoomRate*dt,1.15f,1.9f);lastCar=car;
  }

@@ -68,5 +68,24 @@ int main(){
   CHECK(std::abs(change.pullback-before)<.02f); // one step cannot jump
   CHECK(change.pullback>=.8f&&change.pullback<=1.3f);
  }
+ {
+  // Speed lens: positive gain tightens, negative widens, both smooth and bounded.
+  State tight,wide;wide.lensSpeedGain=-.3f;
+  for(int i=0;i<400;i++){tight.Step({0,0,0},0,0,1.5,6.5,2,.04);wide.Step({0,0,0},0,0,1.5,6.5,2,.04);}
+  CHECK(tight.zoom>1.7f);CHECK(wide.zoom<1.4f);CHECK(wide.zoom>=1.15f&&tight.zoom<=1.9f);
+ }
+ {
+  // Speed shake: absent at rest, small and bounded at speed, off when amount is 0.
+  State rest,fast,off;off.shakeAmount=0;float maxRest=0,maxFast=0,maxOff=0,maxJump=0,last=0;
+  for(int i=0;i<600;i++){rest.Step({0,0,0},0,0,0,6.5,2,.016);fast.Step({0,0,0},0,0,1.5,6.5,2,.016);off.Step({0,0,0},0,0,1.5,6.5,2,.016);
+   maxRest=std::max(maxRest,std::abs(rest.shakeRight));maxFast=std::max(maxFast,std::abs(fast.shakeRight));maxOff=std::max(maxOff,std::abs(off.shakeRight));
+   if(i>0)maxJump=std::max(maxJump,std::abs(fast.shakeRight-last));last=fast.shakeRight;}
+  CHECK(maxRest<1e-6f);CHECK(maxFast>.02f&&maxFast<=.081f);CHECK(maxOff<1e-6f);CHECK(maxJump<.03f);
+ }
+ {
+  State base,close,far;close.distanceScale=.5f;far.distanceScale=1.5f;
+  for(int i=0;i<400;i++){base.Step({0,0,0},0,0,0,6.5,2,.04);close.Step({0,0,0},0,0,0,6.5,2,.04);far.Step({0,0,0},0,0,0,6.5,2,.04);}
+  CHECK(close.usedDistance<base.usedDistance*.6f&&far.usedDistance>base.usedDistance*1.4f&&close.usedDistance>=4.f&&far.usedDistance<=26.f);
+ }
  puts("world camera position/orbit inertia, steering lens, settling, determinism/reset pass");
 }
