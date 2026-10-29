@@ -4059,14 +4059,11 @@ void FrontendMenu_EnterAdvancedGraphicsOptions(Menu *pMenu, int param)
     Menu_GetItem(pMenu, 0x10)->max = Sys_GetOption("video.camera_effects", 1) != 0 ? 1 : 0;
     // OpenCMR2: animated scenery on by default — idle crowds and trees cycle.
     Menu_GetItem(pMenu, 0x11)->max = Sys_GetOption("video.animated_scenery", 1) != 0 ? 1 : 0;
-    // OpenCMR2: motion blur, bloom, particles and shadows are SDL_GPU-only;
-    // force them off on the OpenGL renderer so the menu doesn't pretend they
-    // work.
-    int isOpenGL = Gfx_IsOpenGL() != 0;
-    Menu_GetItem(pMenu, 0x12)->max = isOpenGL ? 0 : Sys_GetOption("video.motion_blur", 1) != 0 ? 1 : 0;
-    Menu_GetItem(pMenu, 0x13)->max = isOpenGL ? 0 : Sys_GetOption("video.bloom", 1) != 0 ? 1 : 0;
-    Menu_GetItem(pMenu, 0x14)->max = isOpenGL ? 0 : Sys_GetOption("video.particles", 1);
-    Menu_GetItem(pMenu, 0x15)->max = isOpenGL ? 0 : Sys_GetOption("video.shadows", 1) != 0 ? 1 : 0;
+    // Both renderers implement these options. Read without mutating saved choices.
+    Menu_GetItem(pMenu, 0x12)->max = Sys_GetOption("video.motion_blur", 1) != 0 ? 1 : 0;
+    Menu_GetItem(pMenu, 0x13)->max = Sys_GetOption("video.bloom", 1) != 0 ? 1 : 0;
+    Menu_GetItem(pMenu, 0x14)->max = Sys_GetOption("video.particles", 1);
+    Menu_GetItem(pMenu, 0x15)->max = Sys_GetOption("video.shadows", 1) != 0 ? 1 : 0;
     // OpenCMR2: windscreen wipers on by default.
     Menu_GetItem(pMenu, 0x16)->max = Sys_GetOption("video.windscreen_wipers", 1) != 0 ? 1 : 0;
     // OpenCMR2: windscreen dirt strength default 40.
@@ -4074,9 +4071,9 @@ void FrontendMenu_EnterAdvancedGraphicsOptions(Menu *pMenu, int param)
     // OpenCMR2: depth of field off by default.
     Menu_GetItem(pMenu, 0x18)->max = Sys_GetOption("video.depth_of_field", 0) != 0 ? 1 : 0;
     // OpenCMR2: god rays off by default.
-    Menu_GetItem(pMenu, 0x19)->max = isOpenGL ? 0 : Sys_GetOption("video.god_rays", 0) != 0 ? 1 : 0;
+    Menu_GetItem(pMenu, 0x19)->max = Sys_GetOption("video.god_rays", 0) != 0 ? 1 : 0;
     // OpenCMR2: color grading off by default.
-    Menu_GetItem(pMenu, 0x1a)->max = isOpenGL ? 0 : Sys_GetOption("video.color_grading", 0) != 0 ? 1 : 0;
+    Menu_GetItem(pMenu, 0x1a)->max = Sys_GetOption("video.color_grading", 0) != 0 ? 1 : 0;
     if (CGameInfo::GetPreviewMode() != 0) {
         Menu_GetItem(pMenu, 10)->max = 1;
         return;
@@ -4132,20 +4129,17 @@ void FrontendMenu_ApplyAdvancedGraphicsOptions(Menu *pMenu, int param)
     Sys_SetOption("video.camera_effects", Menu_GetItem(pMenu, 0x10)->max);
     // OpenCMR2: animated scenery on/off.
     Sys_SetOption("video.animated_scenery", Menu_GetItem(pMenu, 0x11)->max);
-    // OpenCMR2: motion blur, bloom, particles and shadows are SDL_GPU-only.
-    // On OpenGL the Enter routine already forced them off, so these values
-    // are always 0 here; keep the calls for symmetry.
-    int isOpenGL = Gfx_IsOpenGL() != 0;
-    int motionBlur = isOpenGL ? 0 : Menu_GetItem(pMenu, 0x12)->max;
+    // Both renderers consume the same settings reader below.
+    int motionBlur = Menu_GetItem(pMenu, 0x12)->max;
     Sys_SetOption("video.motion_blur", motionBlur);
     Gfx_SetMotionBlur(motionBlur, motionBlur != 0 ? 40 : 0);
-    int bloom = isOpenGL ? 0 : Menu_GetItem(pMenu, 0x13)->max;
+    int bloom = Menu_GetItem(pMenu, 0x13)->max;
     Sys_SetOption("video.bloom", bloom);
     Gfx_SetBloom(bloom, bloom != 0 ? 60 : 0);
-    int particles = isOpenGL ? 0 : Menu_GetItem(pMenu, 0x14)->max;
+    int particles = Menu_GetItem(pMenu, 0x14)->max;
     Sys_SetOption("video.particles", particles);
     Gfx_SetParticles(particles, particles != 0 ? 120 : 0);
-    int shadows = isOpenGL ? 0 : Menu_GetItem(pMenu, 0x15)->max;
+    int shadows = Menu_GetItem(pMenu, 0x15)->max;
     Sys_SetOption("video.shadows", shadows);
     Gfx_SetShadows(shadows, shadows != 0 ? 5 : 0);
     // OpenCMR2: windscreen wipers on/off.
@@ -4159,13 +4153,13 @@ void FrontendMenu_ApplyAdvancedGraphicsOptions(Menu *pMenu, int param)
     Sys_SetOption("video.depth_of_field", dof);
     Gfx_SetDepthOfField(dof, 50, 50, 30);
     // OpenCMR2: god rays on/off.
-    int godRays = isOpenGL ? 0 : Menu_GetItem(pMenu, 0x19)->max;
+    int godRays = Menu_GetItem(pMenu, 0x19)->max;
     Sys_SetOption("video.god_rays", godRays);
     Gfx_SetGodRays(godRays, 100);
     // OpenCMR2: color grading on/off.
-    int colorGrading = isOpenGL ? 0 : Menu_GetItem(pMenu, 0x1a)->max;
+    int colorGrading = Menu_GetItem(pMenu, 0x1a)->max;
     Sys_SetOption("video.color_grading", colorGrading);
-    if(!isOpenGL)EffectSettings::Apply();
+    EffectSettings::Apply();
 }
 
 // FUNCTION: CMR2 0x004f1e40

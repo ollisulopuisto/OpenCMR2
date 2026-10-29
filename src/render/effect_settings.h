@@ -6,7 +6,7 @@ namespace EffectSettings {
 inline int Clamp(int v,int lo,int hi){return v<lo?lo:v>hi?hi:v;}
 inline int Percent(const char* key,int fallback){return Clamp(Sys_GetOption(key,fallback),0,100);}
 inline int Byte(const char* key,int fallback){return Percent(key,fallback)*255/100;}
-// Shared runtime settings reader; no writes. GL activation joins in its own PR.
+// Shared by both executors at startup and menu Apply. No writes.
 inline void Apply(){
  Gfx_SetMotionBlur(Sys_GetOption("video.motion_blur",1),Byte("video.motion_blur_amount",16));
  Gfx_SetBloom(Sys_GetOption("video.bloom",1),Byte("video.bloom_amount",24));
