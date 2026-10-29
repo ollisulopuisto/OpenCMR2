@@ -5572,6 +5572,23 @@ void Particle_Interpolate(int t)
 static float g_speedMoteRatio = 0.f;
 void SpeedMote_ApplyStreak(BillboardDef *def, SceneNode *camera)
 {
+    int sizePct = SpeedMote_SizePercent(Sys_GetOption("video.speed_motes_size", 100));
+    if (sizePct != 100) {   // bigger specks for diagnosis; 100 = the original size
+        def->top = (int)((long long)def->top * sizePct / 100); def->bottom = (int)((long long)def->bottom * sizePct / 100);
+        def->left = (int)((long long)def->left * sizePct / 100); def->right = (int)((long long)def->right * sizePct / 100);
+    }
+    {   // Diagnostic: the submitted quad of one mote about every 300 draws (camera-space offsets, quad half-sizes, alpha).
+        static unsigned calls = 0;
+        if (camera && ++calls % 300 == 1) {
+            const FixMatrix &cm = camera->world;
+            float dx = def->pos.x - cm.position.x, dy = def->pos.y - cm.position.y, dz = def->pos.z - cm.position.z;
+            const float sc = 1.f / (65536.f * 65536.f);
+            Sys_Log("speed mote quad: depth=%.1f right=%.1f up=%.1f half_w=%.3f half_h=%.3f alpha=%d size_pct=%d (16.16 world units, camera node axes)",
+                (dx * cm.forward.x + dy * cm.forward.y + dz * cm.forward.z) * sc, (dx * cm.right.x + dy * cm.right.y + dz * cm.right.z) * sc,
+                (dx * cm.up.x + dy * cm.up.y + dz * cm.up.z) * sc, (def->right - def->left) / 131072.f, (def->top - def->bottom) / 131072.f,
+                (int)def->a, sizePct);
+        }
+    }
     int stretch = Sys_GetOption("video.speed_motes_stretch", 0);
     if (stretch <= 0 || !camera) return;
     const FixMatrix &m = camera->world;
@@ -7092,7 +7109,7 @@ void SpeedMote_Spawn(FixVector *world)
         if (g_particles[i].pType == &g_particleTypes[SPEED_MOTE_TYPE]) ++motes;
     }
     // Never evict original particles: Particle_Spawn reuses the oldest slot when the pool is full.
-    if (!SpeedMote_HasBudget(active, motes, g_particleCount)) { ++g_speedMotesBudgetSkipped; return; }
+    if (!SpeedMote_HasBudget(active, motes, g_particleCount, Sys_GetOption("video.speed_motes_amount", 100))) { ++g_speedMotesBudgetSkipped; return; }
     FixVector still = {0,0,0};
     Particle_Spawn(SPEED_MOTE_TYPE, world, &still, world->y, NULL, NULL, 0, NULL, 1);
     ++g_speedMotesSpawned;

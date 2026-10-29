@@ -5,6 +5,10 @@
 #include <cstdlib>
 #define CHECK(c) do { if (!(c)) { std::printf("FAIL line %d: %s\n", __LINE__, #c); return 1; } } while (0)
 int main() {
+    CHECK(SpeedMote_Cap(100)==64 && SpeedMote_Cap(50)==64 && SpeedMote_Cap(300)==192 && SpeedMote_Cap(999)==192);
+    CHECK(SpeedMote_HasBudget(0,63,400,100) && !SpeedMote_HasBudget(0,64,400,100) && SpeedMote_HasBudget(100,100,400,300) && !SpeedMote_HasBudget(250,100,400,300) && SpeedMote_HasBudget(250,10,400,100) && !SpeedMote_HasBudget(0,192,400,300));
+    for (int cap = 100; cap <= 400; cap += 50) for (int act = 0; act < 400; ++act) if (act >= 400 - 64) CHECK(!SpeedMote_HasBudget(act, 0, 400, cap));  // the last 64 pool slots always stay with original particles
+    CHECK(SpeedMote_SizePercent(100)==100 && SpeedMote_SizePercent(1)==50 && SpeedMote_SizePercent(9999)==800);
     int a; float len, al;
     // Off, behind the camera, or exactly on the view axis: stays a round dot.
     CHECK(!SpeedMote_StreakParams(5, 0, 20, 1, 0, &a, &len, &al));
