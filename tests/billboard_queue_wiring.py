@@ -8,4 +8,5 @@ loop = g[g.index('const int queuedBefore = g_unk0x006dd784;'):g.index('// Camera
 assert re.search(r'Billboard_Add\(&def, texture\);\s*if \(g_particleTypeCount > SPEED_MOTE_TYPE .*?\{\s*if \(g_unk0x006dd784 > queuedBefore\) \+\+g_speedMotesDrawn; else \+\+g_speedMotesRefused;', loop, re.S), 'queued counter must follow acceptance'
 assert 'g_billboardPeakQueue' in g[g.index('void Billboard_Draw(SceneNode'):g.index('// Takes a free texture slot')]
 assert 'billboards_submitted' not in g, 'old label overstated: queued is not drawn/visible'
+assert 'Gfx_GetBlendDepthState' in g and 'billboard draw state:' in g
 print('billboard queue wiring ok')

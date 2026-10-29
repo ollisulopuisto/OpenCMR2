@@ -4247,6 +4247,15 @@ void Billboard_Draw(SceneNode *pCamera)
         } while (--n != 0);
     }
     if ((unsigned)g_unk0x006dd784 > g_billboardPeakQueue) g_billboardPeakQueue = (unsigned)g_unk0x006dd784;
+    {   // Diagnostic: draw state in force when queued billboards are drawn (about every 600th draw), z-write is turned off just below.
+        static unsigned calls = 0;
+        if (++calls % 600 == 1) {
+            int st[10] = {};
+            Gfx_GetBlendDepthState(st);
+            Sys_Log("billboard draw state: queued=%d depthTest=%d depthFunc=%d alphaBlend=%d src=%d dst=%d alphaTest=%d alphaRef=%d fog=%d lighting=%d (z-write forced off for this draw; GFX enum values)",
+                g_unk0x006dd784, st[0], st[2], st[3], st[4], st[5], st[6], st[7], st[8], st[9]);
+        }
+    }
     CGraphics::SetZWriteEnable(0);
     g_billboardRun = g_billboardRuns[0];
     for (i = 0; i < (unsigned int)g_unk0x006dd788; i++) {
