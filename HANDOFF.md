@@ -27,6 +27,18 @@ Update the relevant lane with tests, blockers and next handoff as it changes.
 Do not overlap these claimed lanes silently or combine inactive experiments into
 a road follow-up. Changes to eligibility/defaults need their own reviewed scope.
 
+## Current request: full supported scenery motion
+
+Claim: feat/stronger-supported-scenery, based main7efec63. Keep accepted source-fit
+3D tree geometry and authored arm frames. All verified spectator placements now
+animate (remove Finland65%placement gate), plus fixed-feet geometry sway moves
+all people on each supported card rather than one arm on a multi-person atlas.
+Tree crown amplitude increases1.5%to4.5%height, applies to fitted replacement
+geometry too, with fixed base and immutable source/cached vertices. Same stage
+simulation clock and deterministic phase; no render-clock or physics RNG use.
+This does not claim every game's asset/track is source-covered or add unrelated
+object motion. Native culling/reflections/appearance/performance remain open.
+
 ## Historical completed batch
 
 ## Summary

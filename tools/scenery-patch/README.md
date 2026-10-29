@@ -237,7 +237,7 @@ acceptance. Paused simulation holds the pose; extra views do not advance time.
 Other trees remain original; cropped-atlas cards remain fail-closed for3D
 replacement. `--tree-wind on|off` adds subtle wind to hash-verified individual
 2D tree cards, default on with a selected tree mode. It preserves original
-UVs and fixes the lowest vertices, moving only the top by at most1.5%of card
+UVs and fixes the lowest vertices, moving only the top by at most4.5%of card
 height. This is not a3Dupgrade. Forest strips, composite meshes, shadow masks,
 unverified sources and non-billboard objects are excluded. No mesh/collision
 records or saved settings change. Runtime logs name active wind sources and
@@ -314,12 +314,10 @@ masks and four poses, with both high/low source variants. Feet and lower30%
 remain fixed. Most poses are modest sleeve/hand gestures, not cheering or
 whole-body stretching. Original source bytes stay hash-gated.
 
-A stable placement hash selects65%of these pair cards for motion; the rest
-hold pose0. One moving person per selected pair targets about32.5%of people in
-large samples, not50%. Selection is identical for high/low variants, independent
-of frame order, and does not consume physics RNG. In the held Finland stage10
-(Tampere) placements,89out of302people are selected, about29.5%whole-stage.
-This does not prove the current camera's visible ratio or native appearance.
-Uncovered Finland crowd-strip and single-person atlases keep their earlier
-limited sway route. The roughly-one-in-three-visible target still needs native
-checks and per-view diagnostics.
+The current full-motion request removes that65%placement gate: every verified
+supported card animates. A fixed-feet, bounded2.5%height sway also moves all
+people on multi-person cards; existing authored forearm poses remain. This is
+2Dcard motion, not a skeleton or invented hidden anatomy. Replacement trees
+receive the same fixed-base4.5%height wind as verified original tree cards.
+Unsupported source identities remain original. Native appearance, culling,
+reflection alignment and performance remain unverified.

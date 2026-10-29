@@ -116,6 +116,16 @@ if(argc<2)return 0;base=argv[1];legacy=argc>2&&!strcmp(argv[2],"legacy");separat
  CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(draws==2);CHECK(world._41==3&&world._11==1);CHECK(mesh.flags==2&&object.pMesh==&mesh);
  source.width=128;CHECK(!SceneryPack_Draw(&object,(float*)&billboard));CHECK(logs.find("dimensions differ")!=std::string::npos);source.width=256;
  CHECK(!captured.empty());CHECK(captured[0].x==.5f&&captured[0].y==0);
+ auto restTree=captured;for(int i=0;i<15;i++)SceneryPack_Advance(65536);
+ CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);auto movedTree=captured;
+ CHECK(restTree.size()==movedTree.size());bool crownMoved=false;
+ for(size_t i=0;i<restTree.size();i++){
+  if(restTree[i].y==0)CHECK(restTree[i].x==movedTree[i].x);
+  else if(restTree[i].x!=movedTree[i].x)crownMoved=true;
+ }CHECK(crownMoved);
+ CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);
+ CHECK(captured.size()==movedTree.size()&&!memcmp(captured.data(),movedTree.data(),captured.size()*sizeof(GfxVertex)));
+ windEnabled=false;CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(!memcmp(captured.data(),restTree.data(),captured.size()*sizeof(GfxVertex)));windEnabled=true;
  Mesh cropped=mesh;MeshVertexF cropverts[3];memcpy(cropverts,verts,sizeof verts);
  for(auto &v:cropverts)v.textureCoordinates[0][0]=v.textureCoordinates[0][0]*.5f;
  cropped.pVertexData=(DWORD*)cropverts;object.pMesh=&cropped;CHECK(!SceneryPack_Draw(&object,(float*)&billboard));object.pMesh=&mesh;CHECK(logs.find("cropped, nonplanar or invalid")!=std::string::npos);
