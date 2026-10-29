@@ -144,3 +144,25 @@ existence was not a usable UI. Make that action explicitly Rebind driving
 controls, label the bindings save action and player rows. Test constructed menu
 links and actual action traversal/capture/save. Native pixels/navigation still
 need owner's check; do not tell them an unverified hidden path is usable.
+
+## Helicopter camera operator refinement
+
+Claim: fix/helicopter-camera-framing. Owner screenshot/steering asks stable
+helicopter following, occasional late reframing after a turn and slight
+overshoot, not continuous anticipation or shake. Test bypass of original spring
+only while customized operator mode is on; never overwrite saved lag. Native
+label loses uppercase H/O; inspect font glyph path, use menu-consistent lowercase
+and verify actual pixels once exact owned font pair is available. Native feel,
+projection and menu acceptance stay open. Dust59 and cockpit57 remain separate.
+
+Refinement validation:86/86Linux tests. Actual ChaseCamera_Update confirms custom
+operator spring bypass and immediate original-lag restoration while keeping saved
+lag unchanged; temporary isolated INI only. State fixture confirms mirrored turns,
+cut/NaN/dt resets, per-view independence, bounds, return to stable framing and a
+small single overshoot. Synthetic .3rad/s turn after calm produces -8.4deg lag,
++.32deg overshoot, then zero; not a native gameplay claim. Label regression calls
+actual Font_DrawText with a deliberately lowercase-only glyph map: old uppercase
+H/O vanish, new lowercase label emits both. Original font pair unavailable, so
+this is a source-path regression, NOT native-font/pixel acceptance. Loader slot1
+is Fonts/general/hel_15pt in frontend, hel_12pt in-race (.pcf+.tga). Native
+menu and helicopter feel must still be checked in owner build.

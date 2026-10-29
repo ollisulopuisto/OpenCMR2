@@ -944,7 +944,12 @@ void ChaseCamera_Update(CameraRecord *param_1, FixMatrix *param_2, int param_3)
         xform.forward.z = FixMul(xform.forward.z, g_sinTable[0x200]) - FixMul(up.z, g_sinTable[0x600]);
     }
 
-    if (FIX_ABS(mat.right.x - xform.right.x) >= 0x51e ||
+    if (CameraOperator_Enabled(param_1)) {
+        // Operator owns framing dynamics. Bypass, never modify the stored
+        // player spring/lag; disabling operator restores it on the next update.
+        FixMatrix_GetUp(pUp, &xform);
+        FixMatrix_GetForward(pRight, &xform);
+    } else if (FIX_ABS(mat.right.x - xform.right.x) >= 0x51e ||
         FIX_ABS(mat.right.y - xform.right.y) >= 0x51e ||
         FIX_ABS(mat.right.z - xform.right.z) >= 0x51e ||
         FIX_ABS(mat.up.x - xform.up.x) >= 0x51e ||
