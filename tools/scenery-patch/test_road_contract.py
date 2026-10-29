@@ -9,7 +9,7 @@ import road_contract as r
 
 class ContractTests(unittest.TestCase):
  def setUp(self):
-  self.tmp=tempfile.TemporaryDirectory();self.root=Path(self.tmp.name);self.source=self.root/'original';self.art=self.root/'artifacts';self.source.mkdir();self.art.mkdir()
+  self.tmp=tempfile.TemporaryDirectory();self.root=Path(self.tmp.name).resolve();self.source=self.root/'original';self.art=self.root/'artifacts';self.source.mkdir();self.art.mkdir()
   names=['fra01.hpc','fra01fin.dat','fra01.srf','temp.c3d']
   for name in names:(self.source/name).write_bytes(name.encode())
   (self.art/'curved.hpc').write_bytes(struct.pack('<ii5hh',0,0,1,0,0,0,0,0)+struct.pack('<hhi',1,0,0)+struct.pack('<HH',3,0)+bytes(36)+struct.pack('<HH4H',1,0,0,1,2,21)+struct.pack('<ihhh',1,0,1,1))
@@ -47,6 +47,9 @@ class ContractTests(unittest.TestCase):
   (self.root/'link').symlink_to(self.root/'other',target_is_directory=True)
   with self.assertRaises(ValueError):r.prepare(self.d,self.source,self.art,self.root/'link')
   with self.assertRaises(ValueError):r.prepare(self.d,self.source,self.art,self.source/'cache')
+ def test_symlink_cache_ancestor_refused(self):
+  other=self.root/"other";other.mkdir();(self.root/"alias").symlink_to(other,target_is_directory=True)
+  with self.assertRaisesRegex(ValueError,"Symlink"):r.prepare(self.d,self.source,self.art,self.root/"alias"/"cache")
  def test_key_covers_recipe_sources_and_outputs(self):
   key=r.cache_key(self.d)
   for kind in ['sources','outputs']:

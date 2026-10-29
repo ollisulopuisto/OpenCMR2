@@ -4,6 +4,7 @@
 #include "render/gfx_internal.h"
 #include <cstdio>
 #include <cstring>
+#include <cstdlib>
 
 extern "C" int Sys_GetOption(const char *, int fallback) { return fallback; }
 int Platform_GetSettingInt(const char *, int value) { return value; }
@@ -13,7 +14,11 @@ extern "C" void Sys_GetDesktopSize(int *w, int *h) { *w = 640; *h = 480; }
 extern "C" unsigned int Sys_GetTicks() { return 0; }
 
 // Force the null (headless) backend: no GPU executor to link/stub.
+#ifdef _WIN32
+static bool headlessSet = (_putenv_s("OPENCMR2_HEADLESS", "1") == 0);
+#else
 static bool headlessSet = (setenv("OPENCMR2_HEADLESS", "1", 1) == 0);
+#endif
 
 // The GPU backend is compiled into Gfx_SetVideoMode but never selected with the
 // headless variable above, so stub it out to keep the link minimal.
