@@ -145,3 +145,13 @@ not only a pure bool helper. Preserve rain-dependent speed, CIN blade limits,
 remapping and driving conflicts. Native behavior remains failed acceptance
 until a new build is tried. Dust cost regression is the other current priority;
 hedge/bush/grass additions remain saved and paused, not lost or complete.
+## Driving remapping menu reachability
+
+Claim: fix/driving-bindings-menu. Native report says only Wiper rebind is
+available. Source reproduction: Controls exposes two opaque controller rows;
+the device configuration's sole link to ten existing binding actions is labeled
+Back (localized 0x67). Selecting apparent Back actually enters bindings, so code
+existence was not a usable UI. Make that action explicitly Rebind driving
+controls, label the bindings save action and player rows. Test constructed menu
+links and actual action traversal/capture/save. Native pixels/navigation still
+need owner's check; do not tell them an unverified hidden path is usable.

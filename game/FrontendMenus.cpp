@@ -1108,7 +1108,7 @@ void FrontendControls_DrawDeviceList(Menu *pMenu)
                     g_wiperBindingCapture ? (g_wiperBindingConflict ? "Key in use; choose another" : "Press key (Esc cancels)") :
                     Input_GetKeyName(Sys_GetOption("video.windscreen_wiper_key",WINDSREEN_WIPER_KEY_DEFAULT)));
             else if (i < 2)
-                sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(100), i + 1);
+                snprintf(CFrontend::m_stringDest, 128, "Player %d driving controls", i + 1);
             else
                 sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x67));
             Font_DrawText(1, CFrontend::m_stringDest, textX, (int)(g_pGraphics->resY * 24) / 480 + line[1],
@@ -1195,10 +1195,10 @@ void FrontendControls_DrawDeviceBindings(Menu *pMenu)
                 Sprite_Queue((SpriteRect *)&CFrontend::m_pAr640DTexture->field_0x11c, (SpriteRect *)icon, CFrontend::m_pAr640DTexture, 1, 0, NULL, NULL, pColour, 8);
             }
             if (i >= 10) {
-                sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(pItem->id));
+                snprintf(CFrontend::m_stringDest, 128, "%s", pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
             } else {
                 if (FrontendControls_GetBindingCaptureState() != 0 && pMenu->cursor == i) {
-                    sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(pItem->id));
+                    snprintf(CFrontend::m_stringDest, 128, "%s", pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
                 } else {
                     sprintf(CFrontend::m_stringDest, g_standingsRowFormat, CFrontend::GetTextString(pItem->id), FrontendControls_GetBindingDisplayText(i));
                 }
@@ -1556,7 +1556,7 @@ void FrontendControls_DrawDeviceConfiguration(Menu *pMenu)
             FM_CHOICE(5, 4);
             break;
         case 6:
-            sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(pItem->id));
+            snprintf(CFrontend::m_stringDest, 128, "%s", pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
             Font_DrawText(1, CFrontend::m_stringDest, FM_SX(0x7a), FM_SY(24) + line[1], (int *)pLabel, 0x11);
             break;
         }
@@ -3648,7 +3648,7 @@ void FrontendMenu_BuildDeviceBindings(void)
         Menu_AddItemType4(&g_menu0x008288c0, 0, i + 0x6b, (MenuItemAction)FrontendControls_BeginBindingCapture, i);
         i++;
     } while (i < 10);
-    Menu_AddItemType2(&g_menu0x008288c0, 0, 0x67, &g_menu0x00828c80, 0, 0);
+    Menu_AddItemType2(&g_menu0x008288c0, (char *)"Save bindings", -1, &g_menu0x00828c80, 0, 0);
     Menu_SetCallbacks(&g_menu0x008288c0, (MenuCallback)FrontendControls_EnterDeviceBindings, (MenuCallback)FrontendControls_UpdateBindingCapture,
                       (MenuCallback)FrontendControls_DrawDeviceBindings, (MenuCallback)FrontendControls_LeaveDeviceBindings);
     Menu_ValidateCursor(&g_menu0x008288c0, 0);
@@ -3710,7 +3710,7 @@ void FrontendMenu_BuildDeviceConfiguration(void)
     Menu_AddItemType3(&g_menu0x00829140, 0, 0x6a, 2, 0, 0, 0, 0, 3);
     Menu_AddItemType3(&g_menu0x00829140, 0, 0x20b, 2, 0, 0, 0, 0, 4);
     Menu_AddItemType3(&g_menu0x00829140, 0, 0x20c, 2, 0, 0, 0, 0, 5);
-    Menu_AddItemType2(&g_menu0x00829140, 0, 0x67, &g_menu0x008288c0, 0, 6);
+    Menu_AddItemType2(&g_menu0x00829140, (char *)"Rebind driving controls", -1, &g_menu0x008288c0, 0, 6);
     Menu_SetCallbacks(&g_menu0x00829140, (MenuCallback)FrontendControls_EnterDeviceConfiguration, (MenuCallback)FrontendControls_UpdateDeviceConfiguration,
                       (MenuCallback)FrontendControls_DrawDeviceConfiguration, (MenuCallback)FrontendControls_LeaveDeviceConfiguration);
     Menu_ValidateCursor(&g_menu0x00829140, 0);
