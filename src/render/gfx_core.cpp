@@ -1364,9 +1364,15 @@ void Gfx_SetWindowMode(SDL_Window *window, bool fullscreen, int width, int heigh
     SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 }
 
+static char s_capturePath[1024];
+extern "C" void Gfx_RequestCapture(const char *path)
+{
+    snprintf(s_capturePath, sizeof(s_capturePath), "%s", path ? path : "");
+}
+
 bool Gfx_FrameHashWanted(void)
 {
-    return getenv("OPENCMR2_FRAME_HASH") != NULL;
+    return getenv("OPENCMR2_FRAME_HASH") != NULL || s_capturePath[0] != 0;
 }
 
 void Gfx_HashFrame(const uint8_t *bgra, int width, int height)
@@ -1375,6 +1381,14 @@ void Gfx_HashFrame(const uint8_t *bgra, int width, int height)
     static const char *dump = getenv("OPENCMR2_FRAME_DUMP");
     static int every = getenv("OPENCMR2_FRAME_DUMP_EVERY") ? atoi(getenv("OPENCMR2_FRAME_DUMP_EVERY")) : 600;
     static unsigned frame;
+    if (s_capturePath[0]) {
+        SDL_Surface *s = SDL_CreateSurfaceFrom(width, height, SDL_PIXELFORMAT_ARGB8888, (void *)bgra, width * 4);
+        bool ok = s != NULL && SDL_SavePNG(s, s_capturePath);
+        Sys_Log("capture: %s %s (%dx%d)", s_capturePath, ok ? "saved" : "FAILED", width, height);
+        if (s != NULL)
+            SDL_DestroySurface(s);
+        s_capturePath[0] = 0;
+    }
     if (file == NULL)
         return;
     const size_t bytes = (size_t)width * height * 4;

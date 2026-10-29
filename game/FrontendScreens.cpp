@@ -31,6 +31,7 @@
 #include "FileBuffer.h"
 #include "RecordBits.h"
 #include "StageInfo.h"
+#include "AttractCapture.h"
 
 extern int g_unk0x00819744;
 
@@ -5398,6 +5399,7 @@ void FrontendMenu_EnterMain(Menu *pMenu, int param)
     int k;
 
     g_mainMenuInputTime = Sys_GetTicks();
+    AttractCapture::OnMainMenu();
     FrontendAnimation_ResetMainPath();
     p = FrontendScroller_GetMainScroller();
     p->offset = 0;
@@ -5430,7 +5432,8 @@ void FrontendMenu_UpdateMain(Menu *pMenu)
     now = Sys_GetTicks();
     if (StageObject_GetAnyDeviceHeldButtons() != 0)
         g_mainMenuInputTime = Sys_GetTicks();
-    if ((int)(now - g_mainMenuInputTime) > 30500) {
+    if ((int)(now - g_mainMenuInputTime) > (int)AttractCapture::MenuDelayMs()) {
+        AttractCapture::OnDemoStart();
         CGameInfo::SetGameInfoSessionFlag(1);
         Menu_SetNextAction(FrontendMenu_GetRallyStartTransition());
     }
