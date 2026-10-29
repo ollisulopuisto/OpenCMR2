@@ -6386,7 +6386,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         BYTE colour[4] = {240, 246, 255, 255};
         unsigned long long tick=0;unsigned frame=0,changes=0;
         bool spectator=SceneryPack_GetAnimationStatus(&tick,&frame,&changes);
-        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?4:3)+9);
+        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?4:3)+10);
         short panel[4] = {(short)layout.x,(short)layout.y,(short)layout.width,(short)layout.height};
         Sprite_FillRect(NULL, panel, background, 1);
         char text[96];
@@ -6409,7 +6409,8 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         auto effect=[&](unsigned bit){return status.submitted<0?"?":!(status.requested&bit)?"off":status.encoded&bit?"enc":"skip";};
         snprintf(text,sizeof text,"AA:%s bloom:%s blur:%s",effect(1),effect(2),effect(4));line(text);
         snprintf(text,sizeof text,"DoF:%s rays:%s grade:%s",effect(8),effect(16),effect(32));line(text);
-        snprintf(text,sizeof text,"Shadow:%s rain/snow:%s submit:%s",effect(64),effect(128),status.submitted<0?"?":status.submitted?"OK":"FAIL");line(text);
+        snprintf(text,sizeof text,"shadow:%s rain/snow:%s",effect(64),effect(128));line(text);
+        snprintf(text,sizeof text,"submission:%s",status.submitted<0?"unknown":status.submitted?"accepted":"failed");line(text);
         snprintf(text,sizeof text,"MetalFX:%s",status.metalFX<0?"off/unknown":status.metalFX?"encoded":"fallback");line(text);
         line("enc=encoded; skip=requested, not encoded");
         line("Previous frame; not completed-pixel proof");
