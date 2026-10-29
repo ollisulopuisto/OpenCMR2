@@ -30,7 +30,7 @@ struct EnhancementOptions {
         if(key=="--driver-names"){if(value!="original"&&value!="real"&&value!="sidecar")error="--driver-names expects original, real or sidecar";else names=value;}
         if(key=="--effect"){
             auto at=value.find('=');std::string name=value.substr(0,at),v=at==value.npos?"":value.substr(at+1);
-            static const char *allowed[]={"dust_plume","body_dirt","dust_volume","volumetric_clouds","spatial_aa","metalfx_spatial","motion_blur","bloom","particles","shadows","depth_of_field","god_rays","color_grading","temporal_aa","speed_motes","debug_object_mask"};
+            static const char *allowed[]={"dust_plume","body_dirt","dust_volume","volumetric_clouds","spatial_aa","metalfx_spatial","motion_blur","bloom","particles","shadows","depth_of_field","god_rays","color_grading","temporal_aa","speed_motes","debug_object_mask","vapor_trails","speed_lines"};
             bool known=false;for(auto key:allowed)if(name==key)known=true;
             if(!known||(v!="on"&&v!="off"))error="--effect expects a listed NAME=on/off";
             else overrides["video."+name]=v=="on";

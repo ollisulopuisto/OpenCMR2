@@ -45,6 +45,7 @@ int main(){
   CHECK(run({"t","--fov-preview","0"})&&e2.empty());CHECK(run({"t","--fov-preview","19"})&&!e2.empty());CHECK(run({"t","--fov-preview","151"})&&!e2.empty());CHECK(run({"t","--fov-preview","x"})&&!e2.empty());
   CHECK(run({"t","--speed-hold","2"})&&!e2.empty());CHECK(run({"t","--dof-focus-car","x"})&&!e2.empty());
   CHECK(run({"t","--speed-streak","101"})&&!e2.empty());CHECK(run({"t","--speed-streak","x"})&&!e2.empty());
+  t=p;CHECK(run({"t","--effect","vapor_trails=on","--effect","speed_lines=off"})&&e2.empty());t.Apply();CHECK(t.overrides["video.vapor_trails"]==1&&t.overrides["video.speed_lines"]==0);CHECK(run({"t","--effect","vapor_trails=maybe"})&&!e2.empty());
   CHECK(run({"t","--speed-motes-size","250"})&&e2.empty()&&t.overrides["video.speed_motes_size"]==250);CHECK(run({"t","--speed-motes-size","49"})&&!e2.empty());CHECK(run({"t","--speed-motes-size","801"})&&!e2.empty());
   CHECK(run({"t","--dof-blur-max-px","8"})&&e2.empty()&&t.overrides["video.dof_blur_max_px"]==8);CHECK(run({"t","--dof-blur-max-px","0"})&&!e2.empty());CHECK(run({"t","--dof-blur-max-px","41"})&&!e2.empty());
   EnhancementOptions q;t=q;CHECK(run({"t","--effect","bloom=on"})&&e2.empty());t.Apply();CHECK(!t.overrides.count("video.speed_fov")&&!t.overrides.count("video.dof_blur"));}
