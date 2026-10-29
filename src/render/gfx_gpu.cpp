@@ -2534,7 +2534,7 @@ struct Executor : GfxExecutor {
             float uniforms[8] = { dofFocalDistance / 100.0f,
                                   dofFocalRange / 100.0f * (1.0f - 0.5f * speedFocusSmooth),
                                   dofMaxBlur / 100.0f * 4.0f, speedFocusSmooth,
-                                  aspect, 0.0f, 0.0f, 0.0f };
+                                  aspect, 0.014f * (float)backHeight, 0.0f, 0.0f };
             SDL_GPUTextureSamplerBinding bindings[2] = {
                 { presentSource, linearSampler }, { backDepth, depthSampler }
             };
