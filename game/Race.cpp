@@ -1,4 +1,5 @@
 #include "DustPlume.h"
+#include "CurvedRoad.h"
 #include "SceneryPack.h"
 #include "SceneryPackFormat.h"
 #include <stddef.h>
@@ -357,6 +358,7 @@ void Race_LoadStageModel(void)
     GenericFile *pFile;
 
     pBuffer = CGenericFileLoader::FindFile((GenericFile *)StageTiming_GetStageFile3(), g_strTempC3D, NULL, NULL, 0);
+    if (CurvedRoad_Render()) pBuffer=CurvedRoad_Render();
     if (pBuffer != NULL) {
         pFile = Race_GetLoadedStageFile();
         Sector_BuildC3DModelScene(pBuffer, RallyData_GetChallengeRenderState(), pFile);
@@ -733,6 +735,7 @@ BYTE Race_LoadSelectedStage(void)
     RallyData_DrawLoadingProgress(0xf, 1, 0xff);
     Race_ResolveStageTexturesAndPalettes();
     Race_LoadStageLightPlacement();
+    CurvedRoad_Begin((GenericFile*)StageTiming_GetStageFile3(),(const char*)GameMenu_GetChampionshipTransitionState());
     Race_LoadStageModel();
     Race_LoadHPCData();
     RallyData_DrawLoadingProgress(0x19, 1, 0xff);
@@ -3690,6 +3693,7 @@ void Race_LoadHPCData(void)
     sprintf(CFrontend::m_stringDest, g_strHpcFormat, GameMenu_GetChampionshipTransitionState());
     pData = (BYTE *)CGenericFileLoader::FindFile((GenericFile *)StageTiming_GetStageFile3(), CFrontend::m_stringDest,
                                                  0, 0, 0);
+    if (CurvedRoad_Contact()) pData=(BYTE*)CurvedRoad_Contact();
     if (pData != NULL)
         StageTiming_IndexSerializedStageTables(pData);
 }

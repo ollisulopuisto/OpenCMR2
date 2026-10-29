@@ -391,3 +391,28 @@ endif()
 add_executable(tree_collision_runtime_test tree_collision_runtime.cpp)
 target_link_libraries(tree_collision_runtime_test PRIVATE opencmr2_platform)
 add_test(NAME tree_collision_runtime COMMAND tree_collision_runtime_test)
+
+add_executable(research_track_edges_test research_track_edges.cpp)
+target_link_libraries(research_track_edges_test PRIVATE opencmr2_platform)
+add_test(NAME research_track_edges COMMAND research_track_edges_test)
+if(Python3_Interpreter_FOUND)
+ add_test(NAME road_research_contract COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tools/scenery-patch/test_road_contract.py)
+ add_test(NAME road_pair_transaction COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tools/scenery-patch/test_road_pair.py)
+endif()
+if(OPENCMR2_SHADER_PIXEL_TESTS)
+ add_test(NAME road_prepare_recipe COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tools/scenery-patch/test_road_prepare.py)
+endif()
+if(NOT APPLE AND NOT MSVC)
+ add_executable(road_loader_probe road_loader_probe.cpp)
+ target_link_libraries(road_loader_probe PRIVATE opencmr2_platform)
+ target_link_options(road_loader_probe PRIVATE
+  -Wl,--wrap=_Z30Graphics_LoadTextureRecordListPhPcjiP11GenericFile
+  -Wl,--wrap=_Z19Mesh_UploadVerticesP4Mesh)
+ add_executable(road_runtime_probe road_runtime_probe.cpp)
+ target_link_libraries(road_runtime_probe PRIVATE opencmr2_platform)
+ target_link_options(road_runtime_probe PRIVATE
+  -Wl,--wrap=Sys_GetRoadDirectory
+  -Wl,--wrap=_ZN18CGenericFileLoader8FindFileEP11GenericFilePcPhPjh
+  -Wl,--wrap=_ZN5CGame16RegisterCallbackEPvS0_
+  -Wl,--wrap=_Z24Track_ResearchExactEdgesb)
+endif()

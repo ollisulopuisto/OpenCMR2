@@ -493,3 +493,22 @@ France atlas using the original demo recipe, not all crowd limbs. Other atlases
 retain subtle cutout sway. `--tree-wind off` disables the new base-fixed2Dwind
 (default on with a selected tree mode). Wind does not turn cards into3Dtrees.
 See the preparation guide for exact coverage and the runtime draw counters.
+
+### Experimental curved Ballon roads
+
+Pass `--roads curved` to the OpenCMR2 binary to prepare and select matching
+curved render/contact geometry. `--roads original` or no road flag keeps the
+original geometry. `--help-enhancements` lists the option; add `--prepare-only`
+to prepare/verify without starting the game. Keep your usual data/profile flags;
+no separate save profile is needed, and original game files are never modified.
+
+This requires an existing Python 3.10+ environment with numpy. No dependency or
+asset downloads are performed. Only the exact supported original France Ballon
+high-detail archive is accepted. Other stages remain original. Missing or changed
+source/preparation errors stop that launch with a diagnostic; runtime pair/source
+mismatch falls back to both original render and contact geometry together.
+
+This is experimental, not native acceptance: FIN barriers are unchanged and may
+not align with moved boundaries. Native Mac driving, culling and performance have
+not been verified. The source-only converter and cache require your owned data;
+no game artwork or stage bytes are included in this repository.

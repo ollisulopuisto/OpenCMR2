@@ -73,7 +73,10 @@ set_property(TARGET opencmr2 APPEND PROPERTY LINK_DEPENDS
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/convert.py
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/source-index.json
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/car-index.json
-    ${PROJECT_SOURCE_DIR}/tools/scenery-patch/requirements.txt)
+    ${PROJECT_SOURCE_DIR}/tools/scenery-patch/requirements.txt
+    ${PROJECT_SOURCE_DIR}/tools/scenery-patch/road_prepare.py
+    ${PROJECT_SOURCE_DIR}/tools/scenery-patch/road_pair.py
+    ${PROJECT_SOURCE_DIR}/tools/scenery-patch/road_contract.py)
 add_custom_command(TARGET opencmr2 POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:opencmr2>/enhancements/scenery-patch
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -82,6 +85,9 @@ add_custom_command(TARGET opencmr2 POST_BUILD
         ${PROJECT_SOURCE_DIR}/tools/scenery-patch/car-index.json
         ${PROJECT_SOURCE_DIR}/tools/scenery-patch/source-index.json
         ${PROJECT_SOURCE_DIR}/tools/scenery-patch/requirements.txt
+        ${PROJECT_SOURCE_DIR}/tools/scenery-patch/road_prepare.py
+        ${PROJECT_SOURCE_DIR}/tools/scenery-patch/road_pair.py
+        ${PROJECT_SOURCE_DIR}/tools/scenery-patch/road_contract.py
         $<TARGET_FILE_DIR:opencmr2>/enhancements/scenery-patch)
 
 if(WIN32)
