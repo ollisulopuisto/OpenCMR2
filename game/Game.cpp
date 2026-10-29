@@ -2148,7 +2148,9 @@ static int CarPaintOwner(SceneNode *node){
 }
 static void DrawCarScopedLOD(SceneNode*node,Mesh*mesh){
  int previous=CarBodyDirt::drawingCar;CarBodyDirt::drawingCar=CarPaintOwner(node);
+ Gfx_SetObjectId(CarBodyDirt::drawingCar>=0?(unsigned)CarBodyDirt::drawingCar+1:0);
  Graphics_DrawMeshLOD(mesh,0,0,0);
+ Gfx_SetObjectId(0);
  Gfx_SetBodyDirt(0,0,0,0);CarBodyDirt::drawingCar=previous;
 }
 

@@ -96,6 +96,7 @@ struct GfxDrawState {
     int alphaFunc = GFX_CMP_ALWAYS;
     DWORD alphaRef = 0;
     DWORD textureFactor = 0xffffffff;
+    unsigned objectId = 0; // dynamic object (car slot + 1), 0 = static scenery
     float bodyDirt[4] = {}; // amount, soil RGB; only explicitly qualified paint draws
     GfxStageState stages[2];
     GfxViewport viewport;
