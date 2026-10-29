@@ -5,7 +5,8 @@
 // Visual only: it scales the chase camera's offset from the car and never touches the car, its physics or the road.
 // Pure maths, no game state. Magnifications are 16.16: 65536 = same view as the saved setting, above = wider view (smaller things).
 #include <stdint.h>
-static const int kFovDollyMinScale = 0x7333;   // never closer than 0.45 of the saved distance, so the camera cannot reach the car body
+static const int kFovDollyMinScale = 0x5999;   // never closer than 0.35 of the saved distance, so the camera cannot reach the car body (was 0.45)
+static const int kFovDollyMaxPct = 250;     // 100 = the car keeps its screen size; above 100 the car grows as the view widens (a dolly zoom)
 // Total widening from the saved view: speed FOV widening times effective/saved video.fov (a higher number is a wider view).
 inline int FovDolly_Widening(int speedMag16, int savedFov, int effectiveFov)
 {
@@ -13,12 +14,12 @@ inline int FovDolly_Widening(int speedMag16, int savedFov, int effectiveFov)
     long long w = (long long)speedMag16 * effectiveFov / savedFov;
     return w < 65536 ? 65536 : w > 0x7fffffffLL ? 0x7fffffff : (int)w;   // a narrower view never pushes the camera away
 }
-// Offset scale 16.16 for amount 0..100 percent of the full compensation (full = 1 / widening), clamped to kFovDollyMinScale..1.
+// Offset scale 16.16 for amount 0..250 percent of the full compensation (full = 1 / widening), clamped to kFovDollyMinScale..1.
 inline int FovDolly_Scale(int widening16, int amountPct)
 {
     if (widening16 <= 65536) return 65536;
     if (amountPct < 0) amountPct = 0;
-    if (amountPct > 100) amountPct = 100;
+    if (amountPct > kFovDollyMaxPct) amountPct = kFovDollyMaxPct;
     long long full = (65536LL * 65536) / widening16;                       // full compensation scale, below 65536
     long long scale = 65536 - (65536 - full) * amountPct / 100;
     return scale < kFovDollyMinScale ? kFovDollyMinScale : scale > 65536 ? 65536 : (int)scale;

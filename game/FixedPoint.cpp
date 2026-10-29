@@ -970,7 +970,7 @@ static int View_FovDollyScale(CameraRecord *pObj)
     int target = preview > 0 ? FovPreview_Effective(preview, 70) : saved;
     int shown = View_ShownFov16(target);   // same eased value the projection uses this frame
     int widening = FovDolly_Widening(View_SpeedFovMagnification((BYTE)view), saved * 65536, shown);
-    int scale = FovDolly_Scale(widening, Sys_GetOption("video.fov_dolly", 100));
+    int scale = FovDolly_Scale(widening, Sys_GetOption("video.fov_dolly", 150));
     g_lastWidening[view] = widening;
     g_lastDollyScale[view] = scale;
     return scale;

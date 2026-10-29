@@ -13,7 +13,7 @@ need("base.x = FixMul(base.x, dolly)" in f and "base.z = FixMul(base.z, dolly)" 
 i = f.index("View_FovDollyScale(pObj)"); need(f.index("ChaseCamera_GetViewOffset(&base, pObj);") < i, "dolly must come after the offset is read")
 need("FovDolly_Widening(View_SpeedFovMagnification" in f and "FovDolly_Scale(widening" in f, "must use the pure helpers")
 need("int View_SpeedFovMagnification(BYTE view)" in rd("game/Car.cpp"), "speed FOV accessor missing")
-need('"video.fov_dolly", 0, 100, 10, 100' in rd("game/TuningPanel.h"), "panel row missing or default not 100")
+need('"video.fov_dolly", 0, 250, 10, 150' in rd("game/TuningPanel.h"), "panel row missing or default not 150")
 need("SpeedMotes_Step(" not in rd("game/Race.cpp"), "motes must not be spawned")
 need("video.speed_motes" not in rd("game/TuningPanel.h"), "mote rows must be gone from the panel")
 need("FOV dolly" in rd("game/RallyData.cpp") and "View_GetFovDolly" in rd("game/RallyData.cpp"), "overlay line missing")

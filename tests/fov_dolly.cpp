@@ -21,10 +21,10 @@ int main()
     int half = FovDolly_Scale(w, 50);
     CHECK(half > s && half < 65536 && half - s > (65536 - s) / 2 - 2 && half - s < (65536 - s) / 2 + 2);
     CHECK(FovDolly_Scale(w, 0) == 65536);
-    CHECK(FovDolly_Scale(w, -20) == 65536 && FovDolly_Scale(w, 400) == s);
+    CHECK(FovDolly_Scale(w, -20) == 65536 && FovDolly_Scale(w, 400) == FovDolly_Scale(w, kFovDollyMaxPct));
     // The camera never gets closer than the floor, however wide the view.
     CHECK(FovDolly_Scale(65536 * 20, 100) == kFovDollyMinScale);
-    CHECK(kFovDollyMinScale > 65536 * 4 / 10 && kFovDollyMinScale < 65536 * 5 / 10);
+    CHECK(kFovDollyMinScale > 65536 * 3 / 10 && kFovDollyMinScale < 65536 * 4 / 10);
     // Bad inputs fall back to no change.
     CHECK(FovDolly_Widening(0, 80, 80) == 65536 && FovDolly_Widening(65536, 0, 80) == 65536 && FovDolly_Widening(65536, 80, 0) == 65536);
     // Monotone: a wider view never moves the camera farther.
