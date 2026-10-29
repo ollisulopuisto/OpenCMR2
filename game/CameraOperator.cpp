@@ -3,6 +3,7 @@
 #include "Car.h"
 #include "port/sys.h"
 static CameraOperator::State states[8];
+bool Track_CameraGroundHeight(FixVector*,int*);
 extern BYTE g_playerCameraMode[8];
 bool CameraOperator_Enabled(const CameraRecord*record){
  return record && record->index<8 && g_playerCameraMode[record->index]==4 && Sys_GetOption("video.camera_operator",0);
@@ -16,13 +17,19 @@ void CameraOperator_Update(CameraRecord*record,const FixMatrix*reference,const F
  if(!std::isfinite(x)||!std::isfinite(z)||x*x+z*z<.25f){state.Reset();return;}
  state.pitch=(pitch-0x2d)*(6.28318530718f/4096.f);
  auto&p=reference->position;
+ // Remove last terrain lift before advancing free world inertia.
+ if(state.ready)state.position.y-=state.terrainLift;
  state.Step({p.x/65536.f,p.y/65536.f,p.z/65536.f},std::atan2(x,z),car->steeringInput/65536.f,car->speed/65536.f,
   offset?std::abs(offset->z/65536.f):6.5f,offset?offset->y/65536.f:1.5f,g_physicsTimeStep/(65536.f*25.f));
+ state.ConstrainTerrain({p.x/65536.f,p.y/65536.f,p.z/65536.f},g_physicsTimeStep/(65536.f*25.f),[](CameraOperator::V3 point,float&y){
+  FixVector fixed={(int)std::lround(point.x*65536),(int)std::lround(point.y*65536),(int)std::lround(point.z*65536)};int height;
+  if(!Track_CameraGroundHeight(&fixed,&height))return false;y=height/65536.f;return true;
+ });
 }
 void CameraOperator_Apply(CameraRecord*record){
  if(!CameraOperator_Enabled(record)||!states[record->index].ready)return;
  const auto&s=states[record->index];auto&m=record->matrix;
- CameraOperator::V3 f=CameraOperator::Unit(s.aim-s.position);
+ CameraOperator::V3 f=s.FramedForward();
  CameraOperator::V3 r=CameraOperator::Unit({f.z,0,-f.x});
  CameraOperator::V3 u={f.y*r.z-f.z*r.y,f.z*r.x-f.x*r.z,f.x*r.y-f.y*r.x};
  auto fixed=[](CameraOperator::V3 v){return FixVector{(int)std::lround(v.x*65536),(int)std::lround(v.y*65536),(int)std::lround(v.z*65536)};};

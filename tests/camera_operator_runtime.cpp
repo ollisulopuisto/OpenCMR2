@@ -6,6 +6,7 @@
 #include <cstring>
 #include <cstdio>
 BYTE g_playerCameraMode[8]={};int g_physicsTimeStep=65536;static Car car={};static bool enabled=true;
+bool Track_CameraGroundHeight(FixVector*,int*){return false;}
 Car*Car_Get(int i){return i==0?&car:nullptr;}
 extern "C" int Sys_GetOption(const char*,int){return enabled;}
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line%d %s\n",__LINE__,#x);return 1;}}while(0)

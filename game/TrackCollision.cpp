@@ -1446,3 +1446,12 @@ void AutoGear_UpdateCarGearState(Car *pCar)
     }
     g_pAutoGearCar->renderSteeringAngle = (short)FTOI(__int64, X87S_MUL((double)t, g_fixedDegreesToAngle12));
 }
+
+// Camera samples only valid collision terrain. No default car-height fallback:
+// off-mesh/missing terrain is unknown, not proof a sightline is clear.
+bool Track_CameraGroundHeight(FixVector *point,int *height){
+ if(!point||!height||!g_trackTriangles||!g_trackVertices||!g_trackCollisionHeader||!g_trackTriangleIndices||!g_trackGridColumns||!g_trackGridRows||!g_trackCollisionTables.levels[0])return false;
+ short tri=-1;unsigned short surface=0;FixVector normal={};
+ int y=Track_GetGroundHeight(point,&normal,&tri,&surface,point->y);
+ if(tri<0)return false;*height=y;return true;
+}
