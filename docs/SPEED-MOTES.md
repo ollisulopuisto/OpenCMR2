@@ -15,8 +15,8 @@ What it does
 
 What it does not do
 - No collision object, no physics, handling or road-line input. It reads the car state and writes only particle slots.
-- It does not use the global `rand()` stream (own generator). It is separate from the rain/weather switch and `video.particles`
-  still gates nothing here: it is its own option.
+- It does not use the global `rand()` stream (own generator). `video.particles` is the rain/snow switch (0 off, 1 rain,
+  2 snow); motes do not read it, so `particles=off` leaves motes on. They only follow `speed_motes`.
 - It does not change the drone camera or any shake.
 
 Unverified
