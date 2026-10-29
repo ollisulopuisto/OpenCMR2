@@ -312,6 +312,7 @@ add_test(NAME animated_scenery_lifecycle COMMAND animated_scenery_lifecycle_test
 if(Python3_Interpreter_FOUND)
  add_test(NAME renderpass_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/renderpass_wiring.py)
  add_test(NAME billboard_queue_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/billboard_queue_wiring.py)
+ add_test(NAME object_mask_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/object_mask_wiring.py)
 endif()
 if(OPENCMR2_SHADER_PIXEL_TESTS AND Python3_Interpreter_FOUND)
  add_test(NAME dust_volume_pixels COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/dust_volume_shader.py)

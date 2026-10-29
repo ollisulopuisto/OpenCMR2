@@ -40,6 +40,8 @@ void Gfx_SetBodyDirt(float amount, float red, float green, float blue);
 // Stable id of the dynamic object (car slot + 1) for the draws that follow; 0 = static.
 // Only temporal AA reads this, to learn which draws move.
 void Gfx_SetObjectId(unsigned id);
+/* Debug object mask: objectId (car slot + 1) of the car the current view follows; recorded with the world-end marker. */
+void Gfx_SetPlayerObject(unsigned id);
 void Gfx_SetCloudEnvironment(float coverage, float baseHeight, float sunX, float sunY, float sunZ);
 
 

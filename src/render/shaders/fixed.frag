@@ -26,7 +26,7 @@ layout(std140, set = 3, binding = 0) uniform FragmentUniforms {
     ivec4 stage1;
     ivec4 stage1b;
     vec4 textureFactor;
-    ivec4 alphaTest;    // enabled, compare function, -, -
+    ivec4 alphaTest;    // enabled, compare function, debug object mask (1 = paint magenta), -
     vec4 alphaRef;      // reference / 255
     vec4 fogColor;
     ivec4 fogMode;      // fog enabled, table mode (3 linear), specular enabled, -
@@ -223,6 +223,12 @@ void main()
 
     if (alphaTest.x != 0 && !Compare(alphaTest.y, floor(current.a * 255.0 + 0.5), floor(alphaRef.x * 255.0 + 0.5)))
         discard;
+
+    // Debug object mask (video.debug_object_mask): repaint the followed car's own draws, depth tested against the scene.
+    if (alphaTest.z != 0) {
+        outColor = vec4(1.0, 0.0, 1.0, 1.0);
+        return;
+    }
 
     if (fogMode.x != 0) {
         float f = inFog;
