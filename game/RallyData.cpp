@@ -6607,12 +6607,12 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         const char *name = vt == 3 ? "COCKPIT" : vt == 2 ? "BONNET" : (vt >= 4 && vt <= 6) ? (dr && vt == 5 ? "CHASE (DRONE VARIANT)" : "CHASE") : vt == 1 || vt == 10 ? "CAR-MOUNTED (UNNAMED IN SOURCE)" : "UNNAMED IN SOURCE";
         char big[5][96];
         snprintf(big[0], 96, "CAMERA %s  type %d", name, vt);
-        snprintf(big[1], 96, "FOV %.1f deg vertical  %.1f horizontal (measured)", vd, hd);
-        snprintf(big[2], 96, "Speed widening x%.2f  (speed FOV %d%%, eased speed %d%%)", sp > 0 ? 1.0 + (sp > 150 ? 150 : sp) * (sh / 65536.0) / 100.0 : 1.0, sp, sh * 100 / 65536);
+        snprintf(big[1], 96, "FOV %.1f deg vert, %.1f horiz (measured)", vd, hd);
+        snprintf(big[2], 96, "Widening x%.2f (speed FOV %d%%, speed %d%%)", sp > 0 ? 1.0 + (sp > 150 ? 150 : sp) * (sh / 65536.0) / 100.0 : 1.0, sp, sh * 100 / 65536);
         snprintf(big[3], 96, "Camera vs car: FWD/BACK %+.2f  side %+.2f  up %+.2f  (dist %.2f)", cf, cs, cu, cd);
-        snprintf(big[4], 96, "+ = ahead of car, - = behind. Manual move applied %+.2f", eff / 65536.0);
+        snprintf(big[4], 96, "+ ahead, - behind. Manual move %+.2f", eff / 65536.0);
         int bigFont = std::clamp((int)g_pGraphics->resY / 32, 20, 44), bigLine = bigFont + bigFont / 3, pad = bigFont / 2;
-        int bw = (int)g_pGraphics->resX * 56 / 100, bx = ((int)g_pGraphics->resX - bw) / 2, by = (int)g_pGraphics->resY * 2 / 100;
+        int bw = (int)g_pGraphics->resX * 72 / 100, bx = ((int)g_pGraphics->resX - bw) / 2, by = (int)g_pGraphics->resY * 2 / 100;
         short bp[4] = {(short)bx, (short)by, (short)bw, (short)(5 * bigLine + 2 * pad)};
         BYTE bbg[4] = {0, 0, 0, 215}, bfg[4] = {255, 236, 90, 255}, bwhite[4] = {255, 255, 255, 255};
         Sprite_FillRect(NULL, bp, bbg, 1);
