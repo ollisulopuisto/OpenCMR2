@@ -1,4 +1,5 @@
 #include "render/dof_gate.h"
+#include "render/projection_vote.h"
 #include "shadow_caster.h"
 #include "cloud_uniforms.h"
 #include "temporal_uniforms.h"
@@ -288,13 +289,12 @@ struct Executor : GfxExecutor {
     // Projections of the draws that wrote the sampled depth (back buffer, untransformed, depth test+write),
     // recovered from _33/_43 and counted per distinct near/far pair. The dominant pair feeds the DoF pass.
     struct ProjVote { float n, f; int count; };
-    ProjVote projVotes[4] = {}; int projVoteTotal = 0;
+    ProjVote projVotes[4] = {}; int projVoteTotal = 0, projVoteRejected = 0;
     float sceneNear = 0.0f, sceneFar = 0.0f;
     void VoteProjection(const GfxMatrix &m)
     {
-        if (!(m._34 == 1.0f && m._33 > 1.0f && m._43 < 0.0f)) return;
-        float n = -m._43 / m._33, f = m._43 / (m._33 - 1.0f);
-        if (!(n > 0.0f && f > n)) return;
+        float n, f;
+        if (!Projection_NearFar(m._33, m._34, m._43, &n, &f)) { projVoteRejected++; return; }
         projVoteTotal++;
         for (ProjVote &v : projVotes)
             if (v.count && std::fabs(v.n - n) < 1e-3f * n && std::fabs(v.f - f) < 1e-3f * f) { v.count++; return; }
@@ -314,6 +314,14 @@ struct Executor : GfxExecutor {
             if (distinct != lastDistinct) {
                 lastDistinct = distinct;
                 Sys_Log("options: DoF projection from depth-writing draws: %d distinct near/far pair(s), dominant near %.3f far %.1f (%d of %d draws); %s", distinct, projVotes[best].n, projVotes[best].f, projVotes[best].count, projVoteTotal, distinct == 1 ? "linear depth candidate in use" : "ambiguous: old raw-depth rule used");
+            }
+        }
+        else {
+            // No depth-writing draw produced a usable perspective projection: report it once (state change), never silently.
+            static bool loggedNone = false;
+            if (!loggedNone) {
+                loggedNone = true;
+                Sys_Log("options: DoF projection: 0 usable depth-writing draws this frame (%d rejected as non-perspective); old raw-depth rule used", projVoteRejected);
             }
         }
     }
@@ -2171,7 +2179,7 @@ struct Executor : GfxExecutor {
                 }
             }
 
-        memset(projVotes, 0, sizeof(projVotes)); projVoteTotal = 0; // votes are per rendered frame, never carried over
+        memset(projVotes, 0, sizeof(projVotes)); projVoteTotal = 0; projVoteRejected = 0; // votes are per rendered frame, never carried over
         size_t worldEnd=frame.commands.size();unsigned boundaries=0;bool raceWorld=false;
         for(size_t i=0;i<frame.commands.size();++i)if(frame.commands[i].type==GFX_CMD_WORLD_END){worldEnd=i;raceWorld=frame.commands[i].raceWorld;++boundaries;}
         // Per-view history is not implemented. Multi-view/UI-only frames skip
