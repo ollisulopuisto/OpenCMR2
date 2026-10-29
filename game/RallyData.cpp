@@ -6285,7 +6285,7 @@ void View_GetFovPreview(int *preview, int *base);
 void View_GetMeasuredFov(unsigned int view, double *vertDeg, double *horzDeg);
 void AttractCapture_ViewSignature(int view, int *type, int *drone);
 void SpeedFov_GetStatus(int view, int *pct, int *shown);
-void SpeedMote_GetStats(int *live, unsigned *drawn);
+void View_GetFovDolly(unsigned int view, int *scale, int *widening);
 void StageObject_ApplyInterpolatedNodeMatrices(int param1);
 void Race_DrawPlayerCallSlots(unsigned int player, int *pViewRect);
 void Dash_Draw(int player, int *pViewRect);
@@ -6559,11 +6559,9 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             {int pv=0,pbase=70;View_GetFovPreview(&pv,&pbase);
              if(pv>0){snprintf(text,sizeof text,"FOV PREVIEW video.fov number %d (debug; saved %d; x%.2f vs saved, higher = wider). Speed FOV %% below is separate.",pv,pbase,FovPreview_Magnification(pv,pbase));line(text);}}
             int sfPct=0,sfShown=0;SpeedFov_GetStatus((int)param2,&sfPct,&sfShown);
-            int moteLive=0;unsigned moteDrawn=0;SpeedMote_GetStats(&moteLive,&moteDrawn);
-            snprintf(text,sizeof text,"Speed FOV %d%% (eased speed %d%%%s) | motes %s stretch %d",sfPct,sfShown*100/65536,Sys_GetOption("video.speed_fov_hold",0)?", HELD at full speed for FOV and tunnel (overdo test)":"",Sys_GetOption("video.speed_motes",0)?"on":"off",Sys_GetOption("video.speed_motes_stretch",0));
+            snprintf(text,sizeof text,"Speed FOV %d%% (eased speed %d%%%s)",sfPct,sfShown*100/65536,Sys_GetOption("video.speed_fov_hold",0)?", HELD at full speed for FOV and tunnel (overdo test)":"");
             line(text);
-            snprintf(text,sizeof text,"Speed motes live %d | queued ok total %u (not pixels)",moteLive,moteDrawn);
-            line(text);
+            {int dollyScale=0,widening=0;View_GetFovDolly(param2,&dollyScale,&widening);snprintf(text,sizeof text,"FOV dolly %d%%: view widened x%.2f vs saved, camera distance x%.2f (visual only, chase cameras)",Sys_GetOption("video.fov_dolly",100),widening/65536.0,dollyScale/65536.0);line(text);}
         }
         line("enc=encoded; skip=requested, not encoded");
         line("Previous frame; encoded is not pixel proof");

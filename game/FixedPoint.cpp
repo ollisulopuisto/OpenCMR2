@@ -2,6 +2,7 @@
 #include "EffectAmounts.h"
 #include "port/sys.h"
 #include "FovPreview.h"
+#include "FovDolly.h"
 #include "FloatToInt.h"
 #include "FixedPoint.h"
 #include "GraphicsOptions.h"
@@ -942,6 +943,29 @@ void ChaseCamera_GetViewOffset(FixVector *pOut, CameraRecord *pSel);
 
 void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef);
 
+// OpenCMR2 FOV dolly (visual only, game/FovDolly.h): the chase camera moves toward the car by the amount its view is wider than the
+// saved video.fov (speed FOV and the FOV preview), so the car keeps about the same screen size. Chase types 4..6, not the drone.
+int View_SpeedFovMagnification(BYTE view);
+static int g_lastDollyScale[8] = {65536, 65536, 65536, 65536, 65536, 65536, 65536, 65536}, g_lastWidening[8] = {65536, 65536, 65536, 65536, 65536, 65536, 65536, 65536};
+static int View_FovDollyScale(CameraRecord *pObj)
+{
+    int view = pObj->index & 7;
+    int saved = g_appliedFovSetting ? g_appliedFovSetting : Sys_GetOption("video.fov", 70);
+    saved = saved < 30 ? 30 : saved > 150 ? 150 : saved;
+    int preview = Sys_GetOption("video.fov_preview", 0);
+    int effective = preview > 0 ? FovPreview_Effective(preview, 70) : saved;
+    int widening = FovDolly_Widening(View_SpeedFovMagnification((BYTE)view), saved, effective);
+    int scale = FovDolly_Scale(widening, Sys_GetOption("video.fov_dolly", 100));
+    g_lastWidening[view] = widening;
+    g_lastDollyScale[view] = scale;
+    return scale;
+}
+void View_GetFovDolly(unsigned int view, int *scale, int *widening)
+{
+    *scale = g_lastDollyScale[view & 7];
+    *widening = g_lastWidening[view & 7];
+}
+
 // Caches the reference matrix's up and right basis vectors in the player's
 // camera slots, then builds the view object's matrix from them.
 // FUNCTION: CMR2 0x00447a00
@@ -971,6 +995,10 @@ void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef)
 
     sel = pObj->index;
     ChaseCamera_GetViewOffset(&base, pObj);
+    if (pObj->type >= 4 && pObj->type <= 6 && !CameraOperator_Enabled(pObj)) {
+        int dolly = View_FovDollyScale(pObj);
+        if (dolly != 65536) { base.x = FixMul(base.x, dolly); base.y = FixMul(base.y, dolly); base.z = FixMul(base.z, dolly); }
+    }
     FixMatrix_Identity(&identity);
     FixMatrix_SetPosition(&base, &identity);
     index = sel & 0xff;
