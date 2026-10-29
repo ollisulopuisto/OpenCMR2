@@ -1731,8 +1731,8 @@ void CarEffect_UpdateWheelSurfaceParticles(int car, bool emitParticles)
         // Each grounded wheel supplies its own speed. The old rear-left proxy
         // hid front-only spin, leaked the count across wheels and rand()%4/4
         // could never emit a particle in the lower speed band.
-        count = emitParticles ? WheelParticle_Count(Car_GetWheelSpeed(pCar, (BYTE)wheel, 0),
-            pCar->cornerOnGround[wheel] != 0, water != 0 || emit != 0, (unsigned)rand()) : 0;
+        count = emitParticles ? WheelParticle_BoostedCount(Car_GetWheelSpeed(pCar, (BYTE)wheel, 0),
+            pCar->cornerOnGround[wheel] != 0, water != 0 || emit != 0, (unsigned)rand(), Sys_GetOption("video.tire_debris", 0)) : 0;
         // Physical wheel/surface exposure, independent of billboard budget,
         // camera visibility and the airborne-particle toggle. Fixed effects
         // stepping supplies time, rather than rendered-frame dirt growth.

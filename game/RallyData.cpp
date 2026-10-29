@@ -6048,7 +6048,7 @@ static bool g_tuneOpen = false, g_tuneSnapshotTaken = false;
 // overlays can be hidden to judge the effects.
 static int g_tuneMode = 0;
 static bool g_tuneEngaged = false;
-static int g_tuneRow = 0, g_tuneSnapshot[16], g_camMoveSnapshot[16];   // the camera move row edits one camera type: the snapshot holds every type's raw per-type value (kCamMoveUnset = no override)
+static int g_tuneRow = 0, g_tuneSnapshot[32], g_camMoveSnapshot[16];   // the camera move row edits one camera type: the snapshot holds every type's raw per-type value (kCamMoveUnset = no override)
 void AttractCapture_ViewSignature(int view, int *type, int *drone);
 static bool TuneIsCamMove(const TuningRow &r) { return !strcmp(r.key, "video.camera_move_active"); }
 static int TuneCamType(void) { int vt = 0, dr = 0; AttractCapture_ViewSignature(0, &vt, &dr); return vt < 0 || vt > 15 ? 0 : vt; }
