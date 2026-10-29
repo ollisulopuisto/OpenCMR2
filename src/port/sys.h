@@ -117,6 +117,7 @@ BOOL Sys_HasSceneryDirectory(void);
 // Launch-only labels from the selected, verified car overlay; NULL otherwise.
 const char *Sys_GetCarDisplayName(int archiveSlot, BOOL brief);
 SysFile *Sys_OpenSceneryFile(const char *relative);
+const char *Sys_GetRoadDirectory(void);
 // Game path of the last file Sys_OpenFile could not open for reading.
 const char *Sys_GetLastMissingFile(void);
 void Sys_CloseFile(SysFile *file);

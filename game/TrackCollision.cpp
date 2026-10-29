@@ -71,6 +71,21 @@ int Track_GetTriangle(FixVector *pOut, short tri)
 // bounding box first, then the three edges). pTri may be NULL to load it.
 // match 56%: below the 90% bar; kept as FUNCTION on purpose so reccmp measures it (see CONVENCIONES)
 // FUNCTION: CMR2 0x00490f20
+// LOCAL RESEARCH ONLY. Off by default; no game/UI/CLI caller enables this.
+// Probe enables it only for its generated collision block. A production
+// contract and source hash gating are still required before integration.
+static bool researchExactEdges = false;
+void Track_ResearchExactEdges(bool enabled) { researchExactEdges = enabled; }
+static bool ResearchEdgeInside(const FixVector &point,const FixVector &a,const FixVector &b) {
+    // Wide exact determinant avoids separately truncated products rejecting
+    // both sides of a shared edge. Differences are widened before subtracting.
+    // Bound to int32 coordinate deltas so signed64 products/sum cannot wrap.
+    long long dx=(long long)point.x-a.x,dz=(long long)point.z-a.z;
+    long long ex=(long long)b.x-a.x,ez=(long long)b.z-a.z;
+    if (dx < -0x3fffffffLL || dx > 0x3fffffffLL || dz < -0x3fffffffLL || dz > 0x3fffffffLL ||
+        ex < -0x3fffffffLL || ex > 0x3fffffffLL || ez < -0x3fffffffLL || ez > 0x3fffffffLL) return false;
+    return dx*ez-dz*ex >= 0;
+}
 int Track_PointInTriangle(FixVector *pPoint, short tri, FixVector *pTri)
 {
     int v;
@@ -79,6 +94,16 @@ int Track_PointInTriangle(FixVector *pPoint, short tri, FixVector *pTri)
         pTri = g_trackTriangle;
         if (!Track_GetTriangle(g_trackTriangle, tri))
             return 0;
+    }
+    if (researchExactEdges) {
+        long long ex=(long long)pTri[1].x-pTri[0].x,ez=(long long)pTri[1].z-pTri[0].z;
+        long long fx=(long long)pTri[2].x-pTri[0].x,fz=(long long)pTri[2].z-pTri[0].z;
+        if (ex < -0x3fffffffLL || ex > 0x3fffffffLL || ez < -0x3fffffffLL || ez > 0x3fffffffLL ||
+            fx < -0x3fffffffLL || fx > 0x3fffffffLL || fz < -0x3fffffffLL || fz > 0x3fffffffLL ||
+            ex*fz-ez*fx >= 0) return 0; // no XZ area or wrong winding
+        return ResearchEdgeInside(*pPoint,pTri[0],pTri[1]) &&
+               ResearchEdgeInside(*pPoint,pTri[1],pTri[2]) &&
+               ResearchEdgeInside(*pPoint,pTri[2],pTri[0]);
     }
     v = pPoint->x;
     if ((v >= pTri[0].x || v >= pTri[1].x || v >= pTri[2].x) && (v <= pTri[0].x || v <= pTri[1].x || v <= pTri[2].x)) {

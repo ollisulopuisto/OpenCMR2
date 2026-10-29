@@ -34,6 +34,7 @@ std::string s_dataDir;     // game data, read only (ends with '/')
 std::string s_sceneryDir; // optional read-only scenery root, independent of saves
 EnhancementOptions s_enhancements;
 std::string s_carDir;
+std::string s_roadDir;
 CarDisplayNames::Names s_carNames;
 std::string s_userDir;     // saves, settings, logs (ends with '/')
 std::string s_commandLine;
@@ -636,7 +637,7 @@ void UpdateMenuShortcut(const std::string &settingsFile)
 } // namespace
 
 namespace {
-bool PrepareEnhancementPack(bool cars=false){
+bool PrepareEnhancementPack(bool cars=false,bool roads=false){
 #ifdef __ANDROID__
     fprintf(stderr,"Automatic asset preparation requires the desktop build; use --scenery-dir with a prepared pack.\n");return false;
 #else
@@ -648,7 +649,7 @@ bool PrepareEnhancementPack(bool cars=false){
 #ifdef OPENCMR2_SOURCE_ROOT
     roots.emplace_back(fs::path(OPENCMR2_SOURCE_ROOT)/"tools"/"scenery-patch");
 #endif
-    for(const auto &root:roots)if(fs::is_regular_file(root/"prepare.py")){helper=root/"prepare.py";break;}
+    for(const auto &root:roots)if(fs::is_regular_file(root/(roads?"road_prepare.py":"prepare.py"))){helper=root/(roads?"road_prepare.py":"prepare.py");break;}
     if(helper.empty()){fprintf(stderr,"Enhancement preparation helper missing beside executable. Rebuild/reinstall this release; no files changed.\n");return false;}
     const fs::path cache=fs::path(s_userDir)/"enhancements";
     if(fs::is_symlink(cache)){fprintf(stderr,"Refusing symlink enhancement cache; select a regular profile directory.\n");return false;}
@@ -662,12 +663,13 @@ bool PrepareEnhancementPack(bool cars=false){
     if(fs::is_regular_file(existing))interpreters.push_back({existing.u8string()});
 #endif
     interpreters.push_back({"python3"});
-    if(s_enhancements.installDependencies)interpreters.push_back({"uv","run","--no-project","--python","3.12"});
+    if(s_enhancements.installDependencies&&!roads)interpreters.push_back({"uv","run","--no-project","--python","3.12"});
     else interpreters.push_back({"uv","run","--offline","--no-python-downloads","--no-project","--python","3.12"});
     for(auto args:interpreters){
         args.insert(args.end(),{helper.u8string(),"--input-dir",s_dataDir,"--cache-dir",cache.u8string(),cars?"--cars":"--mode",cars?s_enhancements.cars:(s_enhancements.trees=="shell"?"shell":"crossed")});
+        if(roads){args.resize(args.size()-2);}
         if(cars){args.push_back("--mods-dir");args.push_back(s_enhancements.modsDir);}
-        if(s_enhancements.installDependencies)args.push_back("--install-deps");
+        if(s_enhancements.installDependencies&&!roads)args.push_back("--install-deps");
         std::vector<const char*> raw;for(auto &arg:args)raw.push_back(arg.c_str());raw.push_back(nullptr);
         SDL_Process *process=SDL_CreateProcess(raw.data(),true);if(!process)continue;
         size_t length=0;int code=-1;char *out=(char*)SDL_ReadProcess(process,&length,&code);
@@ -675,12 +677,13 @@ bool PrepareEnhancementPack(bool cars=false){
         fprintf(stdout,"%s",text.c_str());
         if(code==78)continue;
         if(code!=0){fprintf(stderr,"Enhancement helper exited %d; stopping without starting game.\n",code);return false;}
-        const std::string marker=cars?"OPENCMR2_CARS=":"OPENCMR2_PACK=";auto pos=text.rfind(marker);
+        const std::string marker=roads?"OPENCMR2_ROADS=":cars?"OPENCMR2_CARS=":"OPENCMR2_PACK=";auto pos=text.rfind(marker);
         if(pos==text.npos)continue;
         std::string value=text.substr(pos+marker.size());value=value.substr(0,value.find_first_of("\r\n"));
         std::error_code ec;auto selected=fs::canonical(value,ec);if(ec)continue;
-        auto parent=fs::canonical(cache,ec);if(ec||selected.parent_path()!=parent||(!cars&&!fs::is_regular_file(selected/"manifest.tsv")))continue;
-        if(cars){
+        auto parent=fs::canonical(cache,ec);if(ec||selected.parent_path()!=parent||(!cars&&!fs::is_regular_file(selected/(roads?"road-pair.tsv":"manifest.tsv"))))continue;
+        if(roads){s_roadDir=WithSlash(selected.u8string());}
+        else if(cars){
             s_carDir=WithSlash(selected.u8string());
             std::ifstream names(selected/"car-names.tsv",std::ios::binary);
             std::string labels;
@@ -703,7 +706,7 @@ bool Platform_Init(int argc, char **argv)
     s_keyRemapping=KeyRemappingOptions{};
     for(int i=1;i<argc;i++){std::string error;if(s_keyRemapping.Consume(i,argc,argv,error)&&!error.empty()){fprintf(stderr,"%s\n",error.c_str());return false;}}
     {std::string error;if(!s_keyRemapping.Validate(error)){fprintf(stderr,"%s\n",error.c_str());return false;}}
-    s_enhancements=EnhancementOptions{};s_carDir.clear();s_carNames={};
+    s_enhancements=EnhancementOptions{};s_carDir.clear();s_roadDir.clear();s_carNames={};
     s_dataDir.clear();
     s_sceneryDir.clear();
     s_commandLine.clear();
@@ -816,6 +819,7 @@ bool Platform_Init(int argc, char **argv)
         fprintf(stderr,"--install-enhancement-deps is only meaningful with --trees shell/crossed or --spectators animated.\n");Platform_Shutdown();return false;
     }
     if(!s_enhancements.cars.empty()&&s_enhancements.cars!="original"&&s_enhancements.modsDir.empty()){fprintf(stderr,"--cars needs --mods-dir PATH to the folder containing the original car ZIPs; see --help-enhancements. Nothing downloaded.\n");Platform_Shutdown();return false;}
+    if(s_enhancements.roads=="curved"&&!PrepareEnhancementPack(false,true)){Platform_Shutdown();return false;}
     if(s_enhancements.NeedsPack()&&!PrepareEnhancementPack()) {Platform_Shutdown();return false;}
     if(!s_enhancements.cars.empty()&&s_enhancements.cars!="original"){
         if(!PrepareEnhancementPack(true)){Platform_Shutdown();return false;}
@@ -1227,6 +1231,7 @@ extern "C" SysFile *Sys_OpenFile(const char *path, int mode)
     return file;
 }
 
+extern "C" const char *Sys_GetRoadDirectory(void){return s_roadDir.c_str();}
 extern "C" BOOL Sys_HasSceneryDirectory(void){return !s_sceneryDir.empty();}
 extern "C" SysFile *Sys_OpenSceneryFile(const char *relative)
 {
