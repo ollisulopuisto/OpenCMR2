@@ -4,6 +4,7 @@ static int fails;
 #define CHECK(c) do{ if(!(c)){ std::printf("FAIL %d: %s\n", __LINE__, #c); ++fails; } }while(0)
 int main(){
     CHECK(SpeedFov_Target(0)==0);
+    CHECK(SpeedFov_HeldTarget(0,1)==65536&&SpeedFov_HeldTarget(1234,0)==1234&&SpeedFov_HeldTarget(1234,1)==65536);   // hold only forces the target
     CHECK(SpeedFov_Target(-65536)==0);                 // reversing
     CHECK(SpeedFov_Target(98304)==65536);              // 1.5/step = full
     CHECK(SpeedFov_Target(1<<30)==65536);              // clamp

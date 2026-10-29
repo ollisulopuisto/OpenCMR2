@@ -57,7 +57,7 @@ struct EnhancementOptions {
     void ApplyTestPreset(){
         if(testPreset!="overdo")return;
         static const std::pair<const char*,int> kOverdo[]={{"video.speed_motes",1},{"video.speed_motes_amount",300},{"video.speed_motes_size",400},{"video.speed_motes_stretch",100},
-            {"video.speed_fov",40},{"video.depth_of_field",1},{"video.dof_blur",100},{"video.dof_blur_max_px",16},{"video.tunnel_vision",100},{"video.motion_blur",1},{"video.motion_blur_amount",60}};
+            {"video.speed_fov",40},{"video.speed_fov_hold",1},{"video.depth_of_field",1},{"video.dof_blur",100},{"video.dof_blur_max_px",16},{"video.tunnel_vision",100},{"video.motion_blur",1},{"video.motion_blur_amount",60}};
         for(auto&e:kOverdo)if(!overrides.count(e.first))overrides[e.first]=e.second;
     }
     void Apply(){
