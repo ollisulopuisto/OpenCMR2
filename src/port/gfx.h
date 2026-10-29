@@ -362,6 +362,8 @@ void Gfx_SetRenderTarget(GfxTexture *target);
 void Gfx_CaptureBackdrop(void);
 /* OpenCMR2: save the next presented frame (HUD and overlay included) as a PNG at `path`. */
 void Gfx_RequestCapture(const char *path);
+/* Number of capture requests the renderer has processed (saved or failed). */
+unsigned Gfx_GetCaptureSerial(void);
 void Gfx_SetDistanceFade(float start, float end);
 
 /* ---- fixed-function state -------------------------------------------------- */
