@@ -284,6 +284,8 @@ void Gfx_SetDepthOfField(BOOL enabled, int focalDistance, int focalRange, int ma
 void Gfx_SetSpeedFocus(float speed);
 /* OpenCMR2: speed streak strength 0..1 (visual only; directional radial streak, SDL_GPU backend). */
 void Gfx_SetSpeedStreak(float strength);
+/* OpenCMR2: vapor trail strength 0..1 (visual only; thin trails shed behind the followed car, SDL_GPU backend, 0 = off). */
+void Gfx_SetVaporTrail(float strength);
 /* OpenCMR2: god rays / volumetric lighting. `enabled` turns it on/off,
    `intensity` (0..255) scales the effect strength. SDL_GPU only. */
 void Gfx_SetGodRays(BOOL enabled, int intensity);
