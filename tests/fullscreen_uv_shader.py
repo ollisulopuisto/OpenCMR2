@@ -10,7 +10,7 @@ with tempfile.TemporaryDirectory() as d:
  vert=subprocess.check_output(['spirv-cross',p,'--version','330','--no-es'],text=True)
 ctx=moderngl.create_standalone_context(require=330,backend='egl')
 prog=ctx.program(vertex_shader=vert,fragment_shader='''#version 330
-in vec2 varying0;out vec4 color;void main(){color=vec4(varying0,0,1);}''')
+in vec2 outTex;out vec4 color;void main(){color=vec4(outTex,0,1);}''')
 t=ctx.texture((64,64),4);f=ctx.framebuffer([t]);f.use();ctx.vertex_array(prog,[]).render(vertices=3)
 a=np.frombuffer(f.read(components=4),dtype='u1').reshape(64,64,4)
 assert a[32,-1,0]>245 and a[32,0,0]<10, 'fullscreen vertex only samples a crop in X'
