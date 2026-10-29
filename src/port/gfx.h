@@ -30,6 +30,8 @@ typedef struct GfxDustLobe { float centreRadius[4]; float colourDensity[4]; } Gf
 BOOL Gfx_DrawDustVolume(const GfxDustLobe *lobes,int count);
 // Encode pending world dust after opaque world/depth, before HUD.
 void Gfx_FlushDustVolume(void);
+// Diagnostic only (log lines, no rendering effect): camera position (world units) and forward vector used when the dust lobes were sampled.
+void Gfx_NoteDustSamplingCamera(float x,float y,float z,float fx,float fy,float fz);
 // Mark the completed world before queued HUD/menu layers are drawn.
 void Gfx_EndWorldEffects(void);
 // Explicit race draw scope; menu/background scenes must never enable weather.

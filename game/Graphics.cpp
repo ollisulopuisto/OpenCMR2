@@ -5582,6 +5582,9 @@ void Particle_DrawAll(SceneNode *pCamera, BYTE view)
     bool volume=Sys_GetOption("video.dust_volume",1)!=0;
     lobeCount=worldDust.Sample(lobes,32);
     for(int i=0;i<lobeCount;i++)lobes[i].colourDensity[3]*=Effect_Clamp(Sys_GetOption("video.dust_amount",100))/100.f;
+    if(volume && lobeCount && pCamera){FixVector cam;FixMatrix_GetPosition(&cam,&pCamera->world);
+        Gfx_NoteDustSamplingCamera(cam.x/65536.f,cam.y/65536.f,cam.z/65536.f,
+            pCamera->world.forward.x/65536.f,pCamera->world.forward.y/65536.f,pCamera->world.forward.z/65536.f);}
     bool volumeQueued=volume && lobeCount && Gfx_DrawDustVolume(lobes,lobeCount);
     // Never draw the camera-facing cloud sheets over a successful world-volume
     // submission. Original wheel chips/spray remain separate.
