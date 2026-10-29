@@ -6386,7 +6386,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         BYTE colour[4] = {240, 246, 255, 255};
         unsigned long long tick=0;unsigned frame=0,changes=0;
         bool spectator=SceneryPack_GetAnimationStatus(&tick,&frame,&changes);
-        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?4:3)+11+4);
+        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?4:3)+11+3);
         short panel[4] = {(short)layout.x,(short)layout.y,(short)layout.width,(short)layout.height};
         Sprite_FillRect(NULL, panel, background, 1);
         char text[96];
@@ -6424,21 +6424,21 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             int tv=Sys_GetOption("video.tunnel_vision",100);
             bool gl=Gfx_IsOpenGL()!=0,dofOn=!gl&&dof.reason==5;
             if(gl)snprintf(text,sizeof text,"DoF pass: n/a (OpenGL backend)");
-            else if(dofOn)snprintf(text,sizeof text,"DoF pass: ACTIVE range %.2f blur %.1f",dof.range,dof.blur);
+            else if(dofOn)snprintf(text,sizeof text,"DoF pass: encoded, range %.2f blur %.1f",dof.range,dof.blur);
             else snprintf(text,sizeof text,"DoF pass: off (%s)",dofWhy[dof.reason>=0&&dof.reason<6?dof.reason:0]);
             line(text,dofOn?lit:dim);
             bool tvOn=dofOn&&tv>0&&dof.smooth>0.02f;
             if(gl)snprintf(text,sizeof text,"Tunnel vision: n/a (OpenGL backend)");
             else if(!dofOn)snprintf(text,sizeof text,"Tunnel vision: off (needs DoF pass)");
             else if(tv<=0)snprintf(text,sizeof text,"Tunnel vision: off (video.tunnel_vision=0)");
-            else snprintf(text,sizeof text,"Tunnel vision: %s %d%% (speed target %d%%)",tvOn?"ACTIVE":"idle",(int)(dof.smooth*100.0f+0.5f),(int)(dof.target*100.0f+0.5f));
+            else snprintf(text,sizeof text,"Tunnel vision: %s %d%% (speed target %d%%)",tvOn?"encoded":"idle",(int)(dof.smooth*100.0f+0.5f),(int)(dof.target*100.0f+0.5f));
             line(text,tvOn?lit:dim);
             bool mb=!gl&&(status.encoded&4)!=0;
-            snprintf(text,sizeof text,"Motion blur (separate effect): %s",mb?"ACTIVE":"off");
+            snprintf(text,sizeof text,"Motion blur (separate effect): %s",mb?"encoded":"off");
             line(text,mb?lit:dim);
         }
         line("enc=encoded; skip=requested, not encoded");
-        line("Previous frame; not completed-pixel proof");
+        line("Previous frame; encoded is not pixel proof");
         }
     }
     CarDamage_UpdateOrderedCarsOffRoadState(pOrder, (short)orderCount, g_viewScreenRect, maskedView);
