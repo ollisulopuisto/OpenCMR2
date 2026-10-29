@@ -28,7 +28,7 @@ struct EnhancementOptions {
         if(key=="--driver-names"){if(value!="original"&&value!="real"&&value!="sidecar")error="--driver-names expects original, real or sidecar";else names=value;}
         if(key=="--effect"){
             auto at=value.find('=');std::string name=value.substr(0,at),v=at==value.npos?"":value.substr(at+1);
-            static const char *allowed[]={"dust_plume","body_dirt","dust_volume","volumetric_clouds","spatial_aa","metalfx_spatial","motion_blur","bloom","particles","shadows","depth_of_field","god_rays","color_grading","temporal_aa"};
+            static const char *allowed[]={"dust_plume","body_dirt","dust_volume","volumetric_clouds","spatial_aa","metalfx_spatial","motion_blur","bloom","particles","shadows","depth_of_field","god_rays","color_grading","temporal_aa","speed_motes"};
             bool known=false;for(auto key:allowed)if(name==key)known=true;
             if(!known||(v!="on"&&v!="off"))error="--effect expects a listed NAME=on/off";
             else overrides["video."+name]=v=="on";
@@ -94,7 +94,7 @@ inline const char *EnhancementHelp(){return
 "  --effect NAME=on|off        Per-launch existing optional GPU effects:\n"
 "                              dust_plume,body_dirt,dust_volume,volumetric_clouds,spatial_aa,metalfx_spatial,\n"
 "                              motion_blur,bloom,particles,shadows,\n"
-"                              depth_of_field,god_rays,color_grading,temporal_aa\n"
+"                              depth_of_field,god_rays,color_grading,temporal_aa,speed_motes\n"
 "                              Requested is not proof of backend support;\n"
 "                              see runtime log. temporal_aa = PARTIAL stage (SDL_GPU only,\n"
 "                              camera reprojection, no object velocity), default off.\n"

@@ -5691,7 +5691,7 @@ void Particle_SpawnTagged(int typeIndex, FixVector *pSource, FixVector *pPositio
     // Extra cosmetic clouds must not consume the gameplay/global rand stream.
     static unsigned cloudSeed = 0x5a17d93u;
     auto random = [&]() -> int {
-        if (typeIndex != DUST_PLUME_TYPE) return rand();
+        if (typeIndex != DUST_PLUME_TYPE && typeIndex != SPEED_MOTE_TYPE) return rand();
         cloudSeed = cloudSeed * 1664525u + 1013904223u;
         return (int)((cloudSeed >> 1) % ((unsigned)RAND_MAX + 1u));
     };
@@ -7037,6 +7037,26 @@ void DustPlume_AdvanceWorld(int step16_16){if(step16_16>0)worldDust.Step(step16_
 void DustPlume_Update(Particle *p, ParticleType *, SceneNode *)
 {
     DustPlume_Step(*p, g_particleWind);
+}
+
+void SpeedMote_Update(Particle *p, ParticleType *, SceneNode *)
+{
+    SpeedMote_Step(*p);
+}
+
+void SpeedMote_Spawn(FixVector *world)
+{
+    if (!world || !g_particles || !g_particleTypes || g_particleTypeCount <= SPEED_MOTE_TYPE || g_particleCount <= 64) return;
+    int motes = 0, active = 0;
+    for (int i=0; i<g_particleCount; ++i) {
+        if (!g_particles[i].active) continue;
+        ++active;
+        if (g_particles[i].pType == &g_particleTypes[SPEED_MOTE_TYPE]) ++motes;
+    }
+    // Never evict original particles: Particle_Spawn reuses the oldest slot when the pool is full.
+    if (!SpeedMote_HasBudget(active, motes, g_particleCount)) return;
+    FixVector still = {0,0,0};
+    Particle_Spawn(SPEED_MOTE_TYPE, world, &still, world->y, NULL, NULL, 0, NULL, 1);
 }
 
 void DustPlume_Emit(FixVector *world, FixVector *velocity, BYTE *colour, BYTE shade, BYTE viewMask)

@@ -7911,7 +7911,7 @@ void RallyData_InitializeRaceRendering(void)
         CGame::SetSectorDrawState(3);
     RallyData_IsChampionshipFinalStage();
     Particle_BuildTriangleStripIndices();
-    Particle_Init(0x21, 400);
+    Particle_Init(0x22, 400);
     if (CGameInfo::IsActiveCheatEnabled(0) != 0)
         Glow_AllocateEntryTable(4);
     else

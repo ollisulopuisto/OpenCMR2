@@ -38,6 +38,29 @@ inline void DustPlume_SoilTint(float &r,float &g,float &b) {
 inline bool DustPlume_HasBudget(int active, int clouds, int capacity) {
     return capacity > 64 && clouds < DUST_PLUME_MAX && active < capacity-64;
 }
+// Optional speed cue (video.speed_motes, default off): sparse, world-fixed specks beside the road
+// that the car passes at speed. Visual only: uses the particle pool, never touches physics, the
+// collision world, the road line or the global rand stream. Separate from the rain/weather switch.
+constexpr int SPEED_MOTE_TYPE = 0x21;
+constexpr int SPEED_MOTE_MAX = 64;
+constexpr int SPEED_MOTE_LIFE = 40; // 25 Hz steps
+inline void SpeedMote_Step(Particle &p) {
+    p.position.x = p.position.y = p.position.z = 0; // world-fixed: it never follows the car or the camera
+    p.vector0x28 = p.sourceVector;
+    int elapsed = SPEED_MOTE_LIFE - (p.age >> 16);
+    if (elapsed < 0) elapsed = 0;
+    if (elapsed > SPEED_MOTE_LIFE) elapsed = SPEED_MOTE_LIFE;
+    int fadeIn = elapsed < 6 ? elapsed : 6, fadeOut = SPEED_MOTE_LIFE - elapsed;
+    if (fadeOut > 10) fadeOut = 10;
+    p.type0x52 = p.type0x56;
+    p.type0x56 = (BYTE)(90 * fadeIn * fadeOut / 60);
+}
+inline bool SpeedMote_HasBudget(int active, int motes, int capacity) {
+    return capacity > 64 && motes < SPEED_MOTE_MAX && active < capacity - 64;
+}
+void SpeedMote_Update(Particle *, ParticleType *, SceneNode *);
+void SpeedMote_Spawn(FixVector *world);
+void SpeedMotes_Step(int step16_16);
 void DustPlume_AdvanceWorld(int step16_16);
 void DustPlume_Update(Particle *, ParticleType *, SceneNode *);
 void DustPlume_Emit(FixVector *world, FixVector *velocity, BYTE *colour, BYTE shade, BYTE viewMask);

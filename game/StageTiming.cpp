@@ -6430,6 +6430,16 @@ void StageTiming_InitEffectParticleTypes(void)
   ParticleEdit_SetSpread(0x1000,0x600,0x1000,0);
   ParticleEdit_SetCallbacks(0,DustPlume_Update,0,0,0);
   ParticleEdit_CommitCurrentType();
+  // Optional sparse speed specks (video.speed_motes): small, pale, world-fixed, short-lived.
+  ParticleEdit_Select(SPEED_MOTE_TYPE);
+  ParticleEdit_SetTextureParams(g_unk0x00543664, -0x10000, 0x10000, 0x10000, -0x10000);
+  ParticleEdit_SetMotion(SPEED_MOTE_LIFE << 16, 0, 0, 0, 0, 0, 0);
+  ParticleEdit_SetAlphaRamp(0, 0, 0, 0);
+  ParticleEdit_SetColour(0xe0,0xd8,0xc4,1);
+  ParticleEdit_SetSizeRamp(0x2400,0x2400,0);
+  ParticleEdit_SetSpread(0,0,0,0);
+  ParticleEdit_SetCallbacks(0,SpeedMote_Update,0,0,0);
+  ParticleEdit_CommitCurrentType();
   return;
 }
 
