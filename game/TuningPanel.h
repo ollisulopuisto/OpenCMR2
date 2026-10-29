@@ -8,6 +8,7 @@ inline const TuningRow *Tuning_Rows(int &count)
         {"Speed FOV %", "video.speed_fov", 0, 40, 2, 0},
         {"Speed motes (0/1)", "video.speed_motes", 0, 1, 1, 0},
         {"Mote amount %", "video.speed_motes_amount", 0, 300, 25, 100},
+        {"Mote size %", "video.speed_motes_size", 50, 800, 50, 100},
         {"Mote stretch", "video.speed_motes_stretch", 0, 100, 10, 0},
         {"DoF (0/1)", "video.depth_of_field", 0, 1, 1, 0},
         {"DoF blur %", "video.dof_blur", 0, 100, 10, 30},
