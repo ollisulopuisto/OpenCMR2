@@ -1,3 +1,4 @@
+#include "EffectAmounts.h"
 #include "DebugOverlayLayout.h"
 #include "SceneryPack.h"
 #include "SavedGame.h"
@@ -6010,8 +6011,7 @@ void RallyData_DrawProjectedChallengeScene(int param1, int param2)
     Game_DrawSceneViewport(g_unk0x00536be0, g_unk0x00536be4, rect, 0, 1);
     // OpenCMR2: camera effects — dirt on the lens and a sun lens flare,
     // drawn over the finished frame ([video] video.camera_effects).
-    if (Sys_GetOption("video.camera_effects", 1) != 0)
-        CameraEffects_DrawOverlays(rect);
+    CameraEffects_DrawOverlays(rect);
     Graphics_PresentFrameAndResetCounters();
 }
 
@@ -6081,9 +6081,9 @@ static void CameraEffects_DrawOverlays(short *pRect)
 
     // ---- dirt on the lens -------------------------------------------------
     for (int view = 0; view < 8; view++) {
-        if (g_lensDirt[view] == 0)
+        if (g_lensDirt[view] == 0 || !Sys_GetOption("video.lens_dirt",Sys_GetOption("video.camera_effects",1)))
             continue;
-        BYTE colour[4] = { 0x20, 0x18, 0x10, (BYTE)g_lensDirt[view] };
+        BYTE colour[4] = { 0x20, 0x18, 0x10, (BYTE)Effect_Scale(g_lensDirt[view],Sys_GetOption("video.lens_dirt_amount",100)) };
         short rect[4] = { 0, 0, (short)resX, (short)resY };
         Sprite_FillRect(&g_pGraphics->field309_0x150, rect, colour, 1);
         // Decay each frame so dirt clears after a few seconds.
@@ -6124,9 +6124,9 @@ static void CameraEffects_DrawOverlays(short *pRect)
     }
 
     // ---- lens flare -------------------------------------------------------
-    if (g_sunVisibility < 10)
+    if (g_sunVisibility < 10 || !Sys_GetOption("video.lens_flare",Sys_GetOption("video.camera_effects",1)))
         return;
-    int brightness = Flare_Brightness(g_sunVisibility);
+    int brightness = Effect_Scale(Flare_Brightness(g_sunVisibility),Sys_GetOption("video.lens_flare_amount",100));
     if (brightness == 0)
         return;
     // Additive sun sprite at screen centre.
@@ -6140,7 +6140,7 @@ static void CameraEffects_DrawOverlays(short *pRect)
     for (int i = 0; i < 4; i++) {
         v[i].sz = 0;
         v[i].rhw = 1.0f;
-        v[i].color = GFX_RGBA(0xff, 0xff, 0xe0, (BYTE)brightness);
+        v[i].color = GFX_RGBA((BYTE)brightness, (BYTE)brightness, (BYTE)(brightness*0xe0/255), 0xff);
         v[i].specular = 0;
     }
     v[0].sx = cx - size; v[0].sy = cy - size; v[0].tu = 0; v[0].tv = 0;

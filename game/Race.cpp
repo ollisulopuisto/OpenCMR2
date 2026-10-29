@@ -1,3 +1,4 @@
+#include "EffectAmounts.h"
 #include "France1Textures.h"
 #include "DustPlume.h"
 #include "CurvedRoad.h"
@@ -4082,12 +4083,12 @@ void Race_PlayScrapeAndShakeCar(int view, int strength, int listener)
                 Car_Get(view)->shakeLevel = (BYTE)shake;
             // OpenCMR2: dirt on the lens from a hard hit
             // ([video] video.camera_effects).
-            if (Sys_GetOption("video.camera_effects", 1) != 0)
+            if (Sys_GetOption("video.lens_dirt",Sys_GetOption("video.camera_effects",1)) != 0)
                 g_lensDirt[view] = LensDirt_Accumulate(g_lensDirt[view], shake * 20);
             // OpenCMR2: dirt on the windscreen from driving hard
             // ([video] video.windscreen_dirt).
             if (Sys_GetOption("video.windscreen_dirt", 40) != 0)
-                g_windscreenDirt[view] = WindscreenDirt_Accumulate(g_windscreenDirt[view], shake * 10);
+                g_windscreenDirt[view] = WindscreenDirt_Accumulate(g_windscreenDirt[view], Effect_Scale(shake * 10,Sys_GetOption("video.windscreen_dirt",40)));
         }
     }
 }
@@ -4677,6 +4678,8 @@ void Race_UpdateFrameEffects(int param_1)
             int amount = FixMul(speed, 0x0800) >> 16;
             if (amount < 1)
                 amount = 1;
+            static int residue=0;
+            amount=Effect_Accumulate(amount,Sys_GetOption("video.windscreen_dirt",40),residue);
             g_windscreenDirt[0] = WindscreenDirt_Accumulate(g_windscreenDirt[0], amount);
         }
     }

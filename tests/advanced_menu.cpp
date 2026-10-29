@@ -5,12 +5,14 @@
 #include "Font.h"
 #include "Sprite.h"
 #include "SettingsPage.h"
+#include "EffectAmounts.h"
 #include <cstdio>
 #include <cstring>
 #include <initializer_list>
 extern void FrontendMenu_BuildAdvancedGraphicsOptions();
 extern void FrontendMenu_DrawAdvancedGraphicsOptions(Menu*);
 extern Menu g_menu0x0081cd78;
+extern Menu* FrontendMenu_GetEffectAmounts(Menu*);
 extern "C" void __wrap__Z21FrontendDraw_PlayTimev(){}
 extern "C" int __wrap__Z21FrontendDraw_MenuPathP4MenuiiciPPci(Menu*,int,int,char,int,char**,int){return 0;}
 extern "C" void __wrap__Z21FrontendDraw_CarouselP4MenucPc(Menu*,char,char*){}
@@ -48,10 +50,26 @@ int main(int argc,char **argv){
    for(unsigned i=0;i<g_spriteCount1;++i){auto r=g_spriteLayer1[i].dst;if(r.y<80||r.y+r.h>=384||r.x+r.w>640)++fail;}
    if(g_spriteCount1>900)++fail;
  }
+ Menu* amounts=FrontendMenu_GetEffectAmounts(m);amounts->pfnCallback0(amounts,0);
+ if(amounts->itemCount!=18 || amounts->pParent!=m)++fail;
+ amounts->cursor=0;
+ for(int i=0;i<amounts->itemCount;i++){if(amounts->cursor!=i)++fail;Menu_Update(amounts,8);Menu_Update(amounts,0);}
+ if(amounts->cursor!=0)++fail;
+ for(int page=0;page<3;page++){
+   amounts->cursor=page*7;g_spriteCount1=0;
+   if(argc>1){char name[256];snprintf(name,sizeof name,"%s-amount-%d.tsv",argv[1],page);out=fopen(name,"w");}
+   FrontendMenu_DrawAdvancedGraphicsOptions(amounts);if(out){fclose(out);out=nullptr;}
+   for(unsigned i=0;i<g_spriteCount1;i++){auto r=g_spriteLayer1[i].dst;if(r.y<80||r.y+r.h>=384||r.x+r.w>640)++fail;}
+ }
+ amounts->cursor=0;Menu_Update(amounts,2);Menu_Update(amounts,0);if(amounts->items[0].max!=17)++fail;
+ amounts->items[0].max=35;Menu_Update(amounts,2);Menu_Update(amounts,0);if(amounts->items[0].max!=35)++fail;
+ int n;const auto*rows=EffectAmount_Rows(n);if(n>=22)++fail;
+ int remainder=0,sum=0;for(int i=0;i<100;i++)sum+=Effect_Accumulate(1,25,remainder);
+ if(sum!=25||remainder!=0||Effect_Scale(200,-1)!=0||Effect_Scale(200,200)!=200)++fail;
  // Same bounded layout at common render heights; no display-model assumption.
  for(int res: {720,1080,1664}){
    height=res;gfx.resY=res;gfx.resX=res*4/3;
-   for(int row=0;row<m->itemCount;++row){m->cursor=row;g_spriteCount1=0;FrontendMenu_DrawAdvancedGraphicsOptions(m);
+   for(Menu* page: {m,amounts})for(int row=0;row<page->itemCount;++row){page->cursor=row;g_spriteCount1=0;FrontendMenu_DrawAdvancedGraphicsOptions(page);
      for(unsigned i=0;i<g_spriteCount1;++i){auto r=g_spriteLayer1[i].dst;if(r.y<80*res/480 || r.y+r.h>=384*res/480)++fail;}}
  }
  if(SettingsPage_ClampPercent(-1)!=0||SettingsPage_ClampPercent(300)!=100)++fail;

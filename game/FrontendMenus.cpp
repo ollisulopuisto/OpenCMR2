@@ -1,5 +1,6 @@
 #include "port/sys.h"
 #include "FrontendMenus.h"
+Menu* FrontendMenu_GetEffectAmounts(Menu*);
 #include "GameInfo.h"
 #include "Graphics.h"
 #include "Frontend.h"
@@ -2613,7 +2614,7 @@ void FrontendMenu_BuildAdvancedGraphicsOptions(void)
     Menu_GetItem(&g_menu0x0081cd78, 0xc)->text = (char *)"OSD";
     Menu_GetItem(&g_menu0x0081cd78, 0xd)->text = (char *)"Texture Filtering";
     Menu_GetItem(&g_menu0x0081cd78, 0xf)->text = (char *)"Breakable Trees";
-    Menu_GetItem(&g_menu0x0081cd78, 0x10)->text = (char *)"Camera Effects";
+    Menu_GetItem(&g_menu0x0081cd78, 0x10)->text = (char *)"Camera Shake";
     // OpenCMR2: animated scenery — crowds and trees with a subtle idle cycle
     // ([video] video.animated_scenery).
     Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x11);
@@ -2629,7 +2630,7 @@ void FrontendMenu_BuildAdvancedGraphicsOptions(void)
     // OpenCMR2: particles — rain or snow falling through the scene
     // ([video] video.particles).
     Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 3, 0, 0, 0, 0, 0x14);
-    Menu_GetItem(&g_menu0x0081cd78, 0x14)->text = (char *)"Particles";
+    Menu_GetItem(&g_menu0x0081cd78, 0x14)->text = (char *)"Added Precipitation";
     // OpenCMR2: directional shadows cast by the sun
     // ([video] video.shadows).
     Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x15);
@@ -2637,7 +2638,7 @@ void FrontendMenu_BuildAdvancedGraphicsOptions(void)
     // OpenCMR2: windscreen wipers — sweep across the screen clearing dirt
     // ([video] video.windscreen_wipers).
     Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x16);
-    Menu_GetItem(&g_menu0x0081cd78, 0x16)->text = (char *)"Windscreen Wipers";
+    Menu_GetItem(&g_menu0x0081cd78, 0x16)->text = (char *)"Automatic Wipers";
     // OpenCMR2: windscreen dirt — grime builds up as you drive
     // ([video] video.windscreen_dirt).
     Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 101, 0, 0, 0, 0, 0x17);
@@ -2654,6 +2655,7 @@ void FrontendMenu_BuildAdvancedGraphicsOptions(void)
     // ([video] video.color_grading).
     Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x1a);
     Menu_GetItem(&g_menu0x0081cd78, 0x1a)->text = (char *)"Color Grading";
+    Menu_AddItemType2(&g_menu0x0081cd78,(char*)"Effect amounts...",-1,FrontendMenu_GetEffectAmounts(&g_menu0x0081cd78),0,0x30);
     Menu_AddItemType1(&g_menu0x0081cd78, 0, 0x67, (MenuItemAction)FrontendMenu_ApplyAdvancedGraphicsOptions, 0xe);
     Menu_SetCallbacks(&g_menu0x0081cd78, FrontendMenu_EnterAdvancedGraphicsOptions, (MenuCallback)FrontendMenu_UpdateAdvancedGraphicsOptions, (MenuCallback)FrontendMenu_DrawAdvancedGraphicsOptions, NULL);
     Menu_ValidateCursor(&g_menu0x0081cd78, 0);

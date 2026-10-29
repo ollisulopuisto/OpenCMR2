@@ -356,3 +356,14 @@ Failure retains source, never claim executed from request. Actual GL3.3 executor
 pixel tests cover changed edge pixels, alpha, exact flat colors, off identity,
 stacked effects/ordering, resize and normal draw state restoration. Full90tests
 pass. Native Mac output/performance acceptance remains open.
+## Strength-controls checkpoint
+Effect amounts subpage18rows/3pages, bounded22itemMenu capacity. Uses actual
+keyboard/controller menu navigation, all-size draw tests and no writes on Enter.
+Real shared effect strengths and shadowquality, conservative35%blurUIcap. Split
+camera shake/lens dirt/flare with legacyfallback; scaleactualRGBadditiveflare
+insteadineffectivealpha. Windscreendirtfractionalaccumulation scaled, dustvolume
+density+fallbackopacityseparatefromweather/debris, cubeStage/64/128/256reloadquality.
+No profile/save migration. BothGL/Metalruntimefoundationshumanmerged69. Actual
+menu-coordinateillustrationinspected, notnativeatlas. Lensoverlaysretainexisting
+projectedchallengepath, nofalsegameplayclaim. Auto-weather/autofocus/reflection
+blend/distance+shadowgroupingnotinthischeckpoint; see docs/EFFECT-AMOUNTS.md.
