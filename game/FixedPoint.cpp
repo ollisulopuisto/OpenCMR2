@@ -961,6 +961,16 @@ void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef);
 // saved video.fov (speed FOV and the FOV preview), so the car keeps about the same screen size. Chase types 4..6, not the drone.
 int View_SpeedFovMagnification(BYTE view);
 static int g_lastDollyScale[8] = {65536, 65536, 65536, 65536, 65536, 65536, 65536, 65536}, g_lastWidening[8] = {65536, 65536, 65536, 65536, 65536, 65536, 65536, 65536};
+// Widening (16.16, 65536 = same as saved) of a view right now: speed FOV times preview over saved. Shared by the chase dolly and the cockpit eye shift.
+int View_CurrentWidening(unsigned int viewIn)
+{
+    int view = viewIn & 7;
+    int saved = g_appliedFovSetting ? g_appliedFovSetting : Sys_GetOption("video.fov", 70);
+    saved = saved < 30 ? 30 : saved > 150 ? 150 : saved;
+    int preview = Sys_GetOption("video.fov_preview", 0);
+    int target = preview > 0 ? FovPreview_Effective(preview, 70) : saved;
+    return FovDolly_Widening(View_SpeedFovMagnification((BYTE)view), saved * 65536, View_ShownFov16(target));
+}
 static int View_FovDollyScale(CameraRecord *pObj)
 {
     int view = pObj->index & 7;
@@ -970,7 +980,7 @@ static int View_FovDollyScale(CameraRecord *pObj)
     int target = preview > 0 ? FovPreview_Effective(preview, 70) : saved;
     int shown = View_ShownFov16(target);   // same eased value the projection uses this frame
     int widening = FovDolly_Widening(View_SpeedFovMagnification((BYTE)view), saved * 65536, shown);
-    int scale = FovDolly_Scale(widening, Sys_GetOption("video.fov_dolly", 100));
+    int scale = FovDolly_Scale(widening, Sys_GetOption("video.fov_dolly", 150));
     g_lastWidening[view] = widening;
     g_lastDollyScale[view] = scale;
     return scale;

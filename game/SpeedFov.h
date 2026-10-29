@@ -20,11 +20,13 @@ inline int SpeedFov_Ease(int shown, int target, int elapsedMs)
     if (elapsedMs < 0 || elapsedMs > 250) return target;
     return shown + (int)((long long)(target - shown) * elapsedMs / (elapsedMs + 400));
 }
+// Largest speed FOV percent: 100 widens x2.0 at full speed, about what FOV preview 150 shows against a saved 70-80.
+static const int kSpeedFovMaxPct = 100;
 // Divides the projection zoom so the view widens by pct percent at full speed (pct 0..40, shown 16.16 ratio).
 inline int SpeedFov_Zoom(int zoom, int pct, int shown)
 {
     if (pct < 0) pct = 0;
-    if (pct > 40) pct = 40;
+    if (pct > kSpeedFovMaxPct) pct = kSpeedFovMaxPct;
     long long gain = (long long)pct * shown / 100;
     return (int)((long long)zoom * 65536 / (65536 + gain));
 }

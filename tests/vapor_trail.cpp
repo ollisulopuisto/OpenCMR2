@@ -43,7 +43,7 @@ int main()
     float p2[3] = { 0.0f, 1.0f, 10.0f }; Vapor_Project(I, P, p2, 0, 0, 1000, 500, 1000, 500, &u, &v, &z, &sv); CHECK(v < 0.5f);   // above the axis = smaller v (y down)
     // Width and opacity: thin and strong at the car, wider and fainter with age, zero strength = invisible, never negative.
     CHECK(Vapor_HalfWidth(1.4f, 0.1f, 0) < Vapor_HalfWidth(1.4f, 0.1f, kVaporDepth - 1) && Vapor_HalfWidth(1.4f, 0.1f, 0) > 0.0f);
-    CHECK(Vapor_Alpha(1.0f, 0) > Vapor_Alpha(1.0f, 10) && Vapor_Alpha(1.0f, kVaporDepth - 1) == 0.0f && Vapor_Alpha(0.0f, 0) == 0.0f && Vapor_Alpha(5.0f, 0) <= 0.9f + 1e-6f);
+    CHECK(Vapor_Alpha(1.0f, 0) > Vapor_Alpha(1.0f, 10) && Vapor_Alpha(1.0f, kVaporDepth - 1) == 0.0f && Vapor_Alpha(0.0f, 0) == 0.0f && Vapor_Alpha(5.0f, 0) <= 0.22f + 1e-6f && Vapor_Alpha(1.0f, 0) > 0.1f);
     // Picks stay inside the ring and increase.
     for (int j = 0; j < kVaporPoints; ++j) { CHECK(kVaporPickIndex[j] >= 0 && kVaporPickIndex[j] < kVaporDepth); if (j) CHECK(kVaporPickIndex[j] > kVaporPickIndex[j - 1]); }
     if (!fails) puts("vapor_trail ok");

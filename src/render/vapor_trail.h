@@ -99,11 +99,12 @@ inline bool Vapor_Project(const float *view, const float *proj, const float p[3]
     return true;
 }
 // Width and opacity of a trail point at history index `age` (0..kVaporDepth-1) for strength 0..1: thin and bright at the car, wider and fainter with age.
+static const float kVaporMaxAlpha = 0.22f;   // faint vapor, not solid rails (user, native screenshot: "way more transparent"); was 0.9
 inline float Vapor_HalfWidth(float carHeight, float scaleV, int age) { return 0.02f * carHeight * scaleV * (1.0f + 1.2f * (float)age / (float)(kVaporDepth - 1)); }
 inline float Vapor_Alpha(float strength, int age)
 {
     float t = (float)age / (float)(kVaporDepth - 1), f = 1.0f - t;
     strength = strength < 0.0f ? 0.0f : strength > 1.0f ? 1.0f : strength;
-    return strength * f * f * 0.9f;
+    return strength * f * f * kVaporMaxAlpha;
 }
 #endif

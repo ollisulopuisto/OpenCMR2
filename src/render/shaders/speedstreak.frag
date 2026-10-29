@@ -62,7 +62,7 @@ float vaporTrails(vec2 uv, float aspect)
             float hw = mix(a.z, b.z, t), al = mix(a.w, b.w, t);
             float tz = 1.0 / mix(1.0 / max(trailZ[k * 7 + i].x, 1e-3), 1.0 / max(trailZ[k * 7 + i + 1].x, 1e-3), t);   // perspective-correct depth along the segment
             float vis = 1.0 - smoothstep(0.0, max(depthInfo.w, 1e-3), tz - (sceneZ + depthInfo.z));                    // hidden behind nearer geometry
-            best = max(best, (1.0 - smoothstep(hw * 0.35, hw, d)) * al * vis);
+            best = max(best, (1.0 - smoothstep(0.0, hw, d)) * al * vis);
         }
     }
     return best;
