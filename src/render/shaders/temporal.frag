@@ -11,8 +11,8 @@ layout(set = 2, binding = 3) uniform sampler2D previousDepthTex;
 layout(std140, set = 3, binding = 0) uniform TemporalUniforms {
     mat4 inverseViewProjection;
     mat4 previousViewProjection;
-    vec4 params; // x history weight (0 = no valid history), y clamp slack, z depth tolerance
-    vec4 target; // reciprocal width, reciprocal height
+    vec4 params; // x history weight (0 = no valid history), y clamp slack, z relative view-distance tolerance, w projection A (ndc = A + B/viewZ)
+    vec4 target; // reciprocal width, reciprocal height, projection B
     vec4 carCenter[8]; // xyz world position, w gating radius (0 = unused)
     vec4 carDelta[8];  // xyz translation since last frame, w 1 = has history
 };
@@ -63,15 +63,13 @@ void main()
         vec2 n = q.xy / q.w;
         vec2 puv = vec2(n.x * 0.5 + 0.5, 0.5 - n.y * 0.5);
         if (puv.x < 0.0 || puv.y < 0.0 || puv.x > 1.0 || puv.y > 1.0) continue;
-        // Disocclusion: the history pixel must have been at the depth this world point
-        // had in the previous frame. 1 - depth is roughly proportional to 1/viewZ for
-        // a forward-Z projection, so compare it relatively. Mismatch means something
-        // else (e.g. a car that has since moved) was visible there: reject.
-        float expected = q.z / q.w;
-        float previousDepth = texture(previousDepthTex, puv).r;
-        float a = 1.0 - expected;
-        float b = 1.0 - previousDepth;
-        if (abs(a - b) > params.z * max(max(a, b), 1e-5) + 1e-5) continue;
+        // Disocclusion: the history pixel must have been at the view-space distance this
+        // world point had in the previous frame. Depth is linearised first (viewZ = B / (ndc - A)),
+        // raw non-linear depth would accept almost anything in the distance.
+        float expectedZ = target.z / (q.z / q.w - params.w);
+        float storedZ = target.z / (texture(previousDepthTex, puv).r - params.w);
+        if (!(expectedZ > 0.0) || !(storedZ > 0.0) ||
+            abs(expectedZ - storedZ) > params.z * max(expectedZ, storedZ)) continue;
         vec3 hk = texture(history, puv).rgb;
         float err = dot(hk - c, hk - c);
         if (err < bestError) { bestError = err; h = hk; found = true; }
