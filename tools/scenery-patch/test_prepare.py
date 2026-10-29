@@ -98,6 +98,7 @@ class PrepareTests(unittest.TestCase):
         (helper / 'car-index.json').write_text(json.dumps(idx))
         return mods, helper
 
+    @unittest.skipUnless(importlib.util.find_spec("PIL"), "optional Pillow not installed; converter tests require it")
     def test_real_converter_helper_repeat(self):
         import shutil
         import test_convert

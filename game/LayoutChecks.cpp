@@ -1032,7 +1032,10 @@ CMR2_LAYOUT_CHECK(ParticleType_postUpdate_OffsetCheck, offsetof(ParticleType, po
 CMR2_LAYOUT_CHECK(ParticleType_callback_OffsetCheck, offsetof(ParticleType, callback) == 0x68);
 CMR2_LAYOUT_CHECK(ParticleType_field0x6c_OffsetCheck, offsetof(ParticleType, field0x6c) == 0x6c);
 
-CMR2_LAYOUT_CHECK(Particle_SizeCheck, sizeof(Particle) == 0x68);
+// The original 0x68-byte runtime prefix is preserved; dry-wheel dust adds a
+// runtime-only tag. No Particle record is loaded directly from disk.
+CMR2_LAYOUT_CHECK(Particle_SizeCheck, sizeof(Particle) == 0x6c);
+CMR2_LAYOUT_CHECK(Particle_dryWheelDust_OffsetCheck, offsetof(Particle, dryWheelDust) == 0x68);
 CMR2_LAYOUT_CHECK(Particle_pType_OffsetCheck, offsetof(Particle, pType) == 0x0);
 CMR2_LAYOUT_CHECK(Particle_position_OffsetCheck, offsetof(Particle, position) == 0x4);
 CMR2_LAYOUT_CHECK(Particle_vector0x10_OffsetCheck, offsetof(Particle, vector0x10) == 0x10);
