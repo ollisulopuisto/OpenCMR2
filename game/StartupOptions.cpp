@@ -18,6 +18,7 @@ void LogStartupOptions() {
  };
  for(const auto &option:options){char key[80];snprintf(key,sizeof key,"video.%s",option.key);
   Sys_Log("options: requested %s=%d",key,Sys_GetOption(key,option.value));}
+ Sys_Log("options: volumetric clouds are disabled in this build (video.volumetric_clouds / --effect volumetric_clouds are ignored)");
  Sys_Log("options: temporal reconstruction is not implemented (spatial AA/MetalFX are separate)");
  CAIHelper::LogDriverNameStatus();
  SceneryPack_LogStatus();
