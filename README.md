@@ -210,6 +210,7 @@ the game.
 | `[video] bloom` | `1` | Make bright pixels bleed into their neighbours with a soft glow: `0` off, `1` on (SDL_GPU renderer only) |
 | `[video] particles` | `1` | Rain or snow falling through the scene: `0` off, `1` rain, `2` snow |
 | `[video] shadows` | `1` | Directional light shadow map darkening occluded surfaces: `0` off, `1` on (SDL_GPU renderer only) |
+| `[video] drone_speed_lens` | `100` | Drone camera only (needs `video.camera_operator=1`): how the lens changes with speed, -150 to 100. `100` tightens slightly at speed (the earlier behaviour), `0` holds the lens, negative values widen the view at speed (`-100` is about 24% wider at full speed than at rest). Visual only |
 | `[video] stretch_movies` | `0` | Stretch the movies over the whole window (`1`) instead of keeping their 4:3 proportions |
 | `[input] key_repeat_delay` | `750` | Milliseconds before a key held in the menus repeats |
 | `[input] key_repeat_interval` | `100` | Milliseconds between the repeats of a held key |
