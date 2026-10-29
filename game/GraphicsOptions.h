@@ -390,6 +390,7 @@ int WindscreenWiperKeyPressed(void);
 void WindscreenWiper_UpdateInput(void);
 void TuningPanel_Update(void);
 void TuningPanel_Draw(void);
+void TuningPanel_DrawPaused(void);
 bool TuningPanel_IsOpen(void);
 int TuningPanel_ToggleKey(void);
 
