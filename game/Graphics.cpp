@@ -1,3 +1,4 @@
+#include "render/effect_settings.h"
 #include "France1Textures.h"
 #include "SceneryPack.h"
 #include "DustPlume.h"
@@ -404,6 +405,7 @@ BOOL CGraphics::CreateSelectedDisplayAndRenderDevice(int screenWidth, int screen
 
     if (!Gfx_SetVideoMode(g_pGraphics->resX, g_pGraphics->resY, g_pGraphics->isFullscreen))
         return FALSE;
+    if(!Gfx_IsOpenGL())EffectSettings::Apply();
 
     g_pGraphics->field590_0x26c = 0;
     g_pGraphics->field591_0x26e = 0;

@@ -287,3 +287,19 @@ SetShadowQuality(resolution,softness), softness0..100 maps PCFradius0..4texels.
 Sharedfixedshadowshader uses shadowParams.z as texelradius and sampler7.
 Mac builds now default OpenGL inclusion ON, Metal remains default primary.
 This interface step alone does not claim working new controls or Macnativeproof.
+
+## Metal-first effect activation checkpoint
+Saved/per-launch requests now call actual SDL_GPU setters after device creation,
+and Detail Apply uses the same reader. No INI/profile writes at startup. Nonzero
+grade requests use restrained non-neutral temperature/tint/saturation/contrast;
+zero blend is neutral. Added bounds and explicit amount keys (menu work separate).
+Motion history is seeded before first blend, reset on toggle/resize. Bloom blur
+now supplies a real integer tap count in a padded block, not float0 in that slot.
+Shadow target/viewport/scissor honor selected resolution and PCF texel radius.
+Rays use projected visible stage sun, not fixed screen location; offscreen skips.
+Per-frame state changes log encoded passes and submission acceptance separately.
+Neither encoding nor submission claims completed GPU work or native pixel proof.
+MetalFX remains fallback on unsupported/downscaling presentations. Grounded
+native case 2214x1440 -> 1280x832 is a downscale, not an upscale success.
+GL executor/controls are a separate upcoming patch, not claimed by this one.
+Native Mac stage/gameplay and frame time still require owner test.

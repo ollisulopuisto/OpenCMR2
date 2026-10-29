@@ -1,3 +1,4 @@
+#include "render/effect_settings.h"
 #include "SettingsPage.h"
 #include "SavedGame.h"
 #include "port/sys.h"
@@ -4174,7 +4175,7 @@ void FrontendMenu_ApplyAdvancedGraphicsOptions(Menu *pMenu, int param)
     // OpenCMR2: color grading on/off.
     int colorGrading = isOpenGL ? 0 : Menu_GetItem(pMenu, 0x1a)->max;
     Sys_SetOption("video.color_grading", colorGrading);
-    Gfx_SetColorGrading(0, 0, 100, 100);
+    if(!isOpenGL)EffectSettings::Apply();
 }
 
 // FUNCTION: CMR2 0x004f1e40
