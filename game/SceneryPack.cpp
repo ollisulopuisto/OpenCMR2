@@ -171,10 +171,10 @@ void SceneryPack_RegisterSource(Texture *texture,const void *bytes,unsigned size
     if(candidate)sourceIdentities[texture]=SceneryIdentity::SHA256(bytes,size);
 }
 void SceneryPack_RegisterArchive(GenericFile *file,const char *path){if(file&&path)archives[file]=Leaf(path);}
-static float reactX=0,reactZ=0,reactSpeed=0;static bool reactValid=false;static uint64_t reactAt=0;
-void SceneryPack_Clear(){assets.clear();windIdentities.clear();windLogged.clear();treeOriginalLogged.clear();archives.clear();sourceIdentities.clear();identities.clear();unmatched.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;identityContract=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;reactValid=false;diagnosticObject=nullptr;diagnosticArticulated=false;diagnosticFrame=diagnosticChanges=loggedSecond=treeReplacementDraws=treeWindDraws=0;diagnosticTime=0;}
+struct ReactCar{float x=0,z=0,speed=0;bool valid=false;uint64_t at=0;};static ReactCar reactCars[8];
+void SceneryPack_Clear(){assets.clear();windIdentities.clear();windLogged.clear();treeOriginalLogged.clear();archives.clear();sourceIdentities.clear();identities.clear();unmatched.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;identityContract=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;for(auto &c:reactCars)c=ReactCar();diagnosticObject=nullptr;diagnosticArticulated=false;diagnosticFrame=diagnosticChanges=loggedSecond=treeReplacementDraws=treeWindDraws=0;diagnosticTime=0;}
 void SceneryPack_Advance(int step){if(step>0)animationTime+=(unsigned)step;}
-void SceneryPack_SetReactionSource(int x,int z,int speed,bool valid){reactValid=valid;reactAt=animationTime;reactX=x/65536.f;reactZ=z/65536.f;reactSpeed=speed/65536.f;}
+void SceneryPack_SetReactionSource(int slot,int x,int z,int speed,bool valid){if(slot<0||slot>=8)return;reactCars[slot]={x/65536.f,z/65536.f,speed/65536.f,valid,animationTime};}
 static bool DrawReplacement(StageObject *object,const float *billboard,unsigned textureCount,Texture **textureBuffer){
     if(!object||!object->pMesh||!billboard||Sys_GetOption("video.scenery_overrides",1)==0)return false;
     Mesh *mesh=object->pMesh;
@@ -219,8 +219,11 @@ static bool DrawReplacement(StageObject *object,const float *billboard,unsigned 
         // multi-person atlases. Authored limb poses remain in addition to sway.
         bool selected=true; // Requested full supported placement coverage.
         if(!selected)frame=0;
-        // Stale after ~2s of authored time without a live-race refresh (menus, pauses, replays that do not update).
-        float excitement=reactValid&&animationTime-reactAt<65536ull*50&&Sys_GetOption("video.reactive_spectators",1)!=0?SceneryMotion::Excitement(object->position.x/65536.f-reactX,object->position.z/65536.f-reactZ,reactSpeed):0;
+        // Any nearby rally car excites the crowd. A car stops counting after ~2s of authored
+        // time without a live-race refresh (menus, pauses, replays that do not update).
+        float excitement=0;
+        if(Sys_GetOption("video.reactive_spectators",1)!=0)for(const auto &c:reactCars)if(c.valid&&animationTime-c.at<65536ull*50)
+            excitement=std::max(excitement,SceneryMotion::Excitement(object->position.x/65536.f-c.x,object->position.z/65536.f-c.z,c.speed));
         PackTexture *t=asset->frames[frame];std::vector<GfxVertex> vertices;
         for(int i=0;i<mesh->triangleCount;i++)for(int j=0;j<3;j++){
             unsigned ix=mesh->pTriangles[i].vertexIndex[j];if(ix>=(unsigned)mesh->field_0x10)return false;
