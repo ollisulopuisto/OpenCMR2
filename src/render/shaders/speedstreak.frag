@@ -8,6 +8,7 @@ layout(std140, set = 3, binding = 0) uniform SpeedStreakUniforms {
     vec4 trailPts[28]; // 7 points per trail: uv x, uv y, half width (screen heights, 0 = point unusable), opacity
     vec4 trailZ[28];   // x = view depth of that point (world units)
     vec4 depthInfo;    // x near plane, y far plane (0 = no depth: trails off), z depth tolerance (world units, the car's own surface), w fade width (world units)
+    vec4 tunnelLines;  // x tunnel vision strength 0..2 (eased, same as dof.frag), y 1 = radial lines inside the tunnel vision zone
 };
 // Mirrors src/render/speed_streak.h. Directional radial streak: samples run from the pixel toward the screen centre, so the
 // scenery smears outward. The clear inner zone is a radial exclusion, not a car mask.
@@ -76,6 +77,17 @@ void main()
     float w = smoothstep(INNER, INNER + RAMP, r) * clamp(settings.x, 0.0, 1.0);
     float linesAmount = smoothstep(LINES_ONSET, LINES_FULL, clamp(settings.w, 0.0, 1.0));
     float lines = linesAmount > 0.0 ? speedLines(c * vec2(settings.y, 1.0), settings.z) * linesAmount * LINES_OPACITY : 0.0;
+    // Lines inside the tunnel vision zone (video.tunnel_lines): the same rays, shown only where dof.frag blurs (same clear circle), so the centre and
+    // the road ahead stay clear. They need no speed streak setting. Strength 1 is the full 100% look; above that they brighten a little.
+    if (tunnelLines.y > 0.5 && tunnelLines.x > 0.0) {
+        float tl = tunnelLines.x;
+        vec2 tc = c * 2.0; tc.x *= settings.y; tc.y *= 0.5;                   // mirrors dof.frag
+        float inner = max(mix(1.4, 0.5, tl), 0.1);
+        float zoneT = smoothstep(inner, inner + 0.8, length(tc));
+        float amountT = smoothstep(LINES_ONSET, LINES_FULL, clamp(tl, 0.0, 1.0));
+        float lt = speedLines(c * vec2(settings.y, 1.0), settings.z) * zoneT * amountT * LINES_OPACITY * 0.6 * (1.0 + 0.3 * clamp(tl - 1.0, 0.0, 1.0));
+        lines = max(lines, lt);
+    }
     lines = max(lines, vaporTrails(uv, settings.y));
     if (w <= 0.0) { outColor = vec4(mix(base.rgb, vec3(0.93, 0.95, 1.0), lines), base.a); return; }
     vec2 toCenter = -c * (w * MAXLEN);

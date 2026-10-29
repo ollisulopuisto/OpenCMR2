@@ -30,14 +30,14 @@ struct EnhancementOptions {
         if(key=="--driver-names"){if(value!="original"&&value!="real"&&value!="sidecar")error="--driver-names expects original, real or sidecar";else names=value;}
         if(key=="--effect"){
             auto at=value.find('=');std::string name=value.substr(0,at),v=at==value.npos?"":value.substr(at+1);
-            static const char *allowed[]={"dust_plume","body_dirt","dust_volume","volumetric_clouds","spatial_aa","metalfx_spatial","motion_blur","bloom","particles","shadows","depth_of_field","god_rays","color_grading","temporal_aa","speed_motes","debug_object_mask","vapor_trails","speed_lines"};
+            static const char *allowed[]={"dust_plume","body_dirt","dust_volume","volumetric_clouds","spatial_aa","metalfx_spatial","motion_blur","bloom","particles","shadows","depth_of_field","god_rays","color_grading","temporal_aa","speed_motes","debug_object_mask","vapor_trails","speed_lines","tunnel_lines"};
             bool known=false;for(auto key:allowed)if(name==key)known=true;
             if(!known||(v!="on"&&v!="off"))error="--effect expects a listed NAME=on/off";
             else overrides["video."+name]=v=="on";
         }
         if(key=="--speed-fov"||key=="--speed-motes-stretch"||key=="--speed-motes-amount"||key=="--speed-motes-size"||key=="--dof-blur-max-px"){
             char *end=nullptr;long n=strtol(value.c_str(),&end,10);
-            int hi=key=="--speed-fov"?100:key=="--speed-motes-stretch"?100:key=="--dof-blur-max-px"?40:key=="--speed-motes-size"?800:300,lo=key=="--dof-blur-max-px"?1:key=="--speed-motes-size"?50:0;
+            int hi=key=="--speed-fov"?150:key=="--speed-motes-stretch"?100:key=="--dof-blur-max-px"?40:key=="--speed-motes-size"?800:300,lo=key=="--dof-blur-max-px"?1:key=="--speed-motes-size"?50:0;
             if(value.empty()||*end||n<lo||n>hi)error=key+" expects "+std::to_string(lo)+".."+std::to_string(hi);
             else overrides[key=="--speed-fov"?"video.speed_fov":key=="--speed-motes-stretch"?"video.speed_motes_stretch":key=="--dof-blur-max-px"?"video.dof_blur_max_px":key=="--speed-motes-size"?"video.speed_motes_size":"video.speed_motes_amount"]=(int)n;
         }
@@ -138,7 +138,7 @@ inline const char *EnhancementHelp(){return
 "                              Requested is not proof of backend support;\n"
 "                              see runtime log. temporal_aa = PARTIAL stage (SDL_GPU only,\n"
 "                              camera reprojection, no object velocity), default off.\n"
-"  --speed-fov 0..40           Widen the regular cameras' view with speed (percent); default 0 = off\n"
+"  --speed-fov 0..150          Widen the regular cameras' view with speed (percent); default 0 = off\n"
 "  --speed-streak 0..100       Directional radial speed streak (SDL_GPU only); default 0 = off\n""  --speed-hold 0|1            Hold speed effects at full speed (overdo sets 1); 0 = real car speed\n"
 "  --fov-preview 0|20..150     Debug: try an absolute video.fov number (legacy scale, 70 = original, higher = wider, not an angle); F10 row too; 0 = off\n"
 "  --dof-focus-car 0|1         Focus depth of field on the followed car (SDL_GPU; overdo sets 1); default 0 = fixed plane\n"
