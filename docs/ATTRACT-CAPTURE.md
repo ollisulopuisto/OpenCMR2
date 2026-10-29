@@ -37,3 +37,7 @@ Then compare the two `capture.csv` files row by row before looking at pictures. 
 - The demo runs the AI attract drive and the demo camera; the drone camera knobs only apply if the demo uses the drone camera.
 - If the demo ends before all shots, the log says how many were taken and the game quits.
 - Not run natively by the author; the first real captures come from a native run. On the OpenGL backend the frame readback is the existing frame-dump path and its row order is unverified.
+
+## Clock semantics and the regression test
+
+The stage clock advances +4 cs per 25 Hz simulation step with a random -1..+2 cs jitter (about 100 cs per second on average). A shot fires on the first tick whose clock is at or above `target_s * 100`, so the real time of a shot can be a few centiseconds late, never early. Whether the clock reads 0 before the stage countdown ends was not verified; the first shot is requested at the first tick. `tests/attract_capture.cpp` (non-Windows; ctest `attract_capture`) drives the scheduler with representative ticks, checks targets 0,5,...,30, the 499/500 cs boundary, completion and quit, the `_cs` CSV header, and that a demo ending at 60 s still yields all 7 shots (the old millisecond comparison yields 2).
