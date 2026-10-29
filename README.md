@@ -220,7 +220,7 @@ the game.
 | `[video] particles` | `1` | Rain or snow falling through the scene: `0` off, `1` rain, `2` snow |
 | `[video] shadows` | `1` | Directional light shadow map darkening occluded surfaces: `0` off, `1` on (SDL_GPU renderer only) |
 | `[video] drone_speed_lens` | `100` | Drone camera only (needs `video.camera_operator=1`): how the lens changes with speed, -150 to 100. `100` tightens slightly at speed (the earlier behaviour), `0` holds the lens, negative values widen the view at speed (`-100` is about 24% wider at full speed than at rest). Visual only |
-| `[video] drone_shake` | `100` | Drone camera only: small smooth handheld shake that grows with speed, 0 to 300 percent, `0` off (100 is about 8 cm at full speed, nearly none when slow). Camera position only. Visual only |
+| `[video] drone_shake` | `100` | No longer applies: the drone camera has no speed shake (the regular camera's `camera_shake` is unchanged). The key is still accepted so old INI files load. Visual only |
 | `[video] drone_distance` | `100` | Drone camera only: camera distance in percent of the default, 50 to 150. The default already pulls back at low speed and closes in at speed; this scales that distance. Visual only |
 | `[video] tunnel_vision` | `100` | Speed-driven tunnel vision, 0 to 100 percent, `0` off. Faster driving narrows the sharp zone and blurs the edges. Needs `video.depth_of_field=1` (SDL_GPU renderer only). Visual only |
 | `[video] stretch_movies` | `0` | Stretch the movies over the whole window (`1`) instead of keeping their 4:3 proportions |
