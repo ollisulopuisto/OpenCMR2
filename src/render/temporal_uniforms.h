@@ -20,6 +20,7 @@ class TemporalTracker {
     float prevVP[16]={}, prevEye[3]={}, prevForward[3]={};
     bool have=false;
     float prevObj[kTemporalObjects][3]={}; bool prevObjValid[kTemporalObjects]={}, seenObj[kTemporalObjects]={};
+    float prevProj[2]={0,0};
     int w=0, h=0;
     unsigned sequence=0;
 public:
@@ -58,12 +59,18 @@ public:
             // Camera cut: teleport or sharp turn. Thresholds are guesses; unverified natively.
             if(dx*dx+dy*dy+dz*dz>200.f*200.f||dot<0.7f)have=false;
         }
+        // ndc depth = A + B / viewZ for the perspective projection. The resolve linearises
+        // depth with this to compare view-space distance. A changed projection (FOV/clip) drops history.
+        float projA=s.projection._33/s.projection._34,projB=s.projection._43/s.projection._34;
+        if(!std::isfinite(projA+projB)||projB==0){Reset();return false;}
+        if(have&&(std::fabs(projA-prevProj[0])>1e-4f*std::fabs(prevProj[0])+1e-6f||std::fabs(projB-prevProj[1])>1e-4f*std::fabs(prevProj[1])+1e-6f))have=false;
+        prevProj[0]=projA;prevProj[1]=projB;
         Temporal::Sample j=Temporal::Jitter(sequence);
         f.jitterX=j.x;f.jitterY=j.y;
         f.hasHistory=have;
         memcpy(f.u.previous,have?prevVP:f.vp,sizeof(f.u.previous));
-        f.u.params[0]=have?0.9f:0.f;f.u.params[1]=0.02f;f.u.params[2]=0.15f;f.u.params[3]=0.f;
-        f.u.target[0]=1.f/bw;f.u.target[1]=1.f/bh;f.u.target[2]=f.u.target[3]=0.f;
+        f.u.params[0]=have?0.9f:0.f;f.u.params[1]=0.02f;f.u.params[2]=0.08f;f.u.params[3]=projA;
+        f.u.target[0]=1.f/bw;f.u.target[1]=1.f/bh;f.u.target[2]=projB;f.u.target[3]=0.f;
         f.active=true;
         return true;
     }
