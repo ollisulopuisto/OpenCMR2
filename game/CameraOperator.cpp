@@ -27,7 +27,7 @@ void CameraOperator_Update(CameraRecord*record,const FixMatrix*reference,const F
  // Remove last terrain lift before advancing free world inertia.
  if(state.ready)state.position.y-=state.terrainLift;
  {int pct=Sys_GetOption("video.drone_speed_lens",100);if(pct<-150)pct=-150;if(pct>100)pct=100;state.lensSpeedGain=.3f*pct/100.f;} // visual lens only; 100 = previous behaviour, negative = wider at speed
- {int pct=Sys_GetOption("video.drone_shake",100);if(pct<0)pct=0;if(pct>300)pct=300;state.shakeAmount=pct/100.f;}
+ state.shakeAmount=0.f; // Speed shake belongs to the regular camera, not the drone (user request). video.drone_shake is kept as an accepted but unused key.
  {int pct=Sys_GetOption("video.drone_distance",100);if(pct<50)pct=50;if(pct>150)pct=150;state.distanceScale=pct/100.f;}
  state.Step({p.x/65536.f,p.y/65536.f,p.z/65536.f},std::atan2(x,z),car->steeringInput/65536.f,car->speed/65536.f,
   offset?std::abs(offset->z/65536.f):6.5f,offset?offset->y/65536.f:1.5f,g_physicsTimeStep/(65536.f*25.f),&road);
