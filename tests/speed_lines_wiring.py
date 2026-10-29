@@ -14,7 +14,7 @@ for hn, fn in (("kSpeedLinesInner", "LINES_INNER"), ("kSpeedLinesFade", "LINES_F
 need("speedLines(c * vec2(settings.y, 1.0), settings.z)" in f, "lines must use the aspect corrected radius and the time uniform")
 need("settings.w" in f, "lines amount must come from settings.w")
 need("previous" not in f, "no previous frame")
-need(f.count("sampler2D") == 1, "still one sampler: no extra pass")
+need(f.count("sampler2D") == 2, "scene plus depth for vapor trail occlusion")
 g = rd("src/render/gfx_gpu.cpp")
 need("uniforms[2] = speedStreakClock;" in g and "? speedStreakSmooth : 0.0f;" in g, "SDL_GPU must feed time and strength (strength gated by the video.speed_lines toggle)")
 x = rd("src/render/gl_effects_executor.h")

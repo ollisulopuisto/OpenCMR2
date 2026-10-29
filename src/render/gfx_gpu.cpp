@@ -579,7 +579,7 @@ struct Executor : GfxExecutor {
         fsBlur = Shader(SHADER_CODE(blur_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
         fsComposite = Shader(SHADER_CODE(composite_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1);
         fsLensGrime = Shader(SHADER_CODE(lens_grime_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
-        fsSpeedStreak = Shader(SHADER_CODE(speedstreak_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
+        fsSpeedStreak = Shader(SHADER_CODE(speedstreak_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1);
         fsDoF = Shader(SHADER_CODE(dof_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1);
         fsGodRays = Shader(SHADER_CODE(godRays_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 3, 1);
         fsColorGrading = Shader(SHADER_CODE(colorGrading_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
@@ -2722,7 +2722,8 @@ struct Executor : GfxExecutor {
             if (!raceWorld) speedStreakSmooth = 0.0f;
         }
         // Vapor trails (video.vapor_trails, set by the game through SetVaporTrail): history of the car's rear anchors, projected for the shader.
-        float vaporUniforms[32 * 4] = {};   // 4 trail boxes + 28 points, see speedstreak.frag
+        float vaporUniforms[60 * 4 + 4] = {};   // 4 trail boxes + 28 points + 28 depths + depth info, see speedstreak.frag
+        float vaporNear = 0.0f, vaporFar = 0.0f;
         bool vaporDraw = false;
         {
             Uint64 vTicks = SDL_GetTicksNS();
@@ -2732,7 +2733,7 @@ struct Executor : GfxExecutor {
             if (!raceWorld || vaporTarget <= 0.0f) { if (vaporSmooth < 0.01f || !raceWorld) vaporSmooth = 0.0f; }
             float trailStrength = SpeedStreak_Smoothstep(0.30f, 0.90f, vaporSmooth);
             if (vaporSmooth <= 0.01f || !raceWorld || worldEnd >= frame.commands.size() || frame.commands[worldEnd].playerObject == 0) { vaporHistory.Reset(); vaporHavePrev = vaporHaveDir = false; }
-            else if (trailStrength > 0.0f) {
+            else if (trailStrength > 0.0f && sampledDepth && backDepth != nullptr) {   // trails are hidden by nearer geometry, which needs the scene depth: no depth = no trails
                 const unsigned player = frame.commands[worldEnd].playerObject;
                 const GfxDrawState *ref = NULL;   // any of the car's draws: they share the view, projection and viewport
                 auto carVertices = [&](auto &&fn) {
@@ -2757,7 +2758,8 @@ struct Executor : GfxExecutor {
                 };
                 VaporBounds vb;
                 carVertices([&](const float *wp) { vb.Add(wp); });
-                if (vb.Valid() && ref != NULL) {
+                ResolveProjection(&vaporNear, &vaporFar);
+                if (vb.Valid() && ref != NULL && vaporNear > 0.0f && vaporFar > vaporNear) {
                     float centre[3]; vb.Centre(centre);
                     float carHeight = vb.hi[1] - vb.lo[1];
                     float jump = 0.0f;
@@ -2781,8 +2783,10 @@ struct Executor : GfxExecutor {
                                 float hw = Vapor_HalfWidth(carHeight, sv, age);
                                 if (!(hw > 0.0f)) continue;
                                 pt[0] = u; pt[1] = v; pt[2] = hw; pt[3] = Vapor_Alpha(trailStrength, age);
+                                vaporUniforms[(4 + 28 + k * kVaporPoints + j) * 4] = z;
                                 x0 = std::min(x0, u - 2.0f * hw); x1 = std::max(x1, u + 2.0f * hw); y0 = std::min(y0, v - 2.0f * hw); y1 = std::max(y1, v + 2.0f * hw);
                                 vaporDraw = true;
+                                vaporUniforms[60 * 4] = vaporNear; vaporUniforms[60 * 4 + 1] = vaporFar; vaporUniforms[60 * 4 + 2] = 0.5f * carHeight; vaporUniforms[60 * 4 + 3] = 0.5f * carHeight;
                             }
                             if (x1 > x0) { float *bx = &vaporUniforms[k * 4]; bx[0] = x0; bx[1] = y0; bx[2] = x1; bx[3] = y1; }
                         }
@@ -2793,12 +2797,12 @@ struct Executor : GfxExecutor {
         bool streakApplied = false;
         if ((speedStreakSmooth > 0.01f || vaporDraw) && raceWorld && gradingTarget != nullptr && presentSource != nullptr &&
             presentSource != gradingTarget && SpeedStreakPipeline() != nullptr) {
-            float uniforms[4 + 32 * 4];
+            float uniforms[4 + 60 * 4 + 4];
             uniforms[0] = speedStreakSmooth; uniforms[1] = backHeight ? (float)backWidth / (float)backHeight : 1.0f; uniforms[2] = speedStreakClock;
             uniforms[3] = Sys_GetOption("video.speed_lines", 1) != 0 ? speedStreakSmooth : 0.0f;   // radial lines have their own toggle
             memcpy(uniforms + 4, vaporUniforms, sizeof(vaporUniforms));
-            SDL_GPUTextureSamplerBinding binding = { presentSource, linearSampler };
-            if (PostProcessPass(cmd, SpeedStreakPipeline(), gradingTarget, &binding, 1, uniforms, sizeof(uniforms)))
+            SDL_GPUTextureSamplerBinding binding[2] = { { presentSource, linearSampler }, vaporDraw ? SDL_GPUTextureSamplerBinding{ backDepth, depthSampler } : SDL_GPUTextureSamplerBinding{ presentSource, linearSampler } };   // no trails: the second sampler just needs some texture
+            if (PostProcessPass(cmd, SpeedStreakPipeline(), gradingTarget, binding, 2, uniforms, sizeof(uniforms)))
                 {presentSource = gradingTarget;encoded|=256;streakApplied = true;}
         }
         if ((colorGradingTemperature != 0 || colorGradingTint != 0 ||
