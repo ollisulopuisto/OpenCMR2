@@ -41,11 +41,16 @@ def main():
         d = ctx.texture((w, h), 1, depth.astype('f4').tobytes(), dtype='f4')
         d.filter = (moderngl.NEAREST, moderngl.NEAREST); d.repeat_x = d.repeat_y = False
         if name != 'colorGrading': d.use(1); program['depthTex'].value = 1
+        mask = None
+        if name == 'godRays':
+            mask = ctx.texture((w,h),4,np.full((h,w,4),255,dtype='u1').tobytes())
+            mask.use(2); program['cloudTransmission'].value = 2
         target = ctx.texture((w, h), 4)
         fbo = ctx.framebuffer([target]); fbo.use()
         vao = ctx.vertex_array(program, []); vao.render(vertices=3)
         result = np.frombuffer(fbo.read(components=4), dtype='u1').reshape(h, w, 4).copy()
         vao.release(); fbo.release(); target.release(); scene.release(); d.release(); ubo.release()
+        if mask: mask.release()
         return result
 
     image = Image.new('RGBA', (w, h), '#97badbff')
