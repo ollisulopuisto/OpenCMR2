@@ -286,6 +286,17 @@ struct Executor : GfxExecutor {
     SDL_GPUGraphicsPipeline *colorGradingPipeline = nullptr; // analytic color grading
     SDL_GPUTexture *gradingTarget = nullptr;
     bool sampledDepth = false;
+    // Debug object mask: while maskDraw, only draws whose objectId == maskObject are re-issued (magenta, no blend, no depth write,
+    // depth test LESS_EQUAL against the scene depth), so occluded parts of the car stay unpainted.
+    bool maskDraw = false;
+    unsigned maskObject = 0;
+    static uint32_t MaskKey(uint32_t key)
+    {
+        key &= ~(1u << 4);           // no blend
+        key &= ~(1u << 14);          // no depth write
+        key |= 1u << 13;             // depth test on
+        return (key & ~(15u << 15)) | ((uint32_t)GFX_CMP_LESSEQUAL & 15u) << 15;
+    }
     // Projections of the draws that wrote the sampled depth (back buffer, untransformed, depth test+write),
     // recovered from _33/_43 and counted per distinct near/far pair. The dominant pair feeds the DoF pass.
     struct ProjVote { float n, f; int count; };
@@ -1844,6 +1855,7 @@ struct Executor : GfxExecutor {
         Color(s.textureFactor, u.textureFactor);
         u.alphaTest[0] = s.alphaTest;
         u.alphaTest[1] = s.alphaFunc;
+        u.alphaTest[2] = maskDraw ? 1 : 0;
         u.alphaRef[0] = (s.alphaRef & 0xff) / 255.0f;
         Color(s.fogColor, u.fogColor);
         u.fogMode[0] = s.fog;
@@ -2189,6 +2201,8 @@ struct Executor : GfxExecutor {
         for (size_t i = first; i < last; i++) {
             const GfxCommand &c = frame.commands[i];
             if (c.type == GFX_CMD_WORLD_END) continue;
+            if (maskDraw && c.type != GFX_CMD_DRAW && c.type != GFX_CMD_TARGET) continue;
+            if (maskDraw && c.type == GFX_CMD_DRAW && (target != NULL || c.transformed || frame.states[c.state].objectId != maskObject)) continue;
             if (c.type == GFX_CMD_TARGET) {
                 if (pass != NULL) {
                     SDL_EndGPURenderPass(pass);
@@ -2257,14 +2271,14 @@ struct Executor : GfxExecutor {
                 continue;
             }
             const GfxDrawState &s = frame.states[c.state];
-            SDL_GPUGraphicsPipeline *pipeline = Pipeline(PipelineKey(c, s));
+            SDL_GPUGraphicsPipeline *pipeline = Pipeline(maskDraw ? MaskKey(PipelineKey(c, s)) : PipelineKey(c, s));
             if (pipeline == NULL)
                 continue;
             if (pipeline != bound.pipeline) {
                 SDL_BindGPUGraphicsPipeline(pass, pipeline);
                 bound.pipeline = pipeline;
             }
-            if (target == NULL && !c.transformed && s.depthTest && s.depthWrite) VoteProjection(s.projection);
+            if (!maskDraw && target == NULL && !c.transformed && s.depthTest && s.depthWrite) VoteProjection(s.projection);
             const bool scaled = target == NULL && s.screenW > 0 && s.screenH > 0;
             const GfxViewport viewport = ToTarget(s.viewport, s.screenW, s.screenH, target == NULL, targetW, targetH);
             SDL_GPUViewport vp;
@@ -2340,6 +2354,18 @@ struct Executor : GfxExecutor {
         drawCommands(0,worldEffects?worldEnd:frame.commands.size());
         temporalJitterOn = false;
         vertexUniformState = NULL;
+        bool maskBypassPost = false; // debug_object_mask only: the post chain would soften/recolor the magenta
+        // Debug object mask (opt-in, video.debug_object_mask): repaint the followed car's own draws magenta, depth tested.
+        if (worldEffects && raceWorld && worldEnd < frame.commands.size() && frame.commands[worldEnd].playerObject != 0 &&
+            Sys_GetOption("video.debug_object_mask", 0) != 0) {
+            target = NULL; pass = NULL; maskObject = frame.commands[worldEnd].playerObject; maskDraw = true;
+            fragmentUniformsSet = false; vertexUniformState = NULL;
+            drawCommands(0, worldEnd);
+            maskDraw = false; target = NULL; pass = NULL; fragmentUniformsSet = false; vertexUniformState = NULL;
+            maskBypassPost = true;
+            static bool loggedMask = false;
+            if (!loggedMask) { loggedMask = true; Sys_Log("options: debug object mask repainted draws with objectId %u (car slot+1) in magenta, depth tested; AA/bloom/motion blur/DoF/tunnel/grade are bypassed while this debug option is on; native pixels unverified", maskObject); }
+        }
 
         if (!present) {
             SDL_SubmitGPUCommandBuffer(cmd);
@@ -2368,7 +2394,7 @@ struct Executor : GfxExecutor {
         unsigned encoded=(shadowEncoded?64:0)|(precipitationEncoded?128:0);
         dofStatus={0,speedFocusTarget,0.0f,0.0f,0.0f};
         SDL_GPUTexture *presentSource = backColor;
-        if(worldEffects) {
+        if(worldEffects && !maskBypassPost) {
         // OpenCMR2: opt-in temporal AA resolve (PARTIAL: camera-matrix reprojection,
         // 3x3 clamp, no per-object velocity). Runs first so later passes see its output.
         if (tf.active) {

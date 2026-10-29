@@ -2807,6 +2807,7 @@ static void Game_BeginDistanceFade(void)
 // scratch slots), plus the 0.0f store which the original materialises as an
 // immediate.
 // FUNCTION: CMR2 0x0049d3f0
+BYTE View_GetActiveCameraFlags(BYTE index);
 int Game_DrawSceneViewport(SceneNode *pRoot, SceneNode *pCamera, void *pRect, int bit, BYTE flag)
 {
     GfxViewport viewport;
@@ -2934,6 +2935,7 @@ int Game_DrawSceneViewport(SceneNode *pRoot, SceneNode *pCamera, void *pRect, in
         Line2D_Draw();
         Billboard_Draw(pCamera);
         Scene_DrawShadowBatches(bit);
+        Gfx_SetPlayerObject((unsigned)View_GetActiveCameraFlags((BYTE)bit) + 1); // debug object mask: the followed car's objectId
         Gfx_FlushDustVolume(); // completed world depth/projection, before HUD
     }
     Flare_SampleVisibility(NULL, NULL, 0);
