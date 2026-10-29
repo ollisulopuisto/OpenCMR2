@@ -284,7 +284,7 @@ struct Executor : GfxExecutor {
 
     bool motionOn = false, bloomOn = false, dofOn = false, raysOn = false;
     float speedFocusTarget = 0.0f, speedFocusSmooth = 0.0f; std::chrono::steady_clock::time_point speedFocusTime{}; bool speedFocusTimed = false; // tunnel vision, same easing as SDL_GPU
-    float speedStreakTarget = 0.0f, speedStreakSmooth = 0.0f; std::chrono::steady_clock::time_point speedStreakTime{}; bool speedStreakTimed = false;
+    float speedStreakTarget = 0.0f, speedStreakSmooth = 0.0f, speedStreakClock = 0.0f; std::chrono::steady_clock::time_point speedStreakTime{}; bool speedStreakTimed = false;
     float glCarFocusRaw = -1.0f, glCarDepth = 0.0f;   // dof_focus_car: raw GL depth of the followed car this frame (-1 none)
     bool effectsRaceFrame = true; // set per frame before ApplyEffects: depth blur is a race effect, never run on menu/preview frames
     int motionMix = 0, bloomAmount = 0, dofFocus = 50, dofRange = 30, dofBlur = 0, raysAmount = 0;

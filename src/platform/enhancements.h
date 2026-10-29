@@ -71,7 +71,7 @@ struct EnhancementOptions {
     // Exaggerated diagnostic look (per launch, nothing saved). Explicit flags always win.
     void ApplyTestPreset(){
         if(testPreset!="overdo")return;
-        static const std::pair<const char*,int> kOverdo[]={{"video.speed_motes",1},{"video.speed_motes_amount",300},{"video.speed_motes_size",400},{"video.speed_motes_stretch",100},
+        static const std::pair<const char*,int> kOverdo[]={{"video.speed_motes",0},
             {"video.speed_fov",40},{"video.speed_fov_hold",1},{"video.depth_of_field",1},{"video.dof_blur",100},{"video.dof_blur_max_px",16},{"video.tunnel_vision",100},{"video.motion_blur",1},{"video.motion_blur_amount",60},{"video.speed_streak",100},{"video.dof_focus_car",1}};
         for(auto&e:kOverdo)if(!overrides.count(e.first))overrides[e.first]=e.second;
     }
@@ -139,7 +139,7 @@ inline const char *EnhancementHelp(){return
 "  --speed-motes-amount 0..300 Percent of the normal mote spawn rate (live cap 64 at 100, up to 192 at 300)\n"
 "  --speed-motes-size 50..800  Mote size in percent (default 100)\n"
 "  --dof-blur-max-px 1..40     Blur radius in pixels when dof_blur is 100 (default 4)\n"
-"  --test-preset overdo        Exaggerated diagnostic look for speed motes, streaks, FOV, DoF, tunnel vision\n"
+"  --test-preset overdo        Exaggerated diagnostic look for speed lines/streak, FOV, DoF, tunnel vision (legacy motes off; add --effect speed_motes=on)\n"
 "                              and motion blur. Explicit flags override it; nothing is saved\n"
 "  --attract-capture DIR       Start the attract demo at once, save PNGs of the frame at\n"
 "                              stage-clock 0, N, 2N... s into DIR (+ capture.csv), then quit\n"

@@ -348,7 +348,7 @@ struct Executor : GfxExecutor {
     GfxDofStatus dofStatus = {0, 0, 0, 0, 0};
     float speedFocusTarget = 0.0f, speedFocusSmooth = 0.0f; // 0..1 tunnel vision; smoothed per frame
     Uint64 speedFocusTicks = 0;
-    float speedStreakTarget = 0.0f, speedStreakSmooth = 0.0f; Uint64 speedStreakTicks = 0; // 0..1, smoothed in real time
+    float speedStreakTarget = 0.0f, speedStreakSmooth = 0.0f, speedStreakClock = 0.0f; Uint64 speedStreakTicks = 0; // 0..1, smoothed in real time
     // OpenCMR2: god rays state.
     bool godRaysEnabled = false;
     int godRaysIntensity = 100;
@@ -2681,13 +2681,14 @@ struct Executor : GfxExecutor {
             float dtSeconds = speedStreakTicks ? (float)(nowTicks - speedStreakTicks) * 1e-9f : 0.0f;
             speedStreakTicks = nowTicks;
             if (dtSeconds > 0.25f) dtSeconds = 0.25f;
+            speedStreakClock = std::fmod(speedStreakClock + dtSeconds, 1000.0f);
             speedStreakSmooth += (speedStreakTarget - speedStreakSmooth) * (1.0f - std::exp(-dtSeconds / 0.4f));
             if (!raceWorld) speedStreakSmooth = 0.0f;
         }
         bool streakApplied = false;
         if (speedStreakSmooth > 0.01f && raceWorld && gradingTarget != nullptr && presentSource != nullptr &&
             presentSource != gradingTarget && SpeedStreakPipeline() != nullptr) {
-            float uniforms[4] = { speedStreakSmooth, backHeight ? (float)backWidth / (float)backHeight : 1.0f, 0.0f, 0.0f };
+            float uniforms[4] = { speedStreakSmooth, backHeight ? (float)backWidth / (float)backHeight : 1.0f, speedStreakClock, speedStreakSmooth };
             SDL_GPUTextureSamplerBinding binding = { presentSource, linearSampler };
             if (PostProcessPass(cmd, SpeedStreakPipeline(), gradingTarget, &binding, 1, uniforms, sizeof(uniforms)))
                 {presentSource = gradingTarget;encoded|=256;streakApplied = true;}
