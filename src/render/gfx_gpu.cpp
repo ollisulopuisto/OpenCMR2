@@ -4,6 +4,7 @@
 #include "platform/platform.h"
 #include "port/sys.h"
 #include "render/presentation.h"
+#include "render/gpu_startup_options.h"
 #include "render/dust_volume_math.h"
 #include "render/postprocess_pass.h"
 #include "render/gfx_internal.h"
@@ -433,8 +434,9 @@ struct Executor : GfxExecutor {
         }
         anisotropy = Platform_GetSettingInt("video.anisotropy", 8);
         smoothScaling = Platform_GetSettingInt("video.smooth_scaling", 1);
-        spatialAA = Platform_GetSettingInt("video.spatial_aa", 0) == 1;
-        metalFXSpatial = Platform_GetSettingInt("video.metalfx_spatial", 0) == 1;
+        const auto startupOptions=GPUStartupOptions::Read();
+        spatialAA=startupOptions.spatialAA;
+        metalFXSpatial=startupOptions.metalFXSpatial;
 #ifdef OPENCMR2_SHADERS_MSL
         Sys_Log("options: compiled GPU shader formats=SPIR-V,MSL");
 #else

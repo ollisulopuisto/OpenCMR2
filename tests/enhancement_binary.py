@@ -114,6 +114,28 @@ print(('OPENCMR2_CARS=' if a.cars else 'OPENCMR2_PACK=')+str(out))
         for args in [('--car-names', 'invalid'), ('--trees', 'invalid'), ('--cars', 'one'), ('--trees', 'shell', '--scenery-dir', str(self.root))]:
             self.assertNotEqual(self.run_binary(*args).returncode, 0)
 
+    @unittest.skipIf(OVERLAY, 'full game entry only')
+    def test_user_combined_equals_textures_dispatch(self):
+        self.helper()
+        for name, marker, manifest in [('france1_prepare.py','OPENCMR2_TEXTURES=','france1-textures.tsv'), ('road_prepare.py','OPENCMR2_ROADS=','road-pair.tsv')]:
+            (self.tools/name).write_text("""import argparse
+from pathlib import Path
+p=argparse.ArgumentParser();p.add_argument('--input-dir');p.add_argument('--cache-dir');a=p.parse_args()
+out=Path(a.cache_dir)/'"""+name+"""';out.mkdir(parents=True,exist_ok=True)
+(out/'"""+manifest+"""').write_text('synthetic')
+print('"""+marker+"""'+str(out))
+""")
+        r=self.run_binary('--trees','shell','--spectators','animated','--driver-names','real',
+                          '--cars','205-finland-1986,subaru-spain-1996,fabia-redbull,lancer-finland-2001',
+                          '--mods-dir','mods','--tree-wind','on','--roads','curved','--textures=france1')
+        self.assertEqual(r.returncode,0,r.stderr+r.stdout)
+        for marker in ['OPENCMR2_TEXTURES=','OPENCMR2_ROADS=','OPENCMR2_PACK=','OPENCMR2_CARS=']:
+            self.assertIn(marker,r.stdout)
+        self.assertNotEqual(self.run_binary('--textures=').returncode,0)
+        self.assertNotEqual(self.run_binary('--textures=invalid').returncode,0)
+        r=self.run_binary('--textures=original','--effect=spatial_aa=on','--effect=metalfx_spatial=on')
+        self.assertEqual(r.returncode,0,r.stderr)
+
     @unittest.skipUnless(OVERLAY, 'separate platform IO probe')
     def test_actual_overlay_save_and_write_isolation(self):
         self.helper()

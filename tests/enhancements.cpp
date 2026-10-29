@@ -1,4 +1,5 @@
 #include "platform/enhancements.h"
+#include "render/gpu_startup_options.h"
 #include "Input.h"
 #include "GameInfo.h"
 #include "InstallInfo.h"
@@ -43,6 +44,12 @@ int main(){
  // Starting without flags resets transient overrides, not the persisted profile.
  SDL_SetEnvironmentVariable(SDL_GetEnvironment(),"SDL_VIDEODRIVER","dummy",true);
  CHECK(Platform_Init(5,av));CHECK(Sys_GetOption("video.tree_overrides",1)==1);Platform_Shutdown();
+ // Same startup reader the actual GPU constructor uses, not a log-only check.
+ std::string aa[]={"test","--data",game.string(),"--user-dir",user.string(),"--effect=spatial_aa=on","--effect","metalfx_spatial=on"};
+ char* aaArgs[8];for(int j=0;j<8;j++)aaArgs[j]=aa[j].data();
+ SDL_SetEnvironmentVariable(SDL_GetEnvironment(),"SDL_VIDEODRIVER","dummy",true);CHECK(Platform_Init(8,aaArgs));auto gpu=GPUStartupOptions::Read();CHECK(gpu.spatialAA&&gpu.metalFXSpatial);
+ CHECK(Platform_GetSettingInt("video.spatial_aa",0)==0&&Platform_GetSettingInt("video.metalfx_spatial",0)==0);Platform_Shutdown();
+ CHECK(read(user/"opencmr2.ini")==ini);SDL_SetEnvironmentVariable(SDL_GetEnvironment(),"SDL_VIDEODRIVER","dummy",true);CHECK(Platform_Init(5,av));gpu=GPUStartupOptions::Read();CHECK(!gpu.spatialAA&&!gpu.metalFXSpatial);Platform_Shutdown();
  // Per-launch keys reach real gameplay polling, not persisted records/menu keys.
  write(user/"Configuration/Controller.rcf","sentinel saved controls");
  std::string bound[]={"test","--data",game.string(),"--user-dir",user.string(),"--bind-key","left=A","--bind-key","right=D"};
