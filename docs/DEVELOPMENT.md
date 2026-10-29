@@ -160,3 +160,16 @@ Artifacts and tag releases keep their existing policy. This removes duplicate
 execution and queue pressure, not a claim of measured billed savings.
 Run `python3 -m unittest discover -s tools/ci -v` with PyYAML installed and
 `actionlint` when editing this policy.
+
+
+### Link-interposition isolation tests
+
+Some Linux-only tests/probes intercept original game functions with GNU ELF
+`--wrap` and Itanium C++ mangled symbol names. They are enabled only on Linux
+with GNU/Clang. Windows Clang uses COFF/lld-link, so `NOT MSVC` is not a valid
+capability test: that linker ignores `--wrap`, breaking the harness or letting
+it run without its intended isolation. Apple uses another link format too.
+Portable tests and the actual game still build on Windows/Mac. The affected
+advanced-menu, startup-failure, names/startup options, dust routing, scenery
+capture, car-name and road probes are not native Windows/Mac coverage. A real
+portable interception harness would be needed before claiming that coverage.
