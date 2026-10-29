@@ -25,5 +25,14 @@ int main(){
  keys[0x11]=0;WindscreenWiper_UpdateInput();keys[0x11]=0x80;WindscreenWiper_UpdateInput();CHECK(Sys_GetOption("video.windscreen_wipers",0));
  CarInterior_UpdateWiperSweep(0);CHECK(w.mode==3&&w.angle>0); // second edge resumes real blades
  keys[0x11]=0;WindscreenWiper_UpdateInput();Sys_SetOption("video.windscreen_wipers",0);for(int i=0;i<100;i++)CarInterior_UpdateWiperSweep(0);CHECK(w.mode==0&&w.angle==0); // menu option same control
+ // Light rain retains original slow speed; both cockpit slots obey off.
+ g_carInteriorProfilePointers[1].firstWiperMaxAngle=&maximum;
+ weather[1].kind=1;weather[1].intensity=0x5000;g_carWiperStates[1]={0,1,0,0};
+ Sys_SetOption("video.windscreen_wipers",1);CarInterior_UpdateWiperSweep(1);CHECK(g_carWiperStates[1].mode==2);
+ Sys_SetOption("video.windscreen_wipers",0);for(int i=0;i<100;i++){CarInterior_UpdateWiperSweep(0);CarInterior_UpdateWiperSweep(1);}
+ CHECK(g_carWiperStates[0].angle==0&&g_carWiperStates[1].angle==0&&g_carWiperStates[1].mode==0);
+ // Saved remap controls the same cockpit path, not only the overlay.
+ Sys_SetOption("video.windscreen_wiper_key",0x13);keys[0x11]=0;WindscreenWiper_UpdateInput();keys[0x11]=0x80;WindscreenWiper_UpdateInput();CHECK(!Sys_GetOption("video.windscreen_wipers",1));
+ keys[0x13]=0x80;WindscreenWiper_UpdateInput();CHECK(Sys_GetOption("video.windscreen_wipers",0));CarInterior_UpdateWiperSweep(1);CHECK(g_carWiperStates[1].mode==2&&g_carWiperStates[1].angle>0);
  Platform_SetTestKeyboard(nullptr);std::filesystem::current_path(old);std::filesystem::remove_all(tmp);puts("actual rain/W held/release/off/park/on path passes independent of dirt");return 0;
 }
