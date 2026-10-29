@@ -6,6 +6,7 @@
 #include "port/sys.h"
 #include "port/diagnostics.h"
 #include "render/gfx_internal.h"
+#include "render/motion_blur_limits.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -406,7 +407,7 @@ extern "C" void Gfx_SetAnisotropy(int level)
 extern "C" void Gfx_SetMotionBlur(BOOL enabled, int mix)
 {
     if (s_executor != NULL)
-        s_executor->SetMotionBlur(enabled != 0, mix);
+        s_executor->SetMotionBlur(enabled != 0, MotionBlurClampMix(mix));
 }
 
 extern "C" void Gfx_SetBloom(BOOL enabled, int intensity)
