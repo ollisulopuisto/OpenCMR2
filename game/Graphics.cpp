@@ -5779,7 +5779,13 @@ void Particle_SpawnTagged(int typeIndex, FixVector *pSource, FixVector *pPositio
                 goto particleFound;
             break;
         }
-        if (pParticle->pType->lifetime - pParticle->age > best) {
+        // Optional speed motes yield first: when the pool is full, a spawn of any other type takes a mote slot
+        // before it would evict an original particle. Never true with video.speed_motes off (no motes exist).
+        if (typeIndex != SPEED_MOTE_TYPE && g_particleTypeCount > SPEED_MOTE_TYPE &&
+            pParticle->pType == &g_particleTypes[SPEED_MOTE_TYPE]) {
+            selected = g_nextParticle;
+            best = 0x7fffffff;
+        } else if (best != 0x7fffffff && pParticle->pType->lifetime - pParticle->age > best) {
             selected = g_nextParticle;
             best = pParticle->pType->lifetime - pParticle->age;
         }

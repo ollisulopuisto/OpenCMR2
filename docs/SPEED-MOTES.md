@@ -11,7 +11,7 @@ What it does
   the car and the next bend stay readable.
 - Each mote is world-fixed (it never follows the car or camera), lives 40 sim steps and fades in and out. Colour is a pale
   tan, size is small. It reuses the game's soft smoke texture.
-- Budget: at most 64 motes, and it never fills the last 64 slots of the 400-particle pool, so it can not evict original particles.
+- Budget: at most 64 motes, and it never fills the last 64 slots of the 400-particle pool, so motes never take the last 64 slots. If the pool is full anyway, any other particle spawn takes a mote slot before it evicts an original (Particle_SpawnTagged). Originals can still fill the pool earlier with motes on (about 336 originals plus up to 64 motes) and then evict each other as before; whether that happens was not measured. Purely visual, but it is not 'no effect on original particles' while motes are on.
 
 What it does not do
 - No collision object, no physics, handling or road-line input. It reads the car state and writes only particle slots.
