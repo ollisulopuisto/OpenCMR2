@@ -21,4 +21,11 @@ inline double FovPreview_MeasuredDegrees(double fov)
     if (fov <= 0.0) return 0.0;
     return 2.0 * std::atan(2.0 / fov) * 180.0 / 3.14159265358979323846;
 }
+// One easing step of the shown fov number (16.16) toward the target, closing about half the gap in 400 ms so a preview change (or leaving the
+// preview) is a smooth trombone shot, not a jump. elapsedMs outside 0..250 (first frame, pause, hitch) snaps. Both the projection and the dolly read the same shown value.
+inline int FovPreview_Ease(int shown16, int target16, int elapsedMs)
+{
+    if (shown16 <= 0 || elapsedMs < 0 || elapsedMs > 250) return target16;
+    return shown16 + (int)((long long)(target16 - shown16) * elapsedMs / (elapsedMs + 400));
+}
 #endif

@@ -723,18 +723,32 @@ int RallyData_IsHeadToHeadRaceMode(void);
 // proportional to it (30 to 150).
 static int g_appliedFovSetting;   // OpenCMR2: the video.fov value the cached scale was built from (overlay shows this, not the live INI)
 static int g_previewFov;   // OpenCMR2 debug: the live video.fov_preview in force this frame (0 = off)
+// OpenCMR2: the fov number actually shown (16.16), eased once per frame toward the preview or the saved value. The projection and the dolly both read
+// it, so a manual preview change moves the lens and the camera together and smoothly.
+static int View_ShownFov16(int target)
+{
+    static int shown, lastTime;
+    int now = CMain::GetFrameTime();
+    if (now != lastTime || shown <= 0) {
+        shown = FovPreview_Ease(shown, target * 65536, now - lastTime);
+        lastTime = now;
+    }
+    return shown;
+}
 static int View_GetFovScale(void)
 {
     static int scale;
     int preview = Sys_GetOption("video.fov_preview", 0);
     g_previewFov = preview > 0 ? FovPreview_Effective(preview, 70) : 0;
-    if (g_previewFov) return FTOI(int, X87S_DIV(0x275c2 * 70.0, g_previewFov));   // not cached: follows the panel live
     if (scale == 0) {
         int fov = Sys_GetOption("video.fov", 70);
         fov = fov < 30 ? 30 : fov > 150 ? 150 : fov;
         g_appliedFovSetting = fov;
         scale = FTOI(int, X87S_DIV(0x275c2 * 70.0, fov));
     }
+    int shown = View_ShownFov16(g_previewFov ? g_previewFov : g_appliedFovSetting);
+    if (g_previewFov || shown != g_appliedFovSetting * 65536)   // preview on, or still easing back to the saved view
+        return FTOI(int, X87S_DIV(0x275c2 * 70.0 * 65536.0, (double)shown));
     return scale;
 }
 
@@ -953,8 +967,9 @@ static int View_FovDollyScale(CameraRecord *pObj)
     int saved = g_appliedFovSetting ? g_appliedFovSetting : Sys_GetOption("video.fov", 70);
     saved = saved < 30 ? 30 : saved > 150 ? 150 : saved;
     int preview = Sys_GetOption("video.fov_preview", 0);
-    int effective = preview > 0 ? FovPreview_Effective(preview, 70) : saved;
-    int widening = FovDolly_Widening(View_SpeedFovMagnification((BYTE)view), saved, effective);
+    int target = preview > 0 ? FovPreview_Effective(preview, 70) : saved;
+    int shown = View_ShownFov16(target);   // same eased value the projection uses this frame
+    int widening = FovDolly_Widening(View_SpeedFovMagnification((BYTE)view), saved * 65536, shown);
     int scale = FovDolly_Scale(widening, Sys_GetOption("video.fov_dolly", 100));
     g_lastWidening[view] = widening;
     g_lastDollyScale[view] = scale;

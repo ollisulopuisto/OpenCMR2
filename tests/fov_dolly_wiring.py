@@ -17,4 +17,5 @@ need('"video.fov_dolly", 0, 100, 10, 100' in rd("game/TuningPanel.h"), "panel ro
 need("SpeedMotes_Step(" not in rd("game/Race.cpp"), "motes must not be spawned")
 need("video.speed_motes" not in rd("game/TuningPanel.h"), "mote rows must be gone from the panel")
 need("FOV dolly" in rd("game/RallyData.cpp") and "View_GetFovDolly" in rd("game/RallyData.cpp"), "overlay line missing")
+need("FovPreview_Ease(shown, target * 65536" in f and "View_ShownFov16(target)" in f and "View_ShownFov16(g_previewFov" in f, "projection and dolly must share the eased fov")
 print("fov dolly wiring ok" if ok else "FAILED"); sys.exit(0 if ok else 1)
