@@ -1,3 +1,4 @@
+#include "shadow_caster.h"
 // The OpenGL 3.3 executor: runs a recorded frame (gfx_core.cpp) as the
 // SDL_GPU one does (gfx_gpu.cpp), with its shaders translated to GLSL 330
 // (src/CMakeLists.txt), on GPUs without Vulkan or Direct3D 12.
