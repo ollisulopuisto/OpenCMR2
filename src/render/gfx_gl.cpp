@@ -21,6 +21,8 @@
 #include <SDL3/SDL_opengl.h>
 
 #include <math.h>
+#include <cmath>
+#include "render/gl_effects_sources.h"
 #include <string.h>
 
 #include <algorithm>
@@ -247,8 +249,8 @@ struct Executor : GfxExecutor {
         int blend = -1, srcBlend = -1, destBlend = -1, depthTest = -1, depthWrite = -1, depthFunc = -1, cull = -1;
         GLint viewport[4] = { -1, -1, -1, -1 }, scissor[4] = { -1, -1, -1, -1 };
         float depthRange[2] = { -1, -1 };
-        GLuint textures[7] = { ~0u, ~0u, ~0u, ~0u, ~0u, ~0u, ~0u };
-        GLuint samplers[7] = { ~0u, ~0u, ~0u, ~0u, ~0u, ~0u, ~0u };
+        GLuint textures[8] = { ~0u, ~0u, ~0u, ~0u, ~0u, ~0u, ~0u, ~0u };
+        GLuint samplers[8] = { ~0u, ~0u, ~0u, ~0u, ~0u, ~0u, ~0u, ~0u };
     } bound;
 
     ~Executor() override
@@ -259,7 +261,8 @@ struct Executor : GfxExecutor {
             gl.DeleteSamplers(1, &s.second);
         GLuint textures[] = { backColor, backdrop, white2D, whiteCube };
         gl.DeleteTextures(4, textures);
-        gl.DeleteRenderbuffers(1, &backDepth);
+        gl.DeleteTextures(1, &backDepth);
+        DestroyEffects();
         gl.DeleteFramebuffers(1, &backFramebuffer);
         GLuint buffers[] = { vertexBuffer, indexBuffer, uniformBuffer, readbackBuffer };
         gl.DeleteBuffers(4, buffers);
@@ -270,6 +273,22 @@ struct Executor : GfxExecutor {
             gl.DeleteSync(readbackFence);
         SDL_GL_DestroyContext(context);
     }
+
+    bool motionOn = false, bloomOn = false, dofOn = false, raysOn = false;
+    int motionMix = 0, bloomAmount = 0, dofFocus = 50, dofRange = 30, dofBlur = 0, raysAmount = 0;
+    float grade[4] = {0, 0, 1, 1}, grime[4] = {};
+    float sunX = 0, sunY = 0; bool sunVisible = false;
+    GLuint effectFbo[4] = {}, effectTex[4] = {}, effectUbo = 0, effectVao = 0;
+    GLuint historyTex = 0; bool historyValid = false;
+    unsigned encodedEffects = 0;
+    GLuint effectPrograms[8] = {};
+    GLuint shadowFbo = 0, shadowMap = 0, shadowDepth = 0, shadowProgram = 0;
+    int shadowSize = 1024, shadowSoftness = 25; bool shadowReady = false;
+    struct WeatherParticle { float x,y,vx,vy,sx,sy,life; };
+    std::vector<WeatherParticle> weather;
+    int weatherType = 0, weatherAmount = 0;
+    float weatherCarry = 0; Uint64 weatherTicks = 0; uint32_t weatherSeed = 0x12345678;
+    GLuint weatherProgram = 0, weatherVao = 0, weatherBuffer = 0;
 
     // ---- device ----
 
@@ -313,11 +332,13 @@ struct Executor : GfxExecutor {
             gl.DeleteProgram(program);
             return 0;
         }
-        gl.UniformBlockBinding(program, gl.GetUniformBlockIndex(program, "VertexUniforms"), VERTEX_BLOCK);
-        gl.UniformBlockBinding(program, gl.GetUniformBlockIndex(program, "FragmentUniforms"), FRAGMENT_BLOCK);
+        if (gl.GetUniformBlockIndex(program, "VertexUniforms") != GL_INVALID_INDEX)
+            gl.UniformBlockBinding(program, gl.GetUniformBlockIndex(program, "VertexUniforms"), VERTEX_BLOCK);
+        if (gl.GetUniformBlockIndex(program, "FragmentUniforms") != GL_INVALID_INDEX)
+            gl.UniformBlockBinding(program, gl.GetUniformBlockIndex(program, "FragmentUniforms"), FRAGMENT_BLOCK);
         gl.UseProgram(program);
-        static const char *const samplerNames[7] = { "tex0", "cube0", "tex1", "cube1", "backdrop", "native0", "native1" };
-        for (int i = 0; i < 7; i++)
+        static const char *const samplerNames[8] = { "tex0", "cube0", "tex1", "cube1", "backdrop", "native0", "native1", "shadowMap" };
+        for (int i = 0; i < 8; i++)
             gl.Uniform1i(gl.GetUniformLocation(program, samplerNames[i]), i);
         return program;
     }
@@ -417,7 +438,7 @@ struct Executor : GfxExecutor {
                 gl.GenFramebuffers(1, &backFramebuffer);
                 gl.GenTextures(1, &backColor);
                 gl.GenTextures(1, &backdrop);
-                gl.GenRenderbuffers(1, &backDepth);
+                gl.GenTextures(1, &backDepth);
             }
             gl.BindTexture(GL_TEXTURE_2D, backdrop);
             gl.TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
@@ -425,11 +446,13 @@ struct Executor : GfxExecutor {
             gl.BindTexture(GL_TEXTURE_2D, backColor);
             gl.TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
             gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
-            gl.BindRenderbuffer(GL_RENDERBUFFER, backDepth);
-            gl.RenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+            gl.BindTexture(GL_TEXTURE_2D, backDepth);
+            gl.TexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
+            gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+            gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
             gl.BindFramebuffer(GL_FRAMEBUFFER, backFramebuffer);
             gl.FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, backColor, 0);
-            gl.FramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, backDepth);
+            gl.FramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, backDepth, 0);
             bound.framebuffer = backFramebuffer;
             InvalidateTextureBinding();
             if (gl.CheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -438,6 +461,7 @@ struct Executor : GfxExecutor {
             }
             backWidth = width;
             backHeight = height;
+            ReleaseEffectTargets();
         }
         SDL_SetWindowResizable(window, true);
         SetFullscreen(fullscreen);
@@ -485,7 +509,7 @@ struct Executor : GfxExecutor {
         lightProj._42 = (t + b) / (b - t);
         lightProj._43 = n / (n - f);
         lightProj._44 = 1.0f;
-        Multiply(lightProj, lightView, lightViewProj);
+        Multiply(lightView, lightProj, lightViewProj);
     }
 
     // OpenCMR2: the cached samplers bake the old level in and their cache key
@@ -504,13 +528,40 @@ struct Executor : GfxExecutor {
             s = ~0u;
     }
 
-    // OpenCMR2: shadow maps are not implemented on the OpenGL renderer; the
-    // setting is accepted so the menu works, but it has no effect there.
-    void SetShadows(int, int) override {}
+    // Same runtime setters as SDL_GPU. No setting is accepted as a no-op.
+    void SetMotionBlur(BOOL on, int mix) override {
+        if (!on || !motionOn) historyValid = false;
+        motionOn = on != 0; motionMix = std::clamp(mix, 0, 255);
+    }
+    void SetBloom(BOOL on, int amount) override { bloomOn = on != 0; bloomAmount = std::clamp(amount, 0, 255); }
+    void SetParticles(int type, int amount) override {
+        type = std::clamp(type, 0, 2);
+        if (type != weatherType) { weather.clear(); weatherCarry = 0; weatherTicks = 0; }
+        weatherType = type; weatherAmount = std::clamp(amount, 0, 255);
+    }
+    void SetShadows(int type, int bias) override { shadowType = std::clamp(type, 0, 1); shadowBias = std::clamp(bias, 0, 100) / 10000.0f; }
+    // Additive virtual interface supplied by the shared-options owner.
+    void SetShadowQuality(int resolution, int softness) override {
+        int size = resolution <= 512 ? 512 : resolution <= 1024 ? 1024 : 2048;
+        if (size != shadowSize) { if (context) ReleaseShadow(); shadowSize = size; }
+        shadowSoftness = std::clamp(softness, 0, 100);
+    }
+    void SetSunScreenPosition(float x, float y, BOOL visible) override {
+        sunX = x; sunY = y; sunVisible = visible && std::isfinite(x) && std::isfinite(y);
+    }
+    void SetDepthOfField(BOOL on, int focus, int range, int blur) override {
+        dofOn = on != 0; dofFocus = std::clamp(focus, 0, 100); dofRange = std::clamp(range, 0, 100); dofBlur = std::clamp(blur, 0, 100);
+    }
+    void SetGodRays(BOOL on, int amount) override { raysOn = on != 0; raysAmount = std::clamp(amount, 0, 255); }
+    void SetColorGrading(int temp, int tint, int saturation, int contrast) override {
+        grade[0] = std::clamp(temp, -100, 100) / 100.0f; grade[1] = std::clamp(tint, -100, 100) / 100.0f;
+        grade[2] = std::clamp(saturation, 0, 200) / 100.0f; grade[3] = std::clamp(contrast, 0, 200) / 100.0f;
+    }
+    void SetChromaticAberration(int amount) override { grime[0] = std::clamp(amount, 0, 100) / 100.0f; }
+    void SetVignette(int amount) override { grime[1] = std::clamp(amount, 0, 100) / 100.0f; }
+    void SetFilmGrain(int amount) override { grime[2] = std::clamp(amount, 0, 100) / 100.0f; }
 
-    // OpenCMR2: motion blur is not yet implemented on the OpenGL renderer;
-    // the setting is accepted so the menu works, but it has no effect there.
-    void SetMotionBlur(BOOL, int) override {}
+    #include "render/gl_effects_executor.h"
 
     // ---- textures ----
 
@@ -941,6 +992,9 @@ struct Executor : GfxExecutor {
         memcpy(u.bumpMatrix, a.bumpMat, sizeof(u.bumpMatrix));
         u.bumpLuminance[0] = a.bumpLumScale;
         u.bumpLuminance[1] = a.bumpLumOffset;
+        u.shadowParams[0] = shadowBias;
+        u.shadowParams[1] = shadowReady && fade ? 1.0f : 0.0f;
+        u.shadowParams[2] = shadowSoftness / 25.0f;
         if (fade && s.fadeEnd > s.fadeStart) {
             u.distanceFade[0] = s.fadeStart;
             u.distanceFade[1] = s.fadeEnd;
@@ -1205,7 +1259,11 @@ struct Executor : GfxExecutor {
         gl.BindVertexArray(vertexArray);
         UploadGeometry(frame);
         UploadVertexBuffers(frame);
+        encodedEffects = 0;
+        PrepareShadow();
         BuildUniforms(frame);
+        RenderShadow(frame);
+        if (!shadowReady && shadowType) BuildUniforms(frame);
 
         GfxTexture *target = NULL;
         int targetW = backWidth, targetH = backHeight;
@@ -1265,6 +1323,11 @@ struct Executor : GfxExecutor {
                 boundFragmentOffset = u.fragmentOffset;
             }
             BindTextures(s);
+            gl.ActiveTexture(GL_TEXTURE0 + 7);
+            gl.BindTexture(GL_TEXTURE_2D, shadowReady ? shadowMap : white2D);
+            GfxStageState shadowSampler; shadowSampler.address = GFX_ADDRESS_CLAMP;
+            gl.BindSampler(7, Sampler(shadowSampler));
+            bound.textures[7] = shadowReady ? shadowMap : white2D;
             BindVertices(c.buffer != NULL ? ((GlVertexBuffer *)c.buffer->gpu)->buffer : vertexBuffer, c.transformed);
             GLint firstVertex = (GLint)(c.firstVertexByte / (c.transformed ? sizeof(GfxTLVertex) : sizeof(GfxVertex)));
             if (c.firstIndex != ~0u)
@@ -1281,6 +1344,7 @@ struct Executor : GfxExecutor {
     {
         // Read back before the frame is shown (the lens flare test), into a
         // pixel buffer collected when the game reads it.
+        RenderWeather();
         CollectReadback(readback);
         BindFramebuffer(backFramebuffer);
         if (readback.requested && readback.width > 0 && readback.height > 0) {
@@ -1297,6 +1361,11 @@ struct Executor : GfxExecutor {
             readback.requested = false;
         }
         HashFrame();
+        GLuint presentFbo = ApplyEffects();
+        BindFramebuffer(presentFbo);
+        unsigned requested=(Sys_GetOption("video.spatial_aa",0)?1:0)|(bloomOn?2:0)|(motionOn?4:0)|(dofOn?8:0)|(raysOn?16:0)|((grade[0]||grade[1]||grade[2]!=1||grade[3]!=1)?32:0)|(shadowType?64:0)|(weatherType&&weatherAmount?128:0);
+        // GL error check means accepted commands, never GPU completion or pixels.
+        Gfx_SetEffectStatus(requested,encodedEffects,gl.GetError()==GL_NO_ERROR?1:0,-1);
 
         // A minimised or hidden window is not shown: waiting for the display's
         // refresh there can block until it is shown again (OpenGL on

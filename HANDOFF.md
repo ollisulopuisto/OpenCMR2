@@ -331,3 +331,18 @@ Layout width expands for detailed diagnostics, bounded at640/480 and higher.
 Tests cover source-summary privacy, CLI override count, status roundtrip and
 13line glyph bounds. Native font/pixels remain required. GL status joins with
 its separate executor integration, not falsely reported active in this patch.
+
+## OpenGL effect executor integration
+Integrate reviewed GL-only executor atop human-merged Metal66/camera67/OSD68.
+No SDL_GPU file changes. GL startup and Detail Apply now use same bounded reader;
+entering menu no longer forces effects off. Bloom, temporal history, depth blur,
+projected sun rays, analytic grade, added rain/snow, opaque-only shadow path and
+quality/softness setters have real execution. First history frame seeds without
+blending; toggle/resize resets. GL3.3-safe fullscreen source orientation/whole UV,
+std140 padding, feedback avoidance and complete state-cache invalidation covered.
+OSD encoded bits follow successful GL calls, not option requests. Shadow excludes
+alpha foliage; depth includes HUD and is nonlinear; fixed shadow origin/direction
+remain limited. AA request honestly skips in GL, MetalFX not applicable.
+Actual synthetic runtime pixels inspected and tests pass forced GL3.3/GLSL330
+llvmpipe. Full Linux build/tests pass. Native Mac GL compile, game pixels and frame
+time remain acceptance gates, not inferred from software Linux tests.

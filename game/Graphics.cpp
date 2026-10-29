@@ -405,7 +405,7 @@ BOOL CGraphics::CreateSelectedDisplayAndRenderDevice(int screenWidth, int screen
 
     if (!Gfx_SetVideoMode(g_pGraphics->resX, g_pGraphics->resY, g_pGraphics->isFullscreen))
         return FALSE;
-    if(!Gfx_IsOpenGL())EffectSettings::Apply();
+    EffectSettings::Apply();
 
     g_pGraphics->field590_0x26c = 0;
     g_pGraphics->field591_0x26e = 0;
