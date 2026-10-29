@@ -8372,6 +8372,32 @@ void View_SetCameraType(int view, int type, BYTE target, int blend)
 // shake into the player's camera nodes, rebuilds the view node's matrix
 // (pitching the forward axis and re-orthogonalising the basis) and marks the
 // node and its ancestors dirty.
+// OpenCMR2 (visual only, default off): video.speed_fov widens the regular cameras' field of view with the player
+// car's speed, by that many percent of the projection scale at full speed (0 to 40). The drone camera has its own
+// speed lens (video.drone_speed_lens) and is skipped. The widening eases in and out over about half a second and
+// never changes the camera position, the car or any physics input.
+extern BYTE g_playerCameraMode[8];
+extern BYTE g_droneVariant[8];
+static int View_SpeedFovZoom(BYTE view, int zoom)
+{
+    static int shown[2], lastMs[2];
+    int pct = Sys_GetOption("video.speed_fov", 0);
+    if (pct <= 0 || view >= 2) { shown[view & 1] = 0; return zoom; }
+    if (pct > 40) pct = 40;
+    if (g_playerCameraMode[view] == 4 && g_droneVariant[view] && Sys_GetOption("video.camera_operator", 0)) return zoom;
+    Car *car = Car_Get(view);
+    float ratio = car ? car->speed / 65536.f / 1.5f : 0.f;
+    ratio = ratio < 0.f ? 0.f : ratio > 1.f ? 1.f : ratio;
+    int target = (int)(ratio * 65536.f);
+    int now = CMain::GetFrameTime();
+    int elapsed = now - lastMs[view];
+    lastMs[view] = now;
+    if (elapsed < 0 || elapsed > 250) shown[view] = target;
+    else shown[view] += (int)((long long)(target - shown[view]) * elapsed / (elapsed + 400));
+    long long gain = (long long)pct * shown[view] / 100; // 16.16 fraction of widening
+    return (int)((long long)zoom * 65536 / (65536 + gain));
+}
+
 // FUNCTION: CMR2 0x00422140
 void View_BlendCameraStates(BYTE view, int t)
 {
@@ -8390,7 +8416,7 @@ void View_BlendCameraStates(BYTE view, int t)
     int shake;
 
     CameraState_Interpolate(&state, VIEW_PREV_STATE(view), VIEW_STATE(view), t);
-    g_viewZooms[view] = state.zoom;
+    g_viewZooms[view] = View_SpeedFovZoom(view, state.zoom);
     g_unk0x005391a8[view] = state.field_0x50;
     g_viewNearPlanes[view] = state.nearPlane;
     matrix = state.matrix;

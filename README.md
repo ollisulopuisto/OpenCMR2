@@ -223,6 +223,7 @@ the game.
 | `[video] drone_shake` | `100` | No longer applies: the drone camera has no speed shake (the regular camera's `camera_shake` is unchanged). The key is still accepted so old INI files load. Visual only |
 | `[video] speed_motes` | `0` | Prototype: sparse world-fixed specks beside the road ahead that stream past at speed. Off by default, `--effect speed_motes=on`. See docs/SPEED-MOTES.md. Visual only, native pixels unverified |
 | `[video] speed_motes_amount` | `100` | How many speed motes, 0 to 300 percent |
+| `[video] speed_fov` | `0` | Regular cameras only (the drone has `drone_speed_lens`): widens the field of view with the player car's speed, by this many percent of the projection scale at full speed, 0 to 40 (`0` off, about `10` to `15` is subtle). Eases over about half a second. Visual only: no change to camera position, car or physics. INI only, native look unverified |
 | `[video] drone_distance` | `100` | Drone camera only: camera distance in percent of the default, 50 to 150. The default already pulls back at low speed and closes in at speed; this scales that distance. Visual only |
 | `[video] tunnel_vision` | `100` | Speed-driven tunnel vision, 0 to 100 percent, `0` off. Faster driving narrows the sharp zone and blurs the edges. Needs `video.depth_of_field=1` (SDL_GPU renderer only). Visual only |
 | `[video] stretch_movies` | `0` | Stretch the movies over the whole window (`1`) instead of keeping their 4:3 proportions |
