@@ -171,8 +171,10 @@ void SceneryPack_RegisterSource(Texture *texture,const void *bytes,unsigned size
     if(candidate)sourceIdentities[texture]=SceneryIdentity::SHA256(bytes,size);
 }
 void SceneryPack_RegisterArchive(GenericFile *file,const char *path){if(file&&path)archives[file]=Leaf(path);}
-void SceneryPack_Clear(){assets.clear();windIdentities.clear();windLogged.clear();treeOriginalLogged.clear();archives.clear();sourceIdentities.clear();identities.clear();unmatched.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;identityContract=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;diagnosticObject=nullptr;diagnosticArticulated=false;diagnosticFrame=diagnosticChanges=loggedSecond=treeReplacementDraws=treeWindDraws=0;diagnosticTime=0;}
+static float reactX=0,reactZ=0,reactSpeed=0;static bool reactValid=false;
+void SceneryPack_Clear(){assets.clear();windIdentities.clear();windLogged.clear();treeOriginalLogged.clear();archives.clear();sourceIdentities.clear();identities.clear();unmatched.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;identityContract=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;reactValid=false;diagnosticObject=nullptr;diagnosticArticulated=false;diagnosticFrame=diagnosticChanges=loggedSecond=treeReplacementDraws=treeWindDraws=0;diagnosticTime=0;}
 void SceneryPack_Advance(int step){if(step>0)animationTime+=(unsigned)step;}
+void SceneryPack_SetReactionSource(int x,int z,int speed,bool valid){reactValid=valid;reactX=x/65536.f;reactZ=z/65536.f;reactSpeed=speed/65536.f;}
 static bool DrawReplacement(StageObject *object,const float *billboard,unsigned textureCount,Texture **textureBuffer){
     if(!object||!object->pMesh||!billboard||Sys_GetOption("video.scenery_overrides",1)==0)return false;
     Mesh *mesh=object->pMesh;
@@ -217,10 +219,11 @@ static bool DrawReplacement(StageObject *object,const float *billboard,unsigned 
         // multi-person atlases. Authored limb poses remain in addition to sway.
         bool selected=true; // Requested full supported placement coverage.
         if(!selected)frame=0;
+        float excitement=reactValid&&Sys_GetOption("video.reactive_spectators",1)!=0?SceneryMotion::Excitement(object->position.x/65536.f-reactX,object->position.z/65536.f-reactZ,reactSpeed):0;
         PackTexture *t=asset->frames[frame];std::vector<GfxVertex> vertices;
         for(int i=0;i<mesh->triangleCount;i++)for(int j=0;j<3;j++){
             unsigned ix=mesh->pTriangles[i].vertexIndex[j];if(ix>=(unsigned)mesh->field_0x10)return false;
-            auto &p=v[ix];vertices.push_back({p.x+SceneryMotion::Offset(p.y,bottom,height,animationTime,phase,false),p.y,p.z,p.nx,p.ny,p.nz,p.diffuseColour,p.specularColour,p.textureCoordinates[0][0],p.textureCoordinates[0][1],0,0});}
+            auto &p=v[ix];vertices.push_back({p.x+SceneryMotion::ReactiveOffset(p.y,bottom,height,animationTime,phase,excitement),p.y,p.z,p.nx,p.ny,p.nz,p.diffuseColour,p.specularColour,p.textureCoordinates[0][0],p.textureCoordinates[0][1],0,0});}
         if(!spectatorLogged){Sys_Log("options: spectator sidecar active (first successful override draw)");spectatorLogged=true;}
         State(*(const GfxMatrix*)billboard);Gfx_SetTexture(0,t->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,vertices.data(),vertices.size());Gfx_PopState();
         if(selected&&(!diagnosticObject||(asset->frames.size()==4&&!diagnosticArticulated))){diagnosticObject=object;diagnosticFrame=frame;diagnosticChanges=0;diagnosticArticulated=asset->frames.size()==4;}

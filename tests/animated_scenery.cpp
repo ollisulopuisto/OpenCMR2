@@ -4,6 +4,7 @@
 #include "GraphicsOptions.h"
 #include "SceneryMotion.h"
 #include <cstdio>
+#include <cmath>
 
 static int failures;
 static void Check(bool ok, const char *what)
@@ -46,6 +47,17 @@ int main(void)
     Check(AnimTexture_Index(10, 0) == 10, "anim texture base frame 0");
     Check(AnimTexture_Index(10, 3) == 13, "anim texture base + 3");
 
+    {
+        using namespace SceneryMotion;
+        Check(Excitement(0,0,40)>.99f,"adjacent fast car fully excites");
+        Check(Excitement(100,0,40)==0,"far car does nothing");
+        Check(Excitement(10,0,40)>Excitement(25,0,40),"closer is more excited");
+        Check(Excitement(5,0,0)<Excitement(5,0,40),"faster is more excited");
+        Check(Excitement(NAN,0,1)==0&&Excitement(0,0,INFINITY)==0,"non-finite refused");
+        Check(ReactiveOffset(0,0,10,12345,77,1)==0,"reactive feet stay fixed");
+        Check(ReactiveOffset(10,0,10,0,1000,0)==Offset(10,0,10,0,1000,false),"zero excitement unchanged");
+        for(unsigned t=0;t<5000;t+=29)Check(std::abs(ReactiveOffset(10,0,10,t*65536ull,1234,1))<=1.0501f,"reactive bounded 10.5 percent");
+    }
     if (failures == 0) {
         puts("animated scenery: frame advance and texture indexing hold");
         return 0;

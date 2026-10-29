@@ -5426,6 +5426,7 @@ void Race_UpdatePlayerViewAndDrivenCars(BYTE param1, int param2)
         if (player != 0) {
             DustPlume_AdvanceWorld(SceneryFormat::Step(Car_Get(0)->simulationRateHz));
             SceneryPack_Advance(SceneryFormat::Step(Car_Get(0)->simulationRateHz)); // 25Hz authored units, not render frames
+            SceneryPack_SetReactionSource(Car_Get(0)->position.x,Car_Get(0)->position.z,Car_Get(0)->speed,true);
             StageObjects_Update();
         }
         for (g_raceUpdatePlayer = 0; g_raceUpdatePlayer < Car_GetOrderCount(); g_raceUpdatePlayer++) {
