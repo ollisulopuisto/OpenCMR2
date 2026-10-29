@@ -719,12 +719,14 @@ int RallyData_IsHeadToHeadRaceMode(void);
 // PORT (SilentPatchCMR2): the field of view from video.fov in degrees, 70 being
 // the original's 0x275c2; like SilentPatch, the scale is inversely
 // proportional to it (30 to 150).
+static int g_appliedFovSetting;   // OpenCMR2: the video.fov value the cached scale was built from (overlay shows this, not the live INI)
 static int View_GetFovScale(void)
 {
     static int scale;
     if (scale == 0) {
         int fov = Sys_GetOption("video.fov", 70);
         fov = fov < 30 ? 30 : fov > 150 ? 150 : fov;
+        g_appliedFovSetting = fov;
         scale = FTOI(int, X87S_DIV(0x275c2 * 70.0, fov));
     }
     return scale;
@@ -771,7 +773,7 @@ void View_GetEffectiveProjection(unsigned int view, int *zoom, int *fovY, int *f
 {
     *zoom = g_lastProjZoom[view & 7];
     *fovY = g_lastProjFovY[view & 7];
-    *fovSetting = Sys_GetOption("video.fov", 70);
+    *fovSetting = g_appliedFovSetting ? g_appliedFovSetting : Sys_GetOption("video.fov", 70);   // applied (cached) base, not a later INI edit
 }
 
 // Sets the camera projection for the selected player's view.
