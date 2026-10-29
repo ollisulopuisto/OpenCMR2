@@ -196,3 +196,13 @@ H/O vanish, new lowercase label emits both. Original font pair unavailable, so
 this is a source-path regression, NOT native-font/pixel acceptance. Loader slot1
 is Fonts/general/hel_15pt in frontend, hel_12pt in-race (.pcf+.tga). Native
 menu and helicopter feel must still be checked in owner build.
+
+## PR59 CI repair follow-up
+All failed Linux job logs show recipe tests missing PIL. Exact desktop workflow
+requirements-install patch held separately because credential lacks workflow
+scope. Linux CI dependency gap remains open, not fixed by skipping tests.
+Windows enhancements_test link failure came from redefining private as public,
+changing static member mangling. Use existing public SetGameHDPath, same save
+assertions. Explicit string headers repair wiper and camera Windows tests.
+Both human-merged camera/wiper and dust notes retained above. Native CI pending;
+no merges, dispatches or reruns performed.

@@ -1,9 +1,7 @@
 #include "platform/enhancements.h"
 #include "Input.h"
 #include "GameInfo.h"
-#define private public
 #include "InstallInfo.h"
-#undef private
 #include "platform/platform.h"
 #include "port/sys.h"
 #include <filesystem>
@@ -55,7 +53,7 @@ int main(){
  CGameInfo::m_unk0x0059f8d0=1;CInput::ReadKeyboardDevice(&device);CHECK(device.field_0x4==1);
  CHECK(read(user/"Configuration/Controller.rcf")=="sentinel saved controls");
  // Explicit in-game save serializes only actual control edits, never CLI keys.
- CInstallInfo::m_isHDInstall=TRUE;strcpy(CInstallInfo::m_hdPath,".");CInput::m_unk0x005168f4[0]=0;CInput::m_unk0x005168f4[1]=1;
+ char installPath[]=".";CInstallInfo::SetGameHDPath(installPath);CInput::m_unk0x005168f4[0]=0;CInput::m_unk0x005168f4[1]=1;
  memset(CInput::m_controllerInfo,0,sizeof CInput::m_controllerInfo);CInput::m_controllerInfo[0].field_0x13e[0]=0x2c;
  strcpy(CInput::m_controllerInfo[0].keyNames[0],"Z");CInput::SaveControllerInfo();auto saved=read(user/"Configuration/Controller.rcf");CHECK(saved.size()==0x11a4);
  CInput::m_controllerInfo[0].field_0x13e[0]=0;CInput::LoadControllerInfo();CHECK(CInput::m_controllerInfo[0].field_0x13e[0]==0x2c);CHECK(device.keyboard.field_0x468==0x2c);
