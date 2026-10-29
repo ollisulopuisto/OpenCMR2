@@ -36,24 +36,37 @@ void main()
     float depth = texture(depthTex, uv).r;
     vec4 p = inverseViewProjection * vec4(uv.x * 2.0 - 1.0, 1.0 - uv.y * 2.0, depth, 1.0);
     vec3 worldPos = p.xyz / p.w;
-    vec3 previousWorld = worldPos;
-    // Rigid-translation velocity for dynamic cars (rotation is not reprojected).
+    // Candidate 1: static world (camera motion only). Candidate 2: the pixel belongs to a car
+    // that translated by carDelta. Inside a car's gating sphere both are fetched and the one
+    // whose history is closer to the current pixel wins, so background/road inside the sphere
+    // keeps its static history instead of being dragged along. Rotation is not reprojected.
+    vec3 h = vec3(0.0);
+    float bestError = 1e9;
+    bool found = false;
+    vec3 candidates[2];
+    candidates[0] = worldPos;
+    candidates[1] = worldPos;
+    bool hasCar = false;
     for (int i = 0; i < 8; ++i) {
-        if (carCenter[i].w > 0.0 && distance(worldPos, carCenter[i].xyz) < carCenter[i].w) {
-            if (carDelta[i].w < 0.5) { outColor = vec4(c, 1.0); return; }
-            previousWorld = worldPos - carDelta[i].xyz;
+        if (carCenter[i].w > 0.0 && carDelta[i].w > 0.5 &&
+            distance(worldPos, carCenter[i].xyz) < carCenter[i].w) {
+            candidates[1] = worldPos - carDelta[i].xyz;
+            hasCar = true;
             break;
         }
     }
-    vec4 q = previousViewProjection * vec4(previousWorld, 1.0);
-    if (q.w <= 0.0) { outColor = vec4(c, 1.0); return; }
-    vec2 n = q.xy / q.w;
-    vec2 previousUv = vec2(n.x * 0.5 + 0.5, 0.5 - n.y * 0.5);
-    if (previousUv.x < 0.0 || previousUv.y < 0.0 || previousUv.x > 1.0 || previousUv.y > 1.0) {
-        outColor = vec4(c, 1.0);
-        return;
+    for (int k = 0; k < 2; ++k) {
+        if (k == 1 && !hasCar) break;
+        vec4 q = previousViewProjection * vec4(candidates[k], 1.0);
+        if (q.w <= 0.0) continue;
+        vec2 n = q.xy / q.w;
+        vec2 puv = vec2(n.x * 0.5 + 0.5, 0.5 - n.y * 0.5);
+        if (puv.x < 0.0 || puv.y < 0.0 || puv.x > 1.0 || puv.y > 1.0) continue;
+        vec3 hk = texture(history, puv).rgb;
+        float err = dot(hk - c, hk - c);
+        if (err < bestError) { bestError = err; h = hk; found = true; }
     }
-    vec3 h = texture(history, previousUv).rgb;
+    if (!found) { outColor = vec4(c, 1.0); return; }
     // Variance clip: tighter than the min/max box, so moving objects (no velocity yet)
     // reject stale history sooner. The box is intersected with min/max.
     vec3 mean = m1 / 9.0;
