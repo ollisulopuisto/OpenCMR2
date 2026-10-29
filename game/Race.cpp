@@ -5426,6 +5426,7 @@ void Race_UpdatePlayerViewAndDrivenCars(BYTE param1, int param2)
         if (player != 0) {
             DustPlume_AdvanceWorld(SceneryFormat::Step(Car_Get(0)->simulationRateHz));
             SceneryPack_Advance(SceneryFormat::Step(Car_Get(0)->simulationRateHz)); // 25Hz authored units, not render frames
+            for(int reactSlot=0;reactSlot<Car_GetOrderCount()&&reactSlot<8;reactSlot++){Car *reactCar=Car_Get(reactSlot);if(reactCar)SceneryPack_SetReactionSource(reactSlot,reactCar->position.x,reactCar->position.z,reactCar->speed,true);}
             StageObjects_Update();
         }
         for (g_raceUpdatePlayer = 0; g_raceUpdatePlayer < Car_GetOrderCount(); g_raceUpdatePlayer++) {

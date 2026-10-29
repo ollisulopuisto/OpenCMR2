@@ -9,6 +9,8 @@ void SceneryPack_RegisterArchive(GenericFile *archive, const char *path);
 bool SceneryPack_Draw(StageObject *object, const float *billboardMatrix);
 void SceneryPack_Clear();
 void SceneryPack_Advance(int step16_16);
+// Car state (any rally car, slots 0..7) for reactive spectators (16.16 world position and speed).
+void SceneryPack_SetReactionSource(int slot,int x16_16,int z16_16,int speed16_16,bool valid);
 void SceneryPack_LogStatus();
 // Last actual spectator frame draw, not a promise that a mapping is active.
 bool SceneryPack_GetAnimationStatus(unsigned long long *tick,unsigned *frame,unsigned *changes);
