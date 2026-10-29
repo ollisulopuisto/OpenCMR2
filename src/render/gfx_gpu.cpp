@@ -284,6 +284,7 @@ struct Executor : GfxExecutor {
     SDL_GPUGraphicsPipeline *colorGradingPipeline = nullptr; // analytic color grading
     SDL_GPUTexture *gradingTarget = nullptr;
     bool sampledDepth = false;
+    float sceneNear = 0.0f, sceneFar = 0.0f; // widest perspective seen this frame, recovered from projection _33/_43
     SDL_GPUTexture *dofBuf1 = nullptr;  // depth-aware disk blur output
     SDL_GPUTexture *godRaysBuf1 = nullptr; // normalized light-shaft output
     // OpenCMR2: depth of field state.
@@ -1689,6 +1690,11 @@ struct Executor : GfxExecutor {
         memcpy(u.world, &s.world, sizeof(u.world));
         memcpy(u.lightViewProj, lightViewProj, sizeof(u.lightViewProj));
         memcpy(u.projection, &s.projection, sizeof(u.projection));
+        if (s.projection._34 == 1.0f && s.projection._33 > 1.0f && s.projection._43 < 0.0f) {
+            // depth = A + B/z  =>  near = -B/A, far = B/(A-1)
+            float n = -s.projection._43 / s.projection._33, f = s.projection._43 / (s.projection._33 - 1.0f);
+            if (n > 0.0f && f > n && f > sceneFar) { sceneNear = n; sceneFar = f; }
+        }
         memcpy(u.textureMatrix[0], &s.texture[0], 64);
         memcpy(u.textureMatrix[1], &s.texture[1], 64);
         Copy4(s.material.diffuse, u.materialDiffuse);
@@ -2534,7 +2540,7 @@ struct Executor : GfxExecutor {
             float uniforms[8] = { dofFocalDistance / 100.0f,
                                   dofFocalRange / 100.0f * (1.0f - 0.5f * speedFocusSmooth),
                                   dofMaxBlur / 100.0f * 4.0f, speedFocusSmooth,
-                                  aspect, 0.014f * (float)backHeight, 0.0f, 0.0f };
+                                  aspect, 0.014f * (float)backHeight, sceneNear, sceneFar };
             SDL_GPUTextureSamplerBinding bindings[2] = {
                 { presentSource, linearSampler }, { backDepth, depthSampler }
             };
@@ -2543,6 +2549,7 @@ struct Executor : GfxExecutor {
                 {presentSource = dofBuf1;encoded|=8;
                  dofStatus={5,speedFocusTarget,speedFocusSmooth,uniforms[1],uniforms[2]};}
         }
+        sceneNear = sceneFar = 0.0f;
         if (godRaysEnabled && sunVisible && sampledDepth && godRaysIntensity > 0 &&
             godRaysBuf1 != nullptr && backDepth != nullptr && GodRaysPipeline() != nullptr) {
             float uniforms[4] = { godRaysIntensity / 255.0f, sunX, sunY, 0.0f };

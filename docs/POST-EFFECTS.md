@@ -62,3 +62,17 @@ text readability, and warmed CPU/GPU frame time. No FPS improvement is claimed.
 Sources are the existing fork's shaders and renderer. Changes preserve its
 options, not a quoted suggestion's assumption that a LUT or a true DoF blur
 kernel already existed.
+
+## DoF depth convention (PR "DoF coc fix")
+
+The depth texture holds hardware depth, `depth = far/(far-near) * (1 - near/z)`. With the usual
+camera near plane of 0.1 (0x1999) the old `smoothstep(|depth - focus|)` was already 1.0 for every
+pixel beyond about 0.5 units (checked numerically for near 0.1/0.5/1.0 and far 150/400), so blur was
+uniform and the tunnel-vision peripheral term could add nothing.
+When the renderer sees a perspective projection it now recovers near/far from `_33`/`_43`
+(near = -B/A, far = B/(A-1)), rebuilds the view distance z and measures focus on a unit-free log
+scale: 0 = near plane, 1 = far plane (`dof_focus` 50 = geometric mean of near and far). No metres are assumed.
+Behaviour change applies only when depth_of_field is on (off by default is unchanged); if no
+projection is recognised the old linear rule is used. Not natively verified. A sharp screen
+centre is not a car mask: the car is only sharp while it is within focus range and inside the clear tunnel zone.
+Sky or other draws with a larger far plane can override the recovered pair (widest far wins); unverified.

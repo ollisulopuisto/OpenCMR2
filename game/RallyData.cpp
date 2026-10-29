@@ -6445,7 +6445,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             View_GetEffectiveProjection(param2,&zoomRaw,&fovYRaw,&fovSet);
             snprintf(text,sizeof text,"Camera: type %d%s (live, view %d)",viewType,drone?" drone":"",(int)param2);
             line(text);
-            snprintf(text,sizeof text,"FOV scales (not deg): base %d zoom %.2f proj %.2f",fovSet,zoomRaw/65536.0,fovYRaw/65536.0);
+            snprintf(text,sizeof text,"FOV setting %d deg; zoom x%.2f, proj scale %.2f (scales)",fovSet,zoomRaw/65536.0,fovYRaw/65536.0);
             line(text);
         }
         line("enc=encoded; skip=requested, not encoded");
