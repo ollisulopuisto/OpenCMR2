@@ -126,6 +126,7 @@ GLuint ApplyEffects()
         float dt = speedStreakTimed ? std::chrono::duration<float>(now - speedStreakTime).count() : 0.0f;
         speedStreakTime = now; speedStreakTimed = true;
         if (dt > 0.25f) dt = 0.25f;
+        speedStreakClock = std::fmod(speedStreakClock + dt, 1000.0f);
         speedStreakSmooth += (speedStreakTarget - speedStreakSmooth) * (1.0f - std::exp(-dt / 0.4f));
         if (!effectsRaceFrame) speedStreakSmooth = 0.0f;
     }
@@ -217,7 +218,7 @@ GLuint ApplyEffects()
         run(6, backDepth, u, sizeof(u));
     }
     if (streakOn) {
-        float u[4] = {speedStreakSmooth, backHeight ? (float)backWidth / (float)backHeight : 1.0f, 0, 0};
+        float u[4] = {speedStreakSmooth, backHeight ? (float)backWidth / (float)backHeight : 1.0f, speedStreakClock, speedStreakSmooth};
         run(10, 0, u, sizeof(u));
     }
     if (grade[0] || grade[1] || grade[2] != 1 || grade[3] != 1) run(7, 0, grade, sizeof(grade));

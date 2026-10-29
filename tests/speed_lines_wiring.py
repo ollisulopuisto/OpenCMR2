@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+"""Speed lines: header/shader parity, shared strength (no second knob), time and strength fed on both backends."""
+import pathlib, re, sys
+r = pathlib.Path(__file__).resolve().parents[1]
+rd = lambda p: (r / p).read_text()
+ok = True
+def need(c, m):
+    global ok
+    if not c: print("FAIL", m); ok = False
+h, f = rd("src/render/speed_lines.h"), rd("src/render/shaders/speedstreak.frag")
+for hn, fn in (("kSpeedLinesInner", "LINES_INNER"), ("kSpeedLinesFade", "LINES_FADE"), ("kSpeedLinesRays", "LINES_RAYS")):
+    hv = re.search(hn + r"\s*=\s*([0-9.]+)f;", h); fv = re.search(r"const float " + fn + r"\s*=\s*([0-9.]+);", f)
+    need(hv and fv and float(hv.group(1)) == float(fv.group(1)), fn + " differs between header and shader")
+need("speedLines(c * vec2(settings.y, 1.0), settings.z)" in f, "lines must use the aspect corrected radius and the time uniform")
+need("settings.w" in f, "lines amount must come from settings.w")
+need("previous" not in f, "no previous frame")
+need(f.count("sampler2D") == 1, "still one sampler: no extra pass")
+g = rd("src/render/gfx_gpu.cpp")
+need("speedStreakClock, speedStreakSmooth }" in g, "SDL_GPU must feed time and strength")
+x = rd("src/render/gl_effects_executor.h")
+need("speedStreakClock, speedStreakSmooth}" in x, "GL must feed time and strength")
+need("speedStreakClock" in rd("src/render/gfx_gl.cpp"), "GL member missing")
+need("speed_lines" not in rd("game/TuningPanel.h"), "no new panel knob")
+print("speed lines wiring ok" if ok else "FAILED"); sys.exit(0 if ok else 1)
