@@ -291,6 +291,7 @@ struct Executor : GfxExecutor {
     int dofFocalDistance = 50;   // 0..100, focus plane depth
     int dofFocalRange = 50;      // 0..100, in-focus band width
     int dofMaxBlur = 30;         // 0..100, max blur radius
+    GfxDofStatus dofStatus = {0, 0, 0, 0, 0};
     float speedFocusTarget = 0.0f, speedFocusSmooth = 0.0f; // 0..1 tunnel vision; smoothed per frame
     Uint64 speedFocusTicks = 0;
     // OpenCMR2: god rays state.
@@ -2322,6 +2323,7 @@ struct Executor : GfxExecutor {
         unsigned requested=(particleType&&particleIntensity?128:0)|(Sys_GetOption("video.spatial_aa",0)?1:0)|(bloomEnabled?2:0)|(motionBlurEnabled?4:0)|(dofEnabled?8:0)|(godRaysEnabled?16:0)|((colorGradingTemperature||colorGradingTint||colorGradingSaturation!=100||colorGradingContrast!=100)?32:0)|(shadowType?64:0);
         int metalFXStatus=metalFXSpatial?0:-1;
         unsigned encoded=(shadowEncoded?64:0)|(precipitationEncoded?128:0);
+        dofStatus={0,speedFocusTarget,0.0f,0.0f,0.0f};
         SDL_GPUTexture *presentSource = backColor;
         if(worldEffects) {
         // OpenCMR2: opt-in temporal AA resolve (PARTIAL: camera-matrix reprojection,
@@ -2517,6 +2519,8 @@ struct Executor : GfxExecutor {
         depthStage.address = GFX_ADDRESS_CLAMP;
         SDL_GPUSampler *linearSampler = Sampler(linearStage);
         SDL_GPUSampler *depthSampler = Sampler(depthStage);
+        dofStatus={!dofEnabled?1:!sampledDepth||!backDepth?2:dofFocalRange<=0||dofMaxBlur<=0?3:4,
+            speedFocusTarget,0.0f,0.0f,0.0f};
         if (dofEnabled && sampledDepth && dofFocalRange > 0 && dofMaxBlur > 0 &&
             dofBuf1 != nullptr && backDepth != nullptr && DofPipeline() != nullptr) {
             // Smooth the speed in real time (about 0.8 s) so tunnel vision never pops.
@@ -2536,7 +2540,8 @@ struct Executor : GfxExecutor {
             };
             if (PostProcessPass(cmd, DofPipeline(), dofBuf1, bindings, 2,
                                 uniforms, sizeof(uniforms)))
-                {presentSource = dofBuf1;encoded|=8;}
+                {presentSource = dofBuf1;encoded|=8;
+                 dofStatus={5,speedFocusTarget,speedFocusSmooth,uniforms[1],uniforms[2]};}
         }
         if (godRaysEnabled && sunVisible && sampledDepth && godRaysIntensity > 0 &&
             godRaysBuf1 != nullptr && backDepth != nullptr && GodRaysPipeline() != nullptr) {
@@ -2669,6 +2674,7 @@ struct Executor : GfxExecutor {
         Gfx_SetRaysStatus(!godRaysEnabled?GFX_RAYS_OFF:encoded&16?GFX_RAYS_ENCODED:
             !worldEffects?GFX_RAYS_NO_WORLD:!sunVisible?GFX_RAYS_NO_SUN:
             !sampledDepth||!backDepth?GFX_RAYS_NO_DEPTH:godRaysIntensity<=0?GFX_RAYS_ZERO_AMOUNT:GFX_RAYS_RESOURCE);
+        Gfx_SetDofStatus(dofStatus);
         Gfx_SetEffectStatus(requested,encoded,submitted?1:0,metalFXStatus);
         HashFrame();
     }

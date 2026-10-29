@@ -6386,7 +6386,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         BYTE colour[4] = {240, 246, 255, 255};
         unsigned long long tick=0;unsigned frame=0,changes=0;
         bool spectator=SceneryPack_GetAnimationStatus(&tick,&frame,&changes);
-        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?4:3)+10);
+        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?4:3)+11+4);
         short panel[4] = {(short)layout.x,(short)layout.y,(short)layout.width,(short)layout.height};
         Sprite_FillRect(NULL, panel, background, 1);
         char text[96];
@@ -6403,7 +6403,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         snprintf(text,sizeof(text),"Tree draws %u | wind %u | original %u",treeDraws,windDraws,originalTrees);
         Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?3:2)*layout.line,layout.font,layout.width-2*layout.pad,colour);
         int row=spectator?4:3;
-        auto line=[&](const char*s){Font_DrawTextScaled(1,(char*)s,layout.x+layout.pad,layout.y+layout.pad+row++*layout.line,layout.font,layout.width-2*layout.pad,colour);};
+        auto line=[&](const char*s,const BYTE*c=nullptr){Font_DrawTextScaled(1,(char*)s,layout.x+layout.pad,layout.y+layout.pad+row++*layout.line,layout.font,layout.width-2*layout.pad,(BYTE*)(c?c:colour));};
         for(int i=0;i<3;i++)line(Sys_GetLaunchSummary(i));
         GfxEffectStatus status=Gfx_GetEffectStatus();
         auto effect=[&](unsigned bit){return status.submitted<0?"?":!(status.requested&bit)?"off":status.encoded&bit?"enc":"skip";};
@@ -6416,6 +6416,27 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             "sun offscreen or unavailable","sampled depth unavailable","amount zero","resource or pass unavailable"};
         int reason=Gfx_GetRaysStatus();
         snprintf(text,sizeof text,"rays reason:%s",reason>=0&&reason<8?raysReasons[reason]:"unknown");line(text);
+        {
+            // Effects light up green only while contributing: encoded this frame, with a nonzero amount.
+            BYTE lit[4]={110,255,140,255},dim[4]={150,160,170,255};
+            GfxDofStatus dof=Gfx_GetDofStatus();
+            const char *dofWhy[]={"unknown","depth_of_field off","no sampled depth","range or blur is 0","pass unavailable","encoded"};
+            int tv=Sys_GetOption("video.tunnel_vision",100);
+            bool gl=Gfx_IsOpenGL()!=0,dofOn=!gl&&dof.reason==5;
+            if(gl)snprintf(text,sizeof text,"DoF pass: n/a (OpenGL backend)");
+            else if(dofOn)snprintf(text,sizeof text,"DoF pass: ACTIVE range %.2f blur %.1f",dof.range,dof.blur);
+            else snprintf(text,sizeof text,"DoF pass: off (%s)",dofWhy[dof.reason>=0&&dof.reason<6?dof.reason:0]);
+            line(text,dofOn?lit:dim);
+            bool tvOn=dofOn&&tv>0&&dof.smooth>0.02f;
+            if(gl)snprintf(text,sizeof text,"Tunnel vision: n/a (OpenGL backend)");
+            else if(!dofOn)snprintf(text,sizeof text,"Tunnel vision: off (needs DoF pass)");
+            else if(tv<=0)snprintf(text,sizeof text,"Tunnel vision: off (video.tunnel_vision=0)");
+            else snprintf(text,sizeof text,"Tunnel vision: %s %d%% (speed target %d%%)",tvOn?"ACTIVE":"idle",(int)(dof.smooth*100.0f+0.5f),(int)(dof.target*100.0f+0.5f));
+            line(text,tvOn?lit:dim);
+            bool mb=!gl&&(status.encoded&4)!=0;
+            snprintf(text,sizeof text,"Motion blur (separate effect): %s",mb?"ACTIVE":"off");
+            line(text,mb?lit:dim);
+        }
         line("enc=encoded; skip=requested, not encoded");
         line("Previous frame; not completed-pixel proof");
         }

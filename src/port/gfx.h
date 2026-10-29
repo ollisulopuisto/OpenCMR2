@@ -317,6 +317,14 @@ GfxEffectStatus Gfx_GetEffectStatus(void);
 // Previous submitted frame rays gate, independent of the user's request.
 enum {GFX_RAYS_UNKNOWN, GFX_RAYS_OFF, GFX_RAYS_ENCODED, GFX_RAYS_NO_WORLD,
       GFX_RAYS_NO_SUN, GFX_RAYS_NO_DEPTH, GFX_RAYS_ZERO_AMOUNT, GFX_RAYS_RESOURCE};
+/* OpenCMR2: previous-frame depth of field / tunnel vision status for the debug overlay.
+   reason: 0 unknown, 1 DoF off, 2 no sampled depth, 3 range or blur is zero, 4 pass resources
+   unavailable, 5 encoded. `target` is the requested speed amount 0..1, `smooth` the amount actually
+   sent to the shader, `range` the effective focus range 0..1, `blur` the effective blur radius.
+   Encoded means submitted to the GPU, not proof of pixels. */
+typedef struct GfxDofStatus {int reason;float target,smooth,range,blur;} GfxDofStatus;
+void Gfx_SetDofStatus(GfxDofStatus status);
+GfxDofStatus Gfx_GetDofStatus(void);
 void Gfx_SetRaysStatus(int reason);
 int Gfx_GetRaysStatus(void);
 DWORD Gfx_GetFrameDrawCalls(void);
