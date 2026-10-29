@@ -987,7 +987,6 @@ void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef)
         }
     }
 
-    CameraOperator_Apply(pObj);
 
     pObj->carLift = 0;
     pObj->nearPlane = 0x10000;
@@ -998,6 +997,7 @@ void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef)
         v = -v;
     pObj->lookDistance = v;
     pObj->field_0x50 = v - 0x10000;
+    CameraOperator_Apply(pObj);
 }
 
 extern CarPartSet *g_physicsPartSet;

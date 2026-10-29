@@ -26,8 +26,22 @@ int main(){
  Sys_SetOption("video.camera_effects",0);Sys_SetOption("video.camera_operator",1);
  g_chaseCameraOffsets[2]={0,65536,0};g_chaseCameraViewOffsets[2]={65536,0,0};
  ChaseCamera_Update(&record,&body,0);
- CHECK(g_chaseCameraViewOffsets[2].x==0&&g_chaseCameraViewOffsets[2].z==65536);
+ CHECK(g_chaseCameraViewOffsets[2].x!=0); // original basis spring no longer bypassed
+ CHECK(record.matrix.position.z < -15*65536); // actual distant world camera
+ CHECK(record.zoom>0xa000);
  CHECK(g_chaseCameraLag[0]==0xe0000); // never mutate saved spring
+ // Actual built camera must not rotate its world position around the car on
+ // a turn, and zoom must survive BuildMatrix's original default assignment.
+ auto worldBefore=record.matrix.position;auto forwardBefore=record.matrix.forward;
+ body.right.x=32768;body.right.z=56756;body.forward.x=-56756;body.forward.z=32768;
+ ChaseCamera_Update(&record,&body,0);
+ CHECK(std::abs(record.matrix.position.x-worldBefore.x)<1000);
+ CHECK(std::abs(record.matrix.forward.x-forwardBefore.x)<1000);
+ CHECK(record.zoom>0xa000);
+ car.steeringInput=65536;int tight=record.zoom;
+ for(int i=0;i<80;i++)ChaseCamera_Update(&record,&body,0);
+ CHECK(record.zoom<tight);car.steeringInput=0;
+ body.right={0,0,65536};body.forward={-65536,0,0};
  Sys_SetOption("video.camera_operator",0);
  g_chaseCameraOffsets[2]={0,65536,0};g_chaseCameraViewOffsets[2]={65536,0,0};
  ChaseCamera_Update(&record,&body,0);
@@ -38,6 +52,6 @@ int main(){
  g_chaseCameraOffsets[2]={0,65536,0};g_chaseCameraViewOffsets[2]={65536,0,0};
  ChaseCamera_Update(&record,&body,0);CHECK(g_chaseCameraViewOffsets[2].x!=0);
  std::filesystem::current_path(old);std::filesystem::remove_all(tmp);
- puts("actual ChaseCamera_Update custom-only spring bypass/restoration pass; native feel unverified");
+ puts("actual ChaseCamera_Update world-space camera and original spring restoration pass; native feel unverified");
  return 0;
 }

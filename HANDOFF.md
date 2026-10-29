@@ -224,3 +224,23 @@ No native frame or active AA/MetalFX success claim. MetalFX still needs compatib
 upscale/extension and reports encoded/fallback; input render above output is not
 an upscale recommendation. Font174/174 vectorized log covers existing glyph cells,
 not proof of uppercase code coverage; native lowercase label check remains open.
+
+## Native camera rejection: world-space inertia
+Claim: fix/world-inertial-helicopter-camera. User rejected rear-attached aiming;
+requires independent camera inertia, car can turn before camera follows, distant
+helicopter/long lens, wider turns/tighter fast straights. Previous spring bypass
+and orientation-only offset were wrong. Replace with simulation-owned world
+position/velocity, trailing heading, damped aim and actual projection zoom. Off
+restores untouched original settings. Verify real built records, not graph only;
+synthetic visuals cannot establish native feel or terrain clearance acceptance.
+Validation87/87Linuxpass, finalfocused4/4 after saved-tilt regression. Real
+ChaseCamera_Update/BuildMatrix now shows car yaw30deg without immediate camera
+world orbit/forward rotation, viewpoint farther back and projection zoom wider
+with steering. Repeated draws don't step world physics. Original spring path
+restored, saved lag untouched/off returns original custom path; per-view state,
+teleport/cut/bad-input resets covered. Saved custom tilt offset relative to
+original default carried into independent look-at basis. Synthetic geometry/path
+pixels inspected (world trajectory and lens1.46turn vs1.85straight fixture), NOT
+native game/terrain/collision/feel proof. Steering is an input cue before body
+rotation, not route knowledge or guaranteed anticipation of an unseen corner.
+Native rejection remains open until owner tests this distinct architecture.
