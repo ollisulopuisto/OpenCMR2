@@ -1,5 +1,6 @@
 #include "render/gfx_internal.h"
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 extern "C" int Sys_GetOption(const char *,int v){return v;}
 int Platform_GetSettingInt(const char*,int v){return v;}
@@ -29,7 +30,13 @@ struct Executor:GfxExecutor{
 };
 GfxExecutor *Gfx_CreateGpuExecutor(){return new Executor;}
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line%d: %s\n",__LINE__,#x);return 1;}}while(0)
-int main(){unsetenv("OPENCMR2_HEADLESS");CHECK(Gfx_SetVideoMode(640,480,FALSE));
+int main(){
+#ifdef _WIN32
+ _putenv_s("OPENCMR2_HEADLESS", "");
+#else
+ unsetenv("OPENCMR2_HEADLESS");
+#endif
+ CHECK(Gfx_SetVideoMode(640,480,FALSE));
  GfxMatrix id={};id._11=id._22=id._33=id._44=1;Gfx_SetTransform(GFX_TRANSFORM_VIEW,&id);
  GfxDustLobe lobes[40]={};lobes[0].centreRadius[0]=7;
  CHECK(!Gfx_DrawDustVolume(lobes,40)); // orthographic
