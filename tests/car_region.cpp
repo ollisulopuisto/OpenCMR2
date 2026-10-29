@@ -35,6 +35,19 @@ int main()
     CHECK(CarRegion_Mask(r, 0.9f, 0.55f, 0.50f, 0.45f, 0.55f, 0.02f, 0.012f) < 0.01f);   // outside the rectangle
     float m = CarRegion_Mask(r, r.u1 + 0.01f, 0.55f, 0.50f, 0.45f, 0.55f, 0.02f, 0.012f); CHECK(m > 0.05f && m < 0.95f);
     CHECK(CarRegion_Mask(CarRegion(), 0.5f, 0.5f, 0.5f, 0.45f, 0.55f, 0.02f, 0.012f) == 0.0f);   // no region = nothing excluded
+    // The fast per-draw path matches the single-vertex path on a non-trivial transform (rotated world, offset camera, off-centre viewport).
+    {
+        float W[16], V[16], P[16]; ident(W); ident(V); proj(P, 1.3f, 1.9f);
+        W[0] = 0.8f; W[1] = 0.6f; W[4] = -0.6f; W[5] = 0.8f; W[12] = 0.7f; W[13] = -0.4f; W[14] = 3.0f; V[12] = -0.2f; V[13] = 0.3f; V[14] = 1.5f;
+        struct Vx { float x, y, z, rest[9]; } vx[6] = { {-1,-1,1}, {1,-1,2}, {-1,1,3}, {1,1,1.5f}, {0.3f,0.2f,-9.0f}, {0.5f,-0.5f,0.5f} };   // one vertex is behind the camera
+        CarRegion a, b;
+        for (auto &q : vx) { float pp[3] = { q.x, q.y, q.z }; CarRegion_Add(a, W, V, P, pp, 100, 50, 800, 400, 1000, 500); }
+        CarRegion_AddDraw(b, W, V, P, (const unsigned char *)vx, sizeof(Vx), 6, 100, 50, 800, 400, 1000, 500);
+        CHECK(a.count == b.count && a.count >= 4);
+        CHECK(fabsf(a.u0 - b.u0) < 1e-4f && fabsf(a.u1 - b.u1) < 1e-4f && fabsf(a.v0 - b.v0) < 1e-4f && fabsf(a.v1 - b.v1) < 1e-4f && fabsf(a.zMin - b.zMin) < 1e-4f && fabsf(a.zMax - b.zMax) < 1e-4f);
+        CarRegion c; CarRegion_AddDraw(c, W, V, P, (const unsigned char *)vx, sizeof(Vx), 6, 0, 0, 1000, 500, 0, 0); CHECK(c.count == 0);
+        CarRegion e; CarRegion_AddDraw(e, W, V, P, (const unsigned char *)vx, sizeof(Vx), 0, 0, 0, 1000, 500, 1000, 500); CHECK(!e.Valid());
+    }
     if (!fails) puts("car_region ok");
     return fails;
 }

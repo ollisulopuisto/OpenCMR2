@@ -36,6 +36,36 @@ inline void CarRegion_Add(CarRegion &r, const float *world, const float *view, c
     if (e[2] > r.zMax) r.zMax = e[2];
     ++r.count;
 }
+// Same result as calling CarRegion_Add for every vertex, but the matrices are combined once per draw (clip = p * (world*view*proj), eye depth
+// = p * (world*view) column 2), so each vertex costs 12 multiplies for xyw plus 3 for depth. `stride` is the vertex size in bytes; positions are the
+// first three floats of each vertex (GfxVertex).
+inline void CarRegion_AddDraw(CarRegion &r, const float *world, const float *view, const float *proj, const unsigned char *vertices, unsigned stride,
+                              unsigned count, float vpX, float vpY, float vpW, float vpH, float targetW, float targetH)
+{
+    if (!(targetW > 0.0f) || !(targetH > 0.0f)) return;
+    float wv[16], m[16];
+    for (int i = 0; i < 4; ++i)
+        for (int j = 0; j < 4; ++j) wv[i * 4 + j] = world[i * 4] * view[j] + world[i * 4 + 1] * view[4 + j] + world[i * 4 + 2] * view[8 + j] + world[i * 4 + 3] * view[12 + j];
+    for (int i = 0; i < 4; ++i)
+        for (int j = 0; j < 4; ++j) m[i * 4 + j] = wv[i * 4] * proj[j] + wv[i * 4 + 1] * proj[4 + j] + wv[i * 4 + 2] * proj[8 + j] + wv[i * 4 + 3] * proj[12 + j];
+    const float ku = vpW * 0.5f / targetW, kv = vpH * 0.5f / targetH, ou = (vpX + vpW * 0.5f) / targetW, ov = (vpY + vpH * 0.5f) / targetH;
+    for (unsigned k = 0; k < count; ++k) {
+        const float *p = (const float *)(vertices + (size_t)k * stride);
+        float cw = p[0] * m[3] + p[1] * m[7] + p[2] * m[11] + m[15];
+        if (!(cw > 1e-4f)) continue;
+        float inv = 1.0f / cw;
+        float u = ou + (p[0] * m[0] + p[1] * m[4] + p[2] * m[8] + m[12]) * inv * ku;
+        float v = ov - (p[0] * m[1] + p[1] * m[5] + p[2] * m[9] + m[13]) * inv * kv;
+        float z = p[0] * wv[2] + p[1] * wv[6] + p[2] * wv[10] + wv[14];
+        if (u < r.u0) r.u0 = u;
+        if (u > r.u1) r.u1 = u;
+        if (v < r.v0) r.v0 = v;
+        if (v > r.v1) r.v1 = v;
+        if (z < r.zMin) r.zMin = z;
+        if (z > r.zMax) r.zMax = z;
+        ++r.count;
+    }
+}
 // Mirrors dof.frag's carMask(): 1 inside the car rectangle widened by `feather` and inside the car's depth range widened by `zPad` (both in
 // the shader's log depth position), fading to 0 over the feather. Kept here so the maths is tested.
 inline float CarRegion_Mask(const CarRegion &r, float u, float v, float depthPos, float posMin, float posMax, float feather, float zPad)

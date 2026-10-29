@@ -2671,10 +2671,8 @@ struct Executor : GfxExecutor {
                             vs = (const GfxVertex *)(frame.vertices.data() + oc.firstVertexByte);
                         if (vs == NULL) continue;
                         GfxViewport cv = ToTarget(os.viewport, os.screenW, os.screenH, true, backWidth, backHeight);
-                        for (uint32_t k = 0; k < oc.vertexCount; ++k) {
-                            float p[3] = { vs[k].x, vs[k].y, vs[k].z };
-                            CarRegion_Add(carRegion, &os.world._11, &os.view._11, &os.projection._11, p, (float)cv.x, (float)cv.y, (float)cv.width, (float)cv.height, (float)backWidth, (float)backHeight);
-                        }
+                        CarRegion_AddDraw(carRegion, &os.world._11, &os.view._11, &os.projection._11, (const unsigned char *)vs, (unsigned)sizeof(GfxVertex), oc.vertexCount,
+                                          (float)cv.x, (float)cv.y, (float)cv.width, (float)cv.height, (float)backWidth, (float)backHeight);
                     }
             }
             float carPosMin = 0.0f, carPosMax = 0.0f;
