@@ -134,6 +134,17 @@ choices are retained. Native menu pixels/navigation remain unverified.
 All-track rounding remains source-gated Ballon only until paired source/layout
 and FIN/native validation can extend safely. No arbitrary object animation.
 
+## Cockpit W toggle failure follow-up
+
+Claim: fix/cockpit-wiper-toggle. Native owner report: 3D blades always on in
+rain and W has no effect. Confirmed source mismatch: PR53 toggles the added
+screen-dirt overlay; CarInterior_UpdateWiperSweep independently re-enables the
+actual cockpit blade modes from rain and ignores that option. Fix the shared
+control path and test actual rain/press/held/release/off/park/on transitions,
+not only a pure bool helper. Preserve rain-dependent speed, CIN blade limits,
+remapping and driving conflicts. Native behavior remains failed acceptance
+until a new build is tried. Dust cost regression is the other current priority;
+hedge/bush/grass additions remain saved and paused, not lost or complete.
 ## Driving remapping menu reachability
 
 Claim: fix/driving-bindings-menu. Native report says only Wiper rebind is
@@ -163,3 +174,25 @@ These measure llvmpipe/software rasterization only.120 before/after actual
 compiled-kernel outputs byte-identical across dense/empty/occluded/orbit cases.
 No sample-count, shape, pool, compositor, default or fallback change. Native
 same-camera/weather heavy-dust comparison remains open.
+
+## Helicopter camera operator refinement
+
+Claim: fix/helicopter-camera-framing. Owner screenshot/steering asks stable
+helicopter following, occasional late reframing after a turn and slight
+overshoot, not continuous anticipation or shake. Test bypass of original spring
+only while customized operator mode is on; never overwrite saved lag. Native
+label loses uppercase H/O; inspect font glyph path, use menu-consistent lowercase
+and verify actual pixels once exact owned font pair is available. Native feel,
+projection and menu acceptance stay open. Dust59 and cockpit57 remain separate.
+
+Refinement validation:86/86Linux tests. Actual ChaseCamera_Update confirms custom
+operator spring bypass and immediate original-lag restoration while keeping saved
+lag unchanged; temporary isolated INI only. State fixture confirms mirrored turns,
+cut/NaN/dt resets, per-view independence, bounds, return to stable framing and a
+small single overshoot. Synthetic .3rad/s turn after calm produces -8.4deg lag,
++.32deg overshoot, then zero; not a native gameplay claim. Label regression calls
+actual Font_DrawText with a deliberately lowercase-only glyph map: old uppercase
+H/O vanish, new lowercase label emits both. Original font pair unavailable, so
+this is a source-path regression, NOT native-font/pixel acceptance. Loader slot1
+is Fonts/general/hel_15pt in frontend, hel_12pt in-race (.pcf+.tga). Native
+menu and helicopter feel must still be checked in owner build.

@@ -6056,6 +6056,20 @@ int WindscreenWiperKeyPressed(void)
     return pressed;
 }
 
+// One input edge controls BOTH overlay and actual cockpit blades through the
+// shared option. Held keys do not toggle repeatedly; independent of dirt amount.
+void WindscreenWiper_UpdateInput(void)
+{
+    if (!WindscreenWiperKeyPressed()) return;
+    int enabled = WindscreenWiper_Toggle(Sys_GetOption("video.windscreen_wipers", 1) != 0, true);
+    Sys_SetOption("video.windscreen_wipers", enabled);
+    g_windscreenWiperManualFrames = 0;
+    for (int view=0;view<8;view++) {
+        g_windscreenWipers[view].active = enabled;
+        if(enabled)g_windscreenWipers[view].phase = g_windscreenWipers[view].dir = 0;
+    }
+}
+
 // Draws the dirt overlay (dark tint, alpha from dirt level) and the sun lens
 // flare (additive bright sprite at screen centre, scaled by sun visibility)
 // over the finished frame.
