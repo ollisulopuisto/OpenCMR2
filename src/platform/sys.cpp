@@ -1372,6 +1372,11 @@ extern "C" BOOL Sys_SetOption(const char *name, int value)
     size_t dot = key.find('.');
     if (dot == std::string::npos)
         return FALSE;
+    // A menu change made during this launch wins over a --effect/--tree-wind
+    // override of the same key; an unchanged value keeps the override as is.
+    {auto over = s_enhancements.overrides.find(key);
+     if (over != s_enhancements.overrides.end() && over->second != value)
+         s_enhancements.overrides.erase(over);}
     std::string text = std::to_string(value);
     if (!SaveSetting(s_userDir + "opencmr2.ini", key.substr(0, dot), key.substr(dot + 1), text)) {
         Sys_Log("could not save %s = %s: %s", name, text.c_str(), SDL_GetError());
