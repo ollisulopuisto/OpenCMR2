@@ -4703,6 +4703,7 @@ void Race_UpdateFrameEffects(int param_1)
         }
     }
     WindscreenWiper_UpdateInput();
+    TuningPanel_Update();
     if ((BYTE)RallyData_IsChampionshipFinalStage()) {
         StageObject_UpdateDebris(param_1);
     }

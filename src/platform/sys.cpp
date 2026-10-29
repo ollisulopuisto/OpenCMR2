@@ -1376,6 +1376,8 @@ extern "C" const char *Sys_GetOptionText(const char *name, const char *fallback)
     return Platform_GetSetting(name, fallback);
 }
 
+extern "C" void Sys_SetOptionTemporary(const char *name, int value){s_enhancements.overrides[Lower(name)]=value;}
+
 extern "C" BOOL Sys_SetOption(const char *name, int value)
 {
     std::string key = Lower(name);

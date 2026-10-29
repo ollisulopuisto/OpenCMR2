@@ -1,4 +1,6 @@
 #include "EffectAmounts.h"
+#include "TuningPanel.h"
+#include "render/effect_settings.h"
 #include "DebugOverlayLayout.h"
 #include "SceneryPack.h"
 #include "SavedGame.h"
@@ -6033,6 +6035,74 @@ int g_windscreenWiperKeyPrevState = 0;
 // the wiper sweeps once and then stops (unlike the always-on setting).
 int g_windscreenWiperManualFrames = 0;
 
+// ---- Live effect tuning (visual only) ---------------------------------------------------------
+// Backslash opens a panel on the right. [ and ] pick a row, - and = change it, 0 resets the row and / resets all rows to
+// the values this launch started with, ; saves the shown values to opencmr2.ini. Changes are per launch until saved.
+static bool g_tuneOpen = false, g_tuneSnapshotTaken = false;
+static int g_tuneRow = 0, g_tuneSnapshot[16];
+static unsigned g_tuneSavedStamp = 0, g_tuneFrame = 0;
+static bool TuneKeyEdge(int slot, int key)
+{
+    static bool prev[16];
+    bool down = Input_IsKeyDown(key) != 0;
+    bool edge = down && !prev[slot];
+    prev[slot] = down;
+    return edge;
+}
+void TuningPanel_Update(void)
+{
+    ++g_tuneFrame;
+    int count = 0;
+    const TuningRow *rows = Tuning_Rows(count);
+    bool toggle = TuneKeyEdge(0, 0x2B); // backslash
+    bool prevRow = TuneKeyEdge(1, 0x1A), nextRow = TuneKeyEdge(2, 0x1B); // [ ]
+    bool down = TuneKeyEdge(3, 0x0C), up = TuneKeyEdge(4, 0x0D);         // - =
+    bool resetRow = TuneKeyEdge(5, 0x0B), resetAll = TuneKeyEdge(6, 0x35), save = TuneKeyEdge(7, 0x27); // 0 / ;
+    if (toggle) g_tuneOpen = !g_tuneOpen;
+    if (!g_tuneOpen) return;
+    if (!g_tuneSnapshotTaken) {
+        for (int i = 0; i < count; ++i) g_tuneSnapshot[i] = Sys_GetOption(rows[i].key, rows[i].fallback);
+        g_tuneSnapshotTaken = true;
+    }
+    bool changed = false;
+    if (prevRow) g_tuneRow = Tuning_Select(g_tuneRow, -1, count);
+    if (nextRow) g_tuneRow = Tuning_Select(g_tuneRow, 1, count);
+    if (down || up) {
+        const TuningRow &r = rows[g_tuneRow];
+        Sys_SetOptionTemporary(r.key, Tuning_Step(r, Sys_GetOption(r.key, r.fallback), up ? 1 : -1));
+        changed = true;
+    }
+    if (resetRow) { Sys_SetOptionTemporary(rows[g_tuneRow].key, g_tuneSnapshot[g_tuneRow]); changed = true; }
+    if (resetAll) { for (int i = 0; i < count; ++i) Sys_SetOptionTemporary(rows[i].key, g_tuneSnapshot[i]); changed = true; }
+    if (save) {
+        for (int i = 0; i < count; ++i) Sys_SetOption(rows[i].key, Sys_GetOption(rows[i].key, rows[i].fallback));
+        g_tuneSavedStamp = g_tuneFrame;
+    }
+    if (changed) EffectSettings::Apply();
+}
+void TuningPanel_Draw(void)
+{
+    if (!g_tuneOpen) return;
+    int count = 0;
+    const TuningRow *rows = Tuning_Rows(count);
+    DebugOverlayLayout layout = DebugOverlayLayout::For(g_pGraphics->resX, g_pGraphics->resY, count + 3);
+    short panel[4] = {(short)(g_pGraphics->resX - layout.width - layout.x), (short)(g_pGraphics->resY * 23 / 100), (short)layout.width, (short)layout.height};
+    BYTE background[4] = {12, 16, 22, 220}, colour[4] = {240, 246, 255, 255}, lit[4] = {110, 255, 140, 255};
+    Sprite_FillRect(NULL, panel, background, 1);
+    char text[96];
+    int tx = panel[0] + layout.pad, ty = panel[1] + layout.pad, row = 0;
+    snprintf(text, sizeof text, "TUNING  [ ] row  - = value");
+    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
+    for (int i = 0; i < count; ++i) {
+        snprintf(text, sizeof text, "%s %s: %d", i == g_tuneRow ? ">" : " ", rows[i].label, Sys_GetOption(rows[i].key, rows[i].fallback));
+        Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, i == g_tuneRow ? lit : colour);
+    }
+    snprintf(text, sizeof text, "0 row reset  / all reset  ; save INI");
+    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
+    snprintf(text, sizeof text, g_tuneSavedStamp && g_tuneFrame - g_tuneSavedStamp < 100 ? "saved to opencmr2.ini" : "per launch until saved");
+    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
+}
+
 // Returns 1 when the wiper key was just pressed this frame (edge trigger),
 // 0 otherwise. Resets the edge after reading.
 int WindscreenWiperKeyPressed(void)
@@ -6377,6 +6447,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
     }
     Graphics_SetShadowGeometryState(!CGameInfo::IsRecordFlagSet(0xf));
     View_SetPlayerProjection(param2);
+    TuningPanel_Draw();
     if (Graphics_DebugDrawWanted()) {
         if(Sys_GetOption("video.debug_draw",OPENCMR2_DEBUG_DRAW_DEFAULT)==1){
             char text[32];snprintf(text,sizeof text,"FPS %.1f",Graphics_GetFrameRate());BYTE color[4]={240,246,255,255};

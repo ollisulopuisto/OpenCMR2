@@ -2568,7 +2568,7 @@ struct Executor : GfxExecutor {
             // x focus distance, y focus range (shallower with speed), z max blur, w tunnel strength 0..1
             float uniforms[8] = { dofFocalDistance / 100.0f,
                                   dofFocalRange / 100.0f * (1.0f - 0.5f * speedFocusSmooth),
-                                  dofMaxBlur / 100.0f * 4.0f, speedFocusSmooth,
+                                  dofMaxBlur / 100.0f * (float)(Sys_GetOption("video.dof_blur_max_px", 4) < 1 ? 1 : Sys_GetOption("video.dof_blur_max_px", 4) > 40 ? 40 : Sys_GetOption("video.dof_blur_max_px", 4)), speedFocusSmooth,
                                   aspect, 0.014f * (float)backHeight, sceneNear, sceneFar };
             SDL_GPUTextureSamplerBinding bindings[2] = {
                 { presentSource, linearSampler }, { backDepth, depthSampler }
