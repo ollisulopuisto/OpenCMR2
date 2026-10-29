@@ -644,12 +644,14 @@ void FrontendMenu_DrawAdvancedGraphicsOptions(Menu *pMenu)
                          NULL, pColour, 8);
         }
         switch (pItem->value) {
-        case 0x40:case 0x41:case 0x42:case 0x43:case 0x44:case 0x45:
-        case 0x46:case 0x47:case 0x48:case 0x49:case 0x4a:case 0x4b:
-        case 0x4c:case 0x4d:case 0x4e:case 0x4f:case 0x50: {
+        // Effect-amount rows are 0x40 + row index, for as many rows as the menu holds (22 items).
+        case 0x40 ... 0x55: {
             const char* choice=nullptr;
-            if(pItem->value==0x44){static const char* a[]={"512","1024","2048"};choice=a[pItem->max%3];}
-            if(pItem->value==0x50){static const char* a[]={"Stage","64","128","256"};choice=a[pItem->max%4];}
+            int rowCount=0;const auto*rows=EffectAmount_Rows(rowCount);
+            int row=pItem->value-0x40;
+            const char *key=row>=0&&row<rowCount?rows[row].key:"";
+            if(!strcmp(key,"video.shadow_quality")){static const char* a[]={"512","1024","2048"};choice=a[pItem->max%3];}
+            if(!strcmp(key,"video.reflection_resolution")){static const char* a[]={"Stage","64","128","256"};choice=a[pItem->max%4];}
             if(pItem->min==2)choice=pItem->max?"On":"Off";
             if(choice)snprintf(CFrontend::m_stringDest,sizeof CFrontend::m_stringDest,"%s < %s >",pItem->text,choice);
             else snprintf(CFrontend::m_stringDest,sizeof CFrontend::m_stringDest,"%s < %d >",pItem->text,pItem->max);
@@ -12602,17 +12604,17 @@ char *FrontendMenu_GetScreenOptionsLabel(void)
 namespace {
 Menu effectAmounts;
 void EnterAmounts(Menu*m,int){
- int n;const auto*rows=EffectAmount_Rows(n);
+ int n;const auto*rows=EffectAmount_Rows(n); if(n>20)n=20;
  for(int i=0;i<n;i++){
   int fallback=rows[i].initial;
-  if(i==9||i==11)fallback=Sys_GetOption("video.camera_effects",1);
+  if(!strcmp(rows[i].key,"video.lens_dirt")||!strcmp(rows[i].key,"video.lens_flare"))fallback=Sys_GetOption("video.camera_effects",1);
   int v=Sys_GetOption(rows[i].key,fallback);
   if(!strcmp(rows[i].key,"video.reflection_resolution"))v=v<=0?0:v<=64?1:v<=128?2:3;
   m->items[i].max=EffectSettings::Clamp(v,0,rows[i].count-1);
  }
 }
 void ApplyAmounts(Menu*m,MenuItem*){
- int n;const auto*rows=EffectAmount_Rows(n);
+ int n;const auto*rows=EffectAmount_Rows(n); if(n>20)n=20;
  for(int i=0;i<n;i++){
   int v=m->items[i].max;
   if(!strcmp(rows[i].key,"video.reflection_resolution")){static const int sizes[]={0,64,128,256};v=sizes[v%4];}
@@ -12624,6 +12626,7 @@ void ApplyAmounts(Menu*m,MenuItem*){
 Menu* FrontendMenu_GetEffectAmounts(Menu*parent){
  Menu_Init(&effectAmounts,(char*)"Effect amounts",-1,0,parent,NULL,1,0,1);
  int n;const auto*rows=EffectAmount_Rows(n);
+ if(n>20)n=20; // Menu::items holds 22: leave room for the OK row
  for(int i=0;i<n;i++)Menu_AddItemType3(&effectAmounts,(char*)rows[i].label,-1,rows[i].count,0,0,0,0,0x40+i);
  Menu_AddItemType1(&effectAmounts,0,0x67,ApplyAmounts,0xe);
  Menu_SetCallbacks(&effectAmounts,EnterAmounts,NULL,(MenuCallback)FrontendMenu_DrawAdvancedGraphicsOptions,NULL);

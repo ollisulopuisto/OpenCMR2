@@ -51,7 +51,8 @@ int main(int argc,char **argv){
    if(g_spriteCount1>900)++fail;
  }
  Menu* amounts=FrontendMenu_GetEffectAmounts(m);amounts->pfnCallback0(amounts,0);
- if(amounts->itemCount!=18 || amounts->pParent!=m)++fail;
+ {int rn;EffectAmount_Rows(rn);if(amounts->itemCount!=rn+1 || amounts->pParent!=m)++fail;
+ for(int r=0;r<rn;r++)if(amounts->items[r].value!=0x40+r)++fail;}
  amounts->cursor=0;
  for(int i=0;i<amounts->itemCount;i++){if(amounts->cursor!=i)++fail;Menu_Update(amounts,8);Menu_Update(amounts,0);}
  if(amounts->cursor!=0)++fail;
