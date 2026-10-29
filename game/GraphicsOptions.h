@@ -378,6 +378,7 @@ inline bool WindscreenWiper_Toggle(bool enabled, bool pressed) { return pressed 
 // Returns 1 when the wiper key was just pressed this frame (edge trigger),
 // 0 otherwise. Defined in RallyData.cpp.
 int WindscreenWiperKeyPressed(void);
+void WindscreenWiper_UpdateInput(void);
 
 // OpenCMR2: motion blur between frames. `video.motion_blur` is 0 (off) to
 // MOTION_BLUR_MAX; the mix factor is how much of the previous frame to blend

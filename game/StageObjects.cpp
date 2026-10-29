@@ -9119,7 +9119,19 @@ void CarInterior_UpdateWiperSweep(int index)
 {
     short *pMax;
 
-    if (StageObject_GetViewWeatherStateByte(index) == 1) {
+    // The 3D cockpit blades must obey the same control as the dirt overlay.
+    // Off finishes the current sweep and parks. Rain must not restart it.
+    if (Sys_GetOption("video.windscreen_wipers", 1) == 0) {
+        if (g_carWiperStates[index].angle == 0) {
+            g_carWiperStates[index].mode = 0;
+            g_carWiperStates[index].sweepingForward = 1;
+            return;
+        }
+        g_carWiperStates[index].mode = 1;
+    } else if (StageObject_GetViewWeatherStateByte(index) == 1) {
+        // Re-enable while parking must resume, even below old start threshold.
+        if (g_carWiperStates[index].mode == 1)
+            g_carWiperStates[index].mode = 0;
         if (StageObject_GetViewWeatherField54(index) > 0x3333 && g_carWiperStates[index].mode == 0) {
             g_carWiperStates[index].mode = 2;
             g_carWiperStates[index].step = rand() % 0xb + 0x2d;
