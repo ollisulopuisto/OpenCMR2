@@ -145,6 +145,7 @@ if(Python3_Interpreter_FOUND)
     add_test(NAME speed_streak_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/speed_streak_wiring.py)
     add_test(NAME dof_race_only_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/dof_race_only_wiring.py)
     add_test(NAME dof_focus_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/dof_focus_wiring.py)
+    add_test(NAME tunnel_look_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tunnel_look_wiring.py)
     add_test(NAME gl_tunnel_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gl_tunnel_wiring.py)
     add_test(NAME tuning_pause_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tuning_pause_wiring.py)
     add_test(NAME raw_access_audit
