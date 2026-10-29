@@ -133,3 +133,15 @@ active keyboard driving uses W, rather than stealing acceleration; explicit save
 choices are retained. Native menu pixels/navigation remain unverified.
 All-track rounding remains source-gated Ballon only until paired source/layout
 and FIN/native validation can extend safely. No arbitrary object animation.
+
+## Cockpit W toggle failure follow-up
+
+Claim: fix/cockpit-wiper-toggle. Native owner report: 3D blades always on in
+rain and W has no effect. Confirmed source mismatch: PR53 toggles the added
+screen-dirt overlay; CarInterior_UpdateWiperSweep independently re-enables the
+actual cockpit blade modes from rain and ignores that option. Fix the shared
+control path and test actual rain/press/held/release/off/park/on transitions,
+not only a pure bool helper. Preserve rain-dependent speed, CIN blade limits,
+remapping and driving conflicts. Native behavior remains failed acceptance
+until a new build is tried. Dust cost regression is the other current priority;
+hedge/bush/grass additions remain saved and paused, not lost or complete.
