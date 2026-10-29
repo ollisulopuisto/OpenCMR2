@@ -34,6 +34,7 @@ void Gfx_FlushDustVolume(void);
 void Gfx_EndWorldEffects(void);
 // Explicit race draw scope; menu/background scenes must never enable weather.
 void Gfx_SetRaceWorld(BOOL enabled);
+void Gfx_SetCloudEnvironment(float coverage, float baseHeight, float sunX, float sunY, float sunZ);
 
 
 /* Row-vector matrix, Direct3D layout: v' = v * M, translation in _41.._43. */

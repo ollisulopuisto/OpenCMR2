@@ -2,6 +2,7 @@
 layout(location = 0) out vec4 outColor;
 layout(set = 2, binding = 0) uniform sampler2D scene;
 layout(set = 2, binding = 1) uniform sampler2D depthTex;
+layout(set=2,binding=2) uniform sampler2D cloudTransmission;
 layout(std140, set = 3, binding = 0) uniform GodRaysUniforms {
     vec4 settings; // intensity, artistic screen-space sun x/y, unused
 };
@@ -22,7 +23,7 @@ void main()
         float sky = smoothstep(0.995, 0.9999, texture(depthTex, pos).r);
         vec3 source = texture(scene, pos).rgb;
         float bright = smoothstep(0.55, 0.9, dot(source, vec3(0.299, 0.587, 0.114)));
-        light += source * sky * bright * decay;
+        light += source * sky * bright * decay * texture(cloudTransmission,pos).a * texture(cloudTransmission,settings.yz).a;
         total += decay;
         decay *= 0.96;
     }

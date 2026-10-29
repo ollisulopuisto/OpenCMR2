@@ -3,7 +3,7 @@
 void ReleaseEffectTargets()
 {
     gl.DeleteTextures(4, effectTex); gl.DeleteFramebuffers(4, effectFbo);
-    gl.DeleteTextures(1, &historyTex);
+    gl.DeleteTextures(1, &historyTex);gl.DeleteTextures(1,&cloudMaskTexture);gl.DeleteFramebuffers(1,&cloudMaskFbo);cloudMaskTexture=cloudMaskFbo=0;
     memset(effectTex, 0, sizeof(effectTex)); memset(effectFbo, 0, sizeof(effectFbo));
     historyTex = 0; historyValid = false;
 }
@@ -73,11 +73,11 @@ GLuint EffectProgram(int effect)
     if (effectPrograms[effect]) return effectPrograms[effect];
     static const unsigned char *sources[] = {g_brightpass_frag_glsl, g_blur_frag_glsl,
         g_composite_frag_glsl, g_motionblur_frag_glsl, g_lens_grime_frag_glsl,
-        g_dof_frag_glsl, g_godRays_frag_glsl, g_colorGrading_frag_glsl, g_spatial_aa_frag_glsl};
+        g_dof_frag_glsl, g_godRays_frag_glsl, g_colorGrading_frag_glsl, g_spatial_aa_frag_glsl,g_clouds_frag_glsl};
     static const char *blocks[] = {"BrightPassUniforms", "BlurUniforms", "CompositeUniforms",
-        "MotionBlurUniforms", "LensGrimeUniforms", "DoFUniforms", "GodRaysUniforms", "ColorGradingUniforms", "SpatialAAUniforms"};
-    static const char *samplers0[] = {"scene", "source", "scene", "current", "scene", "sceneTex", "scene", "scene", "scene"};
-    static const char *samplers1[] = {NULL, NULL, "bloom", "previous", NULL, "depthTex", "depthTex", NULL, NULL};
+        "MotionBlurUniforms", "LensGrimeUniforms", "DoFUniforms", "GodRaysUniforms", "ColorGradingUniforms", "SpatialAAUniforms","CloudUniforms"};
+    static const char *samplers0[] = {"scene", "source", "scene", "current", "scene", "sceneTex", "scene", "scene", "scene", "scene"};
+    static const char *samplers1[] = {NULL, NULL, "bloom", "previous", NULL, "depthTex", "depthTex", NULL, NULL,"depthTex"};
     GLuint p = Link(glEffectsVertex, sources[effect]);
     if (p) {
         GLuint block = gl.GetUniformBlockIndex(p, blocks[effect]);
@@ -86,6 +86,7 @@ GLuint EffectProgram(int effect)
         gl.Uniform1i(gl.GetUniformLocation(p, samplers0[effect]), 0);
         if (samplers1[effect]) gl.Uniform1i(gl.GetUniformLocation(p, samplers1[effect]), 1);
     }
+    if(p&&effect==6)gl.Uniform1i(gl.GetUniformLocation(p,"cloudTransmission"),2);
     effectPrograms[effect] = p;
     return p;
 }
@@ -105,7 +106,8 @@ bool EffectPass(int effect, int target, GLuint source, GLuint second, const void
         gl.BindSampler(i, Sampler(i == 1 && second == backDepth ? nearest : linear));
     }
     // std140 blocks are padded, including shaders whose public argument is one float.
-    unsigned char block[64] = {};
+    if(effect==6){gl.ActiveTexture(GL_TEXTURE0+2);gl.BindTexture(GL_TEXTURE_2D,cloudMask?cloudMask:white2D);gl.BindSampler(2,Sampler(linear));}
+    unsigned char block[sizeof(CloudUniforms)] = {};
     if (bytes > sizeof(block)) { ForgetEffectState(); return false; }
     memcpy(block, data, bytes);
     gl.BindBuffer(GL_UNIFORM_BUFFER, effectUbo);
@@ -119,17 +121,18 @@ bool EffectPass(int effect, int target, GLuint source, GLuint second, const void
 }
 GLuint ApplyEffects()
 {
-    bool active = spatialAA || bloomOn && bloomAmount > 0 || motionOn && motionMix > 0 ||
+    bool active = cloudsValid || spatialAA || bloomOn && bloomAmount > 0 || motionOn && motionMix > 0 ||
         dofOn && dofRange > 0 && dofBlur > 0 || raysOn && raysAmount > 0 && sunVisible ||
         grade[0] || grade[1] || grade[2] != 1 || grade[3] != 1 || grime[0] || grime[1] || grime[2];
     if (!active) { historyValid = false; return backFramebuffer; }
     if (!EffectTargets()) return backFramebuffer;
     GLuint source = backColor, sourceFbo = backFramebuffer;
+    cloudMask=0;
     auto run = [&](int effect, GLuint second, const void *data, size_t bytes) {
         int target = source == effectTex[0] ? 1 : 0;
         if (EffectPass(effect, target, source, second, data, bytes)) {
             source = effectTex[target]; sourceFbo = effectFbo[target];
-            static const unsigned bits[]={0,0,2,4,0,8,16,32,1};
+            static const unsigned bits[]={0,0,2,4,0,8,16,32,1,0};
             encodedEffects |= bits[effect];
             return true;
         }
@@ -138,6 +141,19 @@ GLuint ApplyEffects()
     if(spatialAA){
         float size[4]={1.0f/backWidth,1.0f/backHeight,0,0};
         run(8,0,size,sizeof(size));
+    }
+    // Copy the cloud result out of scratch slot3 so later bloom cannot
+    // overwrite its explicit transmission mask.
+    if(cloudsValid && EffectPass(9,3,source,backDepth,&cloudUniforms,sizeof(cloudUniforms))){
+        if(!cloudMaskTexture){cloudMaskTexture=EffectTexture(backWidth,backHeight);gl.GenFramebuffers(1,&cloudMaskFbo);gl.BindFramebuffer(GL_FRAMEBUFFER,cloudMaskFbo);gl.FramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,cloudMaskTexture,0);
+            if(gl.CheckFramebufferStatus(GL_FRAMEBUFFER)!=GL_FRAMEBUFFER_COMPLETE){gl.DeleteTextures(1,&cloudMaskTexture);gl.DeleteFramebuffers(1,&cloudMaskFbo);cloudMaskTexture=cloudMaskFbo=0;}
+        }
+        if(cloudMaskFbo){
+        gl.BindFramebuffer(GL_READ_FRAMEBUFFER,effectFbo[3]);gl.BindFramebuffer(GL_DRAW_FRAMEBUFFER,cloudMaskFbo);gl.Disable(GL_SCISSOR_TEST);
+        gl.BlitFramebuffer(0,0,backWidth,backHeight,0,0,backWidth,backHeight,GL_COLOR_BUFFER_BIT,GL_NEAREST);
+        if(gl.GetError()==GL_NO_ERROR){source=cloudMaskTexture;sourceFbo=cloudMaskFbo;cloudMask=cloudMaskTexture;
+            if(!cloudLogged){Sys_Log("options: GL volumetric clouds encoded (48 view / 6 sun samples), transmission coupled to rays; native pixels unverified");cloudLogged=true;}
+        }}ForgetEffectState();
     }
     if (bloomOn && bloomAmount > 0) {
         float bright[4] = {0.7f, 0.1f, 0, 0};

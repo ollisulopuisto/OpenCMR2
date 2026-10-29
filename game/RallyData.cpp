@@ -8209,6 +8209,8 @@ void RallyData_DrawViewEndFrameOverlay(CallbackStateMachine *pKey, int view)
     // Only this actual race viewport, with no in-race menu, admits added rain/snow.
     // Splash/options/stage-information scenes use the same scene renderer but
     // never enter this explicit scope.
+    extern void StageObject_PrepareVolumetricClouds(void);
+    StageObject_PrepareVolumetricClouds();
     Gfx_SetRaceWorld(CGameInfo::IsInRaceMenuOpen()==0);
     Game_DrawSceneViewport(RallyData_GetChallengeRenderState(), g_viewNodes[view], g_viewScreenRect, view, 1);
     Gfx_SetRaceWorld(FALSE);

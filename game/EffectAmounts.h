@@ -27,6 +27,7 @@ inline const EffectAmountRow* EffectAmount_Rows(int &count){
  {"Dust plume","video.dust_plume",1,2},
  {"Dust amount %","video.dust_amount",100,101},
  {"World dust","video.dust_volume",1,2},
+ {"Volumetric clouds","video.volumetric_clouds",1,2},
  {"Cube reflection size","video.reflection_resolution",128,4},
  };
  count=sizeof(rows)/sizeof(*rows);return rows;
