@@ -18,7 +18,7 @@ struct EnhancementOptions {
         if(equal!=key.npos){inlineValue=key.substr(equal+1);key.resize(equal);}
         if(equal==key.npos && key=="--prepare-only"){prepareOnly=true;return true;}
         if(equal==key.npos && key=="--install-enhancement-deps"){installDependencies=true;return true;}
-        if(key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect"&&key!="--attract-capture"&&key!="--capture-interval"&&key!="--capture-count"&&key!="--speed-fov"&&key!="--speed-motes-stretch"&&key!="--speed-motes-amount"&&key!="--speed-motes-size"&&key!="--dof-blur-max-px"&&key!="--speed-streak"&&key!="--speed-hold"&&key!="--fov-preview"&&key!="--dof-focus-car"&&key!="--test-preset")return false;
+        if(key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect"&&key!="--attract-capture"&&key!="--capture-interval"&&key!="--capture-count"&&key!="--speed-fov"&&key!="--speed-motes-stretch"&&key!="--speed-motes-amount"&&key!="--speed-motes-size"&&key!="--dof-blur-max-px"&&key!="--speed-streak"&&key!="--speed-hold"&&key!="--cockpit-eye-shift"&&key!="--fov-preview"&&key!="--dof-focus-car"&&key!="--test-preset")return false;
         if(equal==std::string::npos && i+1>=argc){error="Missing value for "+key;return true;}
         std::string value=equal==std::string::npos?argv[++i]:inlineValue;
         if(key=="--textures"){if(value!="original"&&value!="france1")error="--textures expects original or france1";else textures=value;}
@@ -40,6 +40,10 @@ struct EnhancementOptions {
             int hi=key=="--speed-fov"?100:key=="--speed-motes-stretch"?100:key=="--dof-blur-max-px"?40:key=="--speed-motes-size"?800:300,lo=key=="--dof-blur-max-px"?1:key=="--speed-motes-size"?50:0;
             if(value.empty()||*end||n<lo||n>hi)error=key+" expects "+std::to_string(lo)+".."+std::to_string(hi);
             else overrides[key=="--speed-fov"?"video.speed_fov":key=="--speed-motes-stretch"?"video.speed_motes_stretch":key=="--dof-blur-max-px"?"video.dof_blur_max_px":key=="--speed-motes-size"?"video.speed_motes_size":"video.speed_motes_amount"]=(int)n;
+        }
+        if(key=="--cockpit-eye-shift"){
+            char *end=nullptr;long n=strtol(value.c_str(),&end,10);   // signed: negative moves the eye the other way
+            if(value.empty()||*end||n<-100||n>100)error=key+" expects -100..100";else overrides["video.cockpit_eye_shift"]=(int)n;
         }
         if(key=="--speed-hold"||key=="--dof-focus-car"){
             // 0/1. --speed-hold 0 makes --test-preset overdo run its speed effects (FOV, tunnel, streak) at the real car speed instead of
@@ -139,6 +143,7 @@ inline const char *EnhancementHelp(){return
 "  --speed-motes-amount 0..300 Percent of the normal mote spawn rate (live cap 64 at 100, up to 192 at 300)\n"
 "  --speed-motes-size 50..800  Mote size in percent (default 100)\n"
 "  --dof-blur-max-px 1..40     Blur radius in pixels when dof_blur is 100 (default 4)\n"
+"  --cockpit-eye-shift -100..100  Cockpit camera: move the eye along its forward axis as the view widens (default 0 = off; sign tuned natively; visual only)\n"
 "  --test-preset overdo        Exaggerated diagnostic look for speed lines/streak, FOV, DoF, tunnel vision (legacy motes off; add --effect speed_motes=on)\n"
 "                              and motion blur. Explicit flags override it; nothing is saved\n"
 "  --attract-capture DIR       Start the attract demo at once, save PNGs of the frame at\n"
