@@ -2088,8 +2088,8 @@ struct Executor : GfxExecutor {
                 }
             }
 
-        size_t worldEnd=frame.commands.size();unsigned boundaries=0;
-        for(size_t i=0;i<frame.commands.size();++i)if(frame.commands[i].type==GFX_CMD_WORLD_END){worldEnd=i;++boundaries;}
+        size_t worldEnd=frame.commands.size();unsigned boundaries=0;bool raceWorld=false;
+        for(size_t i=0;i<frame.commands.size();++i)if(frame.commands[i].type==GFX_CMD_WORLD_END){worldEnd=i;raceWorld=frame.commands[i].raceWorld;++boundaries;}
         // Per-view history is not implemented. Multi-view/UI-only frames skip
         // optional full-screen FX rather than smearing another view's HUD.
         bool worldEffects=present && boundaries==1;
@@ -2239,7 +2239,7 @@ struct Executor : GfxExecutor {
         // OpenCMR2: particles — simulate and render rain/snow into the scene
         // before post-processing, so bloom and motion blur can pick them up.
         bool precipitationEncoded=false;
-        if (worldEffects && particleType != 0 && particleIntensity > 0) {
+        if (worldEffects && raceWorld && particleType != 0 && particleIntensity > 0) {
             uint32_t now = SDL_GetTicks();
             float dt = particleLastTicks == 0 ? 0.0f : (float)(now - particleLastTicks) / 1000.0f;
             particleLastTicks = now;
@@ -2248,6 +2248,8 @@ struct Executor : GfxExecutor {
             UpdateParticles(dt);
             precipitationEncoded=RenderParticles(cmd);
         }
+
+        if(!raceWorld){particleCount=0;particleLastTicks=0;motionBlurHasPrevious=false;}
 
         // OpenCMR2: bloom (bright-pass extract, separable blur, additive
         // composite) followed by motion blur (previous-frame blend).
@@ -2422,6 +2424,7 @@ struct Executor : GfxExecutor {
         }
 
         } else motionBlurHasPrevious=false;
+        if(!raceWorld)motionBlurHasPrevious=false;
         if(worldEffects) {
             if(presentSource!=backColor){
                 SDL_GPUBlitInfo blit={};blit.source.texture=presentSource;blit.source.w=backWidth;blit.source.h=backHeight;
