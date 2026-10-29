@@ -1,4 +1,5 @@
 #include "port/types.h"
+#include <initializer_list>
 #include "DustPlume.h"
 #include <cstdio>
 #include <cmath>
