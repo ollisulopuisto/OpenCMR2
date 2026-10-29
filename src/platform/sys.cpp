@@ -813,8 +813,8 @@ bool Platform_Init(int argc, char **argv)
         return false;
     }
     s_enhancements.Apply();
-    Sys_Log("effective speed-feel settings: speed_motes=%d amount=%d stretch=%d speed_fov=%d dof=%d dof_blur=%d tunnel_vision=%d motion_blur=%d preset=%s (CLI overrides win over opencmr2.ini)",
-        Sys_GetOption("video.speed_motes",0),Sys_GetOption("video.speed_motes_amount",100),Sys_GetOption("video.speed_motes_stretch",0),Sys_GetOption("video.speed_fov",0),
+    Sys_Log("effective speed-feel settings: speed_motes=%d amount=%d stretch=%d size=%d speed_fov=%d dof=%d dof_blur=%d tunnel_vision=%d motion_blur=%d preset=%s (CLI overrides win over opencmr2.ini)",
+        Sys_GetOption("video.speed_motes",0),Sys_GetOption("video.speed_motes_amount",100),Sys_GetOption("video.speed_motes_stretch",0),Sys_GetOption("video.speed_motes_size",100),Sys_GetOption("video.speed_fov",0),
         Sys_GetOption("video.depth_of_field",0),Sys_GetOption("video.dof_blur",30),Sys_GetOption("video.tunnel_vision",100),Sys_GetOption("video.motion_blur",1),
         s_enhancements.testPreset.empty()?"none":s_enhancements.testPreset.c_str());
     if(!s_sceneryDir.empty()&&s_enhancements.NeedsPack()){

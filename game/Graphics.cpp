@@ -5572,6 +5572,11 @@ void Particle_Interpolate(int t)
 static float g_speedMoteRatio = 0.f;
 void SpeedMote_ApplyStreak(BillboardDef *def, SceneNode *camera)
 {
+    int sizePct = SpeedMote_SizePercent(Sys_GetOption("video.speed_motes_size", 100));
+    if (sizePct != 100) {   // bigger specks for diagnosis; 100 = the original size
+        def->top = (int)((long long)def->top * sizePct / 100); def->bottom = (int)((long long)def->bottom * sizePct / 100);
+        def->left = (int)((long long)def->left * sizePct / 100); def->right = (int)((long long)def->right * sizePct / 100);
+    }
     int stretch = Sys_GetOption("video.speed_motes_stretch", 0);
     if (stretch <= 0 || !camera) return;
     const FixMatrix &m = camera->world;
@@ -7092,7 +7097,7 @@ void SpeedMote_Spawn(FixVector *world)
         if (g_particles[i].pType == &g_particleTypes[SPEED_MOTE_TYPE]) ++motes;
     }
     // Never evict original particles: Particle_Spawn reuses the oldest slot when the pool is full.
-    if (!SpeedMote_HasBudget(active, motes, g_particleCount)) { ++g_speedMotesBudgetSkipped; return; }
+    if (!SpeedMote_HasBudget(active, motes, g_particleCount, Sys_GetOption("video.speed_motes_amount", 100))) { ++g_speedMotesBudgetSkipped; return; }
     FixVector still = {0,0,0};
     Particle_Spawn(SPEED_MOTE_TYPE, world, &still, world->y, NULL, NULL, 0, NULL, 1);
     ++g_speedMotesSpawned;
