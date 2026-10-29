@@ -2275,7 +2275,14 @@ struct Executor : GfxExecutor {
         if (worldEffects && raceWorld && sampledDepth && worldEnd < frame.commands.size() &&
             Sys_GetOption("video.temporal_aa", 0) != 0 &&
             temporalTracker.Prepare(frame.commands[worldEnd], frame.states[frame.commands[worldEnd].state], backWidth, backHeight, tf))
+        {
             temporalJitterOn = true;
+            for (const GfxCommand &oc : frame.commands)
+                if (oc.type == GFX_CMD_DRAW && oc.target == NULL && !oc.transformed) {
+                    const GfxDrawState &os = frame.states[oc.state];
+                    if (os.objectId) { float p[3] = { os.world._41, os.world._42, os.world._43 }; temporalTracker.AddObject(tf, os.objectId, p); }
+                }
+        }
         else
             temporalTracker.Reset();
         drawCommands(0,worldEffects?worldEnd:frame.commands.size());
