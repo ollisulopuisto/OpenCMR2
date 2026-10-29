@@ -452,8 +452,8 @@ extern "C" void Gfx_EndWorldEffects(void)
         }
         s_frame.commands.push_back(c); }
 }
-static float s_dustSamplingCamera[3]={};
-extern "C" void Gfx_NoteDustSamplingCamera(float x,float y,float z){s_dustSamplingCamera[0]=x;s_dustSamplingCamera[1]=y;s_dustSamplingCamera[2]=z;}
+static float s_dustSamplingCamera[6]={};
+extern "C" void Gfx_NoteDustSamplingCamera(float x,float y,float z,float fx,float fy,float fz){s_dustSamplingCamera[0]=x;s_dustSamplingCamera[1]=y;s_dustSamplingCamera[2]=z;s_dustSamplingCamera[3]=fx;s_dustSamplingCamera[4]=fy;s_dustSamplingCamera[5]=fz;}
 // Log-only diagnostics, at most once per second: does the camera the volume is encoded with match the camera the lobes
 // were sampled for, and how close are the sampled lobes to the lens.
 static void LogDustDiagnostics()
@@ -466,6 +466,10 @@ static void LogDustDiagnostics()
     if(!DustVolume_Inverse(s_state.view,inverseView))return;
     const float *e=&inverseView[12];
     float dx=e[0]-s_dustSamplingCamera[0],dy=e[1]-s_dustSamplingCamera[1],dz=e[2]-s_dustSamplingCamera[2];
+    // Forward direction of the encode view: world-space image of the +Z camera axis (third row of the inverse view).
+    float efx=inverseView[8],efy=inverseView[9],efz=inverseView[10];
+    float el=std::sqrt(efx*efx+efy*efy+efz*efz),sl=std::sqrt(s_dustSamplingCamera[3]*s_dustSamplingCamera[3]+s_dustSamplingCamera[4]*s_dustSamplingCamera[4]+s_dustSamplingCamera[5]*s_dustSamplingCamera[5]);
+    float cosAngle=(el>0.f&&sl>0.f)?(efx*s_dustSamplingCamera[3]+efy*s_dustSamplingCamera[4]+efz*s_dustSamplingCamera[5])/(el*sl):0.f;
     int inside=0;float nearest=1e9f;
     for(const auto &l:s_pendingDust){
         float ex=e[0]-l.centreRadius[0],ey=e[1]-l.centreRadius[1],ez=e[2]-l.centreRadius[2];
@@ -473,9 +477,9 @@ static void LogDustDiagnostics()
         if(d<nearest)nearest=d;
         if(d<l.centreRadius[3])++inside;
     }
-    Sys_Log("dust diag: lobes=%d camera(encode)=%.1f,%.1f,%.1f camera(sampling)=%.1f,%.1f,%.1f mismatch=%.2f nearest_lobe=%.2f lobes_containing_camera=%d",
+    Sys_Log("dust diag: lobes=%d camera(encode)=%.1f,%.1f,%.1f camera(sampling)=%.1f,%.1f,%.1f mismatch=%.2f forward_cos=%.4f (1 = same heading; sign convention unverified, projection not compared) nearest_lobe=%.2f lobes_containing_camera=%d",
         (int)s_pendingDust.size(),e[0],e[1],e[2],s_dustSamplingCamera[0],s_dustSamplingCamera[1],s_dustSamplingCamera[2],
-        std::sqrt(dx*dx+dy*dy+dz*dz),nearest,inside);
+        std::sqrt(dx*dx+dy*dy+dz*dz),cosAngle,nearest,inside);
 }
 extern "C" void Gfx_FlushDustVolume(void)
 {
