@@ -78,7 +78,7 @@ centre is not a car mask: the car is only sharp while it is within focus range a
 Which projection feeds the pass: every back-buffer, untransformed draw that tests and writes depth votes
 with its recovered near/far pair; the pair with the most draws is used and Sys_Log reports the number of
 distinct pairs and the dominant share ("options: DoF projection from depth-writing draws"). If the log shows more than one
-pair (split screen, mirror, sky with its own projection), the linear depth is a candidate, not proven for the whole frame.
+pair (split screen, mirror, sky with its own projection), the pass falls back to the old raw-depth rule for that frame (so DoF looks as before the fix). With one pair it is a candidate, not proven. Votes reset every rendered frame.
 The log-scale focus is a new mapping chosen here (no original intended focal distance was recovered): dof_focus/dof_range now
 mean positions on a near-to-far log scale instead of raw hardware depth, so existing saved values give a different look
 when depth_of_field is on. Math checks: depth/z round-trip for near 0.1/0.5/1.0 with far 150/400; dof_focus 50 lands at

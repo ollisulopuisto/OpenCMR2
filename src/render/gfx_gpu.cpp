@@ -306,14 +306,15 @@ struct Executor : GfxExecutor {
         int best = -1, distinct = 0;
         for (int i = 0; i < 4; ++i) { if (projVotes[i].count) distinct++; if (best < 0 || projVotes[i].count > projVotes[best].count) best = i; }
         if (best >= 0 && projVotes[best].count) {
-            *outNear = projVotes[best].n; *outFar = projVotes[best].f;
+            // More than one near/far pair among depth-writing draws: the whole-frame depth is ambiguous, so
+            // keep the old raw-depth rule (near = far = 0 tells dof.frag to use it) instead of guessing.
+            if (distinct == 1) { *outNear = projVotes[best].n; *outFar = projVotes[best].f; }
             static int lastDistinct = -1;
             if (distinct != lastDistinct) {
                 lastDistinct = distinct;
-                Sys_Log("options: DoF projection from depth-writing draws: %d distinct near/far pair(s), dominant near %.3f far %.1f (%d of %d draws); ambiguity means the linear depth is a candidate, not proven", distinct, *outNear, *outFar, projVotes[best].count, projVoteTotal);
+                Sys_Log("options: DoF projection from depth-writing draws: %d distinct near/far pair(s), dominant near %.3f far %.1f (%d of %d draws); %s", distinct, projVotes[best].n, projVotes[best].f, projVotes[best].count, projVoteTotal, distinct == 1 ? "linear depth candidate in use" : "ambiguous: old raw-depth rule used");
             }
         }
-        memset(projVotes, 0, sizeof(projVotes)); projVoteTotal = 0;
     }
     SDL_GPUTexture *dofBuf1 = nullptr;  // depth-aware disk blur output
     SDL_GPUTexture *godRaysBuf1 = nullptr; // normalized light-shaft output
@@ -2169,6 +2170,7 @@ struct Executor : GfxExecutor {
                 }
             }
 
+        memset(projVotes, 0, sizeof(projVotes)); projVoteTotal = 0; // votes are per rendered frame, never carried over
         size_t worldEnd=frame.commands.size();unsigned boundaries=0;bool raceWorld=false;
         for(size_t i=0;i<frame.commands.size();++i)if(frame.commands[i].type==GFX_CMD_WORLD_END){worldEnd=i;raceWorld=frame.commands[i].raceWorld;++boundaries;}
         // Per-view history is not implemented. Multi-view/UI-only frames skip
