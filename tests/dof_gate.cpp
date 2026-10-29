@@ -19,5 +19,9 @@ int main()
     g = Dof_Gate(true, 30, 30, 0.0f, 0.2f, true);  CHECK(g.runPass && g.tunnel);
     // no sampled depth: no pass.
     g = Dof_Gate(true, 30, 30, 1.0f, 1.0f, false); CHECK(!g.runPass && g.reason == 2);
+    // Not a race frame (setup/repair screen car preview, menus): never runs, whatever the settings or the last speed.
+    g = Dof_Gate(true, 30, 100, 1.0f, 1.0f, true, false); CHECK(!g.runPass && !g.depthBlur && !g.tunnel && g.reason == 6);
+    g = Dof_Gate(false, 30, 0, 1.0f, 1.0f, true, false);  CHECK(!g.runPass && g.reason == 6);
+    g = Dof_Gate(true, 30, 100, 1.0f, 1.0f, true, true);  CHECK(g.runPass);   // a race frame is unchanged
     std::puts("dof_gate ok");
 }

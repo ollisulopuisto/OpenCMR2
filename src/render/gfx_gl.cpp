@@ -279,6 +279,7 @@ struct Executor : GfxExecutor {
     }
 
     bool motionOn = false, bloomOn = false, dofOn = false, raysOn = false;
+    bool effectsRaceFrame = true; // set per frame before ApplyEffects: depth blur is a race effect, never run on menu/preview frames
     int motionMix = 0, bloomAmount = 0, dofFocus = 50, dofRange = 30, dofBlur = 0, raysAmount = 0;
     float grade[4] = {0, 0, 1, 1}, grime[4] = {};
     float sunX = 0, sunY = 0; bool sunVisible = false;
@@ -1288,6 +1289,7 @@ struct Executor : GfxExecutor {
                     cloudsValid=c.raceWorld && Clouds_Enabled()&&Sys_GetOption("video.volumetric_clouds",0)!=0 && CloudUniforms_Build(c,frame.states[c.state],backWidth,backHeight,cloudUniforms);
                     if(c.raceWorld)RenderWeather();
                     else {weather.clear();weatherTicks=0;weatherCarry=0;historyValid=false;}
+                    effectsRaceFrame=c.raceWorld;
                     GLuint output=ApplyEffects();
                     if(!c.raceWorld)historyValid=false;
                     if(output!=backFramebuffer){
