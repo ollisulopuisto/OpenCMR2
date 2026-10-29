@@ -8326,18 +8326,20 @@ void View_RefreshForTuning(void)
     CameraState_Copy(VIEW_STATE(index), pActive);
 }
 
-// OpenCMR2 debug overlay: where the camera really is this frame, measured from the camera state and the car, in world units (16.16 / 65536). dist is the
-// straight distance to the car origin, height the camera's y above it, along the car's forward axis is not used (the axis is not named in source).
-void View_GetCameraCarOffset(unsigned view, double *dist, double *height)
+// OpenCMR2 debug overlay: camera position relative to the car, measured this frame, in world units, along the car body matrix axes
+// (forward is the matrix forward axis, + ahead of the car, - behind). dist is the straight distance.
+void View_GetCameraCarOffset(unsigned view, double *dist, double *fwd, double *side, double *up)
 {
     BYTE v = (BYTE)(view & 1);
     Car *car = Car_Get(v);
-    if (!car) { *dist = 0; *height = 0; return; }
-    double dx = (double)(VIEW_STATE(v)->matrix.position.x - car->position.x) / 65536.0;
-    double dy = (double)(VIEW_STATE(v)->matrix.position.y - car->position.y) / 65536.0;
-    double dz = (double)(VIEW_STATE(v)->matrix.position.z - car->position.z) / 65536.0;
-    *dist = sqrt(dx * dx + dy * dy + dz * dz);
-    *height = dy;
+    *dist = *fwd = *side = *up = 0;
+    if (!car || !car->pWorld) return;
+    double d[3] = {(double)(VIEW_STATE(v)->matrix.position.x - car->position.x) / 65536.0, (double)(VIEW_STATE(v)->matrix.position.y - car->position.y) / 65536.0, (double)(VIEW_STATE(v)->matrix.position.z - car->position.z) / 65536.0};
+    const FixVector *f = &car->pWorld->forward, *r = &car->pWorld->right, *u = &car->pWorld->up;
+    *dist = sqrt(d[0]*d[0] + d[1]*d[1] + d[2]*d[2]);
+    *fwd = (d[0]*f->x + d[1]*f->y + d[2]*f->z) / 65536.0;
+    *side = (d[0]*r->x + d[1]*r->y + d[2]*r->z) / 65536.0;
+    *up = (d[0]*u->x + d[1]*u->y + d[2]*u->z) / 65536.0;
 }
 
 // Resets the cameras of a view to their records (after a restart).
