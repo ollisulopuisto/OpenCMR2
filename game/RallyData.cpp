@@ -6516,13 +6516,13 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             // Effects light up green only while contributing: encoded this frame, with a nonzero amount.
             BYTE lit[4]={110,255,140,255},dim[4]={150,160,170,255};
             GfxDofStatus dof=Gfx_GetDofStatus();
-            const char *dofWhy[]={"unknown","depth_of_field off","no sampled depth","range or blur is 0","pass unavailable","encoded"};
+            const char *dofWhy[]={"unknown","depth_of_field off","no sampled depth","range or blur is 0","pass unavailable","encoded","not a race frame"};
             int tv=Sys_GetOption("video.tunnel_vision",100);
             bool gl=Gfx_IsOpenGL()!=0,dofOn=!gl&&dof.reason==5;
             if(gl)snprintf(text,sizeof text,"DoF pass: n/a (OpenGL backend)");
             else if(dofOn&&dof.blur<=0.0f)snprintf(text,sizeof text,"DoF pass: encoded for tunnel vision only (depth blur 0)");
             else if(dofOn)snprintf(text,sizeof text,"DoF pass: encoded, range %.2f blur %.1f",dof.range,dof.blur);
-            else snprintf(text,sizeof text,"DoF pass: off (%s)",dofWhy[dof.reason>=0&&dof.reason<6?dof.reason:0]);
+            else snprintf(text,sizeof text,"DoF pass: off (%s)",dofWhy[dof.reason>=0&&dof.reason<7?dof.reason:0]);
             line(text,dofOn?lit:dim);
             bool tvOn=dofOn&&tv>0&&dof.smooth>0.02f;
             if(gl)snprintf(text,sizeof text,"Tunnel vision: n/a (OpenGL backend)");

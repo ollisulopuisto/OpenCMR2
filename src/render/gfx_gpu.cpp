@@ -2625,7 +2625,7 @@ struct Executor : GfxExecutor {
         SDL_GPUSampler *linearSampler = Sampler(linearStage);
         SDL_GPUSampler *depthSampler = Sampler(depthStage);
         // Tunnel vision is independent of the depth blur (see render/dof_gate.h): it still runs with DoF off or dof_blur 0.
-        DofGate dofGate = Dof_Gate(dofEnabled, dofFocalRange, dofMaxBlur, speedFocusTarget, speedFocusSmooth, sampledDepth && backDepth);
+        DofGate dofGate = Dof_Gate(dofEnabled, dofFocalRange, dofMaxBlur, speedFocusTarget, speedFocusSmooth, sampledDepth && backDepth, raceWorld);
         dofStatus={dofGate.reason,speedFocusTarget,0.0f,0.0f,0.0f};
         if (dofGate.runPass &&
             dofBuf1 != nullptr && backDepth != nullptr && DofPipeline() != nullptr) {

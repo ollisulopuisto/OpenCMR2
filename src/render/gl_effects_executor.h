@@ -122,7 +122,7 @@ bool EffectPass(int effect, int target, GLuint source, GLuint second, const void
 GLuint ApplyEffects()
 {
     bool active = cloudsValid || spatialAA || bloomOn && bloomAmount > 0 || motionOn && motionMix > 0 ||
-        dofOn && dofRange > 0 && dofBlur > 0 || raysOn && raysAmount > 0 && sunVisible ||
+        effectsRaceFrame && dofOn && dofRange > 0 && dofBlur > 0 || raysOn && raysAmount > 0 && sunVisible ||
         grade[0] || grade[1] || grade[2] != 1 || grade[3] != 1 || grime[0] || grime[1] || grime[2];
     if (!active) { historyValid = false; return backFramebuffer; }
     if (!EffectTargets()) return backFramebuffer;
@@ -181,7 +181,7 @@ GLuint ApplyEffects()
         ForgetEffectState();
     } else historyValid = false;
     if (grime[0] || grime[1] || grime[2]) run(4, 0, grime, sizeof(grime));
-    if (dofOn && dofRange > 0 && dofBlur > 0) {
+    if (effectsRaceFrame && dofOn && dofRange > 0 && dofBlur > 0) {
         float u[4] = {dofFocus / 100.0f, dofRange / 100.0f, dofBlur * 0.04f, 0};
         run(5, backDepth, u, sizeof(u));
     }
