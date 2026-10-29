@@ -777,10 +777,11 @@ void View_GetEffectiveProjection(unsigned int view, int *zoom, int *fovY, int *f
 // Sets the camera projection for the selected player's view.
 // match 66%: below the 90% bar; kept as FUNCTION on purpose so reccmp measures it (see CONVENCIONES)
 // FUNCTION: CMR2 0x00422d40
+int View_SpeedFovZoom(BYTE view, int zoom);
 void View_SetPlayerProjection(unsigned int player)
 {
     BYTE i = (BYTE)player;
-    int zoom = g_viewZooms[i];
+    int zoom = View_SpeedFovZoom(i, g_viewZooms[i]);  // OpenCMR2 speed_fov (visual only; identity when off)
     // PORT (SilentPatchCMR2): the original scales X by resX/resY, which is
     // right only at 4:3 and stretches wider resolutions. (16/9) * (resY/resX)
     // is the same at 4:3 and keeps the vertical view on any other shape.

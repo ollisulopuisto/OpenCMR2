@@ -8382,9 +8382,11 @@ extern BYTE g_droneVariant[8];
 static int g_speedFovShown[2], g_speedFovPct[2];
 // Diagnostics overlay: the effective percent setting and the eased 0..65536 speed ratio of a view.
 void SpeedFov_GetStatus(int view, int *pct, int *shown) { *pct = g_speedFovPct[view & 1]; *shown = g_speedFovShown[view & 1]; }
-static int View_SpeedFovZoom(BYTE view, int zoom)
+// Called by View_SetPlayerProjection once per rendered view (not from the logic step, whose cadence did not track the
+// frame clock: a native run showed the eased value stuck at 13% from 22 to 146 kph). Eases in real time.
+int View_SpeedFovZoom(BYTE view, int zoom)
 {
-    static int lastMs[2];
+    static double lastMs[2];
     int (&shown)[2] = g_speedFovShown;
     int pct = Sys_GetOption("video.speed_fov", 0);
     g_speedFovPct[view & 1] = pct;
@@ -8393,10 +8395,12 @@ static int View_SpeedFovZoom(BYTE view, int zoom)
     if (g_playerCameraMode[view] == 4 && g_droneVariant[view] && Sys_GetOption("video.camera_operator", 0)) return zoom;
     Car *car = Car_Get(view);
     int target = SpeedFov_Target(car ? car->speed : 0);
-    int now = CMain::GetFrameTime();
-    int elapsed = now - lastMs[view];
-    lastMs[view] = now;
-    shown[view] = SpeedFov_Ease(shown[view], target, elapsed);
+    double now = Sys_GetTicksPrecise();
+    int elapsed = lastMs[view] == 0.0 ? 1000 : (int)(now - lastMs[view]);
+    if (elapsed >= 1 || lastMs[view] == 0.0) {   // sub-millisecond repeat calls in one frame leave the state alone
+        lastMs[view] = now;
+        shown[view] = SpeedFov_Ease(shown[view], target, elapsed);
+    }
     return SpeedFov_Zoom(zoom, pct, shown[view]);
 }
 
@@ -8418,7 +8422,7 @@ void View_BlendCameraStates(BYTE view, int t)
     int shake;
 
     CameraState_Interpolate(&state, VIEW_PREV_STATE(view), VIEW_STATE(view), t);
-    g_viewZooms[view] = View_SpeedFovZoom(view, state.zoom);
+    g_viewZooms[view] = state.zoom;
     g_unk0x005391a8[view] = state.field_0x50;
     g_viewNearPlanes[view] = state.nearPlane;
     matrix = state.matrix;
