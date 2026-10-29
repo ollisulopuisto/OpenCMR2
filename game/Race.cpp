@@ -3992,7 +3992,7 @@ void Race_UpdatePauseState(CallbackStateMachine *p, BYTE index)
     // The race logic step (which normally runs the live tuning panel) does not run while paused: tune from here, once per pause tick.
     // Visual settings only; the simulation is not advanced. Panel keys are already filtered out of the keyboard state read above.
     TuningPanel_Update();
-    if (TuningPanel_IsOpen()) View_RefreshForTuning();
+    if (TuningPanel_IsOpen()) { View_RefreshForTuning(); Race_ApplySpeedEffectParams(); }
     Input_TranslatePedalsToMenuKeys();
     pDev = CInput::GetAvailableDeviceRecord(0);
     Input_MergeAssignedJoystickButtons(0, pDev);
@@ -4665,6 +4665,24 @@ void Dash_Interpolate(int t);
 void StageObject_UpdateDebris(int scale);
 void StageObject_InterpolateHeadlightGlows(int t);
 
+// OpenCMR2: hands the speed-driven look settings (tunnel vision, speed streak, vapor trails) to the renderer from the car speed. Visual only.
+// Also called while paused with the tuning panel open, so a changed setting reaches the frozen scene.
+void Race_ApplySpeedEffectParams(void)
+{
+    // OpenCMR2: speed-driven tunnel vision (visual only; reads speed, changes nothing in the sim).
+    {
+        float speedUnits = SpeedFov_HeldRatio((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0)); // hold: overdo test only
+        int strength = Sys_GetOption("video.tunnel_vision", 100); // 0..150, adjustable; 0 = off; above 100 is the experimental overdrive
+        if (strength < 0) strength = 0;
+        if (strength > 150) strength = 150;
+        Gfx_SetSpeedFocus(speedUnits * (float)strength / 100.0f);
+    }
+    // OpenCMR2: speed streak (visual only): directional radial streak, 0 = off (default). Same speed ratio and overdo hold as above.
+    Gfx_SetSpeedStreak(SpeedStreak_Strength((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0), Sys_GetOption("video.speed_streak", 0)));
+    // OpenCMR2: vapor trails (visual only, video.vapor_trails 0/1, default off): same speed ratio and overdo hold; the renderer eases and fades them in.
+    Gfx_SetVaporTrail(SpeedStreak_Strength((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0), Sys_GetOption("video.vapor_trails", 0) != 0 ? 100 : 0));
+}
+
 // Per-frame race update: advances the stage timing, the particle and dash
 // effects and the debris, then refreshes them once the frame gate opens.
 // FUNCTION: CMR2 0x0041d060
@@ -4687,18 +4705,7 @@ void Race_UpdateFrameEffects(int param_1)
         AttractCapture::Tick(StageTiming_GetClockTime(), (BYTE)RallyDataCountryIndex(), (BYTE)RallyDataStageIndex(), pCapture->speed,
                              pCapture->position.x, pCapture->position.y, pCapture->position.z, viewType, drone);
     }
-    // OpenCMR2: speed-driven tunnel vision (visual only; reads speed, changes nothing in the sim).
-    {
-        float speedUnits = SpeedFov_HeldRatio((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0)); // hold: overdo test only
-        int strength = Sys_GetOption("video.tunnel_vision", 100); // 0..150, adjustable; 0 = off; above 100 is the experimental overdrive
-        if (strength < 0) strength = 0;
-        if (strength > 150) strength = 150;
-        Gfx_SetSpeedFocus(speedUnits * (float)strength / 100.0f);
-    }
-    // OpenCMR2: speed streak (visual only): directional radial streak, 0 = off (default). Same speed ratio and overdo hold as above.
-    Gfx_SetSpeedStreak(SpeedStreak_Strength((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0), Sys_GetOption("video.speed_streak", 0)));
-    // OpenCMR2: vapor trails (visual only, video.vapor_trails 0/1, default off): same speed ratio and overdo hold; the renderer eases and fades them in.
-    Gfx_SetVaporTrail(SpeedStreak_Strength((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0), Sys_GetOption("video.vapor_trails", 0) != 0 ? 100 : 0));
+    Race_ApplySpeedEffectParams();
     // OpenCMR2: windscreen dirt accumulates while driving; faster = more dirt.
     if (Sys_GetOption("video.windscreen_dirt", 40) != 0) {
         Car *pPlayer = Car_Get(0);

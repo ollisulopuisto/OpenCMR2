@@ -8379,7 +8379,10 @@ void RallyData_DrawViewEndFrameOverlay(CallbackStateMachine *pKey, int view)
     // never enter this explicit scope.
     extern void StageObject_PrepareVolumetricClouds(void);
     StageObject_PrepareVolumetricClouds();
-    Gfx_SetRaceWorld(CGameInfo::IsInRaceMenuOpen()==0);
+    // OpenCMR2: the in-race (Esc) menu marks the frame as not a race world, which switches every race effect off in the renderer (depth of field,
+    // tunnel vision, speed streak, vapor trails, motion blur, particles, clouds). With the debug tuning panel open they stay on, so the settings can
+    // be seen while paused. The car setup editor keeps its preview as it was.
+    Gfx_SetRaceWorld(CGameInfo::IsInRaceMenuOpen()==0 || (TuningPanel_IsOpen() && InRaceMenu_IsPlayerEditingCarSetup(view)==0));
     Game_DrawSceneViewport(RallyData_GetChallengeRenderState(), g_viewNodes[view], g_viewScreenRect, view, 1);
     Gfx_SetRaceWorld(FALSE);
     RallyData_NotifyAdjacentMenuKeyValue(pKey, view);
