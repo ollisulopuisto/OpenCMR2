@@ -6376,6 +6376,8 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
     if (Graphics_DebugDrawWanted()) {
         if(Sys_GetOption("video.debug_draw",OPENCMR2_DEBUG_DRAW_DEFAULT)==1){
             char text[32];snprintf(text,sizeof text,"FPS %.1f",Graphics_GetFrameRate());BYTE color[4]={240,246,255,255};
+            BYTE background[4]={12,16,22,220};short panel[4]={8,8,128,22};
+            Sprite_FillRect(NULL,panel,background,1);
             Font_DrawTextScaled(1,text,12,12,14,120,color);
         }else{
         // Compact single-view diagnostics: left edge, away from central pace

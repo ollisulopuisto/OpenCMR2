@@ -30,6 +30,8 @@ typedef struct GfxDustLobe { float centreRadius[4]; float colourDensity[4]; } Gf
 BOOL Gfx_DrawDustVolume(const GfxDustLobe *lobes,int count);
 // Encode pending world dust after opaque world/depth, before HUD.
 void Gfx_FlushDustVolume(void);
+// Mark the completed world before queued HUD/menu layers are drawn.
+void Gfx_EndWorldEffects(void);
 
 
 /* Row-vector matrix, Direct3D layout: v' = v * M, translation in _41.._43. */

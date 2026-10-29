@@ -2088,8 +2088,15 @@ struct Executor : GfxExecutor {
                 }
             }
 
-        for (size_t i = 0; i < frame.commands.size(); i++) {
+        size_t worldEnd=frame.commands.size();unsigned boundaries=0;
+        for(size_t i=0;i<frame.commands.size();++i)if(frame.commands[i].type==GFX_CMD_WORLD_END){worldEnd=i;++boundaries;}
+        // Per-view history is not implemented. Multi-view/UI-only frames skip
+        // optional full-screen FX rather than smearing another view's HUD.
+        bool worldEffects=present && boundaries==1;
+        auto drawCommands=[&](size_t first,size_t last) {
+        for (size_t i = first; i < last; i++) {
             const GfxCommand &c = frame.commands[i];
+            if (c.type == GFX_CMD_WORLD_END) continue;
             if (c.type == GFX_CMD_TARGET) {
                 if (pass != NULL) {
                     SDL_EndGPURenderPass(pass);
@@ -2219,8 +2226,10 @@ struct Executor : GfxExecutor {
                 SDL_DrawGPUPrimitives(pass, c.vertexCount, 1, firstVertex, 0);
             }
         }
-        if (pass != NULL)
-            SDL_EndGPURenderPass(pass);
+        if (pass != NULL) { SDL_EndGPURenderPass(pass); pass=nullptr; }
+
+        };
+        drawCommands(0,worldEffects?worldEnd:frame.commands.size());
 
         if (!present) {
             SDL_SubmitGPUCommandBuffer(cmd);
@@ -2230,7 +2239,7 @@ struct Executor : GfxExecutor {
         // OpenCMR2: particles — simulate and render rain/snow into the scene
         // before post-processing, so bloom and motion blur can pick them up.
         bool precipitationEncoded=false;
-        if (particleType != 0 && particleIntensity > 0) {
+        if (worldEffects && particleType != 0 && particleIntensity > 0) {
             uint32_t now = SDL_GetTicks();
             float dt = particleLastTicks == 0 ? 0.0f : (float)(now - particleLastTicks) / 1000.0f;
             particleLastTicks = now;
@@ -2240,44 +2249,15 @@ struct Executor : GfxExecutor {
             precipitationEncoded=RenderParticles(cmd);
         }
 
-        // Read back before the frame is shown (the lens flare test).
-        CollectReadback(readback);
-        bool reading = false;
-        if (readback.requested && readback.width > 0 && readback.height > 0) {
-            int x = std::max(0, std::min(readback.x, backWidth - 1));
-            int y = std::max(0, std::min(readback.y, backHeight - 1));
-            int w = std::min(readback.width, backWidth - x), h = std::min(readback.height, backHeight - y);
-            if ((uint32_t)(w * h * 4) > readbackCapacity) {
-                SDL_ReleaseGPUTransferBuffer(device, readbackBuffer);
-                readbackCapacity = (uint32_t)(w * h * 4);
-                SDL_GPUTransferBufferCreateInfo tbi = { SDL_GPU_TRANSFERBUFFERUSAGE_DOWNLOAD, readbackCapacity, 0 };
-                readbackBuffer = SDL_CreateGPUTransferBuffer(device, &tbi);
-            }
-            SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(cmd);
-            SDL_GPUTextureRegion src = {};
-            src.texture = backColor;
-            src.x = x;
-            src.y = y;
-            src.w = w;
-            src.h = h;
-            src.d = 1;
-            SDL_GPUTextureTransferInfo dst = { readbackBuffer, 0, 0, 0 };
-            SDL_DownloadFromGPUTexture(copy, &src, &dst);
-            SDL_EndGPUCopyPass(copy);
-            readbackWidth = w;
-            readbackHeight = h;
-            readback.requested = false;
-            reading = true;
-        }
-
         // OpenCMR2: bloom (bright-pass extract, separable blur, additive
         // composite) followed by motion blur (previous-frame blend).
         unsigned requested=(particleType&&particleIntensity?128:0)|(Sys_GetOption("video.spatial_aa",0)?1:0)|(bloomEnabled?2:0)|(motionBlurEnabled?4:0)|(dofEnabled?8:0)|(godRaysEnabled?16:0)|((colorGradingTemperature||colorGradingTint||colorGradingSaturation!=100||colorGradingContrast!=100)?32:0)|(shadowType?64:0);
         int metalFXStatus=metalFXSpatial?0:-1;
         unsigned encoded=(shadowEncoded?64:0)|(precipitationEncoded?128:0);
         SDL_GPUTexture *presentSource = backColor;
+        if(worldEffects) {
         // OpenCMR2: AA is not an upscaler or a temporal reconstruction method.
-        // This includes the HUD. Failure falls back to the original scene.
+        // HUD/menu draws follow this world-only chain.
         if (spatialAA) {
             if (fsSpatialAA == nullptr)
                 fsSpatialAA = Shader(SHADER_CODE(spatial_aa_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
@@ -2440,6 +2420,48 @@ struct Executor : GfxExecutor {
                                 uniforms, sizeof(uniforms)))
                 {presentSource = gradingTarget;encoded|=32;}
         }
+
+        } else motionBlurHasPrevious=false;
+        if(worldEffects) {
+            if(presentSource!=backColor){
+                SDL_GPUBlitInfo blit={};blit.source.texture=presentSource;blit.source.w=backWidth;blit.source.h=backHeight;
+                blit.destination.texture=backColor;blit.destination.w=backWidth;blit.destination.h=backHeight;
+                blit.load_op=SDL_GPU_LOADOP_DONT_CARE;blit.filter=SDL_GPU_FILTER_NEAREST;SDL_BlitGPUTexture(cmd,&blit);
+            }
+            presentSource=backColor;
+            bound=PassBindings();vertexUniformState=nullptr;fragmentUniformsSet=false;
+            drawCommands(worldEnd+1,frame.commands.size());
+        }
+        // Read back before the frame is shown (the lens flare test).
+        CollectReadback(readback);
+        bool reading = false;
+        if (readback.requested && readback.width > 0 && readback.height > 0) {
+            int x = std::max(0, std::min(readback.x, backWidth - 1));
+            int y = std::max(0, std::min(readback.y, backHeight - 1));
+            int w = std::min(readback.width, backWidth - x), h = std::min(readback.height, backHeight - y);
+            if ((uint32_t)(w * h * 4) > readbackCapacity) {
+                SDL_ReleaseGPUTransferBuffer(device, readbackBuffer);
+                readbackCapacity = (uint32_t)(w * h * 4);
+                SDL_GPUTransferBufferCreateInfo tbi = { SDL_GPU_TRANSFERBUFFERUSAGE_DOWNLOAD, readbackCapacity, 0 };
+                readbackBuffer = SDL_CreateGPUTransferBuffer(device, &tbi);
+            }
+            SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(cmd);
+            SDL_GPUTextureRegion src = {};
+            src.texture = backColor;
+            src.x = x;
+            src.y = y;
+            src.w = w;
+            src.h = h;
+            src.d = 1;
+            SDL_GPUTextureTransferInfo dst = { readbackBuffer, 0, 0, 0 };
+            SDL_DownloadFromGPUTexture(copy, &src, &dst);
+            SDL_EndGPUCopyPass(copy);
+            readbackWidth = w;
+            readbackHeight = h;
+            readback.requested = false;
+            reading = true;
+        }
+
 
         if (vsync != presentModeVsync) {
             SDL_GPUPresentMode mode = vsync ? SDL_GPU_PRESENTMODE_VSYNC : SDL_GPU_PRESENTMODE_IMMEDIATE;
