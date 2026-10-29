@@ -133,3 +133,14 @@ active keyboard driving uses W, rather than stealing acceleration; explicit save
 choices are retained. Native menu pixels/navigation remain unverified.
 All-track rounding remains source-gated Ballon only until paired source/layout
 and FIN/native validation can extend safely. No arbitrary object animation.
+
+## Driving remapping menu reachability
+
+Claim: fix/driving-bindings-menu. Native report says only Wiper rebind is
+available. Source reproduction: Controls exposes two opaque controller rows;
+the device configuration's sole link to ten existing binding actions is labeled
+Back (localized 0x67). Selecting apparent Back actually enters bindings, so code
+existence was not a usable UI. Make that action explicitly Rebind driving
+controls, label the bindings save action and player rows. Test constructed menu
+links and actual action traversal/capture/save. Native pixels/navigation still
+need owner's check; do not tell them an unverified hidden path is usable.
