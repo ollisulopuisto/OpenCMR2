@@ -6544,7 +6544,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             line(text);
             int sfPct=0,sfShown=0;SpeedFov_GetStatus((int)param2,&sfPct,&sfShown);
             int moteLive=0;unsigned moteDrawn=0;SpeedMote_GetStats(&moteLive,&moteDrawn);
-            snprintf(text,sizeof text,"Speed FOV %d%% (eased speed %d%%) | motes %s stretch %d",sfPct,sfShown*100/65536,Sys_GetOption("video.speed_motes",0)?"on":"off",Sys_GetOption("video.speed_motes_stretch",0));
+            snprintf(text,sizeof text,"Speed FOV %d%% (eased speed %d%%%s) | motes %s stretch %d",sfPct,sfShown*100/65536,Sys_GetOption("video.speed_fov_hold",0)?", HELD at full speed (overdo test)":"",Sys_GetOption("video.speed_motes",0)?"on":"off",Sys_GetOption("video.speed_motes_stretch",0));
             line(text);
             snprintf(text,sizeof text,"Speed motes live %d | queued ok total %u (not pixels)",moteLive,moteDrawn);
             line(text);

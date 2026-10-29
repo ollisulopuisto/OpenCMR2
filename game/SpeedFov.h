@@ -9,6 +9,9 @@ inline int SpeedFov_Target(int carSpeed)
     ratio = ratio < 0.f ? 0.f : ratio > 1.f ? 1.f : ratio;
     return (int)(ratio * 65536.f);
 }
+// Diagnostic hold (video.speed_fov_hold, set only by --test-preset overdo): pretend full speed so the widening can be A/B tested
+// standing still by changing the speed FOV percent. Off = the real speed target.
+inline int SpeedFov_HeldTarget(int target, int hold) { return hold ? 65536 : target; }
 // One easing step toward target (16.16). elapsedMs outside 0..250 (pause, first frame, camera restart) snaps to target.
 inline int SpeedFov_Ease(int shown, int target, int elapsedMs)
 {

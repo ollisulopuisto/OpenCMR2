@@ -8394,7 +8394,7 @@ int View_SpeedFovZoom(BYTE view, int zoom)
     if (pct > 40) pct = 40;
     if (g_playerCameraMode[view] == 4 && g_droneVariant[view] && Sys_GetOption("video.camera_operator", 0)) return zoom;
     Car *car = Car_Get(view);
-    int target = SpeedFov_Target(car ? car->speed : 0);
+    int target = SpeedFov_HeldTarget(SpeedFov_Target(car ? car->speed : 0), Sys_GetOption("video.speed_fov_hold", 0));
     double now = Sys_GetTicksPrecise();
     int elapsed = lastMs[view] == 0.0 ? 1000 : (int)(now - lastMs[view]);
     if (elapsed >= 1 || lastMs[view] == 0.0) {   // sub-millisecond repeat calls in one frame leave the state alone

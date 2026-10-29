@@ -35,7 +35,7 @@ int main(){
   CHECK(run({"t","--speed-fov","41"})&&!e2.empty());CHECK(run({"t","--speed-fov","x"})&&!e2.empty());CHECK(run({"t","--speed-motes-stretch","101"})&&!e2.empty());
   CHECK(run({"t","--speed-motes-amount","301"})&&!e2.empty());CHECK(run({"t","--test-preset","bad"})&&!e2.empty());
   EnhancementOptions p;t=p;CHECK(run({"t","--test-preset","overdo","--speed-fov","5","--effect","motion_blur=off"})&&e2.empty());t.Apply();
-  CHECK(t.overrides["video.speed_fov"]==5&&t.overrides["video.motion_blur"]==0&&t.overrides["video.speed_motes"]==1&&t.overrides["video.speed_motes_stretch"]==100&&t.overrides["video.dof_blur"]==100&&t.overrides["video.speed_motes_amount"]==300&&t.overrides["video.dof_blur_max_px"]==16);
+  CHECK(t.overrides["video.speed_fov"]==5&&t.overrides["video.speed_fov_hold"]==1&&t.overrides["video.motion_blur"]==0&&t.overrides["video.speed_motes"]==1&&t.overrides["video.speed_motes_stretch"]==100&&t.overrides["video.dof_blur"]==100&&t.overrides["video.speed_motes_amount"]==300&&t.overrides["video.dof_blur_max_px"]==16);
   CHECK(run({"t","--speed-motes-size","250"})&&e2.empty()&&t.overrides["video.speed_motes_size"]==250);CHECK(run({"t","--speed-motes-size","49"})&&!e2.empty());CHECK(run({"t","--speed-motes-size","801"})&&!e2.empty());
   CHECK(run({"t","--dof-blur-max-px","8"})&&e2.empty()&&t.overrides["video.dof_blur_max_px"]==8);CHECK(run({"t","--dof-blur-max-px","0"})&&!e2.empty());CHECK(run({"t","--dof-blur-max-px","41"})&&!e2.empty());
   EnhancementOptions q;t=q;CHECK(run({"t","--effect","bloom=on"})&&e2.empty());t.Apply();CHECK(!t.overrides.count("video.speed_fov")&&!t.overrides.count("video.dof_blur"));}

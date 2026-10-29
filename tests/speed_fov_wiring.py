@@ -8,4 +8,5 @@ assert "View_SpeedFovZoom(i, g_viewZooms[i])" in m.group(0), "projection must ap
 b = re.search(r"void View_BlendCameraStates\(.*?\n}\n", car, re.S); assert b
 assert "View_SpeedFovZoom" not in b.group(0), "camera blend must not apply speed fov (stale cadence)"
 assert "Sys_GetTicksPrecise" in re.search(r"int View_SpeedFovZoom\(.*?\n}\n", car, re.S).group(0), "easing must use the real-time clock"
+assert "g_appliedFovSetting = fov;" in fp and "g_appliedFovSetting ? g_appliedFovSetting" in fp, "overlay must show the applied cached video.fov"
 print("speed fov wiring ok")
