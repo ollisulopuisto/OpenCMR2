@@ -14,6 +14,7 @@
 #include <filesystem>
 #include <fstream>
 #include <chrono>
+#include <string>
 extern int Collision_TestCarAgainstSectorObjects(Car *);
 extern int Collision_DoSpheresOverlap(int,int,int*,int*);
 extern void Scene_InitFixedMathTables();
