@@ -1811,6 +1811,7 @@ void SpeedMotes_Step(int step16_16)
     float ratio = car->speed / 65536.f / 1.5f; // 1.0 is the speed the tunnel-vision ramp calls full
     if (ratio < 0.4f) return;
     if (ratio > 1.f) ratio = 1.f;
+    SpeedMote_SetRatio(ratio);
     int amount = Sys_GetOption("video.speed_motes_amount", 100);
     if (amount < 0) amount = 0;
     if (amount > 300) amount = 300;

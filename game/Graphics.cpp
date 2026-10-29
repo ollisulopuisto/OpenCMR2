@@ -5564,6 +5564,29 @@ void Particle_Interpolate(int t)
 //   pb-9    size         pb-5    field0x50   pb-2    type0x53   pb-1  field0x54
 //   pb+2    active       pb+0    field0x55   pb+4..6 colour      pb+0xb field0x60
 // match 40%: below the 90% bar; kept as FUNCTION on purpose so reccmp measures it (see CONVENCIONES)
+// Optional streak look for the speed motes (video.speed_motes_stretch, 0 to 100, default 0 = round dots). The billboard
+// quad is stretched along the screen-space direction from the view axis to the mote, which is the direction a
+// world-fixed point moves across the screen as the car approaches it, and rotated to match (BillboardDef rotation is a
+// 12-bit angle about the view axis, see Billboard_Draw). Nearby motes fade out so a streak never fills the screen.
+// Visual only: reads the camera node and the mote's own position.
+static float g_speedMoteRatio = 0.f;
+void SpeedMote_ApplyStreak(BillboardDef *def, SceneNode *camera)
+{
+    int stretch = Sys_GetOption("video.speed_motes_stretch", 0);
+    if (stretch <= 0 || !camera) return;
+    const FixMatrix &m = camera->world;
+    float rx = def->pos.x - m.position.x, ry = def->pos.y - m.position.y, rz = def->pos.z - m.position.z;
+    const float scale = 1.f / (65536.f * 65536.f); // both vectors are 16.16
+    float right = (rx * m.right.x + ry * m.right.y + rz * m.right.z) * scale;
+    float up = (rx * m.up.x + ry * m.up.y + rz * m.up.z) * scale;
+    float depth = (rx * m.forward.x + ry * m.forward.y + rz * m.forward.z) * scale;
+    int angle; float lengthMul, alphaMul;
+    if (!SpeedMote_StreakParams(right, up, depth, g_speedMoteRatio, stretch, &angle, &lengthMul, &alphaMul)) return;
+    def->field_0x20 = (short)angle;
+    def->left = (int)(def->left * lengthMul);
+    def->right = (int)(def->right * lengthMul);
+    def->a = (BYTE)(def->a * alphaMul);
+}
 #define DRAW_PARTICLE (*(Particle *)(pb - offsetof(Particle, field0x55)))
 // FUNCTION: CMR2 0x004b0480
 static unsigned g_speedMotesDrawn=0,g_speedMotesSpawned=0,g_speedMotesBudgetSkipped=0,g_speedMotesNoGround=0;
@@ -5651,6 +5674,8 @@ void Particle_DrawAll(SceneNode *pCamera, BYTE view)
             def.a = DRAW_PARTICLE.type0x53;
             if(pType==&g_particleTypes[DUST_PLUME_TYPE])def.a=(BYTE)Effect_Scale(def.a,Sys_GetOption("video.dust_amount",100));
             def.shade = DRAW_PARTICLE.field0x54;
+            if (g_particleTypeCount > SPEED_MOTE_TYPE && pType == &g_particleTypes[SPEED_MOTE_TYPE])
+                SpeedMote_ApplyStreak(&def, pCamera);
             Billboard_Add(&def, texture);
             if (g_particleTypeCount > SPEED_MOTE_TYPE && pType == &g_particleTypes[SPEED_MOTE_TYPE]) ++g_speedMotesDrawn;
         }
@@ -7054,6 +7079,8 @@ void SpeedMote_Update(Particle *p, ParticleType *, SceneNode *)
 {
     SpeedMote_Step(*p);
 }
+
+void SpeedMote_SetRatio(float ratio) { g_speedMoteRatio = ratio; }
 
 void SpeedMote_Spawn(FixVector *world)
 {
