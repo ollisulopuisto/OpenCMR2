@@ -1,3 +1,4 @@
+#include "shadow_caster.h"
 // The SDL_GPU executor: runs a recorded frame (gfx_core.cpp) with one set of
 // shaders that emulate Direct3D 7's fixed-function pipeline.
 
@@ -498,7 +499,7 @@ struct Executor : GfxExecutor {
         vsParticle = Shader(SHADER_CODE(particle_vert), SDL_GPU_SHADERSTAGE_VERTEX, 0, 1);
         fsParticle = Shader(SHADER_CODE(particle_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
         vsShadow = Shader(SHADER_CODE(shadow_vert), SDL_GPU_SHADERSTAGE_VERTEX, 0, 1);
-        fsShadow = Shader(SHADER_CODE(shadow_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 0, 1);
+        fsShadow = Shader(SHADER_CODE(shadow_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
         if (!vs3d || !vsTL || !fs || !vsClear || !fsClear || !vsMotionBlur || !fsMotionBlur ||
             !fsBrightPass || !fsBlur || !fsComposite || !fsLensGrime || !fsDoF || !fsGodRays ||
             !fsColorGrading || !vsParticle || !fsParticle || !vsShadow || !fsShadow)
@@ -1296,11 +1297,11 @@ struct Executor : GfxExecutor {
         info.fragment_shader = fsShadow;
         SDL_GPUVertexBufferDescription vb = {};
         vb.slot = 0; vb.pitch = sizeof(GfxVertex); vb.input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
-        SDL_GPUVertexAttribute position = { 0, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3, 0 };
+        SDL_GPUVertexAttribute attributes[3] = {{0,0,SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,0},{2,0,SDL_GPU_VERTEXELEMENTFORMAT_UBYTE4_NORM,24},{4,0,SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,32}};
         info.vertex_input_state.vertex_buffer_descriptions = &vb;
         info.vertex_input_state.num_vertex_buffers = 1;
-        info.vertex_input_state.vertex_attributes = &position;
-        info.vertex_input_state.num_vertex_attributes = 1;
+        info.vertex_input_state.vertex_attributes = attributes;
+        info.vertex_input_state.num_vertex_attributes = 3;
         info.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
         info.rasterizer_state.fill_mode = SDL_GPU_FILLMODE_FILL;
         info.rasterizer_state.cull_mode = SDL_GPU_CULLMODE_NONE;
@@ -2060,9 +2061,18 @@ struct Executor : GfxExecutor {
                         if (sc.type != GFX_CMD_DRAW || sc.transformed || shadowTarget != NULL ||
                             sc.primitive != GFX_TRIANGLELIST) continue;
                         const GfxDrawState &ss = frame.states[sc.state];
-                        // Until coverage-aware shadow materials exist, avoid solid tree/billboard
-                        // rectangles and transparent effects. Original game shadows remain.
-                        if (!ss.depthTest || !ss.depthWrite || ss.alphaBlend || ss.alphaTest) continue;
+                        // Reproduce only supported texture-alpha cutouts, never solid
+                        // billboard rectangles or translucent glass/smoke.
+                        if (!Gfx_ShadowCaster(ss)) continue;
+                        bool cutout=Gfx_CutoutShadow(ss);
+                        GpuTexture *coverage=cutout?Ensure(Gfx_DrawnTexture(ss.stages[0].texture)):nullptr;
+                        if(cutout&&!coverage)continue;
+                        GfxStageState sample=ss.stages[0];
+                        SDL_GPUTextureSamplerBinding binding={cutout?coverage->texture:white2D,Sampler(sample)};
+                        if(!binding.texture||!binding.sampler)continue;
+                        SDL_BindGPUFragmentSamplers(spass,0,&binding,1);
+                        float settings[4]={cutout?1.f:0.f,(ss.alphaRef&255)/255.f,ss.alphaFunc==GFX_CMP_GREATEREQUAL?1.f:0.f,ss.stages[0].alphaOp==GFX_TOP_MODULATE?1.f:0.f};
+                        SDL_PushGPUFragmentUniformData(cmd,0,settings,sizeof(settings));
                         if (svUniformState == NULL || memcmp(&ss.world, &svUniformState->world, sizeof(ss.world)) != 0) {
                             VertexUniforms vu;
                             memset(&vu, 0, sizeof(vu));

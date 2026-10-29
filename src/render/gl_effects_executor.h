@@ -180,7 +180,15 @@ void PrepareShadow()
 {
     shadowReady = false;
     if (!shadowType) return;
-    if (!shadowProgram) shadowProgram = Link(g_shadow_vert_glsl, g_shadow_frag_glsl);
+    if (!shadowProgram) {
+        shadowProgram = Link(g_shadow_vert_glsl, g_shadow_frag_glsl);
+        if(shadowProgram){
+            gl.UseProgram(shadowProgram);
+            gl.Uniform1i(gl.GetUniformLocation(shadowProgram,"coverage"),0);
+            GLuint block=gl.GetUniformBlockIndex(shadowProgram,"ShadowCoverage");
+            if(block!=GL_INVALID_INDEX)gl.UniformBlockBinding(shadowProgram,block,FRAGMENT_BLOCK);
+        }
+    }
     if (!shadowProgram) { ForgetEffectState(); return; }
     if (!shadowFbo) {
         gl.ActiveTexture(GL_TEXTURE0);
@@ -212,8 +220,17 @@ void RenderShadow(const GfxFrame &frame)
         if (c.type == GFX_CMD_TARGET) { target = c.target; continue; }
         if (c.type != GFX_CMD_DRAW || c.transformed || target || c.primitive != GFX_TRIANGLELIST) continue;
         const GfxDrawState &state = frame.states[c.state];
-        // Preserve SDL_GPU exclusions: no opaque billboard shadows or weather.
-        if (!state.depthTest || !state.depthWrite || state.alphaBlend || state.alphaTest) continue;
+        if (!Gfx_ShadowCaster(state)) continue;
+        bool cutout=Gfx_CutoutShadow(state);
+        GlTexture *coverage=cutout?Ensure(Gfx_DrawnTexture(state.stages[0].texture)):nullptr;
+        if(cutout&&!coverage)continue;
+        gl.ActiveTexture(GL_TEXTURE0);gl.BindTexture(GL_TEXTURE_2D,cutout?coverage->texture:white2D);
+        GfxStageState sample=state.stages[0];
+        gl.BindSampler(0,Sampler(sample));
+        if(!effectUbo)gl.GenBuffers(1,&effectUbo);
+        float settings[4]={cutout?1.f:0.f,(state.alphaRef&255)/255.f,state.alphaFunc==GFX_CMP_GREATEREQUAL?1.f:0.f,state.stages[0].alphaOp==GFX_TOP_MODULATE?1.f:0.f};
+        gl.BindBuffer(GL_UNIFORM_BUFFER,effectUbo);gl.BufferData(GL_UNIFORM_BUFFER,sizeof(settings),settings,GL_STREAM_DRAW);
+        gl.BindBufferRange(GL_UNIFORM_BUFFER,FRAGMENT_BLOCK,effectUbo,0,sizeof(settings));
         gl.BindBufferRange(GL_UNIFORM_BUFFER, VERTEX_BLOCK, uniformBuffer,
             drawUniforms[i].vertexOffset, sizeof(VertexUniforms));
         BindVertices(c.buffer ? ((GlVertexBuffer *)c.buffer->gpu)->buffer : vertexBuffer, false);
