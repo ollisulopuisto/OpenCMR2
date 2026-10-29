@@ -32,7 +32,7 @@ is high enough (above about 0.4 * 1.5 * 65536).
 
 The first prototype was not identifiable in native screenshots. From source: it spawned 30 to 70 units ahead with a 40-step life, so at speed most motes faded out before the car reached them, and the billboard was about 0.28 units wide (a few pixels at that distance) with at most 35 percent alpha. This revision places each mote by arrival time (18 to 36 steps, life 48), makes the billboard about 0.5 units wide, and raises peak alpha to about 59 percent. These are guesses chosen from that arithmetic, not measured in game.
 
-Diagnostics: while motes are on and the car is above the speed threshold, about every 5 s of simulation the game logs `speed motes: speed_ratio=... spawned=... budget_skipped=... no_ground_height=... live=... billboards_submitted=...` (spawned, skipped and submitted counts are cumulative). `billboards_submitted` counts draw submissions, not visible pixels. Visibility, placement and performance are still unverified natively. The motes are camera-facing billboards of the soft smoke texture, not stretched streaks.
+Diagnostics: while motes are on and the car is above the speed threshold, about every 5 s of simulation the game logs `speed motes: speed_ratio=... spawned=... budget_skipped=... no_ground_height=... live=... billboards_queued=... refused_by_queue=...` plus `billboard queue: peak_depth=N of 800 refused_disabled=N refused_full=N` (spawned, skipped and queued counts are cumulative). `billboards_queued` counts quads that Billboard_Add accepted into the 800-entry per-frame queue, not GPU draws or visible pixels; `refused_by_queue` counts motes it refused (queue disabled or full). Visibility, placement and performance are still unverified natively. The motes are camera-facing billboards of the soft smoke texture, not stretched streaks.
 
 ## Optional streak look (video.speed_motes_stretch)
 
@@ -42,7 +42,7 @@ Diagnostics: while motes are on and the car is above the speed threshold, about 
 
 Per-launch flags (they win over opencmr2.ini and are never saved): `--speed-fov 0..40`, `--speed-motes-stretch 0..100`, `--speed-motes-amount 0..300`, plus `--effect speed_motes=on`.
 `--test-preset overdo` is an exaggerated diagnostic look (motes on at 300% with full streaks, speed FOV 40, DoF on with the largest blur, tunnel vision 100, motion blur on at 60). Any explicit flag overrides a preset value. It is for finding out what the effects do, not a recommended setting, and nothing is saved.
-The startup log line `effective speed-feel settings: ...` shows the values the game actually uses. The debug overlay adds `Speed FOV N% (eased speed M%)`, mote state, and `Speed motes live N | drawn total N` so a missing effect can be told apart from a setting that never reached the game. Native look is unverified.
+The startup log line `effective speed-feel settings: ...` shows the values the game actually uses. The debug overlay adds `Speed FOV N% (eased speed M%)`, mote state, and `Speed motes live N | queued ok total N (not pixels)` so a missing effect can be told apart from a setting that never reached the game. Native look is unverified.
 
 ## Live tuning panel (in a race)
 
