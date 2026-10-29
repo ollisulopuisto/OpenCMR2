@@ -6090,15 +6090,15 @@ void TuningPanel_Draw(void)
     Sprite_FillRect(NULL, panel, background, 1);
     char text[96];
     int tx = panel[0] + layout.pad, ty = panel[1] + layout.pad, row = 0;
-    snprintf(text, sizeof text, "TUNING (keys 1-7, F10 closes)");
+    snprintf(text, sizeof text, "TUNING  1/2 row  3/4 value");
     Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
     for (int i = 0; i < count; ++i) {
         snprintf(text, sizeof text, "%s %s: %d", i == g_tuneRow ? ">" : " ", rows[i].label, Sys_GetOption(rows[i].key, rows[i].fallback));
         Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, i == g_tuneRow ? lit : colour);
     }
-    snprintf(text, sizeof text, "5 row reset  6 all reset  7 save INI");
+    snprintf(text, sizeof text, "5 row reset  6 all reset  7 save");
     Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
-    snprintf(text, sizeof text, g_tuneSavedStamp && g_tuneFrame - g_tuneSavedStamp < 100 ? "saved to opencmr2.ini" : "per launch until saved");
+    snprintf(text, sizeof text, g_tuneSavedStamp && g_tuneFrame - g_tuneSavedStamp < 100 ? "saved to opencmr2.ini; F10 closes" : "F10 closes; per launch until saved");
     Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
 }
 
