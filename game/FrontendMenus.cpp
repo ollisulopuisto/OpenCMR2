@@ -2601,7 +2601,7 @@ void FrontendMenu_BuildAdvancedGraphicsOptions(void)
     // (FPS plus draw stats) and texture filtering (anisotropy). Plain
     // opencmr2.ini settings, not save-game bits.
     Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, DRAW_DISTANCE_COUNT, 0, 0, 0, 0, 0xb);
-    Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0xc);
+    Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 3, 0, 0, 0, 0, 0xc);
     Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, ANISOTROPY_LEVEL_COUNT, 0, 0, 0, 0, 0xd);
     // OpenCMR2: breakable trees — a hard hit smashes a tree, a gentle tap
     // still stops the car ([video] video.tree_break).
@@ -2610,7 +2610,7 @@ void FrontendMenu_BuildAdvancedGraphicsOptions(void)
     // human-operator camera shake ([video] video.camera_effects).
     Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x10);
     Menu_GetItem(&g_menu0x0081cd78, 0xb)->text = (char *)"Draw Distance";
-    Menu_GetItem(&g_menu0x0081cd78, 0xc)->text = (char *)"Debug HUD";
+    Menu_GetItem(&g_menu0x0081cd78, 0xc)->text = (char *)"OSD";
     Menu_GetItem(&g_menu0x0081cd78, 0xd)->text = (char *)"Texture Filtering";
     Menu_GetItem(&g_menu0x0081cd78, 0xf)->text = (char *)"Breakable Trees";
     Menu_GetItem(&g_menu0x0081cd78, 0x10)->text = (char *)"Camera Effects";

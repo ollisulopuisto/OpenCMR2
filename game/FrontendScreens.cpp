@@ -709,21 +709,11 @@ void FrontendMenu_DrawAdvancedGraphicsOptions(Menu *pMenu)
             Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
                           (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
             break;
-        case 0xc:
-            // OpenCMR2: the debug HUD (FPS and draw stats), Off/On as the
-            // other toggles draw theirs.
-            strcpy(CFrontend::m_stringDest, pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
-            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
-                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
-            for (j = 0; j < pItem->min; j++) {
-                x += (int)(g_pGraphics->resX * 10) / 640 +
-                     Font_GetTextWidth(1, (BYTE *)CFrontend::m_stringDest);
-                strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(j == 0 ? 0x133 : 0x134));
-                Font_DrawText(1, CFrontend::m_stringDest, x,
-                              (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1],
-                              (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
-            }
-            break;
+        case 0xc:{
+            static const char* labels[]={"Off","FPS","Detail"};
+            sprintf(CFrontend::m_stringDest,"OSD < %s >",labels[pItem->max<3?pItem->max:2]);
+            Font_DrawText(1,CFrontend::m_stringDest,x,(int)(g_pGraphics->resY*24)/480+g_frontendDrawRect[1],(int*)pColour,0x11);break;
+        }
         case 0xd: {
             // OpenCMR2: texture filtering (anisotropy), the level chosen
             // highlighted among the steps offered.
@@ -4061,7 +4051,7 @@ void FrontendMenu_EnterAdvancedGraphicsOptions(Menu *pMenu, int param)
     // OpenCMR2: initialise the new rows from the settings, before the preview
     // mode's early return below.
     Menu_GetItem(pMenu, 0xb)->max = DrawDistance_PercentToIndex(Sys_GetOption("video.draw_distance", 100));
-    Menu_GetItem(pMenu, 0xc)->max = Sys_GetOption("video.debug_draw", OPENCMR2_DEBUG_DRAW_DEFAULT) != 0 ? 1 : 0;
+    Menu_GetItem(pMenu, 0xc)->max = Sys_GetOption("video.debug_draw", OPENCMR2_DEBUG_DRAW_DEFAULT) < 0 ? 0 : Sys_GetOption("video.debug_draw", OPENCMR2_DEBUG_DRAW_DEFAULT)>2?2:Sys_GetOption("video.debug_draw", OPENCMR2_DEBUG_DRAW_DEFAULT);
     Menu_GetItem(pMenu, 0xd)->max = Anisotropy_LevelToIndex(Sys_GetOption("video.anisotropy", 8));
     // OpenCMR2: breakable trees default on; off restores solid scenery.
     Menu_GetItem(pMenu, 0xf)->max = Sys_GetOption("video.tree_break", 1) != 0 ? 1 : 0;

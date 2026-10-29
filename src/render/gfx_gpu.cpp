@@ -1512,13 +1512,13 @@ struct Executor : GfxExecutor {
         particleCount = count;
     }
 
-    void RenderParticles(SDL_GPUCommandBuffer *cmd)
+    bool RenderParticles(SDL_GPUCommandBuffer *cmd)
     {
         if (particleType == 0 || particleCount == 0)
-            return;
+            return false;
         SDL_GPUGraphicsPipeline *pipeline = ParticlePipeline();
         SDL_GPUSampler *sampler = Sampler(GfxStageState());
-        if (!cmd || !backColor || !pipeline || !white2D || !sampler) return;
+        if (!cmd || !backColor || !pipeline || !white2D || !sampler) return false;
         uint32_t vertexBytes = (uint32_t)(particleCount * 6 * 20);
         if (vertexBytes > particleVBCapacity) {
             SDL_ReleaseGPUBuffer(device, particleVB);
@@ -1527,12 +1527,12 @@ struct Executor : GfxExecutor {
             particleVB = SDL_CreateGPUBuffer(device, &info);
         }
         if (particleVB == NULL)
-            return;
+            return false;
         SDL_GPUTransferBufferCreateInfo tbi = { SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, vertexBytes, 0 };
         SDL_GPUTransferBuffer *tb = SDL_CreateGPUTransferBuffer(device, &tbi);
-        if (!tb) return;
+        if (!tb) return false;
         uint8_t *map = (uint8_t *)SDL_MapGPUTransferBuffer(device, tb, true);
-        if (!map) { SDL_ReleaseGPUTransferBuffer(device,tb); return; }
+        if (!map) { SDL_ReleaseGPUTransferBuffer(device,tb); return false; }
         uint8_t *write = map;
         for (int i = 0; i < particleCount; i++) {
             const Particle &p = particles[i];
@@ -1549,7 +1549,7 @@ struct Executor : GfxExecutor {
         }
         SDL_UnmapGPUTransferBuffer(device, tb);
         SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(cmd);
-        if (!copy) { SDL_ReleaseGPUTransferBuffer(device,tb); return; }
+        if (!copy) { SDL_ReleaseGPUTransferBuffer(device,tb); return false; }
         SDL_GPUTransferBufferLocation src = { tb, 0 };
         SDL_GPUBufferRegion dst = { particleVB, 0, vertexBytes };
         SDL_UploadToGPUBuffer(copy, &src, &dst, true);
@@ -1557,7 +1557,7 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUTransferBuffer(device, tb);
         SDL_GPURenderPass *pass = Gfx_BeginColourOnlyPass(cmd,backColor,SDL_GPU_LOADOP_LOAD);
         if (pass == NULL)
-            return;
+            return false;
         SDL_BindGPUGraphicsPipeline(pass, pipeline);
         SDL_GPUViewport vp = { 0.0f, 0.0f, (float)backWidth, (float)backHeight, 0.0f, 1.0f };
         SDL_Rect scissor = { 0, 0, backWidth, backHeight };
@@ -1571,6 +1571,7 @@ struct Executor : GfxExecutor {
         SDL_BindGPUFragmentSamplers(pass, 0, bindings, 1);
         SDL_DrawGPUPrimitives(pass, (uint32_t)(particleCount * 6), 1, 0, 0);
         SDL_EndGPURenderPass(pass);
+        return true;
     }
 
     SDL_GPUSampler *Sampler(const GfxStageState &stage)
@@ -2228,6 +2229,7 @@ struct Executor : GfxExecutor {
 
         // OpenCMR2: particles — simulate and render rain/snow into the scene
         // before post-processing, so bloom and motion blur can pick them up.
+        bool precipitationEncoded=false;
         if (particleType != 0 && particleIntensity > 0) {
             uint32_t now = SDL_GetTicks();
             float dt = particleLastTicks == 0 ? 0.0f : (float)(now - particleLastTicks) / 1000.0f;
@@ -2235,7 +2237,7 @@ struct Executor : GfxExecutor {
             if (dt > 0.05f)
                 dt = 0.05f;   // spiral-of-death guard
             UpdateParticles(dt);
-            RenderParticles(cmd);
+            precipitationEncoded=RenderParticles(cmd);
         }
 
         // Read back before the frame is shown (the lens flare test).
@@ -2270,7 +2272,9 @@ struct Executor : GfxExecutor {
 
         // OpenCMR2: bloom (bright-pass extract, separable blur, additive
         // composite) followed by motion blur (previous-frame blend).
-        unsigned encoded=shadowEncoded?64:0;
+        unsigned requested=(particleType&&particleIntensity?128:0)|(Sys_GetOption("video.spatial_aa",0)?1:0)|(bloomEnabled?2:0)|(motionBlurEnabled?4:0)|(dofEnabled?8:0)|(godRaysEnabled?16:0)|((colorGradingTemperature||colorGradingTint||colorGradingSaturation!=100||colorGradingContrast!=100)?32:0)|(shadowType?64:0);
+        int metalFXStatus=metalFXSpatial?0:-1;
+        unsigned encoded=(shadowEncoded?64:0)|(precipitationEncoded?128:0);
         SDL_GPUTexture *presentSource = backColor;
         // OpenCMR2: AA is not an upscaler or a temporal reconstruction method.
         // This includes the HUD. Failure falls back to the original scene.
@@ -2474,6 +2478,7 @@ struct Executor : GfxExecutor {
                 scaled = metalFXBlit(cmd, &blit);
             if (!scaled)
                 SDL_BlitGPUTexture(cmd, &blit);
+            if(metalFXSpatial)metalFXStatus=scaled?1:0;
             if (metalFXSpatial && !metalFXLogged) {
                 Sys_Log("gfx: MetalFX spatial %s (%dx%d -> %dx%d); no FPS claim",
                     scaled ? "encoded" : "fallback", backWidth, backHeight, rect.width, rect.height);
@@ -2500,6 +2505,7 @@ struct Executor : GfxExecutor {
             Sys_Log("effects: SDL_GPU command submission=%s (accepted is not completed/pixel verification)%s",submitted?"accepted":"FAILED",submitted?"":SDL_GetError());
             lastSubmission=submitted;
         }
+        Gfx_SetEffectStatus(requested,encoded,submitted?1:0,metalFXStatus);
         HashFrame();
     }
 

@@ -320,3 +320,14 @@ route rewriting or car physics change. Mirrored bends, drift-opposite-heading,
 loops/finish/missing data and actual runtime matrix wiring covered.89/89Linux
 pass; synthetic projection inspected, native road/vegetation visibility remains
 acceptance gate. Route is coarse and not a full render-geometry visibility solver.
+## Launch choices and runtime effects OSD
+OSD has Off/FPS/Detail choices. FPS remains one line. Detail adds sanitized
+launch choices (trees, crowd, wind, roads, textures, names, car-skin presence and
+CLI effect override count), never absolute paths or raw command line. Requested
+vs encoded states come from previous actual SDL_GPU frame, including precipitation,
+submission acceptance and MetalFX fallback. Encoded does not mean completed pixels.
+Mode/reset clears stale status; unsupported/unwired executor reports unknown.
+Layout width expands for detailed diagnostics, bounded at640/480 and higher.
+Tests cover source-summary privacy, CLI override count, status roundtrip and
+13line glyph bounds. Native font/pixels remain required. GL status joins with
+its separate executor integration, not falsely reported active in this patch.

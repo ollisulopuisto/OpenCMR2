@@ -297,6 +297,10 @@ void Gfx_PresentStretched(BOOL vsync);
 /* OpenCMR2: statistics of the frame last presented (draw calls, vertices,
    indices and triangles), for the in-game debug overlay. [video]
    video.debug_draw enables it. */
+// Previous presented frame: encoded commands, not completed pixels.
+typedef struct GfxEffectStatus {unsigned requested,encoded;int submitted;int metalFX;} GfxEffectStatus;
+void Gfx_SetEffectStatus(unsigned requested,unsigned encoded,int submitted,int metalFX);
+GfxEffectStatus Gfx_GetEffectStatus(void);
 DWORD Gfx_GetFrameDrawCalls(void);
 DWORD Gfx_GetFrameVertices(void);
 DWORD Gfx_GetFrameIndices(void);

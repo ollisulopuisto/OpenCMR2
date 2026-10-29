@@ -48,6 +48,9 @@ int main(){
  std::string aa[]={"test","--data",game.string(),"--user-dir",user.string(),"--effect=spatial_aa=on","--effect","metalfx_spatial=on"};
  char* aaArgs[8];for(int j=0;j<8;j++)aaArgs[j]=aa[j].data();
  SDL_SetEnvironmentVariable(SDL_GetEnvironment(),"SDL_VIDEODRIVER","dummy",true);CHECK(Platform_Init(8,aaArgs));auto gpu=GPUStartupOptions::Read();CHECK(gpu.spatialAA&&gpu.metalFXSpatial);
+ CHECK(std::string(Sys_GetLaunchSummary(2)).find("CLI effects:2")!=std::string::npos);
+ for(int i=0;i<3;i++){std::string summary=Sys_GetLaunchSummary(i);CHECK(summary.find(user.string())==std::string::npos&&summary.find("/tmp/")==std::string::npos);}
+
  CHECK(Platform_GetSettingInt("video.spatial_aa",0)==0&&Platform_GetSettingInt("video.metalfx_spatial",0)==0);Platform_Shutdown();
  CHECK(read(user/"opencmr2.ini")==ini);SDL_SetEnvironmentVariable(SDL_GetEnvironment(),"SDL_VIDEODRIVER","dummy",true);CHECK(Platform_Init(5,av));gpu=GPUStartupOptions::Read();CHECK(!gpu.spatialAA&&!gpu.metalFXSpatial);Platform_Shutdown();
  // Per-launch keys reach real gameplay polling, not persisted records/menu keys.
