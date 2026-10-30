@@ -4,6 +4,12 @@
 // in index order, so the serial path is the fallback and the reference.
 #ifndef OPENCMR2_PARALLELFOR_H
 #define OPENCMR2_PARALLELFOR_H
+// The port's forced -include msvcrt.h maps rand/srand to the MSVC-compatible RNG; libstdc++
+// (32-bit) calls std::rand inside <bits/stl_algo.h>, which the macro breaks. Shield the std headers.
+#pragma push_macro("rand")
+#pragma push_macro("srand")
+#undef rand
+#undef srand
 #include <atomic>
 #include <condition_variable>
 #include <cstddef>
@@ -11,6 +17,8 @@
 #include <mutex>
 #include <thread>
 #include <vector>
+#pragma pop_macro("rand")
+#pragma pop_macro("srand")
 namespace ParallelWork {
 class Pool {
 public:
