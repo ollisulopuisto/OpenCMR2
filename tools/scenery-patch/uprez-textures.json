@@ -4532,6 +4532,844 @@
       "stage": "fra01",
       "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
       "output_sha256": "c7aeb1bae05979979085277536df6031b23c0350f9600e05527a3c2212d366e3"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "ban_bos.dds",
+      "sha256": "8e89690360a5962c392eda0e163ca8b66dacbb64b5ab5437e9cfeb91a30630fc",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_bos-finhit.rgba",
+      "stage": "fin01",
+      "usage": "original finland1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "0c601743a850c6d1f419139d4f3a722ca9e2b87461a0924955c570c4f132cce9"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "ban_bosb.dds",
+      "sha256": "bb29ac721af152d90b8090a55daf721755291632a31b39a8035b4c001e1a9ab7",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_bosb-finhit.rgba",
+      "stage": "fin01",
+      "usage": "original finland1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "3f0ad4d29fdb718b63fe2a07cb5f6836147e572931fab3c666c8fed2d241b3e6"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "ban_cer.dds",
+      "sha256": "b7480a188a5f9b4466a573ce5e30a7aea1cb1f7818049b3723f240f8dd3471a0",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_cer-finhit.rgba",
+      "stage": "fin01",
+      "usage": "original finland1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "36620a457a8e7435ae8d882b0e2b1606e0ae39ccfd7c860e3454aadd89189c0f"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "ban_cmr.dds",
+      "sha256": "c2b8928e21f101d1db72379b827e77b9337ba1d8b6430858e40bcc0d0db8e645",
+      "bytes": 32896,
+      "width": 256,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_cmr-finhit.rgba",
+      "stage": "fin01",
+      "usage": "original finland1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "5537e58e316997d3563f44f67b706452c449a0c2f2ae00d440ac89fe7d9f8178"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "ban_cmrr.dds",
+      "sha256": "ce38ef40545884177fa827e9a178021f702b836651d530bc30e301ff1609edd7",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_cmrr-finhit.rgba",
+      "stage": "fin01",
+      "usage": "original finland1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "09b704f30f88983fa49195c06eb60385acf3c53e73bb93a178c85e8203873123"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "ban_bos.dds",
+      "sha256": "c3c665589bd036b1c11fa58fc05f299f629a82afbedfa256670a61c6ab147701",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_bos-finlot.rgba",
+      "stage": "fin01",
+      "usage": "original finland1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "34fb61ffa9dd85f5cac676b337064efa2c8fb4ed7e0f5d0e1b878c93fbce532f"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "ban_bosb.dds",
+      "sha256": "cac46cae6c40162d70e2998cf18bcbac4d39b3f82fef0e0276b700ce3ef1f43a",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_bosb-finlot.rgba",
+      "stage": "fin01",
+      "usage": "original finland1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "4dd963cc25e0b96063916a650679c1fb04a5a3cf08090cec13933b315dadab85"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "ban_cer.dds",
+      "sha256": "5765341b314dfb14eed88c6443c54d88bb89a3d63189069eb51a782918276bf7",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_cer-finlot.rgba",
+      "stage": "fin01",
+      "usage": "original finland1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "67b46a8c01ae266ffd7325f82acffea00bd628ea418ced41ce283e6ee0971de5"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "ban_cmr.dds",
+      "sha256": "e7eccb76d8a46b326203783372ca618f30f0d2b56c5c179e3f07c11577c99643",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_cmr-finlot.rgba",
+      "stage": "fin01",
+      "usage": "original finland1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "7a73411788e71b5c3f3ba0f3343d5a056034e30a7c62e2125a65c13907f72011"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "ban_cmrr.dds",
+      "sha256": "4e98047e8dc4724d49e1e1665cb9b3612a3ccce3ba46630bc79a18accfe9e11c",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_cmrr-finlot.rgba",
+      "stage": "fin01",
+      "usage": "original finland1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "b7c0fb9c13b60976de2da23e7f012686f84f28488b21df3f8169674c9ec8e54a"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "arm_1a.dds",
+      "sha256": "da4254998b24b1dd3c1fe882168661580685e327028fa4df0f564744e6c23bb4",
+      "bytes": 32896,
+      "width": 256,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "arm_1a-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "248507397dbe4a5751c804be98873bd39f3835ca59c3631bc63468300dd5a403"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "arm_1b.dds",
+      "sha256": "0f67d97fc3beac8669594b91aa1733faab6aaae52f33c4002077789b40583c3c",
+      "bytes": 32896,
+      "width": 256,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "arm_1b-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "d5e20a13e1261b15030bbff11a2b0c4755ec1d7ebc586435a8aca607f7dc922b"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "arm_1c.dds",
+      "sha256": "2486efc5e5ae71181002283fa65b608575aa6a323903aea248ceb40ff735ca82",
+      "bytes": 32896,
+      "width": 256,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "arm_1c-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "2b31736baa7e08f6c3231028692194bc33b619face82a02e3bbe234ece74c303"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "ban_bas.dds",
+      "sha256": "6f5ca08f008c154810bd2b97f0956e538e38b0e72f66251f08466d9875b01e4c",
+      "bytes": 32896,
+      "width": 256,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_bas-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "a4de37e5882e8e9ccaf5fc595fae0233d360b204182c618f40799837b4cb74f0"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "ban_bla.dds",
+      "sha256": "ffb16e0ff60f6efd70437525557c4f0cd7a9f8dda0280898fa28d40bf826a521",
+      "bytes": 32896,
+      "width": 256,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_bla-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "5b9537bedf5d801ff7e7e20df69472a02e0e6889137537190e85b5ae40bfd8a5"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "ban_bosb.dds",
+      "sha256": "bb29ac721af152d90b8090a55daf721755291632a31b39a8035b4c001e1a9ab7",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_bosb-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "3f0ad4d29fdb718b63fe2a07cb5f6836147e572931fab3c666c8fed2d241b3e6"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "ban_cer.dds",
+      "sha256": "b7480a188a5f9b4466a573ce5e30a7aea1cb1f7818049b3723f240f8dd3471a0",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_cer-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "36620a457a8e7435ae8d882b0e2b1606e0ae39ccfd7c860e3454aadd89189c0f"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "ban_cmr.dds",
+      "sha256": "c2b8928e21f101d1db72379b827e77b9337ba1d8b6430858e40bcc0d0db8e645",
+      "bytes": 32896,
+      "width": 256,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_cmr-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "5537e58e316997d3563f44f67b706452c449a0c2f2ae00d440ac89fe7d9f8178"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "ban_elle.dds",
+      "sha256": "93ad42b676f82b998e1e57afaa6958c639745454106901d00bb3dcfda2e14aa7",
+      "bytes": 32896,
+      "width": 256,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_elle-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "77df21ebc2e10299a279b78c63cda97d8556aaaaa494bb78ee2e515bf2354f76"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "ban_mic.dds",
+      "sha256": "66873a12b1b9f1ae7d06d4dc79a28b2487a25f7cd2acbffa49755deba0776641",
+      "bytes": 32896,
+      "width": 256,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_mic-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "fe2a11ceaf51f0913c6171cb545e1c1270c466db817858f7d3901bd7efa3fa4a"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "ban_ngk.dds",
+      "sha256": "1f8cd70bd29a1d6a783545597edcbf948cd027904d5474e34901eb7ec3a561b9",
+      "bytes": 32896,
+      "width": 256,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_ngk-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "d6bf7f8409c322848a8ef416aa5019b2d71ab1a785e7b476302cfd62225b23cc"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "rw1.dds",
+      "sha256": "a4588ce39ceecd0aeef6e0be4cbd1177de0d275ae4e74ed1892d0a18f7a74ee8",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rw1-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "4fe87c58373cf91b1971fb349fbc134f89fe72fd9e6cd2c066f32407d8a895ea"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "rw2.dds",
+      "sha256": "0beb5a2db7ae79d79da04d37d225f41767797e7c295fc7cd129e5bfd5839cfd2",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rw2-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "9894d187c23efca576c2e6276c3f160370ec0740745a94cfc7e5af1c3e6faa8b"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "rw5.dds",
+      "sha256": "ea7617669e18aa0b23c4d3989cdce72a04a0b17bd501e93c1e9143985f8727f3",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rw5-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "c76c72a42a2843fed242974e3fd75329624ab5eb97672af003edb34af1ee053e"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "wal_ls1a.dds",
+      "sha256": "65bd702fe07a8e412aa58d53efb8e32ee8897a05a1d6ca522ad7ea71a4eb3872",
+      "bytes": 8320,
+      "width": 128,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "wal_ls1a-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "output_sha256": "77b6daefc706041847b3e2a4dd690e135204cf255d944e3fb6a8455150083078"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "wal_ls1b.dds",
+      "sha256": "5a8d91f0f41a483d42d3fa07c33b2a93f8bcbd59f1b198db1b47e2d1922d6eb9",
+      "bytes": 8320,
+      "width": 128,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "wal_ls1b-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "output_sha256": "6b686e9626ab39586b406e46b137914794823248e5eeb50c71a2d70b0d19a601"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "wal_ls1t.dds",
+      "sha256": "76dd71f30f0060775d3a648e02230547959c2466b6e1f5cb31bda9e30a0234f4",
+      "bytes": 4224,
+      "width": 32,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "wal_ls1t-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "output_sha256": "8ffb74b2ea3b436664d73c135062d6e38665ec4d4e510fffb163f8288ef81453"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "wal_ls2a.dds",
+      "sha256": "232a23cca7ce090164f88b501f15dc0846feb9f65262827ec665ae536df3fead",
+      "bytes": 8320,
+      "width": 128,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "wal_ls2a-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "output_sha256": "3bea95c7da7eb0870d24949cecd201fc86c3c91d4cb72f95108ee10aa43f5b21"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "wal_ls2b.dds",
+      "sha256": "ebc15ed18484b8c786bf21f00bac8528d852329ec4b4fbe350b99499ffa52eaf",
+      "bytes": 8320,
+      "width": 128,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "wal_ls2b-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "output_sha256": "c0594b68e3ec75de3930f8efb0d81e06e400896131154a0dbe43afff3ecbd2f2"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "wal_ls2t.dds",
+      "sha256": "1d7b21fbdcc4873071b20dccdf22c847846c77392eca6fd45e7d1e4fff350705",
+      "bytes": 4224,
+      "width": 32,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "wal_ls2t-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "output_sha256": "027638709d770b00fafde75e5d2c631a221d40a16f752a14fc26bd8d828e9afe"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "arm_1a.dds",
+      "sha256": "7b94ce7e3648e8c8a98692fe0114d0b2a834a53379937f144a23a0032c156dab",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "arm_1a-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "18cdb91942c505ca72dc822e2d3fb071b9e8129a642f4ae45a9c25ec8aa55ef4"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "arm_1b.dds",
+      "sha256": "94f0c3edcc6b235ec02ae134368e0485b221070296717ebf62527d5fcdab96c4",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "arm_1b-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "e3dcd3878f594d31b9d154667d9274d394d6ab7bbe559707e5880f9aaa16753e"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "arm_1c.dds",
+      "sha256": "5acb459cb2cbfe025a12846f4ac3bbfa5d8d59d87db04320a7d39263722e01a7",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "arm_1c-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "82bec281568e0215455c0fe4cfefd8d71eade3b961fd401a5c0d08f58a762caf"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "ban_bas.dds",
+      "sha256": "845e32989b68ec3f14c0b6691d7370ac00c4409b6d6844c8dbec025d21162a74",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_bas-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "ae68ddfa0e269f91b3f0c865ebf6b0ba401564377c4ea811db66dbdf745a1b86"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "ban_bla.dds",
+      "sha256": "e6592daffd02bb63a07aa69bc7263c1f398fd28047847155aa23fc39725f3efe",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_bla-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "213d6aa1a605c4ee55a56a5b6541607913878f0d578b20564dc1ff5d4f0e6e43"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "ban_bosb.dds",
+      "sha256": "cac46cae6c40162d70e2998cf18bcbac4d39b3f82fef0e0276b700ce3ef1f43a",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_bosb-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "4dd963cc25e0b96063916a650679c1fb04a5a3cf08090cec13933b315dadab85"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "ban_cer.dds",
+      "sha256": "b7480a188a5f9b4466a573ce5e30a7aea1cb1f7818049b3723f240f8dd3471a0",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_cer-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "36620a457a8e7435ae8d882b0e2b1606e0ae39ccfd7c860e3454aadd89189c0f"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "ban_cmr.dds",
+      "sha256": "e7eccb76d8a46b326203783372ca618f30f0d2b56c5c179e3f07c11577c99643",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_cmr-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "7a73411788e71b5c3f3ba0f3343d5a056034e30a7c62e2125a65c13907f72011"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "ban_elle.dds",
+      "sha256": "4c712eebb667c7ade442ce4f28f9c2e7bbc8b545b7f0534a408682498667f7fa",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_elle-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "e8e982dda03622ef72a9e0c11c2fbbe692de2eaf00ade7a26a0e61af7d9baba5"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "ban_mic.dds",
+      "sha256": "eccefcc1b10fc1c285531671d8d96e4ab11b4147c0579ac3ad573bb08e99d645",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_mic-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "05846911af74b982ea4efe016f6427b8befb09d1a6e2eecd2b8e0532b7561dc6"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "ban_ngk.dds",
+      "sha256": "b46f75c749be4fe2c54bf20edcab900fc17190fc4ad93f822a837b2866040684",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ban_ngk-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "3b44d1f48c00ef19fd996b6efb34cd4dd74ed6c5b3a3c708dad55abb46c2c313"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "rw1.dds",
+      "sha256": "cc20546a58e545657e917c2d8ff99d0001e219a014c2b34a0b3376e0ded74e66",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rw1-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "092a6f9f68a97451d92c7a79ea162cac2d85560b426cdc6c0265cd7f6cdf6caf"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "rw2.dds",
+      "sha256": "27c76fc4730be40a82a9f6ebc6d697b2db9d601f3d988775066aeec5e023e1ce",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rw2-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "6aae43e82a513eae27c348df4b11c20fef0aea3d534b768573677cb993829cf9"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "rw5.dds",
+      "sha256": "68629fc7e3ca679d8c82a157ba5617f8374eef315985d628d60c69354db170b4",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rw5-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "kind": "full-canvas-cutout",
+      "output_sha256": "2cbdfab1034c94a8807831d1aceea7f95a5f7635bdedbddc5a24d35a75ec7ed0"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "wal_ls1a.dds",
+      "sha256": "b076d080d9422ba91513730b77c01a5c28d59b1186051de493b90a7b95a7b387",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "wal_ls1a-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "output_sha256": "90b1e2f3a59500ad359363f9d5de0f23b88dd16dbe12a9a376a793f8422c089d"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "wal_ls1b.dds",
+      "sha256": "55ccd63203596889b84d4e46820e99eb47505522e3051861a4388daee5478da9",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "wal_ls1b-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "output_sha256": "443c521c24266c4dce07e5fdc26deec72b283163f27f7fb05026dee0d208ae62"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "wal_ls1t.dds",
+      "sha256": "ee91a4432fa51518ed2cc52b180087c69347ecb81466116accd98d887c889818",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "wal_ls1t-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "output_sha256": "7df9d1de21d6b5e9a8cac845788f43fd353abe72173d74465621316debefcb3f"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "wal_ls2a.dds",
+      "sha256": "5f73bd37da31736de2352a2e06be8259b0fb849ea8d93be251a57149b5615054",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "wal_ls2a-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "output_sha256": "73c82225f06d100f0129d36ed2950c2fa72205fe0063ce88b53da4a22ef5ccc7"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "wal_ls2b.dds",
+      "sha256": "44103035e0d83c2d9dfc34bc9e351e9899b9336e90cdbece855a295fb56be4cc",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "wal_ls2b-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "output_sha256": "24e1a3558cb0ce15caeffd53f27b3c5027b03cb018da0e972bd936624344c9ca"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "wal_ls2t.dds",
+      "sha256": "d9b94ca399f7c060687adc45f3695e0037f6bcfc9eb1ba001273265bc06cf452",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "wal_ls2t-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
+      "output_sha256": "07c4debbfbe2aa3643faf7c2183d5b1de8f7d7085405c5f5428d59226daa22a2"
     }
   ]
 }

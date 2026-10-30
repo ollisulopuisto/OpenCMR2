@@ -400,3 +400,15 @@ change. All288outputs pass actual runtime upload/all-mip/stage/identity/reset
 checks with owned originals and stubbed executor. Native appearance/FPS open.
 Runtime manifest limit raised to128KiB because the expanded metadata exceeds
 the former32KiB limit; original bounded read and exact source/output checks stay.
+
+
+### Fixed trackside texture coverage
+
+Adds50hi/lo full-canvas fixed temp.shtmaterial variants: Finland banners,
+France banners, stone walls, guardrails and static ribbon materials.338indexed
+outputs total, all actual runtime upload/all-mip/stage/identity/reset validated
+with owned originals and stub executor. Texture filtering only, no geometry or
+physics change. Original UVs and clamp policy retained. Original/derived artwork
+stays private. No AI detail or whole644pack claim. Alpha mip histogram counting
+replaces repeated per-pixel scans; all338outputs are byte-identical to the old
+algorithm. Native Metal appearance/FPS remain open.
