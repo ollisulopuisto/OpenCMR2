@@ -2796,7 +2796,7 @@ struct Executor : GfxExecutor {
             }
         }
         bool streakApplied = false;
-        bool tunnelLinesOn = Sys_GetOption("video.tunnel_lines", 0) != 0 && speedFocusSmooth > 0.01f;   // radial lines inside the tunnel vision zone
+        bool tunnelLinesOn = Sys_GetOption("video.tunnel_lines", 1) != 0 && speedFocusSmooth > 0.01f;   // radial lines inside the tunnel vision zone
         if ((speedStreakSmooth > 0.01f || vaporDraw || tunnelLinesOn) && raceWorld && gradingTarget != nullptr && presentSource != nullptr &&
             presentSource != gradingTarget && SpeedStreakPipeline() != nullptr) {
             float uniforms[4 + 60 * 4 + 4 + 4];   // + tunnelLines, after depthInfo

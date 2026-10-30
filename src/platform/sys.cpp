@@ -819,7 +819,7 @@ bool Platform_Init(int argc, char **argv)
     s_enhancements.Apply();
     Sys_Log("effective speed-feel settings: speed_motes=%d amount=%d stretch=%d size=%d speed_fov=%d dof=%d dof_blur=%d tunnel_vision=%d speed_streak=%d motion_blur=%d speed_hold=%d dof_focus_car=%d dof_blur_max_px=%d preset=%s (CLI overrides win over opencmr2.ini)",
         Sys_GetOption("video.speed_motes",0),Sys_GetOption("video.speed_motes_amount",100),Sys_GetOption("video.speed_motes_stretch",0),Sys_GetOption("video.speed_motes_size",100),Sys_GetOption("video.speed_fov",0),
-        Sys_GetOption("video.depth_of_field",0),Sys_GetOption("video.dof_blur",30),Sys_GetOption("video.tunnel_vision",100),Sys_GetOption("video.speed_streak",0),Sys_GetOption("video.motion_blur",1),Sys_GetOption("video.speed_fov_hold",0),Sys_GetOption("video.dof_focus_car",0),Sys_GetOption("video.dof_blur_max_px",4),
+        Sys_GetOption("video.depth_of_field",0),Sys_GetOption("video.dof_blur",30),Sys_GetOption("video.tunnel_vision",150),Sys_GetOption("video.speed_streak",0),Sys_GetOption("video.motion_blur",1),Sys_GetOption("video.speed_fov_hold",0),Sys_GetOption("video.dof_focus_car",0),Sys_GetOption("video.dof_blur_max_px",4),
         s_enhancements.testPreset.empty()?"none":s_enhancements.testPreset.c_str());
     if(!s_sceneryDir.empty()&&s_enhancements.NeedsPack()){
         fprintf(stderr,"Do not combine --scenery-dir with automatic --trees/--spectators preparation. Select one route.\n");Platform_Shutdown();return false;
