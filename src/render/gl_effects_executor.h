@@ -209,7 +209,7 @@ GLuint ApplyEffects()
         // tunnel vision adds the speed-driven peripheral blur with its own radius (kTunnelRadiusPerHeight x height px at full strength).
         float aspect = backHeight ? (float)backWidth / (float)backHeight : 1.0f;
         float focusRaw = glCarFocusRaw >= 0.0f ? glCarFocusRaw : dofFocus / 100.0f;
-        float u[8] = {focusRaw, dofRange / 100.0f * (1.0f - 0.5f * speedFocusSmooth), depthBlurOn ? dofBlur * 0.04f : 0.0f,
+        float u[8] = {focusRaw, dofRange / 100.0f * (1.0f - 0.5f * std::min(speedFocusSmooth, 1.0f)), depthBlurOn ? dofBlur * 0.04f : 0.0f,
                       speedFocusSmooth, aspect, kTunnelRadiusPerHeight * (float)backHeight, 0.0f, 0.0f};
         if (run(5, backDepth, u, sizeof(u)))
             Gfx_SetDofStatus(GfxDofStatus{5, speedFocusTarget, speedFocusSmooth, u[1], u[2], focusRaw, glCarFocusRaw >= 0.0f ? glCarDepth : 0.0f});

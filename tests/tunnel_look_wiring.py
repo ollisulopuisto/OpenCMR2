@@ -6,8 +6,11 @@ def need(c,m):
     global ok
     if not c: print("FAIL",m); ok=False
 rad=float(re.search(r'kTunnelRadiusPerHeight = ([0-9.]+)f',h).group(1)); inner=float(re.search(r'kTunnelInnerFull = ([0-9.]+)f',h).group(1))
-m=re.search(r'float inner = mix\(1\.4, ([0-9.]+), tunnel\);',sh)
+m=re.search(r'float inner = max\(mix\(1\.4, ([0-9.]+), tunnel\), ([0-9.]+)\);',sh)
 need(m is not None and abs(float(m.group(1))-inner)<1e-6,'dof.frag inner radius mirrors kTunnelInnerFull')
+imin=float(re.search(r'kTunnelInnerMin = ([0-9.]+)f',h).group(1))
+need(m is not None and abs(float(m.group(2))-imin)<1e-6,'dof.frag inner floor mirrors kTunnelInnerMin')
+need('kTunnelMaxStrength = 2.0f' in h and 'kTunnelMaxStrength' in g and 'kTunnelMaxStrength' in gl,'overdrive cap shared by both backends')
 vs=float(re.search(r'kTunnelVerticalScale = ([0-9.]+)f',h).group(1))
 need('centered.y *= %s;'%re.search(r'centered\.y \*= ([0-9.]+);',sh).group(1) in sh and abs(float(re.search(r'centered\.y \*= ([0-9.]+);',sh).group(1))-vs)<1e-6,'dof.frag vertical scale mirrors header')
 import math

@@ -960,6 +960,7 @@ void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef);
 // OpenCMR2 FOV dolly (visual only, game/FovDolly.h): the chase camera moves toward the car by the amount its view is wider than the
 // saved video.fov (speed FOV and the FOV preview), so the car keeps about the same screen size. Chase types 4..6, not the drone.
 int View_SpeedFovMagnification(BYTE view);
+int View_CameraMoveStep(int cameraType, int view);   // Car.cpp: signed 16.16 move along the camera forward axis, scaled by speed
 static int g_lastDollyScale[8] = {65536, 65536, 65536, 65536, 65536, 65536, 65536, 65536}, g_lastWidening[8] = {65536, 65536, 65536, 65536, 65536, 65536, 65536, 65536};
 // Widening (16.16, 65536 = same as saved) of a view right now: speed FOV times preview over saved. Shared by the chase dolly and the cockpit eye shift.
 int View_CurrentWidening(unsigned int viewIn)
@@ -980,7 +981,7 @@ static int View_FovDollyScale(CameraRecord *pObj)
     int target = preview > 0 ? FovPreview_Effective(preview, 70) : saved;
     int shown = View_ShownFov16(target);   // same eased value the projection uses this frame
     int widening = FovDolly_Widening(View_SpeedFovMagnification((BYTE)view), saved * 65536, shown);
-    int scale = FovDolly_Scale(widening, Sys_GetOption("video.fov_dolly", 150));
+    int scale = Sys_GetOption("video.fov_dolly_curve", 0) ? FovDolly_ScaleLinear(widening, Sys_GetOption("video.fov_dolly", 150)) : FovDolly_Scale(widening, Sys_GetOption("video.fov_dolly", 150));
     g_lastWidening[view] = widening;
     g_lastDollyScale[view] = scale;
     return scale;
@@ -1045,6 +1046,14 @@ void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef)
     FixMatrix_SetPosition(&pos, pM);
     if (g_playerCameraMode[index] == 4)
         FixMatrix_RotateAboutRight(pM, (unsigned short)g_chaseCameraPitch[2 + pObj->view]);
+    {   // OpenCMR2 debug camera move (visual only, video.camera_move_chase): signed move along the final look direction, + forward, - back, 0.05 model units per step.
+        int step = (pObj->type >= 4 && pObj->type <= 6 && !CameraOperator_Enabled(pObj)) ? View_CameraMoveStep(pObj->type, pObj->index) : 0;
+        if (step != 0) {
+            pObj->matrix.position.x += FixMul(pObj->matrix.forward.x, step);
+            pObj->matrix.position.y += FixMul(pObj->matrix.forward.y, step);
+            pObj->matrix.position.z += FixMul(pObj->matrix.forward.z, step);
+        }
+    }
 
     // OpenCMR2: human-operator camera shake — smoothed random jitter on the chase
     // camera position, scaled by car speed and impact strength
@@ -1272,6 +1281,14 @@ void View_PositionFromCarProfile(CameraRecord *pObj, FixMatrix *pRef)
     pos.y += off.y;
     pos.z += off.z;
     FixMatrix_SetPosition(&pos, pM);
+    {   // OpenCMR2 debug camera move (video.camera_move_car) for the car-mounted views (types 1, 2, 10: bonnet, bumper...). The position is rebuilt above every call, so this never accumulates.
+        int step = View_CameraMoveStep(pObj->type, pObj->index);
+        if (step != 0) {
+            pM->position.x += FixMul(pM->forward.x, step);
+            pM->position.y += FixMul(pM->forward.y, step);
+            pM->position.z += FixMul(pM->forward.z, step);
+        }
+    }
 
     base = g_viewCarLift[pObj->index];
     pObj->zoom = 0xa000;

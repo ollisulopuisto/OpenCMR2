@@ -5,7 +5,7 @@
 // Visual only: it scales the chase camera's offset from the car and never touches the car, its physics or the road.
 // Pure maths, no game state. Magnifications are 16.16: 65536 = same view as the saved setting, above = wider view (smaller things).
 #include <stdint.h>
-static const int kFovDollyMinScale = 0x5999;   // never closer than 0.35 of the saved distance, so the camera cannot reach the car body (was 0.45)
+static const int kFovDollyMinScale = 0xB333;   // never closer than 0.70 of the saved distance. Native evidence: 0.35 put the camera inside the car body at x1.86 widening; 0.71 (speed FOV 40, dolly 100) showed no clipping. 0.70 is the closest value with that evidence.
 static const int kFovDollyMaxPct = 250;     // 100 = the car keeps its screen size; above 100 the car grows as the view widens (a dolly zoom)
 // Total widening from the saved view: speed FOV widening times effective/saved video.fov (a higher number is a wider view).
 inline int FovDolly_Widening(int speedMag16, int savedFov, int effectiveFov)
@@ -23,5 +23,16 @@ inline int FovDolly_Scale(int widening16, int amountPct)
     long long full = (65536LL * 65536) / widening16;                       // full compensation scale, below 65536
     long long scale = 65536 - (65536 - full) * amountPct / 100;
     return scale < kFovDollyMinScale ? kFovDollyMinScale : scale > 65536 ? 65536 : (int)scale;
+}
+// Experimental (video.fov_dolly_curve=1): same endpoints (1.0 at no widening, kFovDollyMinScale at widening 2.0 and above, amount scales the travel)
+// but spread linearly over widening 1.0..2.0, so the distance keeps changing with speed instead of reaching the floor at about x1.3.
+inline int FovDolly_ScaleLinear(int widening16, int amountPct)
+{
+    if (widening16 <= 65536) return 65536;
+    if (amountPct < 0) amountPct = 0;
+    if (amountPct > kFovDollyMaxPct) amountPct = kFovDollyMaxPct;
+    long long t = widening16 >= 2 * 65536 ? 65536 : widening16 - 65536;                  // 0..65536 over widening 1..2
+    long long travel = (65536LL - kFovDollyMinScale) * t / 65536 * (amountPct > 100 ? 100 : amountPct) / 100;   // never beyond the floor
+    return (int)(65536 - travel);
 }
 #endif

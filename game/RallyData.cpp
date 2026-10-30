@@ -1,3 +1,4 @@
+#include "CameraMove.h"
 #include "EffectAmounts.h"
 #include "TuningPanel.h"
 #include "FovPreview.h"
@@ -6042,11 +6043,34 @@ int g_windscreenWiperManualFrames = 0;
 // the row and 6 resets all rows to the values they had when the panel was first opened this launch (after any menu edits), 7 saves the shown values to opencmr2.ini. Changes are
 // per launch until saved. While open, these keys are removed from the game's keyboard state (see CInput::ReadKeyboardState).
 static bool g_tuneOpen = false, g_tuneSnapshotTaken = false;
-static int g_tuneRow = 0, g_tuneSnapshot[16];
+// F10 cycles 0 = debug info only (the start), 1 = debug info and adjustments, 2 = nothing. g_tuneOpen means "adjustments shown" (mode 1) and is what
+// captures the adjustment keys. g_tuneEngaged is separate: once F10 was pressed, the tuned look stays live (paused scene too) in every mode, so both
+// overlays can be hidden to judge the effects.
+static int g_tuneMode = 0;
+static bool g_tuneEngaged = false;
+static int g_tuneRow = 0, g_tuneSnapshot[32], g_camMoveSnapshot[16];   // the camera move row edits one camera type: the snapshot holds every type's raw per-type value (kCamMoveUnset = no override)
+void AttractCapture_ViewSignature(int view, int *type, int *drone);
+static bool TuneIsCamMove(const TuningRow &r) { return !strcmp(r.key, "video.camera_move_active"); }
+static int TuneCamType(void) { int vt = 0, dr = 0; AttractCapture_ViewSignature(0, &vt, &dr); return vt < 0 || vt > 15 ? 0 : vt; }
+static void TuneCamKey(int type, char *buf, size_t n) { snprintf(buf, n, "video.camera_move_type%d", type); }
+// The value shown and stepped: for the camera row, the per-type value of the camera in use, else its family value.
+static int TuneGet(const TuningRow &r)
+{
+    if (!TuneIsCamMove(r)) return Sys_GetOption(r.key, r.fallback);
+    char k[40]; int t = TuneCamType(); TuneCamKey(t, k, sizeof k);
+    return CameraMove_Effective(Sys_GetOption(k, kCamMoveUnset), Sys_GetOption(CameraMove_FamilyKey(t), 0));
+}
+static void TuneSet(const TuningRow &r, int v)
+{
+    if (!TuneIsCamMove(r)) { Sys_SetOptionTemporary(r.key, v); return; }
+    char k[40]; TuneCamKey(TuneCamType(), k, sizeof k); Sys_SetOptionTemporary(k, v);
+}
 static unsigned g_tuneSavedStamp = 0, g_tuneFrame = 0;
 static bool g_tuneDrawn = false;  // set by every TuningPanel_Draw; the paused-scene draw skips when another path already drew this frame
 static TuningEdges g_tuneEdges;
 bool TuningPanel_IsOpen(void) { return g_tuneOpen; }
+bool TuningPanel_PreviewActive(void) { return g_tuneEngaged; }
+bool TuningPanel_InfoShown(void) { return g_tuneMode != 2; }
 int TuningPanel_ToggleKey(void)
 {
     static int checked = -1, result = kTuningToggleDefault;
@@ -6065,18 +6089,27 @@ int TuningPanel_ToggleKey(void)
     result = ok ? key : kTuningToggleDefault;
     return result;
 }
+extern "C" double Sys_GetTicksPrecise(void);
 void TuningPanel_Update(void)
 {
     ++g_tuneFrame;
     int count = 0;
     const TuningRow *rows = Tuning_Rows(count);
-    if (g_tuneEdges.Edge(0, Input_IsKeyDown(TuningPanel_ToggleKey()) != 0)) g_tuneOpen = !g_tuneOpen;
+    if (g_tuneEdges.Edge(0, Input_IsKeyDown(TuningPanel_ToggleKey()) != 0)) { g_tuneMode = (g_tuneMode + 1) % 3; g_tuneOpen = g_tuneMode == 1; g_tuneEngaged = true; }
     bool pressed[7];
-    for (int i = 0; i < 7; ++i) pressed[i] = g_tuneEdges.Edge(1 + i, Input_IsKeyDown(kTuningKeys[i]) != 0);
+    static TuningRepeat repeat;
+    double nowMs = Sys_GetTicksPrecise();
+    for (int i = 0; i < 7; ++i) {
+        bool down = Input_IsKeyDown(kTuningKeys[i]) != 0;
+        bool edge = g_tuneEdges.Edge(1 + i, down);
+        // Row and value keys (1..4) repeat while held; reset, reset all and save stay single presses.
+        pressed[i] = i < 4 ? repeat.Fire(i, down, nowMs) : edge;
+    }
     if (!g_tuneOpen) return;
     bool prevRow = pressed[0], nextRow = pressed[1], down = pressed[2], up = pressed[3], resetRow = pressed[4], resetAll = pressed[5], save = pressed[6];
     if (!g_tuneSnapshotTaken) {
         for (int i = 0; i < count; ++i) g_tuneSnapshot[i] = Sys_GetOption(rows[i].key, rows[i].fallback);
+        for (int t = 0; t < 16; ++t) { char k[40]; TuneCamKey(t, k, sizeof k); g_camMoveSnapshot[t] = Sys_GetOption(k, kCamMoveUnset); }
         g_tuneSnapshotTaken = true;
     }
     bool changed = false;
@@ -6084,13 +6117,22 @@ void TuningPanel_Update(void)
     if (nextRow) g_tuneRow = Tuning_Select(g_tuneRow, 1, count);
     if (down || up) {
         const TuningRow &r = rows[g_tuneRow];
-        Sys_SetOptionTemporary(r.key, Tuning_Step(r, Sys_GetOption(r.key, r.fallback), up ? 1 : -1));
+        TuneSet(r, Tuning_Step(r, TuneGet(r), up ? 1 : -1));
         changed = true;
     }
-    if (resetRow) { Sys_SetOptionTemporary(rows[g_tuneRow].key, g_tuneSnapshot[g_tuneRow]); changed = true; }
-    if (resetAll) { for (int i = 0; i < count; ++i) Sys_SetOptionTemporary(rows[i].key, g_tuneSnapshot[i]); changed = true; }
+    if (resetRow) {
+        if (TuneIsCamMove(rows[g_tuneRow])) TuneSet(rows[g_tuneRow], g_camMoveSnapshot[TuneCamType()]);   // back to this camera's opening state (override or none)
+        else Sys_SetOptionTemporary(rows[g_tuneRow].key, g_tuneSnapshot[g_tuneRow]);
+        changed = true;
+    }
+    if (resetAll) {
+        for (int i = 0; i < count; ++i) if (!TuneIsCamMove(rows[i])) Sys_SetOptionTemporary(rows[i].key, g_tuneSnapshot[i]);
+        for (int t = 0; t < 16; ++t) { char k[40]; TuneCamKey(t, k, sizeof k); Sys_SetOptionTemporary(k, g_camMoveSnapshot[t]); }
+        changed = true;
+    }
     if (save) {
-        for (int i = 0; i < count; ++i) if (strcmp(rows[i].key, "video.fov_preview")) Sys_SetOption(rows[i].key, Sys_GetOption(rows[i].key, rows[i].fallback));   // the FOV preview is a per-launch debug view, never saved
+        for (int i = 0; i < count; ++i) if (strcmp(rows[i].key, "video.fov_preview") && !TuneIsCamMove(rows[i])) Sys_SetOption(rows[i].key, Sys_GetOption(rows[i].key, rows[i].fallback));   // the FOV preview is a per-launch debug view, never saved
+        for (int t = 0; t < 16; ++t) { char k[40]; TuneCamKey(t, k, sizeof k); int v = Sys_GetOption(k, kCamMoveUnset); if (v != kCamMoveUnset) Sys_SetOption(k, v); }   // only camera types that have an override
         g_tuneSavedStamp = g_tuneFrame;
     }
     if (changed) EffectSettings::Apply();
@@ -6104,19 +6146,23 @@ void TuningPanel_Draw(void)
     DebugOverlayLayout layout = DebugOverlayLayout::For(g_pGraphics->resX, g_pGraphics->resY, count + 3);
     short panel[4] = {(short)(g_pGraphics->resX - layout.width - layout.x), (short)(g_pGraphics->resY * 23 / 100), (short)layout.width, (short)layout.height};
     BYTE background[4] = {12, 16, 22, 220}, colour[4] = {240, 246, 255, 255}, lit[4] = {110, 255, 140, 255};
-    Sprite_FillRect(NULL, panel, background, 1);
+    Sprite_FillRect(NULL, panel, background, 4);
     char text[96];
     int tx = panel[0] + layout.pad, ty = panel[1] + layout.pad, row = 0;
     snprintf(text, sizeof text, "TUNING  1/2 row  3/4 value");
-    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
+    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour, 4);
     for (int i = 0; i < count; ++i) {
+        if (TuneIsCamMove(rows[i])) {
+            char k[40]; int t = TuneCamType(); TuneCamKey(t, k, sizeof k);
+            snprintf(text, sizeof text, "%s Camera type %d move (%s) 0.05 units: %d", i == g_tuneRow ? ">" : " ", t, Sys_GetOption(k, kCamMoveUnset) == kCamMoveUnset ? "family" : "own", TuneGet(rows[i]));
+        } else
         snprintf(text, sizeof text, "%s %s: %d", i == g_tuneRow ? ">" : " ", rows[i].label, Sys_GetOption(rows[i].key, rows[i].fallback));
-        Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, i == g_tuneRow ? lit : colour);
+        Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, i == g_tuneRow ? lit : colour, 4);
     }
     snprintf(text, sizeof text, "5 row reset  6 all to opening  7 save");
-    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
-    snprintf(text, sizeof text, g_tuneSavedStamp && g_tuneFrame - g_tuneSavedStamp < 100 ? "saved to opencmr2.ini; F10 closes" : "F10 closes; per launch until saved");
-    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour);
+    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour, 4);
+    snprintf(text, sizeof text, g_tuneSavedStamp && g_tuneFrame - g_tuneSavedStamp < 100 ? "saved to opencmr2.ini; F10: next view" : "F10: nothing next; per launch until saved");
+    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour, 4);
 }
 // The paused scene (render callback of Race_UpdatePauseState) never reaches the per-view overlay that normally draws the panel.
 void TuningPanel_DrawPaused(void)
@@ -6286,6 +6332,8 @@ void View_GetMeasuredFov(unsigned int view, double *vertDeg, double *horzDeg);
 void AttractCapture_ViewSignature(int view, int *type, int *drone);
 void SpeedFov_GetStatus(int view, int *pct, int *shown);
 void View_GetFovDolly(unsigned int view, int *scale, int *widening);
+void View_GetCockpitShift(unsigned int view, int *widening, int *step);
+int View_CameraMoveStep(int cameraType, int view);
 void StageObject_ApplyInterpolatedNodeMatrices(int param1);
 void Race_DrawPlayerCallSlots(unsigned int player, int *pViewRect);
 void Dash_Draw(int player, int *pViewRect);
@@ -6473,7 +6521,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
     Graphics_SetShadowGeometryState(!CGameInfo::IsRecordFlagSet(0xf));
     View_SetPlayerProjection(param2);
     TuningPanel_Draw();
-    if (Graphics_DebugDrawWanted()) {
+    if (Graphics_DebugDrawWanted() && TuningPanel_InfoShown()) {
         if(Sys_GetOption("video.debug_draw",OPENCMR2_DEBUG_DRAW_DEFAULT)==1){
             char text[32];snprintf(text,sizeof text,"FPS %.1f",Graphics_GetFrameRate());BYTE color[4]={240,246,255,255};
             BYTE background[4]={12,16,22,220};short panel[4]={8,8,128,22};
@@ -6556,7 +6604,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             int viewType=0,drone=0,zoomRaw=0,fovYRaw=0,fovSet=70;
             AttractCapture_ViewSignature((int)param2,&viewType,&drone);
             View_GetEffectiveProjection(param2,&zoomRaw,&fovYRaw,&fovSet);
-            snprintf(text,sizeof text,"Camera: type %d%s (live, view %d)",viewType,drone?" drone":"",(int)param2);
+            snprintf(text,sizeof text,"Camera: type %d%s (live, view %d)",viewType,(drone&&viewType==5)?" drone":"",(int)param2);
             line(text);
             snprintf(text,sizeof text,"video.fov number %d (legacy scale, 70 original, higher = wider; not an angle); zoom x%.2f (camera base x%.2f), proj scale %.2f",fovSet,zoomRaw/65536.0,g_viewZooms[param2&1]/65536.0,fovYRaw/65536.0);
             line(text);
@@ -6566,11 +6614,40 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             int sfPct=0,sfShown=0;SpeedFov_GetStatus((int)param2,&sfPct,&sfShown);
             snprintf(text,sizeof text,"Speed FOV %d%% (eased speed %d%%%s)",sfPct,sfShown*100/65536,Sys_GetOption("video.speed_fov_hold",0)?", HELD at full speed for FOV and tunnel (overdo test)":"");
             line(text);
-            {int dollyScale=0,widening=0;View_GetFovDolly(param2,&dollyScale,&widening);snprintf(text,sizeof text,"FOV dolly %d%%: view widened x%.2f vs saved, camera distance x%.2f (visual only, chase cameras)",Sys_GetOption("video.fov_dolly",100),widening/65536.0,dollyScale/65536.0);line(text);}
+            {int dollyScale=0,widening=0;View_GetFovDolly(param2,&dollyScale,&widening);
+             if(viewType>=4&&viewType<=6){snprintf(text,sizeof text,"FOV dolly %d%%: view widened x%.2f vs saved, camera distance x%.2f (visual only, chase cameras)",Sys_GetOption("video.fov_dolly",150),widening/65536.0,dollyScale/65536.0);}
+             else{snprintf(text,sizeof text,"FOV dolly %d%%: not applied to camera type %d (chase types 4-6 only)",Sys_GetOption("video.fov_dolly",150),viewType);}
+             line(text);
+             {int eff=View_CameraMoveStep(viewType,(int)param2);const char*k=(viewType>=4&&viewType<=6)?"video.camera_move_chase":viewType==3?"video.camera_move_cockpit":"video.camera_move_car";char tk2[40];snprintf(tk2,sizeof tk2,"video.camera_move_type%d",viewType);int mv=CameraMove_Effective(Sys_GetOption(tk2,kCamMoveUnset),Sys_GetOption(k,0));snprintf(text,sizeof text,"Camera move (%s) %d steps at full speed; now %+.2f model units along camera forward (0 standing still; + forward, - back)",k+6,mv,eff/65536.0);line(text);}
+             if(viewType==3){int cw=0,cs=0;View_GetCockpitShift(param2,&cw,&cs);snprintf(text,sizeof text,"Cockpit eye shift setting %d: view widened x%.2f, eye moved %+.3f model units along camera forward (0.2 = driver mount height)",Sys_GetOption("video.cockpit_eye_shift",0),cw/65536.0,cs/65536.0);line(text);}}
         }
         line("enc=encoded; skip=requested, not encoded");
         line("Previous frame; encoded is not pixel proof");
         }
+    }
+    // OpenCMR2: the camera readout, big and high contrast, short lines so nothing clips. Names are only what the source states; the rest are numbers.
+    if (Graphics_DebugDrawWanted() && TuningPanel_InfoShown() && (CGameInfo::IsInRaceMenuOpen() == 0 || TuningPanel_PreviewActive())) {
+        int vt = 0, dr = 0, zr = 0, fy = 0, fs = 70;
+        AttractCapture_ViewSignature((int)param2, &vt, &dr);
+        View_GetEffectiveProjection(param2, &zr, &fy, &fs);
+        double vd = 0, hd = 0, cd = 0, cf = 0, cs = 0, cu = 0;
+        View_GetMeasuredFov(param2, &vd, &hd);
+        View_GetCameraCarOffset(param2, &cd, &cf, &cs, &cu);
+        int sp = 0, sh = 0; SpeedFov_GetStatus((int)param2, &sp, &sh);
+        int eff = View_CameraMoveStep(vt, (int)param2);
+        const char *name = vt == 3 ? "COCKPIT" : vt == 2 ? "BONNET" : (vt >= 4 && vt <= 6) ? (dr && vt == 5 ? "CHASE (DRONE VARIANT)" : "CHASE") : vt == 1 || vt == 10 ? "CAR-MOUNTED (UNNAMED IN SOURCE)" : "UNNAMED IN SOURCE";
+        char big[5][96];
+        snprintf(big[0], 96, "CAMERA %s  type %d", name, vt);
+        snprintf(big[1], 96, "FOV %.1f deg vert, %.1f horiz (measured)", vd, hd);
+        snprintf(big[2], 96, "Widening x%.2f (speed FOV %d%%, speed %d%%)", sp > 0 ? 1.0 + (sp > 150 ? 150 : sp) * (sh / 65536.0) / 100.0 : 1.0, sp, sh * 100 / 65536);
+        snprintf(big[3], 96, "Camera vs car: FWD/BACK %+.2f  side %+.2f  up %+.2f  (dist %.2f)", cf, cs, cu, cd);
+        snprintf(big[4], 96, "+ ahead, - behind. Manual move %+.2f", eff / 65536.0);
+        int bigFont = std::clamp((int)g_pGraphics->resY / 32, 20, 44), bigLine = bigFont + bigFont / 3, pad = bigFont / 2;
+        int bw = (int)g_pGraphics->resX * 56 / 100, bx = (int)g_pGraphics->resX * 2 / 100, by = (int)g_pGraphics->resY * 52 / 100;
+        short bp[4] = {(short)bx, (short)by, (short)bw, (short)(5 * bigLine + 2 * pad)};
+        BYTE bbg[4] = {0, 0, 0, 215}, bfg[4] = {255, 236, 90, 255}, bwhite[4] = {255, 255, 255, 255};
+        Sprite_FillRect(NULL, bp, bbg, 4);
+        for (int k = 0; k < 5; ++k) Font_DrawTextScaled(1, big[k], bx + pad, by + pad + k * bigLine, bigFont, bw - 2 * pad, k == 0 ? bfg : bwhite, 4);
     }
     CarDamage_UpdateOrderedCarsOffRoadState(pOrder, (short)orderCount, g_viewScreenRect, maskedView);
     if (CGameInfo::GetGameModeOptionBit19() != 0) {
@@ -8364,7 +8441,10 @@ void RallyData_DrawViewEndFrameOverlay(CallbackStateMachine *pKey, int view)
     // never enter this explicit scope.
     extern void StageObject_PrepareVolumetricClouds(void);
     StageObject_PrepareVolumetricClouds();
-    Gfx_SetRaceWorld(CGameInfo::IsInRaceMenuOpen()==0);
+    // OpenCMR2: the in-race (Esc) menu marks the frame as not a race world, which switches every race effect off in the renderer (depth of field,
+    // tunnel vision, speed streak, vapor trails, motion blur, particles, clouds). With the debug tuning panel open they stay on, so the settings can
+    // be seen while paused. The car setup editor keeps its preview as it was.
+    Gfx_SetRaceWorld(CGameInfo::IsInRaceMenuOpen()==0 || (TuningPanel_PreviewActive() && InRaceMenu_IsPlayerEditingCarSetup(view)==0));
     Game_DrawSceneViewport(RallyData_GetChallengeRenderState(), g_viewNodes[view], g_viewScreenRect, view, 1);
     Gfx_SetRaceWorld(FALSE);
     RallyData_NotifyAdjacentMenuKeyValue(pKey, view);

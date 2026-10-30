@@ -1,3 +1,4 @@
+#include "CameraMove.h"
 #include "CameraOperator.h"
 #include "port/sys.h"
 #include "SpeedFov.h"
@@ -8315,6 +8316,41 @@ void View_UpdateCamera(BYTE view)
     *pTimer -= g_physicsTimeStep;
 }
 
+// OpenCMR2: rebuilds view 0's camera from the frozen car while the race is paused, so live camera tuning (F10 panel) shows at once.
+// Visual only: no simulation step. Skipped while a camera transition blend runs.
+void View_RefreshForTuning(void)
+{
+    BYTE index = 0;
+    if (g_unk0x00538d20[index] >= 0) return;
+    CameraRecord *pActive = VIEW_RECORD(g_activeViewRecord[index] + index * 2);
+    Camera_Update(pActive);
+    CameraState_Copy(VIEW_STATE(index), pActive);
+}
+
+// OpenCMR2 debug overlay: camera position relative to the car, measured this frame, in world units, along the car body matrix axes
+// (forward is the matrix forward axis, + ahead of the car, - behind). dist is the straight distance.
+void View_GetCameraCarOffset(unsigned view, double *dist, double *fwd, double *side, double *up)
+{
+    BYTE v = (BYTE)(view & 1);
+    Car *car = Car_Get(v);
+    *dist = *fwd = *side = *up = 0;
+    if (!car || !car->pWorld) return;
+    double d[3] = {(double)(VIEW_STATE(v)->matrix.position.x - car->position.x) / 65536.0, (double)(VIEW_STATE(v)->matrix.position.y - car->position.y) / 65536.0, (double)(VIEW_STATE(v)->matrix.position.z - car->position.z) / 65536.0};
+    const FixVector *f = &car->pWorld->forward, *r = &car->pWorld->right, *u = &car->pWorld->up;
+    *dist = sqrt(d[0]*d[0] + d[1]*d[1] + d[2]*d[2]);
+    *fwd = (d[0]*f->x + d[1]*f->y + d[2]*f->z) / 65536.0;
+    *side = (d[0]*r->x + d[1]*r->y + d[2]*r->z) / 65536.0;
+    *up = (d[0]*u->x + d[1]*u->y + d[2]*u->z) / 65536.0;
+}
+
+// Camera position of a view in fixed-point world coordinates (x, z). Used to cull tyre-mark history around the camera.
+void View_GetCameraXZ(unsigned view, int *x, int *z)
+{
+    BYTE v = (BYTE)(view & 1);
+    *x = VIEW_STATE(v)->matrix.position.x;
+    *z = VIEW_STATE(v)->matrix.position.z;
+}
+
 // Resets the cameras of a view to their records (after a restart).
 // FUNCTION: CMR2 0x00421d80
 void View_ResetCameras(int view)
@@ -8411,6 +8447,23 @@ int View_SpeedFovMagnification(BYTE view)
     if (pct <= 0 || view >= 2) return 65536;
     if (pct > kSpeedFovMaxPct) pct = kSpeedFovMaxPct;
     return 65536 + (int)((long long)pct * g_speedFovShown[view & 1] / 100);
+}
+
+// OpenCMR2 debug camera move (visual only): each camera family has its own signed setting, the amount at full speed, and the move blends from 0 standing
+// still to that amount at full speed (the same 0..1 speed ratio as the speed FOV). Chase (types 4-6): video.camera_move_chase. Cockpit (3):
+// video.camera_move_cockpit. Car-mounted (1, 2, 10: bonnet, bumper): video.camera_move_car. Returns 16.16 model units; 0.05 per setting step.
+int View_CameraMoveStep(int cameraType, int view)
+{
+    const char *key = (cameraType >= 4 && cameraType <= 6) ? "video.camera_move_chase" : cameraType == 3 ? "video.camera_move_cockpit" : "video.camera_move_car";
+    int setting;
+    {   // a per-type value (--camera-move-type N=V, F10 row, video.camera_move_type<N>) replaces the family value for that type, also when it is an explicit 0
+        char tk[40]; snprintf(tk, sizeof tk, "video.camera_move_type%d", cameraType);
+        setting = CameraMove_Effective(Sys_GetOption(tk, kCamMoveUnset), Sys_GetOption(key, 0));
+    }
+    if (setting == 0) return 0;
+    Car *car = Car_Get(view & 1);
+    int ratio = SpeedFov_HeldTarget(SpeedFov_Target(car ? car->speed : 0), Sys_GetOption("video.speed_fov_hold", 0));
+    return (int)((long long)setting * 0xCCC * ratio / 65536);
 }
 
 // FUNCTION: CMR2 0x00422140

@@ -18,7 +18,7 @@ struct EnhancementOptions {
         if(equal!=key.npos){inlineValue=key.substr(equal+1);key.resize(equal);}
         if(equal==key.npos && key=="--prepare-only"){prepareOnly=true;return true;}
         if(equal==key.npos && key=="--install-enhancement-deps"){installDependencies=true;return true;}
-        if(key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect"&&key!="--attract-capture"&&key!="--capture-interval"&&key!="--capture-count"&&key!="--speed-fov"&&key!="--speed-motes-stretch"&&key!="--speed-motes-amount"&&key!="--speed-motes-size"&&key!="--dof-blur-max-px"&&key!="--speed-streak"&&key!="--speed-hold"&&key!="--cockpit-eye-shift"&&key!="--fov-preview"&&key!="--dof-focus-car"&&key!="--test-preset")return false;
+        if(key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect"&&key!="--attract-capture"&&key!="--capture-interval"&&key!="--capture-count"&&key!="--speed-fov"&&key!="--speed-motes-stretch"&&key!="--speed-motes-amount"&&key!="--speed-motes-size"&&key!="--dof-blur-max-px"&&key!="--speed-streak"&&key!="--speed-hold"&&key!="--cockpit-eye-shift"&&key!="--camera-move-chase"&&key!="--camera-move-cockpit"&&key!="--camera-move-car"&&key!="--fov-dolly-curve"&&key!="--tire-debris"&&key!="--tire-track-length"&&key!="--tire-track-history"&&key!="--camera-move-type"&&key!="--fov-preview"&&key!="--dof-focus-car"&&key!="--test-preset")return false;
         if(equal==std::string::npos && i+1>=argc){error="Missing value for "+key;return true;}
         std::string value=equal==std::string::npos?argv[++i]:inlineValue;
         if(key=="--textures"){if(value!="original"&&value!="france1")error="--textures expects original or france1";else textures=value;}
@@ -30,20 +30,44 @@ struct EnhancementOptions {
         if(key=="--driver-names"){if(value!="original"&&value!="real"&&value!="sidecar")error="--driver-names expects original, real or sidecar";else names=value;}
         if(key=="--effect"){
             auto at=value.find('=');std::string name=value.substr(0,at),v=at==value.npos?"":value.substr(at+1);
-            static const char *allowed[]={"dust_plume","body_dirt","dust_volume","volumetric_clouds","spatial_aa","metalfx_spatial","motion_blur","bloom","particles","shadows","depth_of_field","god_rays","color_grading","temporal_aa","speed_motes","debug_object_mask","vapor_trails","speed_lines"};
+            static const char *allowed[]={"dust_plume","body_dirt","dust_volume","volumetric_clouds","spatial_aa","metalfx_spatial","motion_blur","bloom","particles","shadows","depth_of_field","god_rays","color_grading","temporal_aa","speed_motes","debug_object_mask","vapor_trails","speed_lines","tunnel_lines"};
             bool known=false;for(auto key:allowed)if(name==key)known=true;
             if(!known||(v!="on"&&v!="off"))error="--effect expects a listed NAME=on/off";
             else overrides["video."+name]=v=="on";
         }
         if(key=="--speed-fov"||key=="--speed-motes-stretch"||key=="--speed-motes-amount"||key=="--speed-motes-size"||key=="--dof-blur-max-px"){
             char *end=nullptr;long n=strtol(value.c_str(),&end,10);
-            int hi=key=="--speed-fov"?100:key=="--speed-motes-stretch"?100:key=="--dof-blur-max-px"?40:key=="--speed-motes-size"?800:300,lo=key=="--dof-blur-max-px"?1:key=="--speed-motes-size"?50:0;
+            int hi=key=="--speed-fov"?150:key=="--speed-motes-stretch"?100:key=="--dof-blur-max-px"?40:key=="--speed-motes-size"?800:300,lo=key=="--dof-blur-max-px"?1:key=="--speed-motes-size"?50:0;
             if(value.empty()||*end||n<lo||n>hi)error=key+" expects "+std::to_string(lo)+".."+std::to_string(hi);
             else overrides[key=="--speed-fov"?"video.speed_fov":key=="--speed-motes-stretch"?"video.speed_motes_stretch":key=="--dof-blur-max-px"?"video.dof_blur_max_px":key=="--speed-motes-size"?"video.speed_motes_size":"video.speed_motes_amount"]=(int)n;
         }
         if(key=="--cockpit-eye-shift"){
             char *end=nullptr;long n=strtol(value.c_str(),&end,10);   // signed: negative moves the eye the other way
             if(value.empty()||*end||n<-100||n>100)error=key+" expects -100..100";else overrides["video.cockpit_eye_shift"]=(int)n;
+        }
+        if(key=="--camera-move-type"){   // N=V, N one of the camera types 1 2 3 4 5 6 10, V -200..200 (0.05 model unit steps at full speed); replaces the family value for that type when not 0
+            auto eq=value.find('=');int n=-1;long v=0;bool ok=eq!=std::string::npos;
+            if(ok){char *end=nullptr;n=(int)strtol(value.substr(0,eq).c_str(),&end,10);ok=!*end&&(n==1||n==2||n==3||n==4||n==5||n==6||n==10);std::string vs=value.substr(eq+1);char *e2=nullptr;v=strtol(vs.c_str(),&e2,10);ok=ok&&!vs.empty()&&!*e2&&v>=-200&&v<=200;}
+            if(!ok)error="--camera-move-type expects TYPE=VALUE, TYPE 1 2 3 4 5 6 or 10, VALUE -200..200";else overrides["video.camera_move_type"+std::to_string(n)]=(int)v;
+        }
+        if(key=="--tire-track-history"){
+            char *end=nullptr;long n=strtol(value.c_str(),&end,10);
+            if(value.empty()||*end||n<0||n>64)error="--tire-track-history expects 0..64";else overrides["video.tire_track_history"]=(int)n;
+        }
+        if(key=="--tire-track-length"){
+            char *end=nullptr;long n=strtol(value.c_str(),&end,10);
+            if(value.empty()||*end||n<0||n>1000)error="--tire-track-length expects 0..1000";else overrides["video.tire_track_length"]=(int)n;
+        }
+        if(key=="--tire-debris"){
+            char *end=nullptr;long n=strtol(value.c_str(),&end,10);
+            if(value.empty()||*end||n<0||n>400)error="--tire-debris expects 0..400";else overrides["video.tire_debris"]=(int)n;
+        }
+        if(key=="--fov-dolly-curve"){
+            if(value!="0"&&value!="1")error="--fov-dolly-curve expects 0 or 1";else overrides["video.fov_dolly_curve"]=value=="1"?1:0;
+        }
+        if(key=="--camera-move-chase"||key=="--camera-move-cockpit"||key=="--camera-move-car"){
+            char *end=nullptr;long n=strtol(value.c_str(),&end,10);   // signed: positive forward, negative back, 0.05 model units per step
+            if(value.empty()||*end||n<-200||n>200)error=key+" expects -200..200";else overrides[key=="--camera-move-chase"?"video.camera_move_chase":key=="--camera-move-cockpit"?"video.camera_move_cockpit":"video.camera_move_car"]=(int)n;
         }
         if(key=="--speed-hold"||key=="--dof-focus-car"){
             // 0/1. --speed-hold 0 makes --test-preset overdo run its speed effects (FOV, tunnel, streak) at the real car speed instead of
@@ -134,7 +158,7 @@ inline const char *EnhancementHelp(){return
 "                              Requested is not proof of backend support;\n"
 "                              see runtime log. temporal_aa = PARTIAL stage (SDL_GPU only,\n"
 "                              camera reprojection, no object velocity), default off.\n"
-"  --speed-fov 0..40           Widen the regular cameras' view with speed (percent); default 0 = off\n"
+"  --speed-fov 0..150          Widen the regular cameras' view with speed (percent); default 0 = off\n"
 "  --speed-streak 0..100       Directional radial speed streak (SDL_GPU only); default 0 = off\n""  --speed-hold 0|1            Hold speed effects at full speed (overdo sets 1); 0 = real car speed\n"
 "  --fov-preview 0|20..150     Debug: try an absolute video.fov number (legacy scale, 70 = original, higher = wider, not an angle); F10 row too; 0 = off\n"
 "  --dof-focus-car 0|1         Focus depth of field on the followed car (SDL_GPU; overdo sets 1); default 0 = fixed plane\n"
@@ -143,6 +167,12 @@ inline const char *EnhancementHelp(){return
 "  --speed-motes-amount 0..300 Percent of the normal mote spawn rate (live cap 64 at 100, up to 192 at 300)\n"
 "  --speed-motes-size 50..800  Mote size in percent (default 100)\n"
 "  --dof-blur-max-px 1..40     Blur radius in pixels when dof_blur is 100 (default 4)\n"
+"  --camera-move-chase|--camera-move-cockpit|--camera-move-car -200..200  Move that camera family along its forward axis by this many 0.05 model unit steps at full speed, blending from 0 standing still; + forward, - back (default 0; visual only)\n"
+"  --camera-move-type TYPE=VALUE  Per camera type (1 2 3 4 5 6 10; repeatable): same as the family move, replaces the family value for that type when not 0\n"
+"  --tire-track-history 0..64  Optional long-lived tyre tracks: keeps N x 1024 points per wheel (default 0 = off, original ring; replaces the ring drawing when on). Old marks are dropped when full, so this is long, not unlimited. Draws only marks near the car, at most 1000 segments per wheel. Visual only\n"
+"  --tire-track-length 0..1000  Optional longer tyre tracks: skid-mark points kept per wheel for the viewed car (default 0 = original 200; 5x longer at 1000; marks never time out in this port, only this ring wraps; visual only, costs triangles per frame)\n"
+"  --tire-debris 0..400  Optional stronger wheel debris: average chips per wheel per effects step x100 on loose or wet ground above 10 km/h (default 0 = original; visual only, max 4 per wheel step)\n"
+"  --fov-dolly-curve 0|1  Experimental: 1 spreads the chase dolly (same 1.0 to 0.70 limits) linearly over widening 1.0 to 2.0 instead of reaching 0.70 at about x1.3 (default 0 = current curve; visual only)\n"
 "  --cockpit-eye-shift -100..100  Cockpit camera: move the eye along its forward axis as the view widens (default 0 = off; sign tuned natively; visual only)\n"
 "  --test-preset overdo        Exaggerated diagnostic look for speed lines/streak, FOV, DoF, tunnel vision (legacy motes off; add --effect speed_motes=on)\n"
 "                              and motion blur. Explicit flags override it; nothing is saved\n"

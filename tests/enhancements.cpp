@@ -48,6 +48,8 @@ int main(){
   t=p;CHECK(run({"t","--effect","vapor_trails=on","--effect","speed_lines=off"})&&e2.empty());t.Apply();CHECK(t.overrides["video.vapor_trails"]==1&&t.overrides["video.speed_lines"]==0);CHECK(run({"t","--effect","vapor_trails=maybe"})&&!e2.empty());
   CHECK(run({"t","--speed-motes-size","250"})&&e2.empty()&&t.overrides["video.speed_motes_size"]==250);CHECK(run({"t","--speed-motes-size","49"})&&!e2.empty());CHECK(run({"t","--speed-motes-size","801"})&&!e2.empty());
   CHECK(run({"t","--dof-blur-max-px","8"})&&e2.empty()&&t.overrides["video.dof_blur_max_px"]==8);CHECK(run({"t","--dof-blur-max-px","0"})&&!e2.empty());CHECK(run({"t","--dof-blur-max-px","41"})&&!e2.empty());
+  CHECK(run({"t","--camera-move-type","5=30"})&&e2.empty()&&t.overrides["video.camera_move_type5"]==30);CHECK(run({"t","--camera-move-type","7=30"})&&!e2.empty());CHECK(run({"t","--camera-move-type","5=201"})&&!e2.empty());CHECK(run({"t","--camera-move-type","5"})&&!e2.empty());
+CHECK(run({"t","--camera-move-chase","-60"})&&e2.empty()&&t.overrides["video.camera_move_chase"]==-60);CHECK(run({"t","--camera-move-cockpit","5"})&&e2.empty()&&t.overrides["video.camera_move_cockpit"]==5);CHECK(run({"t","--camera-move-car","201"})&&!e2.empty());
   CHECK(run({"t","--cockpit-eye-shift","-40"})&&e2.empty()&&t.overrides["video.cockpit_eye_shift"]==-40);CHECK(run({"t","--cockpit-eye-shift","101"})&&!e2.empty());CHECK(run({"t","--cockpit-eye-shift","x"})&&!e2.empty());
   EnhancementOptions q;t=q;CHECK(run({"t","--effect","bloom=on"})&&e2.empty());t.Apply();CHECK(!t.overrides.count("video.speed_fov")&&!t.overrides.count("video.dof_blur"));}
  auto root=fs::temp_directory_path()/(std::string("cmr-enhancements-")+std::to_string(SDL_GetPerformanceCounter()));

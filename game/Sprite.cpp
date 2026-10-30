@@ -668,7 +668,9 @@ Quad2D g_quad2DLayerA[0x400];
 // GLOBAL: CMR2 0x00803168
 Quad2D g_quad2DLayerB[0x200];
 // GLOBAL: CMR2 0x00730fd0
-Quad2D g_quad2DLayerC[0x800];
+// OpenCMR2: layer C (skid marks) is 8x the original 0x800 (one entry = one triangle) so longer tyre tracks fit; the draw count stays what the game queues.
+#define QUAD2D_LAYER_C_MAX 0x4000
+Quad2D g_quad2DLayerC[QUAD2D_LAYER_C_MAX];
 // GLOBAL: CMR2 0x007acfd0
 Quad2D g_quad2DLayerD[1];
 // GLOBAL: CMR2 0x00816174
@@ -707,7 +709,7 @@ void Quad2D_Queue(Quad2DVertices *pVerts, Texture *pTexture, UINT_PTR pDest)
         p = &g_quad2DLayerB[g_quad2DCountB];
         g_quad2DCountB++;
     } else if (pDest & 0x20) {
-        if (g_quad2DCountC >= 0x800) {
+        if (g_quad2DCountC >= QUAD2D_LAYER_C_MAX) {
             if (g_quad2DOverflow == 0)
                 g_quad2DOverflow = 1;
             return;
@@ -865,7 +867,7 @@ void Quad2D_QueueFixedTriangle(int, Quad2DInputVertex *pA,
         p = &g_quad2DLayerB[g_quad2DCountB];
         g_quad2DCountB++;
     } else if (pDest & 0x20) {
-        if (g_quad2DCountC >= 0x800) {
+        if (g_quad2DCountC >= QUAD2D_LAYER_C_MAX) {
             if (g_quad2DConvertOverflow == 0)
                 g_quad2DConvertOverflow = 1;
             return;

@@ -36,7 +36,7 @@ void main()
         centered.x *= extra.x;
         centered.y *= 0.5; // mirrors kTunnelVerticalScale: bonnet and car (low, centred) stay sharp, the sides blur
         float edge = length(centered);
-        float inner = mix(1.4, 0.5, tunnel);
+        float inner = max(mix(1.4, 0.5, tunnel), 0.1);   // mirrors kTunnelInnerMin; tunnel may exceed 1 (overdrive up to 2.0)
         float peripheral = smoothstep(inner, inner + 0.8, edge) * tunnel;
         if (carMode.x > 0.5) {
             // Whole-scene mode: the same speed-driven tunnel strength, but blurring everywhere. The car is kept sharp by a rectangle from its own
@@ -57,9 +57,11 @@ void main()
     // to avoid pulling a sharp foreground silhouette into the blurred distance.
     vec3 sum = center.rgb;
     float weight = 1.0;
-    for (int i = 0; i < 16; ++i) {
+    // 16 taps up to tunnel strength 1 (unchanged look), growing to 32 at strength 2 so the larger overdrive radius stays dense.
+    int taps = 16 + int(16.0 * clamp(tunnel - 1.0, 0.0, 1.0) + 0.5);
+    for (int i = 0; i < taps; ++i) {
         float angle = float(i) * 2.39996323;
-        float r = sqrt((float(i) + 0.5) / 16.0) * radius;
+        float r = sqrt((float(i) + 0.5) / float(taps)) * radius;
         vec2 pos = uv + vec2(cos(angle), sin(angle)) * r * pixel;
         float sampleDepth = texture(depthTex, pos).r;
         float w = 1.0 - smoothstep(0.002, 0.02, depth - sampleDepth);

@@ -389,9 +389,14 @@ inline bool WindscreenWiper_Toggle(bool enabled, bool pressed) { return pressed 
 int WindscreenWiperKeyPressed(void);
 void WindscreenWiper_UpdateInput(void);
 void TuningPanel_Update(void);
+void View_RefreshForTuning(void);
+void View_GetCameraCarOffset(unsigned view, double *dist, double *fwd, double *side, double *up);
+void Race_ApplySpeedEffectParams(void);
 void TuningPanel_Draw(void);
 void TuningPanel_DrawPaused(void);
 bool TuningPanel_IsOpen(void);
+bool TuningPanel_PreviewActive(void);
+bool TuningPanel_InfoShown(void);
 int TuningPanel_ToggleKey(void);
 
 // OpenCMR2: motion blur between frames. `video.motion_blur` is 0 (off) to

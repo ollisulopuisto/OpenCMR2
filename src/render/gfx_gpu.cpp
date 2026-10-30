@@ -840,7 +840,7 @@ struct Executor : GfxExecutor {
 
     void SetSpeedFocus(float speed) override
     {
-        speedFocusTarget = !(speed > 0.0f) ? 0.0f : speed > 1.0f ? 1.0f : speed;
+        speedFocusTarget = !(speed > 0.0f) ? 0.0f : speed > kTunnelMaxStrength ? kTunnelMaxStrength : speed;
     }
 
     // OpenCMR2: god rays / volumetric lighting. `enabled` turns it on/off,
@@ -2683,7 +2683,7 @@ struct Executor : GfxExecutor {
             if (blurMode == 1 && carRegion.Valid() && DofFocus_Position(carRegion.zMin, sceneNear, sceneFar, &carPosMin) && DofFocus_Position(carRegion.zMax, sceneNear, sceneFar, &carPosMax)) blurShown = 1;
             else blurMode = 0;
             float uniforms[16] = { focusPos,
-                                  dofFocalRange / 100.0f * (1.0f - 0.5f * speedFocusSmooth),
+                                  dofFocalRange / 100.0f * (1.0f - 0.5f * std::min(speedFocusSmooth, 1.0f)),
                                   !dofGate.depthBlur ? 0.0f : dofMaxBlur / 100.0f * (float)(Sys_GetOption("video.dof_blur_max_px", 4) < 1 ? 1 : Sys_GetOption("video.dof_blur_max_px", 4) > 40 ? 40 : Sys_GetOption("video.dof_blur_max_px", 4)), speedFocusSmooth,
                                   aspect, kTunnelRadiusPerHeight * (float)backHeight, sceneNear, sceneFar,
                                   carRegion.u0, carRegion.v0, carRegion.u1, carRegion.v1,
@@ -2795,12 +2795,14 @@ struct Executor : GfxExecutor {
             }
         }
         bool streakApplied = false;
-        if ((speedStreakSmooth > 0.01f || vaporDraw) && raceWorld && gradingTarget != nullptr && presentSource != nullptr &&
+        bool tunnelLinesOn = Sys_GetOption("video.tunnel_lines", 0) != 0 && speedFocusSmooth > 0.01f;   // radial lines inside the tunnel vision zone
+        if ((speedStreakSmooth > 0.01f || vaporDraw || tunnelLinesOn) && raceWorld && gradingTarget != nullptr && presentSource != nullptr &&
             presentSource != gradingTarget && SpeedStreakPipeline() != nullptr) {
-            float uniforms[4 + 60 * 4 + 4];
+            float uniforms[4 + 60 * 4 + 4 + 4];   // + tunnelLines, after depthInfo
             uniforms[0] = speedStreakSmooth; uniforms[1] = backHeight ? (float)backWidth / (float)backHeight : 1.0f; uniforms[2] = speedStreakClock;
             uniforms[3] = Sys_GetOption("video.speed_lines", 1) != 0 ? speedStreakSmooth : 0.0f;   // radial lines have their own toggle
             memcpy(uniforms + 4, vaporUniforms, sizeof(vaporUniforms));
+            uniforms[4 + 60 * 4 + 4] = speedFocusSmooth; uniforms[4 + 60 * 4 + 5] = tunnelLinesOn ? 1.0f : 0.0f; uniforms[4 + 60 * 4 + 6] = 0.0f; uniforms[4 + 60 * 4 + 7] = 0.0f;
             SDL_GPUTextureSamplerBinding binding[2] = { { presentSource, linearSampler }, vaporDraw ? SDL_GPUTextureSamplerBinding{ backDepth, depthSampler } : SDL_GPUTextureSamplerBinding{ presentSource, linearSampler } };   // no trails: the second sampler just needs some texture
             if (PostProcessPass(cmd, SpeedStreakPipeline(), gradingTarget, binding, 2, uniforms, sizeof(uniforms)))
                 {presentSource = gradingTarget;encoded|=256;streakApplied = true;}

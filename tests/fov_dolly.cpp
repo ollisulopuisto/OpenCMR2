@@ -13,18 +13,18 @@ int main()
     int w = FovDolly_Widening(65536, 80, 150);
     CHECK(w == (int)(65536LL * 150 / 80));
     int s = FovDolly_Scale(w, 100);
-    CHECK(s > 34900 && s < 35100);                      // 0.533 * 65536 = 34953
-    // The car's screen size is proportional to (1 / widening) / distance: with full dolly it is unchanged.
-    CHECK((long long)s * w / 65536 > 65536 - 40 && (long long)s * w / 65536 < 65536 + 40);
+    CHECK(s == kFovDollyMinScale);                      // 0.533 is closer than the floor, so the floor holds (0.35 clipped into the car natively)
+    // Inside the floor the car's screen size is proportional to (1 / widening) / distance: full dolly keeps it unchanged.
+    { int w2 = FovDolly_Widening(65536, 80, 100); int s2 = FovDolly_Scale(w2, 100); CHECK(s2 > 65536 * 79 / 100 && s2 < 65536 * 81 / 100); CHECK((long long)s2 * w2 / 65536 > 65536 - 40 && (long long)s2 * w2 / 65536 < 65536 + 40); }
     // Speed FOV widening multiplies with the preview; amount 50 is half way; amount 0 is off.
     CHECK(FovDolly_Widening(65536 + 65536 / 4, 70, 70) == 65536 + 65536 / 4);
     int half = FovDolly_Scale(w, 50);
-    CHECK(half > s && half < 65536 && half - s > (65536 - s) / 2 - 2 && half - s < (65536 - s) / 2 + 2);
+    CHECK(half >= s && half < 65536);
     CHECK(FovDolly_Scale(w, 0) == 65536);
     CHECK(FovDolly_Scale(w, -20) == 65536 && FovDolly_Scale(w, 400) == FovDolly_Scale(w, kFovDollyMaxPct));
     // The camera never gets closer than the floor, however wide the view.
     CHECK(FovDolly_Scale(65536 * 20, 100) == kFovDollyMinScale);
-    CHECK(kFovDollyMinScale > 65536 * 3 / 10 && kFovDollyMinScale < 65536 * 4 / 10);
+    CHECK(kFovDollyMinScale > 65536 * 69 / 100 && kFovDollyMinScale < 65536 * 71 / 100);
     // Bad inputs fall back to no change.
     CHECK(FovDolly_Widening(0, 80, 80) == 65536 && FovDolly_Widening(65536, 0, 80) == 65536 && FovDolly_Widening(65536, 80, 0) == 65536);
     // Monotone: a wider view never moves the camera farther.
@@ -45,8 +45,13 @@ int main()
     // Dolly follows the eased value, so the car size stays about constant through the whole transition.
     for (int e = 80 * 65536; e <= 150 * 65536; e += 5 * 65536) {
         int wd = FovDolly_Widening(65536, 80 * 65536, e), sc = FovDolly_Scale(wd, 100);
-        long long size = (long long)sc * wd / 65536; CHECK(size > 65536 - 60 && size < 65536 + 60);
+        long long size = (long long)sc * wd / 65536; if (sc > kFovDollyMinScale) CHECK(size > 65536 - 60 && size < 65536 + 60); else CHECK(size >= 65536);
     }
+    // Experimental linear curve: same endpoints, but not exhausted at widening 1.31.
+    CHECK(FovDolly_ScaleLinear(65536, 150) == 65536);
+    CHECK(FovDolly_ScaleLinear(2 * 65536, 150) == kFovDollyMinScale && FovDolly_ScaleLinear(5 * 65536, 150) == kFovDollyMinScale);
+    { int a = FovDolly_ScaleLinear(65536 * 131 / 100, 150), b = FovDolly_ScaleLinear(65536 * 185 / 100, 150); CHECK(a > kFovDollyMinScale && b < a && b >= kFovDollyMinScale); }
+    CHECK(FovDolly_ScaleLinear(65536 * 150 / 100, 0) == 65536);
     if (!fails) puts("fov_dolly ok");
     return fails;
 }

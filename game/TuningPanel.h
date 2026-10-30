@@ -5,20 +5,23 @@ struct TuningRow { const char *label, *key; int lo, hi, step, fallback; };
 inline const TuningRow *Tuning_Rows(int &count)
 {
     static const TuningRow rows[] = {
-        {"Speed FOV %", "video.speed_fov", 0, 100, 2, 0},
+        {"Speed FOV %", "video.speed_fov", 0, 150, 2, 0},
         {"FOV dolly % (camera closer when wider)", "video.fov_dolly", 0, 250, 10, 150},
         {"Cockpit eye shift % (sign tuned natively)", "video.cockpit_eye_shift", -100, 100, 10, 0},
         {"DoF (0/1)", "video.depth_of_field", 0, 1, 1, 0},
         {"DoF blur %", "video.dof_blur", 0, 100, 10, 30},
         {"DoF max px at 100%", "video.dof_blur_max_px", 1, 40, 2, 4},
         {"Blur mode (0 peripheral, 1 whole scene minus car)", "video.blur_mode", 0, 1, 1, 0},
-        {"Tunnel vision %", "video.tunnel_vision", 0, 100, 10, 100},
+        {"Tunnel vision %", "video.tunnel_vision", 0, 200, 10, 100},
+        {"Radial lines inside the tunnel vision zone (0/1)", "video.tunnel_lines", 0, 1, 1, 0},
         {"Motion blur (0/1)", "video.motion_blur", 0, 1, 1, 1},
         {"Motion blur %", "video.motion_blur_amount", 0, 100, 10, 16},
         {"Vapor trails behind car (0/1)", "video.vapor_trails", 0, 1, 1, 0},
         {"Radial speed lines (0/1)", "video.speed_lines", 0, 1, 1, 1},
         {"Speed streak %", "video.speed_streak", 0, 100, 10, 0},
         {"FOV preview, video.fov number (0 off)", "video.fov_preview", 0, 150, 5, 0},   // absolute video.fov, debug only, a legacy scale number not an angle, below 20 acts as 20; Speed FOV % is separate
+        {"Tyre debris (0 off; chips per wheel per step x100, loose/wet ground)", "video.tire_debris", 0, 400, 25, 0},
+        {"Active camera forward(+)/back(-) at full speed, 0.05 units", "video.camera_move_active", -200, 200, 5, 0},   // special row: edits video.camera_move_type<N> of the camera in use; RallyData.cpp resolves it
     };
     count = (int)(sizeof(rows) / sizeof(*rows));
     return rows;
@@ -58,5 +61,19 @@ inline void Tuning_FilterKeys(unsigned char keys[256], bool open, int toggleKey)
 struct TuningEdges {
     bool prev[8] = {};
     bool Edge(int slot, bool down) { bool e = down && !prev[slot]; prev[slot] = down; return e; }
+};
+// Hold-to-repeat for the row and value keys: one trigger on the press, then after kTuningRepeatDelayMs one trigger every
+// kTuningRepeatIntervalMs while the key stays down. Time is wall-clock milliseconds, so it behaves the same in a race tick and a pause tick.
+static const double kTuningRepeatDelayMs = 350.0, kTuningRepeatIntervalMs = 60.0;
+struct TuningRepeat {
+    bool held[8] = {};
+    double nextMs[8] = {};
+    bool Fire(int slot, bool down, double nowMs)
+    {
+        if (!down) { held[slot] = false; return false; }
+        if (!held[slot]) { held[slot] = true; nextMs[slot] = nowMs + kTuningRepeatDelayMs; return true; }
+        if (nowMs >= nextMs[slot]) { nextMs[slot] = nowMs + kTuningRepeatIntervalMs; return true; }
+        return false;
+    }
 };
 #endif

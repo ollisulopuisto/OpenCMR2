@@ -2,6 +2,7 @@
 // both, MSVC calls RallyDataState first.
 short Car_GetOrderCount(void);
 #include "SoundCurve.h"
+#include "TrailHistory.h"
 #include "FloatToInt.h"
 #include "port/disk.h"
 #include "port/disk_layouts.h"
@@ -304,6 +305,7 @@ void CarInterior_UpdateGearDigitTexture(Texture *pTexture, int state, int cacheB
 void StageObject_BuildCarNodeOrientation(CameraRecord *object, int *src);
 void StageObject_BuildCarMountWorldMatrix(CameraRecord *object, void *unused);
 int View_CurrentWidening(unsigned int view);
+int View_CameraMoveStep(int cameraType, int view);
 #include "CockpitEyeShift.h"
 void StageObject_ResetBodyTextureCaches(void);
 void CarLight_ResetTextureState(int index);
@@ -518,7 +520,12 @@ BYTE g_stageSurfaceMap[48] = {
 BYTE g_trailColor[8][4];
 // GLOBAL: CMR2 0x00588750
 int g_trailFrame;
-extern BYTE g_trailPointUsed[8][4][200];
+// OpenCMR2: the skid-mark ring holds up to TRAIL_MAX points per wheel. The original size, 200, stays the default; video.tire_track_length (0 = original 200, else 200..TRAIL_MAX)
+// lengthens the ring of every car slot (points are only laid for the viewed car of each view, so one car per view), so the geometry drawn per frame stays bounded: 4 wheels x 1000 points x 2 triangles = 8000 per view, 2 views fit the 16384-entry skid layer. Time-based expiry never runs in this port
+// (a point's age is only ever set to 0), so the ring size is what decides how long marks stay.
+#define TRAIL_MAX 1000
+extern BYTE g_trailPointUsed[8][4][TRAIL_MAX];
+int StageObject_TrailRing(int car);
 // One point of a wheel's skid mark ring (200 per wheel and car).
 struct TrailPoint {
     int age;                // 0x00 frames since it was laid
@@ -532,7 +539,7 @@ struct TrailPoint {
     BYTE flags : 4;
     BYTE pad;
 };
-extern TrailPoint g_trailPoints[8][4][200];
+extern TrailPoint g_trailPoints[8][4][TRAIL_MAX];
 extern int g_unk0x00549b20[8][4];
 extern FixVector g_carTyreTrailCenters[8][4];
 
@@ -1194,6 +1201,135 @@ int StageObject_ClampByteRange(int value);
 #define TRAIL_POINT(i) (&g_trailPoints[0][0][0] + (i))
 #define TRAIL_FADE(p, f) ((p)->f - (p)->f * (p)->age * 0x7c / 0x4d8)
 
+// Queues the quad (two triangles) joining pCur to pPrev. Returns false when nothing was queued.
+static bool DrawTrailSegment(const TrailPoint *pCur, const TrailPoint *pPrev)
+{
+    BYTE curColour[4] = { 0, 0, 0, 25 };
+    BYTE prevColour[4] = { 0, 0, 0, 25 };
+    Quad2DInputVertex a, b, c, d;
+    int alpha0, alpha1, alpha2, alpha3;
+    Texture *pTexture;
+
+    a.u = 0;
+    a.v = 0;
+    b.u = 0x10000;
+    b.v = 0;
+    d.u = 0x10000;
+    d.v = 0x10000;
+    c.u = 0;
+    c.v = 0x10000;
+    if (pPrev->colour[0] <= 200 && pPrev->age <= 0x4d8) {
+        alpha0 = pCur->alphaLeft;
+        alpha3 = pPrev->alphaRight;
+        alpha2 = pPrev->alphaLeft;
+        alpha1 = pCur->alphaRight;
+    } else {
+        alpha2 = TRAIL_FADE(pPrev, alphaLeft);
+        alpha3 = TRAIL_FADE(pPrev, alphaRight);
+        alpha0 = TRAIL_FADE(pCur, alphaLeft);
+        alpha1 = TRAIL_FADE(pCur, alphaRight);
+    }
+    alpha0 = StageObject_ClampByteRange(alpha0);
+    alpha1 = StageObject_ClampByteRange(alpha1);
+    alpha2 = StageObject_ClampByteRange(alpha2);
+    alpha3 = StageObject_ClampByteRange(alpha3);
+    if (alpha0 <= 1 && alpha1 <= 1 && alpha2 <= 1 && alpha3 <= 1)
+        return false;
+    curColour[0] = pCur->colour[0];
+    curColour[1] = pCur->colour[1];
+    curColour[2] = pCur->colour[2];
+    prevColour[0] = pPrev->colour[0];
+    prevColour[1] = pPrev->colour[1];
+    prevColour[2] = pPrev->colour[2];
+    a.x = pCur->left.x;
+    a.y = pCur->left.y;
+    a.z = pCur->left.z;
+    *(DWORD *)a.colour = *(DWORD *)curColour;
+    a.colour[3] = (BYTE)alpha0;
+    b.x = pCur->right.x;
+    b.y = pCur->right.y;
+    b.z = pCur->right.z;
+    *(DWORD *)b.colour = *(DWORD *)curColour;
+    b.colour[3] = (BYTE)alpha1;
+    c.x = pPrev->left.x;
+    c.y = pPrev->left.y;
+    c.z = pPrev->left.z;
+    *(DWORD *)c.colour = *(DWORD *)prevColour;
+    c.colour[3] = (BYTE)alpha2;
+    d.x = pPrev->right.x;
+    d.y = pPrev->right.y;
+    d.z = pPrev->right.z;
+    *(DWORD *)d.colour = *(DWORD *)prevColour;
+    d.colour[3] = (BYTE)alpha3;
+    if (pPrev->left.x == pPrev->right.x && pPrev->left.y == pPrev->right.y)
+        return false;
+    switch ((g_stageSurfaceInfo[pCur->material & 0xf].flags >> 2) & 3) {
+    case 1:
+        pTexture = g_unk0x00588744;
+        break;
+    case 2:
+        a.colour[0] = 0;
+        a.colour[1] = 0;
+        a.colour[2] = 0;
+        a.colour[3] = (BYTE)(alpha0 / 3);
+        *(DWORD *)c.colour = *(DWORD *)a.colour;
+        b.colour[0] = 0;
+        b.colour[1] = 0;
+        b.colour[2] = 0;
+        b.colour[3] = (BYTE)(alpha1 / 3);
+        *(DWORD *)d.colour = *(DWORD *)b.colour;
+        pTexture = g_unk0x00588748;
+        break;
+    default:
+        pTexture = g_unk0x00588740;
+        break;
+    }
+    Quad2D_QueueFixedTriangle(0, &b, &a, &c, pTexture, 0x26);
+    Quad2D_QueueFixedTriangle(0, &d, &b, &c, pTexture, 0x26);
+    return true;
+}
+
+static TrailHistory<TrailPoint> g_trailHist[8][4];
+// Reference radius for skipping far history, in fixed-point world coordinates (16.16). The game's world unit scale is not
+// verified natively.
+static const long long kTrailHistRadius = 150LL << 16;
+static const int kTrailHistSegmentsPerWheel = 1000;
+// Points examined in near chunks per wheel per frame. Worst case per wheel per view: 1024 chunk tests (64k point cap / 64) plus 4096 point visits.
+static const int kTrailHistVisitsPerWheel = 4096;
+void View_GetCameraXZ(unsigned view, int *x, int *z);
+static int g_trailDrawView;
+static int StageObject_TrailHistoryOption(void)
+{
+    int n = Sys_GetOption("video.tire_track_history", 0);
+    return n < 0 ? 0 : n > 64 ? 64 : n;
+}
+static void StageObject_TrailHistoryPush(int car, int wheel, const TrailPoint &p)
+{
+    TrailHistory<TrailPoint> &h = g_trailHist[car][wheel];
+    h.Init(StageObject_TrailHistoryOption() * 1024);
+    h.Push(p, (int)(((long long)p.left.x + p.right.x) / 2), (int)(((long long)p.left.z + p.right.z) / 2));
+}
+// Draws the stored history of one car instead of its 200-point ring. Returns false when the option is off.
+static bool StageObject_DrawTrailHistory(int index)
+{
+    int camX, camZ;
+    View_GetCameraXZ((unsigned)g_trailDrawView, &camX, &camZ);
+    if (StageObject_TrailHistoryOption() == 0)
+        return false;
+    const int hstep = g_stageSurfaceInfo[8].flags > 0 ? g_stageSurfaceInfo[8].flags : 1;
+    for (int wheel = 0; wheel < 4; wheel++) {
+        const TrailHistory<TrailPoint> &h = g_trailHist[index][wheel];
+        if (!h.Active() || h.count < 2)
+            continue;
+        h.Walk(camX, camZ, kTrailHistRadius, kTrailHistSegmentsPerWheel, kTrailHistVisitsPerWheel, [&](const TrailPoint &cur, const TrailPoint &prev) {
+            if (cur.frame != prev.frame + hstep || (prev.left.x == prev.right.x && prev.left.y == prev.right.y))
+                return false;
+            return DrawTrailSegment(&cur, &prev);
+        });
+    }
+    return true;
+}
+
 // Draws the tyre marks of one car: for every wheel it walks its ring of 200
 // trail points backwards in steps of g_stageSurfaceInfo[8].flags, joins each
 // point to the previous consecutive one with a textured quad (two triangles)
@@ -1202,12 +1338,6 @@ int StageObject_ClampByteRange(int value);
 // FUNCTION: CMR2 0x004658e0
 void CarEffects_DrawTyreMarks(int index)
 {
-    BYTE curColour[4] = { 0, 0, 0, 25 };
-    BYTE prevColour[4] = { 0, 0, 0, 25 };
-    Quad2DInputVertex a;
-    Quad2DInputVertex b;
-    Quad2DInputVertex c;
-    Quad2DInputVertex d;
     int *pHead;
     int base;
     int wheel;
@@ -1218,117 +1348,40 @@ void CarEffects_DrawTyreMarks(int index)
     int found;
     TrailPoint *pCur;
     TrailPoint *pPrev;
-    int alpha0;
-    int alpha1;
-    int alpha2;
-    int alpha3;
-    Texture *pTexture;
 
     if (index >= 8 || CGameInfo::GetGraphicsOptionBits25To26() == 2)
         return;
-    base = index * 800;
+    if (StageObject_DrawTrailHistory(index))
+        return;
+    base = index * 4 * TRAIL_MAX;
+    const int ring = StageObject_TrailRing(index);
     pHead = g_unk0x00549ba0[index];
-    a.u = 0;
-    a.v = 0;
-    b.u = 0x10000;
-    b.v = 0;
-    d.u = 0x10000;
-    d.v = 0x10000;
-    c.u = 0;
-    c.v = 0x10000;
-    for (wheel = 4; wheel != 0; wheel--, pHead++, base += 200) {
+    for (wheel = 4; wheel != 0; wheel--, pHead++, base += TRAIL_MAX) {
         j = 0;
         do {
             found = 0;
-            cur = (*pHead - j + 200) % 200;
+            cur = ((*pHead % ring) - j + ring) % ring;
             step = g_stageSurfaceInfo[8].flags;
             if (step > 1) {
-                k = cur - step + 200;
+                k = cur - step + ring;
                 do {
                     if (found)
                         break;
                     step--;
                     k++;
                     if ((&g_trailPointUsed[0][0][0])[base + cur] == 0 ||
-                        (&g_trailPointUsed[0][0][0])[base + k % 200] == 0)
+                        (&g_trailPointUsed[0][0][0])[base + k % ring] == 0)
                         continue;
-                    pPrev = TRAIL_POINT(k % 200 + base);
+                    pPrev = TRAIL_POINT(k % ring + base);
                     pCur = TRAIL_POINT(base + cur);
                     found = pCur->frame == pPrev->frame + step;
                     if (found != 1)
                         continue;
-                    if (pPrev->colour[0] <= 200 && pPrev->age <= 0x4d8) {
-                        alpha0 = pCur->alphaLeft;
-                        alpha3 = pPrev->alphaRight;
-                        alpha2 = pPrev->alphaLeft;
-                        alpha1 = pCur->alphaRight;
-                    } else {
-                        alpha2 = TRAIL_FADE(pPrev, alphaLeft);
-                        alpha3 = TRAIL_FADE(pPrev, alphaRight);
-                        alpha0 = TRAIL_FADE(pCur, alphaLeft);
-                        alpha1 = TRAIL_FADE(pCur, alphaRight);
-                    }
-                    alpha0 = StageObject_ClampByteRange(alpha0);
-                    alpha1 = StageObject_ClampByteRange(alpha1);
-                    alpha2 = StageObject_ClampByteRange(alpha2);
-                    alpha3 = StageObject_ClampByteRange(alpha3);
-                    if (alpha0 <= 1 && alpha1 <= 1 && alpha2 <= 1 && alpha3 <= 1)
-                        continue;
-                    curColour[0] = pCur->colour[0];
-                    curColour[1] = pCur->colour[1];
-                    curColour[2] = pCur->colour[2];
-                    prevColour[0] = pPrev->colour[0];
-                    prevColour[1] = pPrev->colour[1];
-                    prevColour[2] = pPrev->colour[2];
-                    a.x = pCur->left.x;
-                    a.y = pCur->left.y;
-                    a.z = pCur->left.z;
-                    *(DWORD *)a.colour = *(DWORD *)curColour;
-                    a.colour[3] = (BYTE)alpha0;
-                    b.x = pCur->right.x;
-                    b.y = pCur->right.y;
-                    b.z = pCur->right.z;
-                    *(DWORD *)b.colour = *(DWORD *)curColour;
-                    b.colour[3] = (BYTE)alpha1;
-                    c.x = pPrev->left.x;
-                    c.y = pPrev->left.y;
-                    c.z = pPrev->left.z;
-                    *(DWORD *)c.colour = *(DWORD *)prevColour;
-                    c.colour[3] = (BYTE)alpha2;
-                    d.x = pPrev->right.x;
-                    d.y = pPrev->right.y;
-                    d.z = pPrev->right.z;
-                    *(DWORD *)d.colour = *(DWORD *)prevColour;
-                    d.colour[3] = (BYTE)alpha3;
-                    if (pPrev->left.x == pPrev->right.x && pPrev->left.y == pPrev->right.y)
-                        continue;
-                    switch ((g_stageSurfaceInfo[pCur->material & 0xf].flags >> 2) & 3) {
-                    case 1:
-                        pTexture = g_unk0x00588744;
-                        break;
-                    case 2:
-                        a.colour[0] = 0;
-                        a.colour[1] = 0;
-                        a.colour[2] = 0;
-                        a.colour[3] = (BYTE)(alpha0 / 3);
-                        *(DWORD *)c.colour = *(DWORD *)a.colour;
-                        b.colour[0] = 0;
-                        b.colour[1] = 0;
-                        b.colour[2] = 0;
-                        b.colour[3] = (BYTE)(alpha1 / 3);
-                        *(DWORD *)d.colour = *(DWORD *)b.colour;
-                        pTexture = g_unk0x00588748;
-                        break;
-                    default:
-                        pTexture = g_unk0x00588740;
-                        break;
-                    }
-                    Quad2D_QueueFixedTriangle(0, &b, &a, &c, pTexture, 0x26);
-                    Quad2D_QueueFixedTriangle(0, &d, &b, &c, pTexture, 0x26);
+                    DrawTrailSegment(pCur, pPrev);
                 } while (step > 1);
             }
             j += step;
-        } while (j <= 199);
+        } while (j <= ring - 1);
     }
 }
 #undef TRAIL_POINT
@@ -5186,7 +5239,7 @@ void StageObject_AdvanceFlaggedCarSlotCounters(int car)
         for (i = 0; i < 4; i++) {
             if (g_unk0x005885a0[car][i] != 0) {
                 g_unk0x005885a0[car][i] = 0;
-                g_unk0x00549ba0[car][i] = (g_unk0x00549ba0[car][i] + 1) % 200;
+                g_unk0x00549ba0[car][i] = (g_unk0x00549ba0[car][i] + 1) % StageObject_TrailRing(car);
             }
         }
     }
@@ -5233,7 +5286,7 @@ void StageObject_UpdateSkidTrails(int carIndex)
             baseColour[1] = 0xff;
             baseColour[2] = 0xff;
         }
-        for (pointIndex = 0; pointIndex < 200; pointIndex++) {
+        for (pointIndex = 0; pointIndex < TRAIL_MAX; pointIndex++) {
             pPoint = &g_trailPoints[carIndex][wheel][pointIndex];
             if (g_trailPointUsed[carIndex][wheel][pointIndex] != 0 &&
                 pPoint->age > (shortLifetime ? g_stageSurfaceInfo[8].flags << 2 : g_stageSurfaceInfo[8].flags * 0x50)) {
@@ -5302,6 +5355,8 @@ void StageObject_UpdateSkidTrails(int carIndex)
             pPoint->material = material;
             g_trailPointUsed[carIndex][wheel][trailIndex] = 1;
             pPoint->frame = g_trailFrame;
+            if (StageObject_TrailHistoryOption() != 0 && (g_trailFrame % (g_stageSurfaceInfo[8].flags > 0 ? g_stageSurfaceInfo[8].flags : 1)) == 0)
+                StageObject_TrailHistoryPush(carIndex, wheel, *pPoint);
             if ((g_stageSurfaceInfo[material].flags & 2) == 0) {
                 g_trailColor[carIndex][0] += (g_stageSurfaceInfo[previousMaterial].red - g_trailColor[carIndex][0]) / 2;
                 g_trailColor[carIndex][1] += (g_stageSurfaceInfo[previousMaterial].green - g_trailColor[carIndex][1]) / 2;
@@ -5319,8 +5374,8 @@ void StageObject_UpdateSkidTrails(int carIndex)
                 g_unk0x00543708[carIndex][wheel] = 0;
                 g_unk0x00549b20[carIndex][wheel] = 1;
             }
-            g_trailPoints[carIndex][wheel][(g_unk0x00549ba0[carIndex][wheel] + 1) % 200].alphaLeft = 0;
-            g_trailPoints[carIndex][wheel][(g_unk0x00549ba0[carIndex][wheel] + 1) % 200].alphaRight = 0;
+            g_trailPoints[carIndex][wheel][(g_unk0x00549ba0[carIndex][wheel] + 1) % StageObject_TrailRing(carIndex)].alphaLeft = 0;
+            g_trailPoints[carIndex][wheel][(g_unk0x00549ba0[carIndex][wheel] + 1) % StageObject_TrailRing(carIndex)].alphaRight = 0;
         } else if (g_unk0x00543708[carIndex][wheel] != 0 || g_unk0x00549b20[carIndex][wheel] != 0) {
             g_unk0x005885a0[carIndex][wheel] = 1;
         }
@@ -7753,11 +7808,17 @@ void StageObject_CreateRecordGlows(void)
 // Skid mark points of every car wheel: a used flag and a 0x28-byte record
 // for each of the 200 points.
 // GLOBAL: CMR2 0x00548220
-BYTE g_trailPointUsed[8][4][200];
+BYTE g_trailPointUsed[8][4][TRAIL_MAX];
 // GLOBAL: CMR2 0x00549b20
 int g_unk0x00549b20[8][4];
 // GLOBAL: CMR2 0x00549da0
-TrailPoint g_trailPoints[8][4][200];
+TrailPoint g_trailPoints[8][4][TRAIL_MAX];
+int StageObject_TrailRing(int car)
+{
+    (void)car;
+    int n = Sys_GetOption("video.tire_track_length", 0);
+    return n <= 200 ? 200 : n > TRAIL_MAX ? TRAIL_MAX : n;
+}
 
 // Clears every wheel's skid marks and trail state.
 // FUNCTION: CMR2 0x00465530
@@ -7770,13 +7831,16 @@ void CarSkid_ClearWheelTrails(void)
     int *q;
 
     for (car = 0; car < 8; car++) {
-        for (point = 0; point < 200; point++) {
+        for (point = 0; point < TRAIL_MAX; point++) {
             for (wheel = 0; wheel < 4; wheel++) {
                 g_trailPointUsed[car][wheel][point] = 0;
                 g_trailPoints[car][wheel][point].age = 0;
             }
         }
     }
+    for (car = 0; car < 8; car++)
+        for (wheel = 0; wheel < 4; wheel++)
+            g_trailHist[car][wheel].Clear();
     p = (int *)g_trailDelta + 1;
     memset(g_unk0x00549ba0, 0, sizeof(g_unk0x00549ba0));
     memset(g_trailState, 0, sizeof(g_trailState));
@@ -8317,6 +8381,7 @@ void StageObject_UpdateRaceSkidTrails(int param_1)
     int i;
 
     if (CGameInfo::GetGraphicsOptionBits25To26() != 2) {
+        g_trailDrawView = param_1 & 0xff;
         i = 0;
         s = Car_GetOrderCount();
         if (0 < s) {
@@ -8588,6 +8653,10 @@ BYTE *Replay_LoadValidatedBuffer(char *path)
 
 void FixMatrix_RotateAboutRight(FixMatrix *pOut, unsigned short angle);
 
+// OpenCMR2 cockpit eye shift diagnostics (16.16): latest widening and eye displacement along the camera forward axis, per view.
+static int g_lastCockpitWidening[8] = {65536, 65536, 65536, 65536, 65536, 65536, 65536, 65536}, g_lastCockpitStep[8];
+void View_GetCockpitShift(unsigned int view, int *widening, int *step) { *widening = g_lastCockpitWidening[view & 7]; *step = g_lastCockpitStep[view & 7]; }
+
 // GLOBAL: CMR2 0x0051c9b0
 short g_carMountRightRotationAngle = 0x71;
 
@@ -8622,9 +8691,22 @@ void StageObject_BuildCarMountWorldMatrix(CameraRecord *object, void *unused)
     {   // OpenCMR2 cockpit eye shift (visual only, default 0 = unchanged): moves the eye along the camera's forward axis by the view's widening.
         // Positive = forward axis, negative = the other way; which sign hides the model edges is to be tuned natively.
         int shiftPct = Sys_GetOption("video.cockpit_eye_shift", 0);
+        {   // diagnostics: what this view's eye actually did on its latest build, for the F10 overlay
+            int widening0 = View_CurrentWidening(object->index);
+            g_lastCockpitWidening[object->index & 7] = widening0;
+            g_lastCockpitStep[object->index & 7] = CockpitEyeShift_Amount(widening0, shiftPct);
+        }
         if (shiftPct != 0) {
             int widening = View_CurrentWidening(object->index);
             int step = CockpitEyeShift_Amount(widening, shiftPct);
+            object->matrix.position.x += FixMul(object->matrix.forward.x, step);
+            object->matrix.position.y += FixMul(object->matrix.forward.y, step);
+            object->matrix.position.z += FixMul(object->matrix.forward.z, step);
+        }
+    }
+    {   // OpenCMR2 debug camera move (video.camera_move_cockpit), signed along the camera forward axis, + forward, - back, 0.05 model units per step, scaled by speed (0 standing still).
+        int step = View_CameraMoveStep(3, object->index);
+        if (step != 0) {
             object->matrix.position.x += FixMul(object->matrix.forward.x, step);
             object->matrix.position.y += FixMul(object->matrix.forward.y, step);
             object->matrix.position.z += FixMul(object->matrix.forward.z, step);

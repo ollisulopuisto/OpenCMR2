@@ -20,8 +20,9 @@ inline int SpeedFov_Ease(int shown, int target, int elapsedMs)
     if (elapsedMs < 0 || elapsedMs > 250) return target;
     return shown + (int)((long long)(target - shown) * elapsedMs / (elapsedMs + 400));
 }
-// Largest speed FOV percent: 100 widens x2.0 at full speed, about what FOV preview 150 shows against a saved 70-80.
-static const int kSpeedFovMaxPct = 100;
+// Largest speed FOV percent: 100 widens x2.0 at full speed, about what FOV preview 150 shows against a saved 70-80. 101..150 is a testing range
+// (x2.5 at 150); 100 and below are unchanged. The FOV dolly follows the widening, so a large value pulls the chase camera back further.
+static const int kSpeedFovMaxPct = 150;
 // Divides the projection zoom so the view widens by pct percent at full speed (pct 0..40, shown 16.16 ratio).
 inline int SpeedFov_Zoom(int zoom, int pct, int shown)
 {
