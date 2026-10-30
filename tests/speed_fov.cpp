@@ -41,6 +41,20 @@ int main(){
     CHECK(SpeedFov_Zoom(65536,20,65536)==54613);
     CHECK(SpeedFov_Zoom(65536,999,65536)==SpeedFov_Zoom(65536,kSpeedFovMaxPct,65536) && SpeedFov_Zoom(65536,100,65536)==32768);
     CHECK(SpeedFov_Zoom(65536,20,65536)<65536);
+    {   // testing range above 150: finite, monotonic, never zero or negative, view stays under 180 degrees at the widest saved/preview combination
+        CHECK(kSpeedFovMaxPct==500);
+        auto fixmul=[](int a,int b){return (int)(((long long)a*b)>>16);};
+        const int fovScale=(int)(0x275c2*70.0/80.0);
+        int prev=1<<30;
+        for(int pct=0;pct<=500;pct+=5){
+            int z=SpeedFov_Zoom(40632,pct,65536);CHECK(z>0&&z<=prev);prev=z;
+            float m22=0.5f*fixmul(0x2147a,fixmul(z,fovScale))/65536.f;
+            CHECK(m22>0.05f);                                            // far above fixed-point resolution (1/65536)
+            CHECK(2*std::atan(1/m22)*57.29578f<179.f);                  // finite projection, under 180 degrees
+        }
+        CHECK(SpeedFov_Zoom(65536,500,65536)==10922);   // x6 at the top
+        CHECK(SpeedFov_Zoom(65536,501,65536)==SpeedFov_Zoom(65536,500,65536));
+    }
     if(!fails) std::puts("speed_fov ok");
     return fails;
 }

@@ -6552,7 +6552,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         BYTE colour[4] = {240, 246, 255, 255};
         unsigned long long tick=0;unsigned frame=0,changes=0;
         bool spectator=SceneryPack_GetAnimationStatus(&tick,&frame,&changes);
-        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?6:5)+11+5+2+5);   // +5: the Speed FOV, FOV dolly, FOV preview and footer rows were drawn below the panel in the 12:04 native screenshot (panel ended at "Measured")
+        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?6:5)+11+5+2+5+1);   // +5: the Speed FOV, FOV dolly, FOV preview and footer rows were drawn below the panel in the 12:04 native screenshot (panel ended at "Measured")
         short panel[4] = {(short)layout.x,(short)layout.y,(short)layout.width,(short)layout.height};
         Sprite_FillRect(NULL, panel, background, 1);
         char text[96];
@@ -6573,16 +6573,43 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         {   // Wall-clock ms spent in the scenery sidecar draws last frame (diagnostic build), next to the frame time.
             static unsigned long long prn=0,ptn=0,pcl=0;unsigned long long rn=0,tn=0,cl=0;
             SceneryPack_GetTimeTotals(&rn,&tn,&cl);
-            snprintf(text,sizeof(text),"Scenery CPU ms: all %.2f (whole trees %.2f) %llu calls | frame %.1f ms",(tn-ptn)/1e6,(rn-prn)/1e6,cl-pcl,Graphics_GetFrameRate()>0?1000.0/Graphics_GetFrameRate():0.0);
+            static unsigned long long pwm=0,psb=0;unsigned long long wm=0,sb=0;SceneryPack_GetTimeSplit(&wm,&sb);
+            snprintf(text,sizeof(text),"Scenery CPU ms: all %.2f | whole trees %.2f (wind math %.2f, record draws %.2f) %llu calls",(tn-ptn)/1e6,(rn-prn)/1e6,(wm-pwm)/1e6,(sb-psb)/1e6,cl-pcl);
+            pwm=wm;psb=sb;
             prn=rn;ptn=tn;pcl=cl;
             Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?5:4)*layout.line,layout.font,layout.width-2*layout.pad,colour);
+        }
+        static char hitchText[200]="";
+        {   // Same-interval split (diagnostic): everything below is a difference between two consecutive pane draws, so all numbers cover the same frame.
+            static double pt=0,pe=0,pw=0;static unsigned long long ptn2=0;
+            double now=Sys_GetTicksPrecise(),ex=0,wt=0;Gfx_GetPresentTimeTotals(&ex,&wt);
+            unsigned long long rn=0,tn=0,cl=0;SceneryPack_GetTimeTotals(&rn,&tn,&cl);
+            double interval=pt>0?now-pt:0,sc=(tn-ptn2)/1e6;
+            snprintf(text,sizeof(text),"Frame split ms: interval %.1f | executor encode+submit %.1f (swapchain wait %.1f) | scenery %.1f | rest %.1f",interval,ex-pe,wt-pw,sc,interval-(ex-pe)-sc);
+            {   // Worst single frame over ~5 s windows (diagnostic): hitches that a one-frame readout misses. Timing only, no cause claimed.
+                static double winStart=0,worst=0,wEx=0,wSc=0,lastWorst=0,lWEx=0,lWSc=0;static unsigned over25=0,frames=0,lastOver=0,lastFrames=0;
+                const unsigned long long presents=Gfx_GetPresentCount();static unsigned long long prevPresents=0;
+                if(prevPresents==0||presents!=prevPresents+1){   // frames were presented without this pane (pane off, menu, pause): restart the window, but keep a genuine long single frame
+                    winStart=0;worst=0;over25=0;frames=0;lastFrames=0;snprintf(hitchText,sizeof(hitchText),"Hitch block: collecting 5 s after pane/menu gap");interval=0;
+                } else if(interval>0){
+                    if(winStart==0)winStart=now;
+                    frames++;if(interval>25.0)over25++;
+                    if(interval>worst){worst=interval;wEx=ex-pe;wSc=sc;}
+                }
+                prevPresents=presents;
+                if(now-winStart>=5000.0&&winStart>0){lastWorst=worst;lWEx=wEx;lWSc=wSc;lastOver=over25;lastFrames=frames;worst=0;over25=0;frames=0;winStart=now;}
+                if(lastFrames)snprintf(hitchText,sizeof(hitchText),"Last full 5 s block: worst frame %.1f ms (executor %.1f, scenery %.1f) | over 25 ms: %u of %u",lastWorst,lWEx,lWSc,lastOver,lastFrames);
+            }
+            pt=now;pe=ex;pw=wt;ptn2=tn;
+            Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?6:5)*layout.line,layout.font,layout.width-2*layout.pad,colour);
         }
         unsigned treeDraws=0,windDraws=0,originalTrees=0;
         SceneryPack_GetTreeStatus(&treeDraws,&windDraws,&originalTrees);
         snprintf(text,sizeof(text),"Tree draws %u | wind %u | original %u",treeDraws,windDraws,originalTrees);
         Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?3:2)*layout.line,layout.font,layout.width-2*layout.pad,colour);
-        int row=spectator?6:5;
+        int row=spectator?7:6;
         auto line=[&](const char*s,const BYTE*c=nullptr){Font_DrawTextScaled(1,(char*)s,layout.x+layout.pad,layout.y+layout.pad+row++*layout.line,layout.font,layout.width-2*layout.pad,(BYTE*)(c?c:colour));};
+        if(hitchText[0])line(hitchText);
         for(int i=0;i<3;i++)line(Sys_GetLaunchSummary(i));
         GfxEffectStatus status=Gfx_GetEffectStatus();
         auto effect=[&](unsigned bit){return status.submitted<0?"?":!(status.requested&bit)?"off":status.encoded&bit?"enc":"skip";};
@@ -6600,7 +6627,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             BYTE lit[4]={110,255,140,255},dim[4]={150,160,170,255};
             GfxDofStatus dof=Gfx_GetDofStatus();
             const char *dofWhy[]={"unknown","depth_of_field off","no sampled depth","range or blur is 0","pass unavailable","encoded","not a race frame"};
-            int tv=Sys_GetOption("video.tunnel_vision",100);
+            int tv=Sys_GetOption("video.tunnel_vision",130);
             bool gl=false,dofOn=dof.reason==5;   // both backends report this status now
             if(gl)snprintf(text,sizeof text,"DoF pass: n/a (OpenGL backend)");
             else if(dofOn&&dof.blur<=0.0f)snprintf(text,sizeof text,"DoF pass: encoded for tunnel vision only (depth blur 0)");
@@ -6635,7 +6662,8 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             int viewType=0,drone=0,zoomRaw=0,fovYRaw=0,fovSet=70;
             AttractCapture_ViewSignature((int)param2,&viewType,&drone);
             View_GetEffectiveProjection(param2,&zoomRaw,&fovYRaw,&fovSet);
-            snprintf(text,sizeof text,"Camera: type %d%s (live, view %d)",viewType,(drone&&viewType==5)?" drone":"",(int)param2);
+            if(drone&&viewType==5)snprintf(text,sizeof text,"Camera: type %d drone (live, view %d), video.drone_distance %d%% in effect",viewType,(int)param2,Sys_GetOption("video.drone_distance",50));
+            else snprintf(text,sizeof text,"Camera: type %d%s (live, view %d)",viewType,(drone&&viewType==5)?" drone":"",(int)param2);
             line(text);
             snprintf(text,sizeof text,"video.fov number %d (legacy scale, 70 original, higher = wider; not an angle); zoom x%.2f (camera base x%.2f), proj scale %.2f",fovSet,zoomRaw/65536.0,g_viewZooms[param2&1]/65536.0,fovYRaw/65536.0);
             line(text);
@@ -6670,7 +6698,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         // Compact: three short lines at the debug text size, bottom-left, clear of the right-hand panel and the speedometer.
         char big[3][112];
         snprintf(big[0], 112, "Camera %s type %d | FOV %.1f v %.1f h", name, vt, vd, hd);
-        snprintf(big[1], 112, "Widening x%.2f (speed FOV %d, speed %d)", sp > 0 ? 1.0 + (sp > 150 ? 150 : sp) * (sh / 65536.0) / 100.0 : 1.0, sp, sh * 100 / 65536);
+        snprintf(big[1], 112, "Widening x%.2f (speed FOV %d, speed %d)", sp > 0 ? 1.0 + (sp > 500 ? 500 : sp) * (sh / 65536.0) / 100.0 : 1.0, sp, sh * 100 / 65536);
         snprintf(big[2], 112, "Fwd(+)/back(-) %+.2f side %+.2f up %+.2f dist %.2f | move %+.2f", cf, cs, cu, cd, eff / 65536.0);
         int bigFont = std::clamp((int)g_pGraphics->resY / 64, 14, 24), bigLine = bigFont + bigFont / 4, pad = bigFont / 2;
         int bw = (int)g_pGraphics->resX * 46 / 100, bx = (int)g_pGraphics->resX * 2 / 100;

@@ -2301,12 +2301,14 @@ void Game_DrawDeferredObjects(void)
         }
         if (g_depthSortDrawLists != 0)
             qsort(sorted, CGame::m_deferredDrawCount, sizeof(sorted[0]), Game_CompareDeferredDistance);
+        SceneryPack_BeginBatch();
         for (i = 0; i < (unsigned int)CGame::m_deferredDrawCount; i++) {
             pObject = sorted[i].pObject;
             if (SceneryPack_Draw((StageObject *)pObject,pObject->matrix)) {
                 pObject->pMesh->flags |= 8; // preserve next-frame visibility bookkeeping
                 continue;
             }
+            SceneryPack_FlushBatch(); // keep recorded order before a non-replacement draw
             int texture = pObject->pMesh->pTriangles->textures[0];
             // OpenCMR2: an animated scenery object draws its current frame
             // ([video] video.animated_scenery) instead of the base texture.
@@ -2321,6 +2323,7 @@ void Game_DrawDeferredObjects(void)
             pObject->pMesh->flags |= 8;
             Graphics_DrawMeshLOD(pObject->pMesh, 1, 0, 0);
         }
+        SceneryPack_EndBatch();
         CGame::m_deferredDrawCount = 0;
     }
 }

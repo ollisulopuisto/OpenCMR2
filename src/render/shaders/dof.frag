@@ -23,8 +23,10 @@ void main()
     // view distance and measure focus on a log scale between near and far (unit free):
     // 0 = near plane, 1 = far plane.
     float focusPos = depth;
+    float viewZ = 1.0e6;   // view distance of this pixel in world units, when the projection is known
     if (extra.z > 0.0 && extra.w > extra.z) {
         float z = extra.z * extra.w / max(extra.w - depth * (extra.w - extra.z), 1e-6);
+        viewZ = z;
         focusPos = clamp(log(max(z, extra.z) / extra.z) / log(extra.w / extra.z), 0.0, 1.0);
     }
     float coc = smoothstep(0.0, max(focalRange, 0.001), abs(focusPos - focalDistance));
@@ -47,6 +49,10 @@ void main()
             float inZ = edge01(carMode.y - 2.0 * zp, carMode.y - zp, focusPos) * (1.0 - edge01(carMode.z + zp, carMode.z + 2.0 * zp, focusPos));
             peripheral = tunnel * (1.0 - inU * inV * inZ);
         }
+        // Cockpit: carRect.x (peripheral mode only, 0 elsewhere) is a view distance in world units. Pixels nearer than that are the interior
+        // (dashboard, wheel, hands, roof): their real depth keeps them out of the tunnel blur, fading in over 40 percent more distance.
+        // The road and scenery beyond are blurred as before. A depth test on the pixel, not a screen-position guess.
+        if (carMode.x < 0.5 && carRect.x > 0.0) peripheral *= edge01(carRect.x, carRect.x * 1.4, viewZ);
         coc = max(coc, peripheral);
         tunnelRadius = peripheral * extra.y;
     }

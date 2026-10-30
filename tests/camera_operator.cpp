@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line%d: %s\n",__LINE__,#x);return 1;}}while(0)
 int main(){
  using namespace CameraOperator;State a,b;
@@ -88,6 +89,52 @@ int main(){
   State base,close,far;close.distanceScale=.5f;far.distanceScale=1.5f;
   for(int i=0;i<400;i++){base.Step({0,0,0},0,0,0,6.5,2,.04);close.Step({0,0,0},0,0,0,6.5,2,.04);far.Step({0,0,0},0,0,0,6.5,2,.04);}
   CHECK(close.usedDistance<base.usedDistance*.6f&&far.usedDistance>base.usedDistance*1.4f&&close.usedDistance>=4.f&&far.usedDistance<=26.f);
+ }
+ {  // moving car: the camera must not sit at the old 1.3 x tether when the knob is lowered, and knob 100 must stay as it was (13.4 from the car at 28 u/s, straight road)
+  auto settle=[](float scale){State s;s.distanceScale=scale;V3 car={0,0,0};for(int i=0;i<1200;i++){car.z+=28.f/60;s.Step(car,0,0,73.f,6.5f,1.5f,1.f/60);}V3 a=s.position-car;return a.Length();};
+  float d100=settle(1.f),d60=settle(.6f),d50=settle(.5f);
+  CHECK(std::abs(d100-13.38f)<.05f);CHECK(d60<8.f&&d50<d60&&d50<7.f);
+ }
+ {  // camera escape: wild ground samples, tunnel roofs, variable dt, teleports and pauses must never send the camera far from the car
+  typedef std::function<bool(V3,float&)> G;
+  auto worst=[](G g,float scale,float dtBase,bool jitter,bool jumps){
+   State s;s.distanceScale=scale;V3 car={0,0,0};float worstSep=0;unsigned seed=1;
+   for(int i=0;i<1500;i++){
+    seed=seed*1664525u+1013904223u;float dt=dtBase;if(jitter)dt=dtBase*(.2f+(seed>>16&255)/64.f); // .2x to 4.2x
+    if(jumps&&i%400==399)car.z+=300; // respawn / restart
+    if(jumps&&i%500==250)dt=0;       // paused step
+    car.z+=28.f*std::max(dt,0.f);
+    if(s.ready)s.position.y-=s.terrainLift;
+    s.Step(car,0,0,1.5f,6.5f,1.5f,dt,nullptr);
+    s.ConstrainTerrain(car,dt,[&](V3 p,float&y){return g(p,y);});
+    if(s.ready)worstSep=std::max(worstSep,(s.position-car).Length());
+   }
+   return worstSep;
+  };
+  for(float sc:{1.f,.5f})for(bool j:{false,true}){
+   CHECK(worst([](V3,float&y){y=-1.5f;return true;},sc,.04f,j,j)<40.f);
+   CHECK(worst([](V3 p,float&y){y=(p.z>100&&p.z<100.5f)?400.f:-1.5f;return true;},sc,.04f,j,false)<40.f);   // one wild sample
+   CHECK(worst([](V3 p,float&y){y=(p.y>2)?8.f:-1.5f;return true;},sc,.04f,j,false)<40.f);                    // tunnel roof
+   CHECK(worst([](V3 p,float&y){y=(((int)(p.z*3))%7==0)?5000.f:-1.5f;return true;},sc,.04f,j,false)<40.f);    // many wild samples
+   CHECK(worst([](V3 p,float&y){y=std::nanf("");return true;},sc,.04f,j,false)<40.f);                         // non-finite samples
+  }
+ }
+ {  // early-return paths: a zero, negative, oversized or NaN time step after a teleport must not leave a stale far camera
+  for(float badDt:{0.f,-.04f,.5f,(float)NAN}){
+   State s;V3 car={0,0,0};for(int i=0;i<200;i++){car.z+=.5f;s.Step(car,0,0,1.5f,6.5f,1.5f,.04f);}
+   CHECK(s.ready);car.z+=500;s.Step(car,0,0,1.5f,6.5f,1.5f,badDt);s.ConstrainTerrain(car,badDt,[](V3,float&y){y=-1.5f;return true;});
+   CHECK(!s.ready||(s.position-car).Length()<=60.f);
+   car.z+=.5f;s.Step(car,0,0,1.5f,6.5f,1.5f,.04f);CHECK((s.position-car).Length()<20.f);
+  }
+  State s;V3 car={0,0,0};for(int i=0;i<200;i++)s.Step(car,0,0,1.5f,6.5f,1.5f,.04f);
+  s.position.y=1e30f;CHECK(s.Guard(car)&&!s.ready); // far/huge
+  State t;for(int i=0;i<10;i++)t.Step(car,0,0,1.5f,6.5f,1.5f,.04f);t.position.x=NAN;CHECK(t.Guard(car)&&!t.ready);
+ }
+ {  // a bank that really needs more than the cap: the camera is held at the cap and may clip a very tall bank, but stays near the car
+  State s;V3 car={0,0,0};float worstUp=0;
+  for(int i=0;i<600;i++){car.z+=1.1f;if(s.ready)s.position.y-=s.terrainLift;s.Step(car,0,0,1.5f,6.5f,1.5f,.04f);
+   s.ConstrainTerrain(car,.04f,[](V3,float&y){y=12.f;return true;});if(s.ready)worstUp=std::max(worstUp,s.position.y);}
+  CHECK(worstUp<=11+4+8+1);
  }
  puts("world camera position/orbit inertia, steering lens, settling, determinism/reset pass");
 }

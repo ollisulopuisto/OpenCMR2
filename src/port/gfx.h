@@ -282,6 +282,9 @@ void Gfx_SetDepthOfField(BOOL enabled, int focalDistance, int focalRange, int ma
    1 = fast). With depth_of_field on, the sharp zone narrows toward the middle of the screen and the
    focus band gets shallower as it rises. Purely visual. SDL_GPU only. */
 void Gfx_SetSpeedFocus(float speed);
+/* OpenCMR2 cockpit view: pixels nearer than this view distance (world units, the interior) stay out of the tunnel-vision blur. 0 = off. SDL_GPU only. */
+void Gfx_SetTunnelNearClear(float worldUnits);
+float Gfx_GetTunnelNearClear(void);
 /* OpenCMR2: speed streak strength 0..1 (visual only; directional radial streak, SDL_GPU backend). */
 void Gfx_SetSpeedStreak(float strength);
 /* OpenCMR2: vapor trail strength 0..1 (visual only; thin trails shed behind the followed car, SDL_GPU backend, 0 = off). */
@@ -338,6 +341,11 @@ void Gfx_GetBlendDepthState(int *out);
 void Gfx_SetRaysStatus(int reason);
 int Gfx_GetRaysStatus(void);
 DWORD Gfx_GetFrameDrawCalls(void);
+/* OpenCMR2 diagnostics: ms inside the frame executor and, of that, the swapchain wait, summed since launch. */
+void Gfx_NoteSwapchainWait(double ms);
+void Gfx_GetPresentTimeTotals(double *execMs, double *waitMs);
+/* OpenCMR2 diagnostics: number of Present() calls since launch (monotonic). */
+unsigned long long Gfx_GetPresentCount(void);
 DWORD Gfx_GetFrameVertices(void);
 DWORD Gfx_GetFrameIndices(void);
 DWORD Gfx_GetFrameTriangles(void);

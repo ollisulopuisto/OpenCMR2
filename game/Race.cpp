@@ -4667,12 +4667,18 @@ void StageObject_InterpolateHeadlightGlows(int t);
 
 // OpenCMR2: hands the speed-driven look settings (tunnel vision, speed streak, vapor trails) to the renderer from the car speed. Visual only.
 // Also called while paused with the tuning panel open, so a changed setting reaches the frozen scene.
+void AttractCapture_ViewSignature(int view, int *type, int *drone);
 void Race_ApplySpeedEffectParams(void)
 {
+    {   // Cockpit (camera type 3) only: the interior's own depth keeps it out of the tunnel-vision blur. Unit: tenths of a world unit, default 16 = 1.6.
+        int type = 0, drone = 0; AttractCapture_ViewSignature(0, &type, &drone);
+        int tenths = Sys_GetOption("video.cockpit_blur_clear", 16); if (tenths < 0) tenths = 0; if (tenths > 60) tenths = 60;
+        Gfx_SetTunnelNearClear(type == 3 ? tenths / 10.0f : 0.0f);
+    }
     // OpenCMR2: speed-driven tunnel vision (visual only; reads speed, changes nothing in the sim).
     {
         float speedUnits = SpeedFov_HeldRatio((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0)); // hold: overdo test only
-        int strength = Sys_GetOption("video.tunnel_vision", 100); // 0..200, adjustable; 0 = off; above 100 is the experimental overdrive
+        int strength = Sys_GetOption("video.tunnel_vision", 130); // 0..200, adjustable; 0 = off; above 100 is the experimental overdrive
         if (strength < 0) strength = 0;
         if (strength > 200) strength = 200;
         Gfx_SetSpeedFocus(speedUnits * (float)strength / 100.0f);
