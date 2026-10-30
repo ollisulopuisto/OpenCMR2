@@ -19,6 +19,11 @@ void main()
     vec3 c = center.rgb * balance;
     float y = dot(c, vec3(0.2126, 0.7152, 0.0722));
     c = mix(vec3(y), c, saturation);
-    c = (c - 0.5) * contrast + 0.5;
-    outColor = vec4(clamp(c, 0.0, 1.0), center.a);
+    c = clamp(c, 0.0, 1.0);
+    // S-curve instead of straight contrast plus clip: blend between identity and smoothstep. Black and white map to themselves, the slope
+    // at middle grey is `contrast` (1.05 at default strength), and the slope falls toward 0 at both ends, so highlights roll off and nothing
+    // is pushed to flat white or black. contrast 1 is the exact identity.
+    float k = clamp((contrast - 1.0) * 2.0, -1.0, 1.0);
+    c = mix(c, c * c * (3.0 - 2.0 * c), k);
+    outColor = vec4(c, center.a);
 }
