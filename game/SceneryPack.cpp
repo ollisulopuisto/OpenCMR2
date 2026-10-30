@@ -1,4 +1,5 @@
 #include "SceneryMotion.h"
+#include "CrowdMesh.h"
 #include "SceneryPack.h"
 #include "CrowdSelection.h"
 #include "ScenerySHA256.h"
@@ -12,6 +13,7 @@
 #include "port/sys.h"
 #include "port/gfx.h"
 #include <map>
+#include <unordered_map>
 #include <set>
 #ifdef rand
 #undef rand
@@ -34,7 +36,8 @@ uint64_t animationTime=0;
 const StageObject *diagnosticObject=nullptr;
 bool diagnosticArticulated=false;
 unsigned diagnosticFrame=0,diagnosticChanges=0;uint64_t diagnosticTime=0;
-unsigned loggedSecond=0,treeReplacementDraws=0,treeWindDraws=0;
+unsigned loggedSecond=0,treeReplacementDraws=0,treeWindDraws=0,crowdDraws=0;unsigned long long crowdTriangles=0;
+std::unordered_map<const Mesh*,CrowdMesh::Template<GfxVertex>> crowdMeshes;
 
 struct Part { std::vector<GfxVertex> vertices; PackTexture *texture=nullptr; };
 struct Asset { std::map<const Mesh*,std::vector<Part>> fitted; int sourceWidth=0,sourceHeight=0; SceneryFormat::Entry entry; std::string failure; std::set<std::string> loggedFailures; bool attempted=false,ready=false; std::vector<Part> parts; std::vector<PackTexture*> frames; };
@@ -172,7 +175,7 @@ void SceneryPack_RegisterSource(Texture *texture,const void *bytes,unsigned size
 }
 void SceneryPack_RegisterArchive(GenericFile *file,const char *path){if(file&&path)archives[file]=Leaf(path);}
 struct ReactCar{float x=0,z=0,speed=0;bool valid=false;uint64_t at=0;};static ReactCar reactCars[8];
-void SceneryPack_Clear(){assets.clear();windIdentities.clear();windLogged.clear();treeOriginalLogged.clear();archives.clear();sourceIdentities.clear();identities.clear();unmatched.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;identityContract=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;for(auto &c:reactCars)c=ReactCar();diagnosticObject=nullptr;diagnosticArticulated=false;diagnosticFrame=diagnosticChanges=loggedSecond=treeReplacementDraws=treeWindDraws=0;diagnosticTime=0;}
+void SceneryPack_Clear(){crowdMeshes.clear();assets.clear();windIdentities.clear();windLogged.clear();treeOriginalLogged.clear();archives.clear();sourceIdentities.clear();identities.clear();unmatched.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;identityContract=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;for(auto &c:reactCars)c=ReactCar();diagnosticObject=nullptr;diagnosticArticulated=false;diagnosticFrame=diagnosticChanges=loggedSecond=treeReplacementDraws=treeWindDraws=0;diagnosticTime=0;}
 void SceneryPack_Advance(int step){if(step>0)animationTime+=(unsigned)step;}
 void SceneryPack_SetReactionSource(int slot,int x,int z,int speed,bool valid){if(slot<0||slot>=8)return;reactCars[slot]={x/65536.f,z/65536.f,speed/65536.f,valid,animationTime};}
 static bool DrawReplacement(StageObject *object,const float *billboard,unsigned textureCount,Texture **textureBuffer){
@@ -224,31 +227,41 @@ static bool DrawReplacement(StageObject *object,const float *billboard,unsigned 
         float excitement=0;
         if(Sys_GetOption("video.reactive_spectators",1)!=0)for(const auto &c:reactCars)if(c.valid&&animationTime-c.at<65536ull*50)
             excitement=std::max(excitement,SceneryMotion::Excitement(object->position.x/65536.f-c.x,object->position.z/65536.f-c.z,c.speed));
-        PackTexture *t=asset->frames[frame];std::vector<GfxVertex> vertices;
+        PackTexture *t=asset->frames[frame];
         bool irregular=Sys_GetOption("video.spectator_irregular",1)!=0;
         float left=v[0].x,right=v[0].x;for(int i=1;i<mesh->field_0x10;i++){left=std::min(left,v[i].x);right=std::max(right,v[i].x);}
         float span=right-left;
-        for(int i=0;i<mesh->triangleCount;i++){
-            GfxVertex tri[3];
-            for(int j=0;j<3;j++){
+        // Reused across draws and passes (reflections draw the same card): no allocation once warm.
+        static std::vector<GfxVertex> vertices;vertices.clear();
+        if(!irregular){
+            for(int i=0;i<mesh->triangleCount;i++)for(int j=0;j<3;j++){
                 unsigned ix=mesh->pTriangles[i].vertexIndex[j];if(ix>=(unsigned)mesh->field_0x10)return false;
-                auto &p=v[ix];tri[j]={p.x,p.y,p.z,p.nx,p.ny,p.nz,p.diffuseColour,p.specularColour,p.textureCoordinates[0][0],p.textureCoordinates[0][1],0,0};
+                auto &p=v[ix];vertices.push_back({p.x+SceneryMotion::ReactiveOffset(p.y,bottom,height,animationTime,phase,excitement),p.y,p.z,p.nx,p.ny,p.nz,p.diffuseColour,p.specularColour,p.textureCoordinates[0][0],p.textureCoordinates[0][1],0,0});}
+        }else{
+            // Each source triangle is cut into 16 once per mesh (silhouette and texture mapping unchanged) so the sway can
+            // differ along the card: one card carries several people, one tempo for all looks like unison.
+            auto &tpl=crowdMeshes[mesh];
+            if(!tpl.Matches(mesh->triangleCount,mesh->field_0x10,bottom,height,left,span)){
+                tpl=CrowdMesh::Template<GfxVertex>();tpl.verts.reserve((size_t)mesh->triangleCount*48);
+                for(int i=0;i<mesh->triangleCount;i++){
+                    GfxVertex tri[3];
+                    for(int j=0;j<3;j++){
+                        unsigned ix=mesh->pTriangles[i].vertexIndex[j];if(ix>=(unsigned)mesh->field_0x10){crowdMeshes.erase(mesh);return false;}
+                        auto &p=v[ix];tri[j]={p.x,p.y,p.z,p.nx,p.ny,p.nz,p.diffuseColour,p.specularColour,p.textureCoordinates[0][0],p.textureCoordinates[0][1],0,0};
+                    }
+                    CrowdMesh::Tessellate16(tri[0],tri[1],tri[2],tpl.verts);
+                }
+                tpl.triangles=mesh->triangleCount;tpl.sourceVertices=mesh->field_0x10;tpl.bottom=bottom;tpl.height=height;tpl.left=left;tpl.span=span;
             }
-            if(!irregular){for(int j=0;j<3;j++){tri[j].x+=SceneryMotion::ReactiveOffset(tri[j].y,bottom,height,animationTime,phase,excitement);vertices.push_back(tri[j]);}continue;}
-            // Each triangle is cut into 16 (two midpoint splits, silhouette and texture mapping unchanged) so the
-            // sway can differ along the card: one card carries several people, one tempo for all looks like unison.
-            GfxVertex cut[3*16];int n=0;
-            auto mid=[](const GfxVertex &a,const GfxVertex &b){GfxVertex m=a;m.x=(a.x+b.x)*.5f;m.y=(a.y+b.y)*.5f;m.z=(a.z+b.z)*.5f;m.nx=(a.nx+b.nx)*.5f;m.ny=(a.ny+b.ny)*.5f;m.nz=(a.nz+b.nz)*.5f;m.u0=(a.u0+b.u0)*.5f;m.v0=(a.v0+b.v0)*.5f;return m;};
-            auto split=[&](const GfxVertex &a,const GfxVertex &b,const GfxVertex &c,GfxVertex *out){GfxVertex ab=mid(a,b),bc=mid(b,c),ca=mid(c,a);
-                const GfxVertex q[12]={a,ab,ca,ab,b,bc,ca,bc,c,ab,bc,ca};for(int k=0;k<12;k++)out[k]=q[k];};
-            GfxVertex first[12];split(tri[0],tri[1],tri[2],first);
-            for(int k=0;k<4;k++){GfxVertex second[12];split(first[k*3],first[k*3+1],first[k*3+2],second);for(int m=0;m<12;m++)cut[n++]=second[m];}
-            for(int k=0;k<n;k++){
-                float u=span>0?(cut[k].x-left)/span:0;
-                cut[k].x+=SceneryMotion::ReactivePersonOffset(cut[k].y,bottom,height,u,animationTime,phase,excitement);
-                vertices.push_back(cut[k]);
+            vertices.resize(tpl.verts.size());
+            for(size_t k=0;k<tpl.verts.size();k++){
+                GfxVertex g=tpl.verts[k];
+                float u=span>0?(g.x-left)/span:0;
+                g.x+=SceneryMotion::ReactivePersonOffset(g.y,bottom,height,u,animationTime,phase,excitement);
+                vertices[k]=g;
             }
         }
+        ++crowdDraws;crowdTriangles+=vertices.size()/3;
         if(!spectatorLogged){Sys_Log("options: spectator sidecar active (first successful override draw)");spectatorLogged=true;}
         State(*(const GfxMatrix*)billboard);Gfx_SetTexture(0,t->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,vertices.data(),vertices.size());Gfx_PopState();
         if(selected&&(!diagnosticObject||(asset->frames.size()==4&&!diagnosticArticulated))){diagnosticObject=object;diagnosticFrame=frame;diagnosticChanges=0;diagnosticArticulated=asset->frames.size()==4;}
@@ -257,8 +270,8 @@ static bool DrawReplacement(StageObject *object,const float *billboard,unsigned 
             diagnosticFrame=frame;diagnosticTime=animationTime;
             unsigned second=(unsigned)(animationTime/(25ull*65536));
             if(second!=loggedSecond&&second<=5){
-                Sys_Log("options: spectator animation tick=%llu frame=%u/%u bound-frame-changes=%u texture=%s",(unsigned long long)(animationTime/65536),frame,(unsigned)asset->frames.size(),diagnosticChanges,asset->entry.frames[frame].c_str());
-                loggedSecond=second;
+                Sys_Log("options: spectator animation tick=%llu frame=%u/%u bound-frame-changes=%u texture=%s crowd-draws=%u crowd-triangles=%llu (counted since the previous log line; counts, not timing)",(unsigned long long)(animationTime/65536),frame,(unsigned)asset->frames.size(),diagnosticChanges,asset->entry.frames[frame].c_str(),crowdDraws,crowdTriangles);
+                loggedSecond=second;crowdDraws=0;crowdTriangles=0;
             }
         }
         return true;
