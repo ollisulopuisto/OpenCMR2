@@ -1111,7 +1111,7 @@ void FrontendControls_DrawDeviceList(Menu *pMenu)
             if (i < 2)
                 snprintf(CFrontend::m_stringDest, 128, "Player %d driving controls", i + 1);
             else
-                sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x67));
+                sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x67));
             Font_DrawText(1, CFrontend::m_stringDest, textX, (int)(g_pGraphics->resY * 24) / 480 + line[1],
                           (int *)pShadow, 0x11);
             if (pMenu->cursor == i || pMenu->cursor == i + 1) {

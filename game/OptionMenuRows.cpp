@@ -270,7 +270,7 @@ Sprite_Queue((SpriteRect *)&g_unk0x00831648->field_0x11c, (SpriteRect *)rectP,
             break;
         case 4:
             if (i == 0) {
-                sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x141));
+                sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x141));
             } else if (CMain::GetFrameDelta() % 0x14 > 9 && param2 == i) {
                 sprintf(CFrontend::m_stringDest, g_str0x005295f8, CFrontend::GetTextString(0x142),
                         g_unk0x0082aa44);
@@ -325,7 +325,7 @@ Sprite_Queue((SpriteRect *)&g_unk0x00831648->field_0x11c, (SpriteRect *)rectP,
             }
             break;
         default:
-            sprintf(CFrontend::m_stringDest, ((char *)&g_unk0x0051682c[0x44]));
+            sprintf(CFrontend::m_stringDest, "%s", ((char *)&g_unk0x0051682c[0x44]));
             break;
         }
         if (i == param2) {

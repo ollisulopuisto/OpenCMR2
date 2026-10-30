@@ -131,10 +131,10 @@ void CNetworkLeaderboards::AddLeaderboard(void)
 
     *(BYTE *)&m_leaderboards[m_totalLeaderboards].isLoaded = 1;
     for (i = 0; i < MAX_LEADERBOARD_PLAYERS; i++) {
-        sprintf(m_leaderboards[m_totalLeaderboards].entries[i].name, CMain::m_logFileBlankLine);
+        sprintf(m_leaderboards[m_totalLeaderboards].entries[i].name, "%s", CMain::m_logFileBlankLine);
         m_leaderboards[m_totalLeaderboards].entries[i].wins = 0;
     }
-    sprintf(m_leaderboards[m_totalLeaderboards].entries[0].name, (char *)RallyData_GetRecord(0));
+    sprintf(m_leaderboards[m_totalLeaderboards].entries[0].name, "%s", (char *)RallyData_GetRecord(0));
     m_totalLeaderboards++;
 }
 

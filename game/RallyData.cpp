@@ -2714,7 +2714,7 @@ void RallyData_DrawNetworkStandingsPanel(short *pRect)
             if (pName != NULL)
                 sprintf(name, CRegKey::m_regKeyPathFormatValue, pName);
             else
-                sprintf(name, CMain::m_logFileBlankLine);
+                sprintf(name, "%s", CMain::m_logFileBlankLine);
             Sprite_FillRect(&g_pGraphics->field309_0x150, panel, (BYTE *)&g_stageResultPanelColour, 2);
             pColour = NetPlayers_GetPlayerNameColour(NetPlayers_GetPlayerID(id));
         }
@@ -2763,19 +2763,19 @@ void RallyData_DrawAndHandleCarHUD(int car, short *pRect)
     }
     Hud_Element();
     if (g_unk0x00536c88[car] != 0) {
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0xbd));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0xbd));
         Race_DrawPlayerMessage(CFrontend::m_stringDest, (int *)&g_unk0x005170e8, car, 1, -1, -1);
     }
     if (g_unk0x00536c00[car] != 0) {
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x30));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x30));
         Race_DrawPlayerMessage(CFrontend::m_stringDest, (int *)&g_unk0x005170e8, car, 1, -1, -1);
     }
     if (g_finishStageRecordMessage[car] != 0) {
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x6a));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x6a));
         Race_DrawPlayerMessage(CFrontend::m_stringDest, (int *)&g_unk0x005170e8, car, 1, -1, -1);
     }
     if (g_finishLeaderMessage[car] != 0) {
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x83));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x83));
         Race_DrawPlayerMessage(CFrontend::m_stringDest, (int *)&g_unk0x005170e8, car, 1, -1, -1);
     }
     Hud_Element();
@@ -2898,7 +2898,7 @@ void RallyData_DrawCarStageGapPanel(int car, short *pRect)
         Font_DrawText(5, CFrontend::m_stringDest, x, rect[1] + topMarginY,
                       (int *)&g_stageHudTextColour, 9);
         x += Font_GetTextWidth(5, (BYTE *)CFrontend::m_stringDest);
-        sprintf(CFrontend::m_stringDest, g_stageSlashFormat);
+        sprintf(CFrontend::m_stringDest, "%s", g_stageSlashFormat);
         Font_DrawText(0, CFrontend::m_stringDest, x, y, (int *)&g_stageHudTextColour, 9);
         x += Font_GetTextWidth(0, (BYTE *)CFrontend::m_stringDest);
         sprintf(CFrontend::m_stringDest, g_stageNumberFormat, RallyData_GetSetupHighNibble());
@@ -2930,7 +2930,7 @@ void RallyData_DrawCarStageGapPanel(int car, short *pRect)
             Font_DrawText(5, CFrontend::m_stringDest, x, rect[1] + topMarginY,
                           (int *)&g_stageHudTextColour, 9);
             x += Font_GetTextWidth(5, (BYTE *)CFrontend::m_stringDest);
-            sprintf(CFrontend::m_stringDest, g_stageSlashFormat);
+            sprintf(CFrontend::m_stringDest, "%s", g_stageSlashFormat);
             Font_DrawText(0, CFrontend::m_stringDest, x, y, (int *)&g_stageHudTextColour, 9);
             x += Font_GetTextWidth(0, (BYTE *)CFrontend::m_stringDest);
             sprintf(CFrontend::m_stringDest, g_stageNumberFormat, count);
@@ -2941,7 +2941,7 @@ void RallyData_DrawCarStageGapPanel(int car, short *pRect)
 
     if (CGameInfo::GetConfiguredGameMode() != 7 && CGameInfo::GetConfiguredGameMode() != 12 &&
         (RallyDataStageIndex() != 10 || CGameInfo::GetConfiguredGameMode() != 10)) {
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x99));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x99));
         x = rect[0] + rect[2] - wideMarginX;
         y = rect[1] + topMarginY - (int)g_pGraphics->resY * 2 / 480;
         Font_DrawText(0, CFrontend::m_stringDest, x, y, (int *)&g_stageHudTextColour, 12);
@@ -3274,7 +3274,7 @@ void RallyData_DrawStageResultRows(int car, short *position)
         recordTime = (gameInfo->rallyStageRecordTimes[index].value >> 7) & 0xffff;
         index = (RallyDataCountryIndex() & 0xff) * 11 + (RallyDataStageIndex() & 0xff);
         gameInfo = CGameInfo::GetGameInfoFieldA4Address();
-        sprintf(recordName, gameInfo->rallyStageRecordTimes[index].ident);
+        sprintf(recordName, "%s", gameInfo->rallyStageRecordTimes[index].ident);
     } else {
         record = RallyData_GetDriverBestResults((StageUI_GetRaceEndEventCount() & 0xff) + car);
         carTime = record->arcadeStageTimes[RallyData_GetSelectionBits10To11() & 0xff][RallyData_GetSelectionBits12To13() & 0xff].time;
@@ -3284,7 +3284,7 @@ void RallyData_DrawStageResultRows(int car, short *position)
         recordTime = (gameInfo->arcadeRecordTimes[index].value >> 7) & 0xffff;
         index = (RallyData_GetSelectionBits10To11() & 0xff) * 3 + (RallyData_GetSelectionBits12To13() & 0xff);
         gameInfo = CGameInfo::GetGameInfoFieldA4Address();
-        sprintf(recordName, gameInfo->arcadeRecordTimes[index].ident);
+        sprintf(recordName, "%s", gameInfo->arcadeRecordTimes[index].ident);
     }
 
     baseHeight = (int)g_pGraphics->resY * 0xccc >> 16;
@@ -3448,14 +3448,14 @@ void RallyData_SetFinishLineResultMessages(int car)
         if (CGameInfo::GetConfiguredGameMode() != 0xc || !NetPlayers_IsNewLocalRecord())
             goto done;
         g_stageLeaderTime = CGameInfo::GetNetworkStageBestTime(0);
-        sprintf(g_stageLeader.name, (char *)RallyData_GetRecord(0));
+        sprintf(g_stageLeader.name, "%s", (char *)RallyData_GetRecord(0));
         g_finishLeaderMessage[car] = 1;
         g_unk0x00536c08[car] = 0x7d;
     } else {
         if (g_stageLeaderTime != 0 && g_stageLeaderTime <= time)
             goto done;
         g_stageLeaderTime = time;
-        sprintf(g_stageLeader.name, (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + car));
+        sprintf(g_stageLeader.name, "%s", (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + car));
         g_finishLeaderMessage[car] = 1;
         g_unk0x00536c08[car] = 0x7d;
     }
@@ -3621,7 +3621,7 @@ void RallyData_DrawFadedLoadingText(BYTE alpha)
                                ->rallyStageTimes[RallyDataCountryIndex() & 0xff][RallyDataStageIndex() & 0xff].time;
                     LOAD_TIME_TEXT(time);
                 } else {
-                    sprintf(CFrontend::m_stringDest, g_noTimeText);
+                    sprintf(CFrontend::m_stringDest, "%s", g_noTimeText);
                 }
                 Font_DrawText(0, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 0x268) / 640,
                               (int)(g_pGraphics->resY * 0x1a6) / 480 - ((int)(g_pGraphics->resY * 0x18) / 480) * (shown + 2),
@@ -3682,7 +3682,7 @@ void RallyData_DrawFadedLoadingText(BYTE alpha)
                                .time;
                     LOAD_TIME_TEXT(time);
                 } else {
-                    sprintf(CFrontend::m_stringDest, g_noTimeText);
+                    sprintf(CFrontend::m_stringDest, "%s", g_noTimeText);
                 }
                 Font_DrawText(0, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 0x268) / 640,
                               (int)(g_pGraphics->resY * 0x1a6) / 480 - ((int)(g_pGraphics->resY * 0x18) / 480) * (shown + 2),
@@ -4661,9 +4661,9 @@ void RallyData_RunChallengeLoadingScreen(int param1, char param2)
                 sprintf(CFrontend::m_stringDest, g_strFpsFormat0x00516e14, Graphics_GetFrameRate());
                 Font_DrawText(0, CFrontend::m_stringDest, 0, 0, (int *)colour, 9);
                 if (CGraphics::GetSelectedRenderDeviceSurfaceCaps() == 2)
-                    sprintf(CFrontend::m_stringDest, g_strHardwareTl0x00516d54);
+                    sprintf(CFrontend::m_stringDest, "%s", g_strHardwareTl0x00516d54);
                 else
-                    sprintf(CFrontend::m_stringDest, g_strSoftwareTl0x00516d40);
+                    sprintf(CFrontend::m_stringDest, "%s", g_strSoftwareTl0x00516d40);
                 Font_DrawText(0, CFrontend::m_stringDest, 0, 0x5a, (int *)colour, 9);
             }
             RallyData_DrawFadedLoadingText(0xff);
@@ -5508,7 +5508,7 @@ void RallyData_UpdateSplitDisplayAndStageRecord(int car)
             int t = g_stageSplitData[car].times[0];
             if (g_stageLeaderTime == 0 || g_stageLeaderTime > t) {
                 g_stageLeaderTime = t;
-                sprintf(g_stageLeader.name, (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + (char)car));
+                sprintf(g_stageLeader.name, "%s", (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + (char)car));
             }
         }
     } else {
@@ -5768,13 +5768,13 @@ void RallyData_FormatResultDriverName(int driver, int split, int useLongName, in
     int row;
     char *name;
 
-    sprintf(CFrontend::m_stringDest, CMain::m_logFileBlankLine);
+    sprintf(CFrontend::m_stringDest, "%s", CMain::m_logFileBlankLine);
     if (useSplit != 0)
         entry = StageTiming_GetSplitDriverIDForPosition(driver, split);
     else
         entry = StageTiming_GetSplitTableEntry(StageUI_GetRaceEndEventCount(), StageTiming_GetSplitIndexValue(driver));
     if (entry == -1) {
-        sprintf(CFrontend::m_stringDest, CMain::m_logFileBlankLine);
+        sprintf(CFrontend::m_stringDest, "%s", CMain::m_logFileBlankLine);
         return;
     }
     for (row = 0; row < (BYTE)CGameInfo::GetConfiguredPlayerCount(); row++) {
@@ -5799,7 +5799,7 @@ void RallyData_FormatResultDriverName(int driver, int split, int useLongName, in
             name = CAIHelper::GetNameForID(Knockout_GetCurrentDriverField((unsigned int *)entry));
     }
 done:
-    sprintf(CFrontend::m_stringDest, name);
+    sprintf(CFrontend::m_stringDest, "%s", name);
     CGenericFileLoader::StrUpperPolish((BYTE *)CFrontend::m_stringDest);
 }
 
@@ -8199,7 +8199,7 @@ void RallyData_ResetStageClockAndRecords(int keepName)
     }
     if (keepName == 0) {
         g_stageLeaderTime = 0;
-        sprintf(g_stageLeader.name, CMain::m_logFileBlankLine);
+        sprintf(g_stageLeader.name, "%s", CMain::m_logFileBlankLine);
     }
     if (CGameInfo::GetConfiguredGameMode() == 5 || CGameInfo::GetConfiguredGameMode() == 6 || CGameInfo::GetConfiguredGameMode() == 7 ||
         CGameInfo::GetConfiguredGameMode() == 4 || CGameInfo::GetConfiguredGameMode() == 11 || CGameInfo::GetConfiguredGameMode() == 12 ||

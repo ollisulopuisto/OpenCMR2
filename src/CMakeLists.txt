@@ -20,6 +20,9 @@ target_compile_options(cmr2_game PRIVATE
     "SHELL:-include ${CMAKE_CURRENT_SOURCE_DIR}/port/msvcrt.h"
     -fms-extensions
     -Wno-everything
+    # Everything above stays muted, but a format string that is not a literal is a real defect class (a '%' in a
+    # localized or file-loaded string reads missing arguments). All 131 were fixed; keep this one visible.
+    -Wformat-security
     -ferror-limit=0)
 target_link_libraries(cmr2_game PUBLIC SDL3::SDL3)
 

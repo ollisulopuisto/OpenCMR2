@@ -475,9 +475,9 @@ void Dash_DrawBar(int player, int *pViewRect)
     rect[0] = rect[0] + (short)((g_pGraphics->resX * -0x67) / 640);
     rect[1] = rect[1] + (short)((g_pGraphics->resY * 3) / 480);
     if ((BYTE)CGameInfo::IsDashOptionEnabled() != 0)
-        sprintf(text, g_strDashMph);
+        sprintf(text, "%s", g_strDashMph);
     else
-        sprintf(text, g_strDashKmh);
+        sprintf(text, "%s", g_strDashKmh);
     sprintf(CFrontend::m_stringDest, g_strDashSpeedFormat, text, g_dashSpeedNext[player] >> 16);
     rect[1] = rect[1] + (short)((g_pGraphics->resY * -4) / 480);
     Font_DrawText(5, CFrontend::m_stringDest, rect[0] + 1, rect[1] + 1, (int *)g_dashShadow, 0x21);
@@ -616,7 +616,7 @@ void Dash_DrawDial(int player, int *pViewRect)
     int k;
 
     sprintf(speed, g_strDashSpeedDigits, g_dashSpeedNext[player] >> 16);
-    sprintf(unit, g_strDashMph);
+    sprintf(unit, "%s", g_strDashMph);
     g_dashAspect = 0x15553;
     if (g_pGraphics->resX != g_dashLastResX || g_pGraphics->resY != g_dashLastResY) {
         StageTiming_ResetDashGearMarkers();
