@@ -6,17 +6,17 @@ static int fails;
 #define CHECK(c) do{ if(!(c)){ std::printf("FAIL %d: %s\n", __LINE__, #c); ++fails; } }while(0)
 int main(){
     int n; const TuningRow *r = Tuning_Rows(n);
-    CHECK(n == 18);
+    CHECK(n == 26);
     { int bi = -1; for (int i = 0; i < n; ++i) if (!std::strcmp(r[i].key, "video.blur_mode")) bi = i; CHECK(bi >= 0 && r[bi].lo == 0 && r[bi].hi == 1 && r[bi].fallback == 0); }
     for (int i = 0; i < n; ++i) { CHECK(r[i].lo < r[i].hi); CHECK(r[i].step > 0); CHECK(r[i].fallback >= r[i].lo && r[i].fallback <= r[i].hi); CHECK(!std::strncmp(r[i].key, "video.", 6)); }
     CHECK(CameraMove_Effective(kCamMoveUnset, 30) == 30 && CameraMove_Effective(0, 30) == 0 && CameraMove_Effective(-5, 30) == -5);   // an explicit 0 is an override, absent is not
     CHECK(!std::strcmp(CameraMove_FamilyKey(5), "video.camera_move_chase") && !std::strcmp(CameraMove_FamilyKey(3), "video.camera_move_cockpit") && !std::strcmp(CameraMove_FamilyKey(2), "video.camera_move_car"));
     CHECK(Tuning_Step(r[0], 0, -1) == 0);          // speed fov clamps at 0
-    CHECK(Tuning_Step(r[0], 149, 1) == 150);       // and at 150 (101..150 is the testing range)
-    CHECK(Tuning_Step(r[0], 12, 1) == 14);
+    CHECK(Tuning_Step(r[0], 498, 1) == 500 && Tuning_Step(r[0], 150, 1) == 155);       // and at 500 (101..500 is the testing range, 5 per press)
+    CHECK(Tuning_Step(r[0], 12, 1) == 17);
     CHECK(Tuning_Step(r[1], 250, 1) == 250 && Tuning_Step(r[1], 0, -1) == 0 && Tuning_Step(r[1], 50, 1) == 60);  // fov dolly 0..250
     CHECK(Tuning_Step(r[1], 500, 1) == 250 && Tuning_Step(r[1], -50, -1) == 0);   // out of range snaps in
-    { int ci = -1; for (int i = 0; i < n; ++i) if (!std::strcmp(r[i].key, "video.speed_fov_cockpit")) ci = i; CHECK(ci >= 0 && r[ci].lo == 0 && r[ci].hi == 100 && r[ci].fallback == 50); }
+    { int ci = -1; for (int i = 0; i < n; ++i) if (!std::strcmp(r[i].key, "video.speed_fov_cockpit")) ci = i; CHECK(ci >= 0 && r[ci].lo == 0 && r[ci].hi == 100 && r[ci].fallback == 25); }
     CHECK(Tuning_Step(r[5], 1, -1) == 1);          // dof max px never below 1
     CHECK(Tuning_Select(0, -1, n) == n - 1 && Tuning_Select(n - 1, 1, n) == 0 && Tuning_Select(3, 1, n) == 4);
     // Key filtering: panel keys vanish only while open; the toggle key always; everything else untouched.

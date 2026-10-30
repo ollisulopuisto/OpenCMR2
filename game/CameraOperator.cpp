@@ -23,12 +23,17 @@ void CameraOperator_Update(CameraRecord*record,const FixMatrix*reference,const F
  auto&p=reference->position;
  CameraOperator::V3 world={p.x/65536.f,p.y/65536.f,p.z/65536.f};
  auto road=CameraOperator::PreviewRoad(world,RallyData_GetActiveCarRaceRecordField0(car),g_routeNodes?g_routeNodeCount:0,
-  RallyData_GetRouteAdditionalState()!=0,[](int i){auto&p=g_routeNodes[i].position;return CameraOperator::V3{p.x/65536.f,0,p.z/65536.f};});
+  RallyData_GetRouteAdditionalState()!=0,[](int i){auto&p=g_routeNodes[i].position;return CameraOperator::V3{p.x/65536.f,0,p.z/65536.f};},
+  1.f+.6f*CameraOperator::Clamp(car->speed/65536.f/1.5f,0.f,1.f)); // look further down the road at speed (12/30 world units at rest, up to 19.2/48)
  // Remove last terrain lift before advancing free world inertia.
  if(state.ready)state.position.y-=state.terrainLift;
- {int pct=Sys_GetOption("video.drone_speed_lens",100);if(pct<-150)pct=-150;if(pct>100)pct=100;state.lensSpeedGain=.3f*pct/100.f;} // visual lens only; 100 = previous behaviour, negative = wider at speed
+ state.lensSpeedGain=0.f; // The drone lens no longer changes with speed (user request). video.drone_speed_lens is kept as an accepted but unused key; the steering lens stays.
  state.shakeAmount=0.f; // Speed shake belongs to the regular camera, not the drone (user request). video.drone_shake is kept as an accepted but unused key.
  {int pct=Sys_GetOption("video.drone_distance",60);if(pct<50)pct=50;if(pct>150)pct=150;state.distanceScale=pct/100.f;}
+ state.heightScale=CameraOperator::Clamp(Sys_GetOption("video.drone_height",100)/100.f,.5f,1.5f);
+ state.lateralGain=CameraOperator::Clamp(Sys_GetOption("video.drone_lateral",100)/100.f,.25f,2.f);
+ state.springGain=CameraOperator::Clamp(Sys_GetOption("video.drone_spring",100)/100.f,.25f,2.f);
+ state.speedDropAmount=CameraOperator::Clamp(Sys_GetOption("video.drone_speed_drop",100)/100.f,0.f,1.f);
  state.Step({p.x/65536.f,p.y/65536.f,p.z/65536.f},std::atan2(x,z),car->steeringInput/65536.f,car->speed/65536.f,
   offset?std::abs(offset->z/65536.f):6.5f,offset?offset->y/65536.f:1.5f,g_physicsTimeStep/(65536.f*25.f),&road);
  state.ConstrainTerrain({p.x/65536.f,p.y/65536.f,p.z/65536.f},g_physicsTimeStep/(65536.f*25.f),[](CameraOperator::V3 point,float&y){

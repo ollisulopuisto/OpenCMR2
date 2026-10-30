@@ -8325,7 +8325,7 @@ void OptionMenu_DrawScreenTitle(void)
         if (CGameInfo::IsConfiguredMultiplayer() == 0)
             flag = 1;
     }
-    sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x131));
+    sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x131));
     Font_Unused(CFrontend::m_stringDest, flag);
     width = Font_GetTextWidth(0, (BYTE *)CFrontend::m_stringDest);
     OptionMenu_DrawTransitionTextShortCoords(4, 0, 0, CFrontend::m_stringDest,
@@ -8461,7 +8461,7 @@ void OptionMenu_DrawClampedStageTime(void)
                      &g_unk0x0052737c, &g_optionTextBrightColours[1], 0x11);
     width = Font_GetTextWidth(3, (BYTE *)CFrontend::m_stringDest);
     x = g_optionLayoutXScale * (int)g_pGraphics->resX;
-    sprintf(CFrontend::m_stringDest, g_str0x005295f0);
+    sprintf(CFrontend::m_stringDest, "%s", g_str0x005295f0);
     if (CGameInfo::IsOptionMenuTimeoutPulseOn() != 0)
         OptionMenu_DrawTransitionTextShortCoords(4, 0, 0, CFrontend::m_stringDest, x / 0x280 + width,
                      (int)g_pGraphics->resY * 0x90 / 0x1e0,
@@ -9926,10 +9926,10 @@ void OptionMenu_DrawResultsRallyInfo(int param_1)
         g_gameInfoDrawRect[2] = (short)((int)g_pGraphics->resX * 0x147 / 0x280);
         g_gameInfoDrawRect[3] = (short)((int)g_pGraphics->resY * 0xd / 0x1e0);
         OptionMenu_DrawThreeColourGradientStrips(g_gameInfoDrawRect, 1, 0x15, col);
-        sprintf(CFrontend::m_stringDest, g_str0x00519fb0);
+        sprintf(CFrontend::m_stringDest, "%s", g_str0x00519fb0);
         Font_DrawText(0, CFrontend::m_stringDest, g_gameInfoDrawRect[0],
                       (int)g_pGraphics->resY * 0x17c / 0x1e0, g_optionTextColours, 0x11);
-        sprintf(CFrontend::m_stringDest, g_str0x00524e20);
+        sprintf(CFrontend::m_stringDest, "%s", g_str0x00524e20);
         Font_DrawText(0, CFrontend::m_stringDest,
                       OptionMenu_AddPackedScreenRectangleWords((int *)g_gameInfoDrawRect),
                       (int)g_pGraphics->resY * 0x17c / 0x1e0, g_optionTextColours, 0x14);
@@ -10008,7 +10008,7 @@ void OptionMenu_DrawStageSelectionPanel(Menu *pMenu)
     Font_DrawText(0, CFrontend::m_stringDest,
                   (int)g_pGraphics->resX * 0x25f / 0x280,
                   (int)g_pGraphics->resY * 0x78 / 0x1e0, &g_unk0x0052737c, 0xc);
-    sprintf(CFrontend::m_stringDest, g_str0x00529624);
+    sprintf(CFrontend::m_stringDest, "%s", g_str0x00529624);
     Font_DrawText(0, CFrontend::m_stringDest,
                   (int)g_pGraphics->resX * 0x25f / 0x280,
                   (int)g_pGraphics->resY * 0xa0 / 0x1e0, &g_unk0x0052737c, 0xc);
@@ -10346,7 +10346,7 @@ void OptionMenu_DrawStageSummaryPanel(int param_1, int param_2)
                      g_unk0x005297ac, g_unk0x005297ac + 2, 0x11);
         y += 0xe;
     }
-    sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x13e));
+    sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x13e));
     OptionMenu_DrawTransitionTextShortCoords(3, 1, 1, CFrontend::m_stringDest, x, (int)g_pGraphics->resY * 0x17d / 0x1e0,
                  g_unk0x005297ac, g_unk0x005297ac + 2, 0x21);
 }

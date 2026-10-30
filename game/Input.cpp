@@ -1,4 +1,6 @@
 #include "TuningPanel.h"
+bool ReplayControls_KeyIsReplayKey(int key);
+bool ReplayControls_KeyIsFreeCamKey(int key);
 bool TuningPanel_IsOpen(void);
 int TuningPanel_ToggleKey(void);
 #include "port/sys.h"
@@ -742,6 +744,8 @@ void CInput::ReadKeyboardState(void)
         Input_ReadKeyboard(m_pDirectInputKeyboard, m_keyboardState);
     // Live tuning panel: its keys never also reach the game while it is open (F10 never does).
     Tuning_FilterKeys(m_keyboardState, TuningPanel_IsOpen(), TuningPanel_ToggleKey());
+    { static const int replayKeys[4] = {0x33, 0x34, 0x39, 0x0f}; for (int i = 0; i < 4; i++) if (ReplayControls_KeyIsReplayKey(replayKeys[i])) m_keyboardState[replayKeys[i]] = 0; }   // replay keys never also reach the game
+    { static const int freeCamKeys[13] = {0x11, 0x1f, 0x1e, 0x20, 0x10, 0x12, 0x13, 0x2a, 0x36, 0xc8, 0xd0, 0xcb, 0xcd}; for (int i = 0; i < 13; i++) if (ReplayControls_KeyIsFreeCamKey(freeCamKeys[i])) m_keyboardState[freeCamKeys[i]] = 0; }   // free camera keys (replay only, camera active) do not drive
 }
 
 // FUNCTION: CMR2 0x0049fd00

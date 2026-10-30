@@ -2,6 +2,8 @@
 #include "CameraOperator.h"
 #include "port/sys.h"
 #include "SpeedFov.h"
+#include "ReplayCameraCycle.h"
+#include "FreeCam.h"
 #include <math.h>
 #include "FloatToInt.h"
 #include <stddef.h>
@@ -4017,6 +4019,9 @@ BYTE g_carSimulationClockFlags;
 int g_carSimulationEpochMs;
 // GLOBAL: CMR2 0x0053bd40
 int g_carSimulationFrameMs;
+#include "ReplayControls.h"
+float ReplayControls_TimeScale(void);   // 1 unless a replay is playing; pause/slow/fast from the replay keys (RallyData.cpp)
+static ReplayClock g_replayClock;
 // GLOBAL: CMR2 0x0053a374
 int g_carSimulationPreviousMs;
 // GLOBAL: CMR2 0x005113a0
@@ -4060,7 +4065,7 @@ int Car_UpdateEngineNoteFalloff(int *pOut)
         g_carSimulationClockFlags |= 4;
         g_carSimulationPreviousMs = CMain::GetFrameTime();
     }
-    g_carSimulationFrameMs = CMain::GetFrameTime();
+    g_carSimulationFrameMs = g_replayClock.Frame(CMain::GetFrameTime(), ReplayControls_TimeScale());   // OpenCMR2: replay pause/slow/fast scale the real time that feeds the step count; scale 1 = unchanged
     if (InRaceMenu_IsOpening() != 0)
         g_carSimulationPreviousMs = g_carSimulationFrameMs;
     if (Race_ConsumeTransitionLatch() != 0)
@@ -5592,6 +5597,75 @@ int View_FindFreeModeSlot(unsigned char view)
     } while (found == 0);
     View_SwitchCamera(view, mode, 0xffff, View_GetActiveCameraFlags(view), 1);
     return mode;
+}
+
+// OpenCMR2 replay camera cycle (Tab), order in ReplayCameraCycle.h. The drone is the second stop of chase 5 when video.camera_operator is on. A mode
+// that View_SwitchCamera would refuse (trackside 7 without camera spots, an unloaded cockpit) is skipped, so a press always lands on a camera. Returns
+// the new mode, or the unchanged one when nothing else is available.
+int View_IsModeAvailable(BYTE index, int mode);
+static FreeCam g_freeCam;
+static FreeCamInput g_freeCamInput;
+static double g_freeCamLastMs = 0;
+int View_FreeCamActive(void) { return g_freeCam.active ? 1 : 0; }
+void View_FreeCamStop(void) { g_freeCam.active = false; }
+// Starts (or restarts, for R) the free camera at the pose of the active camera record: the chase camera behind the car on entry.
+static void View_FreeCamStart(unsigned char view)
+{
+    BYTE active = (BYTE)(g_activeViewRecord[view & 0xff] + (char)view * 2);
+    const FixMatrix *m = &g_viewRecords[active].matrix;
+    double pos[3] = {m->position.x / 65536.0, m->position.y / 65536.0, m->position.z / 65536.0};
+    double f[3] = {m->forward.x / 65536.0, m->forward.y / 65536.0, m->forward.z / 65536.0};
+    double r[3] = {m->right.x / 65536.0, m->right.y / 65536.0, m->right.z / 65536.0};
+    g_freeCam.Start(pos, f, r);
+    g_freeCamLastMs = Sys_GetTicksPrecise();
+    Sys_Log("replay free camera: start pos %.1f %.1f %.1f yaw %.2f pitch %.2f hand %d", pos[0], pos[1], pos[2], g_freeCam.yaw, g_freeCam.pitch, g_freeCam.hand);
+}
+// Per frame, after the sim steps and the game's own camera update, so it also works with zero steps (paused). Replaces only the shown pose.
+void View_FreeCamFrame(unsigned char view, const FreeCamInput *in, int reset)
+{
+    if (!g_freeCam.active) return;
+    if (reset) View_FreeCamStart(view);
+    double now = Sys_GetTicksPrecise();
+    g_freeCam.Update(*in, (now - g_freeCamLastMs) / 1000.0);
+    g_freeCamLastMs = now;
+    FreeCamAxes a = g_freeCam.Axes();
+    FixMatrix *m = &g_viewStates[view].matrix;
+    #define FREECAM_FIX(v) ((int)std::lround((v) * 65536.0))
+    m->right.x = FREECAM_FIX(a.r[0]); m->right.y = FREECAM_FIX(a.r[1]); m->right.z = FREECAM_FIX(a.r[2]);
+    m->up.x = FREECAM_FIX(a.u[0]); m->up.y = FREECAM_FIX(a.u[1]); m->up.z = FREECAM_FIX(a.u[2]);
+    m->forward.x = FREECAM_FIX(a.f[0]); m->forward.y = FREECAM_FIX(a.f[1]); m->forward.z = FREECAM_FIX(a.f[2]);
+    m->position.x = FREECAM_FIX(g_freeCam.pos[0]); m->position.y = FREECAM_FIX(g_freeCam.pos[1]); m->position.z = FREECAM_FIX(g_freeCam.pos[2]);
+    #undef FREECAM_FIX
+    g_viewPreviousStates[view].matrix = *m;   // no blend back toward the old pose
+}
+int View_CycleReplayCamera(unsigned char view)
+{
+    int mode = View_GetActiveCameraMode(view);
+    BYTE flags = View_GetActiveCameraFlags(view);
+    if (g_freeCam.active) { g_freeCam.active = false; mode = kReplayFreeCamMode; }
+    if (mode == 5 && Sys_GetOption("video.camera_operator", 0) != 0) {
+        BYTE activeRecord = (BYTE)(g_activeViewRecord[view & 0xff] + (char)view * 2);
+        if (activeRecord < 8 && g_dronePairDone[activeRecord] == 0) {
+            int r = View_FindFreeModeSlot(view);   // the drone is the second stop of chase 5; it stays on mode 5
+            Sys_Log("replay camera: %d -> drone/chase variant (mode %d)", mode, r);
+            return r;
+        }
+    }
+    unsigned available = 1u << kReplayFreeCamMode;
+    for (int m = 1; m <= 7; m++) {
+        int ok = m == 7 ? View_IsModeAvailable(view, 7) : RallyData_IsDriverViewModeAllowed(view, m);
+        if (ok) available |= 1u << m;
+    }
+    int next = ReplayCamera_Next(mode, available);
+    Sys_Log("replay camera: mode %d, available mask 0x%x, next %d", mode, available, next);
+    if (next < 0) return mode;
+    if (next == kReplayFreeCamMode) {   // pose override on top of the chase camera, so the car is drawn from outside even when coming from the cockpit
+        if (View_GetActiveCameraMode(view) != 4) View_SwitchCamera(view, 4, 0xffff, flags, 1);
+        View_FreeCamStart(view);
+        return next;
+    }
+    View_SwitchCamera(view, next, 0xffff, flags, next == 7 ? 0 : 1);
+    return next;
 }
 
 // Moves the view's mode record to the surface the camera target sits on.
@@ -8420,6 +8494,14 @@ void View_SetCameraType(int view, int type, BYTE target, int blend)
 extern BYTE g_playerCameraMode[8];
 extern BYTE g_droneVariant[8];
 static int g_speedFovShown[2], g_speedFovPct[2];
+// The camera operator's drone is the active camera of this player (same test the operator itself uses).
+bool View_IsDroneCamera(int view) {
+    if (view < 0 || view >= 2 || !Sys_GetOption("video.camera_operator", 0)) return false;
+    unsigned slot = g_activeViewRecord[view];
+    if (slot > 1) return false;
+    unsigned record = slot + unsigned(view) * 2;
+    return g_viewRecords[record].type == 5 && g_playerCameraMode[record] == 4 && g_droneVariant[record];
+}
 // Diagnostics overlay: the effective percent setting and the eased 0..65536 speed ratio of a view.
 void SpeedFov_GetStatus(int view, int *pct, int *shown) { *pct = g_speedFovPct[view & 1]; *shown = g_speedFovShown[view & 1]; }
 // Called by View_SetPlayerProjection once per rendered view (not from the logic step, whose cadence did not track the
@@ -8428,17 +8510,17 @@ int View_SpeedFovZoom(BYTE view, int zoom)
 {
     static double lastMs[2];
     int (&shown)[2] = g_speedFovShown;
-    int pct = Sys_GetOption("video.speed_fov", 0);
+    int pct = Sys_GetOption("video.speed_effects", 1) != 0 ? Sys_GetOption("video.speed_fov", 0) : 0;   // menu switch off: no speed FOV widening
     {   // Cockpit only: a share of the speed FOV (default 50%, 100 = the full amount as before). Stored scaled, so the readout and the
         // widening-dependent effects see the same effective amount. Other camera types are untouched.
         int type = 0, drone = 0;
         if (view < 2) AttractCapture_ViewSignature(view, &type, &drone);
-        if (type == 3) { int share = Sys_GetOption("video.speed_fov_cockpit", 50); if (share < 0) share = 0; if (share > 100) share = 100; pct = pct * share / 100; }
+        if (type == 3) { int share = Sys_GetOption("video.speed_fov_cockpit", 25); if (share < 0) share = 0; if (share > 100) share = 100; pct = pct * share / 100; }
     }
     g_speedFovPct[view & 1] = pct;
     if (pct <= 0 || view >= 2) { shown[view & 1] = 0; return zoom; }
     if (pct > kSpeedFovMaxPct) pct = kSpeedFovMaxPct;
-    if (g_playerCameraMode[view] == 4 && g_droneVariant[view] && Sys_GetOption("video.camera_operator", 0)) return zoom;
+    if (View_IsDroneCamera(view)) { shown[view] = 0; return zoom; }   // no speed FOV in the drone; the eased value is reset so the dolly and readouts see no widening
     Car *car = Car_Get(view);
     int target = SpeedFov_HeldTarget(SpeedFov_Target(car ? car->speed : 0), Sys_GetOption("video.speed_fov_hold", 0));
     double now = Sys_GetTicksPrecise();

@@ -1,3 +1,4 @@
+#include "sun_glare.h"
 #include "shadow_caster.h"
 #include "cloud_uniforms.h"
 // The OpenGL 3.3 executor: runs a recorded frame (gfx_core.cpp) as the
@@ -289,11 +290,12 @@ struct Executor : GfxExecutor {
     bool effectsRaceFrame = true; // set per frame before ApplyEffects: depth blur is a race effect, never run on menu/preview frames
     int motionMix = 0, bloomAmount = 0, dofFocus = 50, dofRange = 30, dofBlur = 0, raysAmount = 0;
     float grade[4] = {0, 0, 1, 1}, grime[4] = {};
+    SunGlareState sunGlare;std::chrono::steady_clock::time_point sunGlareTime;bool sunGlareTimed=false;
     float sunX = 0, sunY = 0; bool sunVisible = false;
     GLuint effectFbo[4] = {}, effectTex[4] = {}, effectUbo = 0, effectVao = 0;
     GLuint historyTex = 0; bool historyValid = false;
     unsigned encodedEffects = 0;
-    GLuint effectPrograms[11] = {};
+    GLuint effectPrograms[12] = {};
     CloudUniforms cloudUniforms={};
     bool cloudsValid=false,cloudLogged=false;
     GLuint cloudMask=0,cloudMaskTexture=0,cloudMaskFbo=0;
@@ -570,6 +572,7 @@ struct Executor : GfxExecutor {
         dofOn = on != 0; dofFocus = std::clamp(focus, 0, 100); dofRange = std::clamp(range, 0, 100); dofBlur = std::clamp(blur, 0, 100);
     }
     void SetSpeedFocus(float speed) override { speedFocusTarget = !(speed > 0.0f) ? 0.0f : speed > kTunnelMaxStrength ? kTunnelMaxStrength : speed; }
+    void ClearSpeedEffects() override { speedFocusTarget = speedFocusSmooth = 0.0f; speedStreakTarget = speedStreakSmooth = 0.0f; }
     void SetSpeedStreak(float strength) override { speedStreakTarget = !(strength > 0.0f) ? 0.0f : strength > 1.0f ? 1.0f : strength; }
     void SetGodRays(BOOL on, int amount) override { raysOn = on != 0; raysAmount = std::clamp(amount, 0, 255); }
     void SetColorGrading(int temp, int tint, int saturation, int contrast) override {

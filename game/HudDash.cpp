@@ -1,3 +1,4 @@
+#include "CornerCameraRoll.h"
 #include "CameraOperator.h"
 #include "port/sys.h"
 #include <stdio.h>
@@ -475,9 +476,9 @@ void Dash_DrawBar(int player, int *pViewRect)
     rect[0] = rect[0] + (short)((g_pGraphics->resX * -0x67) / 640);
     rect[1] = rect[1] + (short)((g_pGraphics->resY * 3) / 480);
     if ((BYTE)CGameInfo::IsDashOptionEnabled() != 0)
-        sprintf(text, g_strDashMph);
+        sprintf(text, "%s", g_strDashMph);
     else
-        sprintf(text, g_strDashKmh);
+        sprintf(text, "%s", g_strDashKmh);
     sprintf(CFrontend::m_stringDest, g_strDashSpeedFormat, text, g_dashSpeedNext[player] >> 16);
     rect[1] = rect[1] + (short)((g_pGraphics->resY * -4) / 480);
     Font_DrawText(5, CFrontend::m_stringDest, rect[0] + 1, rect[1] + 1, (int *)g_dashShadow, 0x21);
@@ -616,7 +617,7 @@ void Dash_DrawDial(int player, int *pViewRect)
     int k;
 
     sprintf(speed, g_strDashSpeedDigits, g_dashSpeedNext[player] >> 16);
-    sprintf(unit, g_strDashMph);
+    sprintf(unit, "%s", g_strDashMph);
     g_dashAspect = 0x15553;
     if (g_pGraphics->resX != g_dashLastResX || g_pGraphics->resY != g_dashLastResY) {
         StageTiming_ResetDashGearMarkers();
@@ -883,6 +884,7 @@ void ChaseCamera_Start(CameraRecord *param_1, FixMatrix *param_2, int param_3)
 
     BYTE prevMode = pSettings->index < 8 ? g_playerCameraMode[pSettings->index] : 0xff;
     CameraOperator_Reset(pSettings->index);
+    CornerCameraRoll_Reset(pSettings->index);
     index = pSettings->view;
     g_playerCameraMode[pSettings->index] = (BYTE)param_3;
     if (pSettings->index < 8) {
@@ -938,6 +940,7 @@ void ChaseCamera_Update(CameraRecord *param_1, FixMatrix *param_2, int param_3)
 
     FixVector operatorOffset;ChaseCamera_GetViewOffset(&operatorOffset,param_1);
     CameraOperator_Update(param_1,param_2,&operatorOffset,g_chaseCameraPitch[2+param_1->view]);
+    CornerCameraRoll_Update(param_1,param_2);
     index = param_1->index;
     pUp = &g_chaseCameraOffsets[2 + index];
     pRight = &g_chaseCameraViewOffsets[2 + index];

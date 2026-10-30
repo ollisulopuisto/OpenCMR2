@@ -567,10 +567,25 @@ extern "C" void Gfx_SetVaporTrail(float strength)
         s_executor->SetVaporTrail(strength);
 }
 
+static float s_tunnelNearClear=0;
+extern "C" void Gfx_SetTunnelNearClear(float worldUnits){s_tunnelNearClear=worldUnits>0?worldUnits:0;}
+extern "C" float Gfx_GetTunnelNearClear(void){return s_tunnelNearClear;}
 extern "C" void Gfx_SetSpeedFocus(float speed)
 {
     if (s_executor != NULL)
         s_executor->SetSpeedFocus(speed);
+}
+
+extern "C" void Gfx_ClearVaporTrail(void)
+{
+    if (s_executor != NULL)
+        s_executor->ClearVaporTrail();
+}
+
+extern "C" void Gfx_ClearSpeedEffects(void)
+{
+    if (s_executor != NULL)
+        s_executor->ClearSpeedEffects();
 }
 
 extern "C" void Gfx_SetGodRays(BOOL enabled, int intensity)
@@ -642,16 +657,26 @@ extern "C" void Gfx_EndScene(void)
 {
 }
 
+// OpenCMR2 diagnostics: wall-clock ms inside the frame executor (where the recorded frame is encoded and submitted) and, of that, the wait for
+// the swapchain image, summed since launch. Measurement only; two clock reads per frame.
+static double s_execTotalMs=0,s_waitTotalMs=0;static unsigned long long s_presentCount=0;
+extern "C" unsigned long long Gfx_GetPresentCount(void){return s_presentCount;}
+extern "C" void Gfx_NoteSwapchainWait(double ms){s_waitTotalMs+=ms;}
+extern "C" void Gfx_GetPresentTimeTotals(double *execMs,double *waitMs){if(execMs)*execMs=s_execTotalMs;if(waitMs)*waitMs=s_waitTotalMs;}
 static void Present(BOOL vsync, bool stretch)
 {
+    s_presentCount++;
     s_raceWorld=false;
     s_pendingDust.clear(); // never leak an unflushed view into a later frame
     if (FILE *trace = TraceFile())
         fprintf(trace, "F %u\n", s_traceFrame++);
     if (Diagnostics::observer)
         Diagnostics::observer->BeginPresent();
-    if (s_executor != NULL)
+    if (s_executor != NULL) {
+        double t0 = Sys_GetTicksPrecise();
         s_executor->Execute(s_frame, s_textures, s_readback, true, vsync != 0, stretch);
+        s_execTotalMs += Sys_GetTicksPrecise() - t0;
+    }
     s_frame.Reset();
     // OpenCMR2: snapshot this frame's stats for the debug overlay, then reset.
     s_lastDrawCalls = s_frameDrawCalls;

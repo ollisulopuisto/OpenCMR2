@@ -741,9 +741,9 @@ void Surface_LoadCarEngineSounds(void)
         sprintf(name, g_strCarDetIdleWav, pDir, pCarName);
         Surface_LoadArchiveSample(name, &g_carEngineSoundArchives[i]);
         if (CGameInfo::IsRecordFlagSet(0x13)) {
-            sprintf(name, g_strRadioInsideWav);
+            sprintf(name, "%s", g_strRadioInsideWav);
             Surface_LoadArchiveSample(name, (GenericFile *)StageTiming_GetStageFile0());
-            sprintf(name, g_strRadioOutsideWav);
+            sprintf(name, "%s", g_strRadioOutsideWav);
             Surface_LoadArchiveSample(name, (GenericFile *)StageTiming_GetStageFile0());
         }
     }

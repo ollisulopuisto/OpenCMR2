@@ -1,3 +1,4 @@
+#include "CornerCameraRoll.h"
 #include "CameraOperator.h"
 #include "EffectAmounts.h"
 #include "port/sys.h"
@@ -1023,7 +1024,7 @@ void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef)
     ChaseCamera_GetViewOffset(&base, pObj);
     if (pObj->type >= 4 && pObj->type <= 6 && !CameraOperator_Enabled(pObj)) {
         int dolly = View_FovDollyScale(pObj);
-        if (dolly != 65536) { base.x = FixMul(base.x, dolly); base.y = FixMul(base.y, dolly); base.z = FixMul(base.z, dolly); }
+        if (dolly != 65536) { base.x = FixMul(base.x, dolly); base.z = FixMul(base.z, dolly); }   // distance only: the dolly no longer lowers the camera, so the car doesn't block more road as the view widens (visual only)
     }
     FixMatrix_Identity(&identity);
     FixMatrix_SetPosition(&base, &identity);
@@ -1094,6 +1095,7 @@ void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef)
     pObj->lookDistance = v;
     pObj->field_0x50 = v - 0x10000;
     CameraOperator_Apply(pObj);
+    CornerCameraRoll_Apply(pObj);
 }
 
 extern CarPartSet *g_physicsPartSet;

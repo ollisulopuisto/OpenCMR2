@@ -30,10 +30,18 @@ int main(){
  std::string windArgs[]={"test","--tree-wind","off"};char *wv[]={windArgs[0].data(),windArgs[1].data(),windArgs[2].data()};
  error.clear();i=1;CHECK(e.Consume(i,3,wv,error)&&error.empty());e.Apply();CHECK(e.overrides["video.tree_wind"]==0);
  {EnhancementOptions t;std::string e2;auto run=[&](std::vector<std::string> a){std::vector<char*> v;for(auto&x:a)v.push_back(x.data());e2.clear();for(int k=1;k<(int)v.size();k++)if(!t.Consume(k,(int)v.size(),v.data(),e2))return false;return true;};
+  CHECK(run({"t","--sun-glare","40"})&&e2.empty()&&t.overrides["video.sun_glare"]==40);
+  CHECK(run({"t","--sun-glare","101"})&&!e2.empty());CHECK(run({"t","--sun-glare","-1"})&&!e2.empty());
   CHECK(run({"t","--speed-fov","12","--speed-motes-stretch=60","--speed-motes-amount","250"})&&e2.empty());
   CHECK(t.overrides["video.speed_fov"]==12&&t.overrides["video.speed_motes_stretch"]==60&&t.overrides["video.speed_motes_amount"]==250);
-  CHECK(run({"t","--speed-fov","151"})&&!e2.empty());CHECK(run({"t","--speed-fov","x"})&&!e2.empty());CHECK(run({"t","--speed-motes-stretch","101"})&&!e2.empty());
+  CHECK(run({"t","--speed-fov","501"})&&!e2.empty());CHECK(run({"t","--speed-fov","x"})&&!e2.empty());CHECK(run({"t","--speed-motes-stretch","101"})&&!e2.empty());
   CHECK(run({"t","--speed-motes-amount","301"})&&!e2.empty());CHECK(run({"t","--test-preset","bad"})&&!e2.empty());
+  CHECK(run({"t","--camera-roll","30"})&&e2.empty());
+  CHECK(t.overrides["video.camera_roll"]==30);
+  CHECK(run({"t","--camera-roll","101"})&&!e2.empty());
+  CHECK(run({"t","--drone-distance","50","--speed-fov-cockpit=25","--cockpit-blur-clear","16"})&&e2.empty());
+  CHECK(t.overrides["video.drone_distance"]==50&&t.overrides["video.speed_fov_cockpit"]==25&&t.overrides["video.cockpit_blur_clear"]==16);
+  CHECK(run({"t","--drone-distance","49"})&&!e2.empty());CHECK(run({"t","--drone-distance","151"})&&!e2.empty());CHECK(run({"t","--speed-fov-cockpit","101"})&&!e2.empty());CHECK(run({"t","--cockpit-blur-clear","61"})&&!e2.empty());
   EnhancementOptions p;t=p;CHECK(run({"t","--test-preset","overdo","--speed-fov","5","--effect","motion_blur=off"})&&e2.empty());t.Apply();
   CHECK(t.overrides["video.speed_fov"]==5&&t.overrides["video.speed_fov_hold"]==1&&t.overrides["video.motion_blur"]==0&&t.overrides["video.speed_motes"]==0&&!t.overrides.count("video.speed_motes_stretch")&&t.overrides["video.dof_blur"]==100&&t.overrides["video.dof_blur_max_px"]==16&&t.overrides["video.speed_streak"]==100);
   t=p;CHECK(run({"t","--test-preset","overdo","--effect","speed_motes=on"})&&e2.empty());t.Apply();CHECK(t.overrides["video.speed_motes"]==1);   // legacy motes stay opt-in and beat the preset
@@ -53,6 +61,10 @@ CHECK(run({"t","--camera-move-chase","-60"})&&e2.empty()&&t.overrides["video.cam
   CHECK(run({"t","--cockpit-eye-shift","-40"})&&e2.empty()&&t.overrides["video.cockpit_eye_shift"]==-40);CHECK(run({"t","--cockpit-eye-shift","101"})&&!e2.empty());CHECK(run({"t","--cockpit-eye-shift","x"})&&!e2.empty());
   CHECK(run({"t","--tree-rustle","150","--spectator-irregular","0"})&&e2.empty()&&t.overrides["video.tree_rustle"]==150&&t.overrides["video.spectator_irregular"]==0);CHECK(run({"t","--tree-rustle","301"})&&!e2.empty());CHECK(run({"t","--spectator-irregular","2"})&&!e2.empty());
   CHECK(run({"t","--tree-coverage","all","--spectator-gain","250"})&&e2.empty()&&t.treeCoverage=="all"&&t.spectatorGain==250);CHECK(run({"t","--tree-coverage","some"})&&!e2.empty());CHECK(run({"t","--spectator-gain","99"})&&!e2.empty());CHECK(run({"t","--spectator-gain","401"})&&!e2.empty());
+  {EnhancementOptions q2;t=q2;CHECK(run({"t","--test-preset","overdo"})&&e2.empty());t.Apply();CHECK(t.overrides["video.tunnel_vision"]==130&&t.overrides["video.tunnel_lines"]==1);   // the preset follows the new default
+   EnhancementOptions q3;t=q3;CHECK(run({"t","--test-preset","overdo","--tunnel-vision","120","--tunnel-lines=0"})&&e2.empty());t.Apply();CHECK(t.overrides["video.tunnel_vision"]==120&&t.overrides["video.tunnel_lines"]==0);   // explicit flags beat the preset
+   EnhancementOptions q4;t=q4;CHECK(run({"t","--tunnel-vision","201"})&&!e2.empty());CHECK(run({"t","--tunnel-lines","2"})&&!e2.empty());
+   EnhancementOptions q5;t=q5;CHECK(run({"t","--speed-fov","500"})&&e2.empty());CHECK(t.overrides["video.speed_fov"]==500);}
   EnhancementOptions q;t=q;CHECK(run({"t","--effect","bloom=on"})&&e2.empty());t.Apply();CHECK(!t.overrides.count("video.speed_fov")&&!t.overrides.count("video.dof_blur"));}
  auto root=fs::temp_directory_path()/(std::string("cmr-enhancements-")+std::to_string(SDL_GetPerformanceCounter()));
  auto game=root/"owned game",user=root/"profile";

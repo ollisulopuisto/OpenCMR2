@@ -926,6 +926,36 @@ void FrontendMenu_DrawAdvancedGraphicsOptions(Menu *pMenu)
             }
             break;
         }
+        case 0x1b: {
+            // OpenCMR2: speed effects, Off/On.
+            strcpy(CFrontend::m_stringDest, pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
+            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
+                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+            for (j = 0; j < pItem->min; j++) {
+                x += (int)(g_pGraphics->resX * 10) / 640 +
+                     Font_GetTextWidth(1, (BYTE *)CFrontend::m_stringDest);
+                strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(j == 0 ? 0x133 : 0x134));
+                Font_DrawText(1, CFrontend::m_stringDest, x,
+                              (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1],
+                              (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
+            }
+            break;
+        }
+        case 0x1c: {
+            // OpenCMR2: air vortices, Off/On.
+            strcpy(CFrontend::m_stringDest, pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
+            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
+                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+            for (j = 0; j < pItem->min; j++) {
+                x += (int)(g_pGraphics->resX * 10) / 640 +
+                     Font_GetTextWidth(1, (BYTE *)CFrontend::m_stringDest);
+                strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(j == 0 ? 0x133 : 0x134));
+                Font_DrawText(1, CFrontend::m_stringDest, x,
+                              (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1],
+                              (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
+            }
+            break;
+        }
         case 4:
             strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(0x1d2));
             Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
@@ -2320,7 +2350,7 @@ void FrontendMenu_EnterNetworkSessionBrowser(Menu *pMenu, char param)
     g_unk0x0052528c = -1;
     g_selectedNetworkSession = -1;
     Input_ClearCharacterQueue();
-    sprintf(g_unk0x00818da8, CMain::m_logFileBlankLine);
+    sprintf(g_unk0x00818da8, "%s", CMain::m_logFileBlankLine);
     g_unk0x0081901c = 0;
     g_unk0x00819020 = 0;
     pMenu->items[0].id = 0x1ff;
@@ -3063,7 +3093,7 @@ void FrontendMenu_EnterNetworkNameEntry(Menu *pMenu, int param)
 {
     Menu_SetFlags(pMenu, 0, 0, 1, 1);
     Input_ClearCharacterQueue();
-    sprintf(g_unk0x00818da8, CMain::m_logFileBlankLine);
+    sprintf(g_unk0x00818da8, "%s", CMain::m_logFileBlankLine);
 }
 
 // Name entry: appends the typed character or deletes the last one.
@@ -4091,6 +4121,9 @@ void FrontendMenu_EnterAdvancedGraphicsOptions(Menu *pMenu, int param)
     Menu_GetItem(pMenu, 0x19)->max = Sys_GetOption("video.god_rays", 0) != 0 ? 1 : 0;
     // OpenCMR2: color grading off by default.
     Menu_GetItem(pMenu, 0x1a)->max = Sys_GetOption("video.color_grading", 0) != 0 ? 1 : 0;
+    // OpenCMR2: speed effects default on, air vortices (vapor trails) default off. Read without mutating saved choices.
+    Menu_GetItem(pMenu, 0x1b)->max = Sys_GetOption("video.speed_effects", 1) != 0 ? 1 : 0;
+    Menu_GetItem(pMenu, 0x1c)->max = Sys_GetOption("video.vapor_trails", 0) != 0 ? 1 : 0;
     if (CGameInfo::GetPreviewMode() != 0) {
         Menu_GetItem(pMenu, 10)->max = 1;
         return;
@@ -4176,6 +4209,9 @@ void FrontendMenu_ApplyAdvancedGraphicsOptions(Menu *pMenu, int param)
     // OpenCMR2: color grading on/off.
     int colorGrading = Menu_GetItem(pMenu, 0x1a)->max;
     Sys_SetOption("video.color_grading", colorGrading);
+    // OpenCMR2: speed effects and air vortices: saved here, read every frame by Race_ApplySpeedEffectParams and View_SpeedFovZoom.
+    Sys_SetOption("video.speed_effects", Menu_GetItem(pMenu, 0x1b)->max);
+    Sys_SetOption("video.vapor_trails", Menu_GetItem(pMenu, 0x1c)->max);
     EffectSettings::Apply();
 }
 
@@ -8591,7 +8627,7 @@ void FrontendMenu_UpdateNetworkCarSetup(Menu *pMenu)
             pDest += 3;
         } while (i < count);
     }
-    sprintf(&g_unk0x00818d84[i * 3], g_strFlagSS);
+    sprintf(&g_unk0x00818d84[i * 3], "%s", g_strFlagSS);
     if (!(CGameInfo::IsRecordFlagSet(0xd) == 0)) {
         count = ((max & 1) != 0) + 10;
     } else {
@@ -10120,8 +10156,8 @@ void FrontendMenu_DrawProfileNameEntry(Menu *pMenu)
         strcpy(CFrontend::m_stringDest, (char *)RallyData_GetRecord(FrontendProfile_GetCurrentPlayer()));
         strcpy(name, (char *)RallyData_GetRecord(FrontendProfile_GetCurrentPlayer()));
     } else {
-        sprintf(CFrontend::m_stringDest, CMain::m_logFileBlankLine);
-        sprintf(name, CMain::m_logFileBlankLine);
+        sprintf(CFrontend::m_stringDest, "%s", CMain::m_logFileBlankLine);
+        sprintf(name, "%s", CMain::m_logFileBlankLine);
     }
     while (strlen(CFrontend::m_stringDest) < 3) {
         CFrontend::m_stringDest[strlen(CFrontend::m_stringDest) + 1] = 0;
@@ -10169,7 +10205,7 @@ void FrontendMenu_DrawMultiplayerStageSelection(Menu *pMenu)
 
     FrontendDraw_PlayTime();
     if (g_recordsProfileMode != 0) {
-        sprintf(g_str0x008188a4, CFrontend::GetTextString(0xb));
+        sprintf(g_str0x008188a4, "%s", CFrontend::GetTextString(0xb));
         text[0] = g_str0x008188a4;
         FrontendDraw_MenuPath(pMenu, PATH_X(), PATH_Y(), 1, 2, text, 1);
     } else {
@@ -10246,7 +10282,7 @@ void FrontendMenu_DrawMultiplayerStageSelection(Menu *pMenu)
             if (FrontendProfile_IsAlreadyInChampionship(pMenu->items[0].max)) {
                 strcpy(g_unk0x00818368, CFrontend::GetTextString(0xdf));
             } else {
-                sprintf(g_unk0x00818368, CFrontend::GetTextString(0x13b));
+                sprintf(g_unk0x00818368, "%s", CFrontend::GetTextString(0x13b));
                 Font_Unused(g_unk0x00818368, Frontend_GetOverlayMode());
                 FrontendDraw_RallyInfoHeader();
                 FrontendDraw_HelpText(CFrontend::GetTextString(0xf9), 1);
@@ -11162,7 +11198,7 @@ void FrontendMenu_DrawRallySummary(Menu *pMenu)
                 sprintf(CFrontend::m_stringDest, g_loadRecordTimeFormat, time / 6000,
                         (int)((time / 100) % 0x3c), time % 100);
             } else {
-                sprintf(CFrontend::m_stringDest, g_noTimeText);
+                sprintf(CFrontend::m_stringDest, "%s", g_noTimeText);
             }
             Font_DrawText(1, CFrontend::m_stringDest,
                           (int)(g_pGraphics->resX * 0x3a) / 0x280 + (int)(g_pGraphics->resX * 0x19f) / 0x280,
@@ -11287,7 +11323,7 @@ void FrontendMenu_DrawRallyReport(Menu *pMenu)
                 sprintf(CFrontend::m_stringDest, g_loadRecordTimeFormat, time / 6000, (int)((time / 100) % 0x3c),
                         time % 100);
             } else {
-                sprintf(CFrontend::m_stringDest, g_noTimeText);
+                sprintf(CFrontend::m_stringDest, "%s", g_noTimeText);
             }
             Font_DrawText(1, CFrontend::m_stringDest,
                           (int)(g_pGraphics->resX * 0x3a) / 0x280 + (int)(g_pGraphics->resX * 0x19f) / 0x280,
@@ -11442,7 +11478,7 @@ void FrontendMenu_DrawGraphicsOptions(Menu *pMenu)
                 // PORT: the display's size, not that of the menus' screen.
                 int displayX, displayY;
                 MenuScreen_GetDisplaySize(&displayX, &displayY);
-                sprintf(CFrontend::m_stringDest,
+                sprintf(CFrontend::m_stringDest, "%s",
                         CInput::FormatString(g_strResModeFormat, CFrontend::GetTextString(0x1d1), displayX,
                                              displayY, g_pGraphics->depth));
                 Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 0x7a) / 640,
@@ -11885,7 +11921,7 @@ void FrontendMenu_DrawNetworkRallySetup(Menu *pMenu)
                     sprintf(buffer, CFrontend::GetTextString(0x1e0), Menu_GetItem(pMenu, 2)->max + 4);
                     sprintf(CFrontend::m_stringDest, g_strLabelText, CFrontend::GetTextString(0x1de), buffer);
                 } else {
-                    sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x1e1));
+                    sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x1e1));
                 }
                 Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 0x7a) / 0x280,
                               (int)(g_pGraphics->resY * 0x18) / 0x1e0 + g_frontendDrawRect[1], (int *)pColour, 0x11);
@@ -12309,7 +12345,7 @@ void FrontendMenu_DrawNetworkSessionSetup(Menu *pMenu)
         }
         switch (pItem->value) {
         case 0:
-            sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x1c6));
+            sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x1c6));
             break;
         case 1:
             sprintf(CFrontend::m_stringDest, g_str0x00524d9c, CFrontend::GetTextString(0x87),

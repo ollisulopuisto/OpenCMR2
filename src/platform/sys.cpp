@@ -819,7 +819,7 @@ bool Platform_Init(int argc, char **argv)
     s_enhancements.Apply();
     Sys_Log("effective speed-feel settings: speed_motes=%d amount=%d stretch=%d size=%d speed_fov=%d dof=%d dof_blur=%d tunnel_vision=%d speed_streak=%d motion_blur=%d speed_hold=%d dof_focus_car=%d dof_blur_max_px=%d preset=%s (CLI overrides win over opencmr2.ini)",
         Sys_GetOption("video.speed_motes",0),Sys_GetOption("video.speed_motes_amount",100),Sys_GetOption("video.speed_motes_stretch",0),Sys_GetOption("video.speed_motes_size",100),Sys_GetOption("video.speed_fov",0),
-        Sys_GetOption("video.depth_of_field",0),Sys_GetOption("video.dof_blur",30),Sys_GetOption("video.tunnel_vision",100),Sys_GetOption("video.speed_streak",0),Sys_GetOption("video.motion_blur",1),Sys_GetOption("video.speed_fov_hold",0),Sys_GetOption("video.dof_focus_car",0),Sys_GetOption("video.dof_blur_max_px",4),
+        Sys_GetOption("video.depth_of_field",0),Sys_GetOption("video.dof_blur",30),Sys_GetOption("video.tunnel_vision",130),Sys_GetOption("video.speed_streak",0),Sys_GetOption("video.motion_blur",1),Sys_GetOption("video.speed_fov_hold",0),Sys_GetOption("video.dof_focus_car",0),Sys_GetOption("video.dof_blur_max_px",4),
         s_enhancements.testPreset.empty()?"none":s_enhancements.testPreset.c_str());
     if(!s_sceneryDir.empty()&&s_enhancements.NeedsPack()){
         fprintf(stderr,"Do not combine --scenery-dir with automatic --trees/--spectators preparation. Select one route.\n");Platform_Shutdown();return false;
@@ -1353,7 +1353,15 @@ extern "C" const char *Sys_GetInstallSetting(const char *name)
 
 extern "C" int Sys_GetOption(const char *name, int fallback)
 {
-    auto it=s_enhancements.overrides.find(Lower(name));
+    std::string key=Lower(name);
+    if(key.compare(0,12,"video.drone_")==0&&key!="video.drone_locked"){
+    auto lock=s_enhancements.overrides.find("video.drone_locked");
+    bool locked=(lock==s_enhancements.overrides.end()?Platform_GetSettingInt("video.drone_locked",0):lock->second)!=0;
+    // Saved locked drone parameters win over stale launch flags on the next run.
+    // The lock itself remains live-editable; adaptive camera motion still runs.
+    if(locked)return Platform_GetSettingInt(name,fallback);
+    }
+    auto it=s_enhancements.overrides.find(key);
     return it==s_enhancements.overrides.end()?Platform_GetSettingInt(name, fallback):it->second;
 }
 

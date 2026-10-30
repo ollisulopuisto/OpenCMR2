@@ -6085,7 +6085,7 @@ Texture *CGraphics::CreateTextureFromImageData(char *name, void *pData, unsigned
     }
     if (isDDS)
         strncpy(name + strlen(name) - 4, m_ddsExtension, 4);
-    sprintf(pTexture->name, name);
+    sprintf(pTexture->name, "%s", name);
     pTexture->flags |= flags | 0x1000;
     if (isDDS)
         return LoadDDSTexture((DDSFile *)pData, pTexture);
@@ -6132,7 +6132,7 @@ Texture *CGraphics::LoadDDSThenTGATexture(char *name, unsigned int flags)
             break;
         }
     }
-    sprintf(pTexture->name, name);
+    sprintf(pTexture->name, "%s", name);
     SceneryPack_RegisterSource(pTexture,pData,CGenericFileLoader::GetGenericFileSize());
     pTexture->flags |= flags;
     if ((pTexture->flags & 0x20) && (g_pGraphics->field913_0x3bc & 0x10))

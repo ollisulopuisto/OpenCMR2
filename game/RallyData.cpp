@@ -1,4 +1,5 @@
 #include "CameraMove.h"
+#include "TuningMode.h"
 #include "EffectAmounts.h"
 #include "TuningPanel.h"
 #include "FovPreview.h"
@@ -2713,7 +2714,7 @@ void RallyData_DrawNetworkStandingsPanel(short *pRect)
             if (pName != NULL)
                 sprintf(name, CRegKey::m_regKeyPathFormatValue, pName);
             else
-                sprintf(name, CMain::m_logFileBlankLine);
+                sprintf(name, "%s", CMain::m_logFileBlankLine);
             Sprite_FillRect(&g_pGraphics->field309_0x150, panel, (BYTE *)&g_stageResultPanelColour, 2);
             pColour = NetPlayers_GetPlayerNameColour(NetPlayers_GetPlayerID(id));
         }
@@ -2762,19 +2763,19 @@ void RallyData_DrawAndHandleCarHUD(int car, short *pRect)
     }
     Hud_Element();
     if (g_unk0x00536c88[car] != 0) {
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0xbd));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0xbd));
         Race_DrawPlayerMessage(CFrontend::m_stringDest, (int *)&g_unk0x005170e8, car, 1, -1, -1);
     }
     if (g_unk0x00536c00[car] != 0) {
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x30));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x30));
         Race_DrawPlayerMessage(CFrontend::m_stringDest, (int *)&g_unk0x005170e8, car, 1, -1, -1);
     }
     if (g_finishStageRecordMessage[car] != 0) {
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x6a));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x6a));
         Race_DrawPlayerMessage(CFrontend::m_stringDest, (int *)&g_unk0x005170e8, car, 1, -1, -1);
     }
     if (g_finishLeaderMessage[car] != 0) {
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x83));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x83));
         Race_DrawPlayerMessage(CFrontend::m_stringDest, (int *)&g_unk0x005170e8, car, 1, -1, -1);
     }
     Hud_Element();
@@ -2897,7 +2898,7 @@ void RallyData_DrawCarStageGapPanel(int car, short *pRect)
         Font_DrawText(5, CFrontend::m_stringDest, x, rect[1] + topMarginY,
                       (int *)&g_stageHudTextColour, 9);
         x += Font_GetTextWidth(5, (BYTE *)CFrontend::m_stringDest);
-        sprintf(CFrontend::m_stringDest, g_stageSlashFormat);
+        sprintf(CFrontend::m_stringDest, "%s", g_stageSlashFormat);
         Font_DrawText(0, CFrontend::m_stringDest, x, y, (int *)&g_stageHudTextColour, 9);
         x += Font_GetTextWidth(0, (BYTE *)CFrontend::m_stringDest);
         sprintf(CFrontend::m_stringDest, g_stageNumberFormat, RallyData_GetSetupHighNibble());
@@ -2929,7 +2930,7 @@ void RallyData_DrawCarStageGapPanel(int car, short *pRect)
             Font_DrawText(5, CFrontend::m_stringDest, x, rect[1] + topMarginY,
                           (int *)&g_stageHudTextColour, 9);
             x += Font_GetTextWidth(5, (BYTE *)CFrontend::m_stringDest);
-            sprintf(CFrontend::m_stringDest, g_stageSlashFormat);
+            sprintf(CFrontend::m_stringDest, "%s", g_stageSlashFormat);
             Font_DrawText(0, CFrontend::m_stringDest, x, y, (int *)&g_stageHudTextColour, 9);
             x += Font_GetTextWidth(0, (BYTE *)CFrontend::m_stringDest);
             sprintf(CFrontend::m_stringDest, g_stageNumberFormat, count);
@@ -2940,7 +2941,7 @@ void RallyData_DrawCarStageGapPanel(int car, short *pRect)
 
     if (CGameInfo::GetConfiguredGameMode() != 7 && CGameInfo::GetConfiguredGameMode() != 12 &&
         (RallyDataStageIndex() != 10 || CGameInfo::GetConfiguredGameMode() != 10)) {
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x99));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x99));
         x = rect[0] + rect[2] - wideMarginX;
         y = rect[1] + topMarginY - (int)g_pGraphics->resY * 2 / 480;
         Font_DrawText(0, CFrontend::m_stringDest, x, y, (int *)&g_stageHudTextColour, 12);
@@ -3273,7 +3274,7 @@ void RallyData_DrawStageResultRows(int car, short *position)
         recordTime = (gameInfo->rallyStageRecordTimes[index].value >> 7) & 0xffff;
         index = (RallyDataCountryIndex() & 0xff) * 11 + (RallyDataStageIndex() & 0xff);
         gameInfo = CGameInfo::GetGameInfoFieldA4Address();
-        sprintf(recordName, gameInfo->rallyStageRecordTimes[index].ident);
+        sprintf(recordName, "%s", gameInfo->rallyStageRecordTimes[index].ident);
     } else {
         record = RallyData_GetDriverBestResults((StageUI_GetRaceEndEventCount() & 0xff) + car);
         carTime = record->arcadeStageTimes[RallyData_GetSelectionBits10To11() & 0xff][RallyData_GetSelectionBits12To13() & 0xff].time;
@@ -3283,7 +3284,7 @@ void RallyData_DrawStageResultRows(int car, short *position)
         recordTime = (gameInfo->arcadeRecordTimes[index].value >> 7) & 0xffff;
         index = (RallyData_GetSelectionBits10To11() & 0xff) * 3 + (RallyData_GetSelectionBits12To13() & 0xff);
         gameInfo = CGameInfo::GetGameInfoFieldA4Address();
-        sprintf(recordName, gameInfo->arcadeRecordTimes[index].ident);
+        sprintf(recordName, "%s", gameInfo->arcadeRecordTimes[index].ident);
     }
 
     baseHeight = (int)g_pGraphics->resY * 0xccc >> 16;
@@ -3447,14 +3448,14 @@ void RallyData_SetFinishLineResultMessages(int car)
         if (CGameInfo::GetConfiguredGameMode() != 0xc || !NetPlayers_IsNewLocalRecord())
             goto done;
         g_stageLeaderTime = CGameInfo::GetNetworkStageBestTime(0);
-        sprintf(g_stageLeader.name, (char *)RallyData_GetRecord(0));
+        sprintf(g_stageLeader.name, "%s", (char *)RallyData_GetRecord(0));
         g_finishLeaderMessage[car] = 1;
         g_unk0x00536c08[car] = 0x7d;
     } else {
         if (g_stageLeaderTime != 0 && g_stageLeaderTime <= time)
             goto done;
         g_stageLeaderTime = time;
-        sprintf(g_stageLeader.name, (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + car));
+        sprintf(g_stageLeader.name, "%s", (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + car));
         g_finishLeaderMessage[car] = 1;
         g_unk0x00536c08[car] = 0x7d;
     }
@@ -3620,7 +3621,7 @@ void RallyData_DrawFadedLoadingText(BYTE alpha)
                                ->rallyStageTimes[RallyDataCountryIndex() & 0xff][RallyDataStageIndex() & 0xff].time;
                     LOAD_TIME_TEXT(time);
                 } else {
-                    sprintf(CFrontend::m_stringDest, g_noTimeText);
+                    sprintf(CFrontend::m_stringDest, "%s", g_noTimeText);
                 }
                 Font_DrawText(0, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 0x268) / 640,
                               (int)(g_pGraphics->resY * 0x1a6) / 480 - ((int)(g_pGraphics->resY * 0x18) / 480) * (shown + 2),
@@ -3681,7 +3682,7 @@ void RallyData_DrawFadedLoadingText(BYTE alpha)
                                .time;
                     LOAD_TIME_TEXT(time);
                 } else {
-                    sprintf(CFrontend::m_stringDest, g_noTimeText);
+                    sprintf(CFrontend::m_stringDest, "%s", g_noTimeText);
                 }
                 Font_DrawText(0, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 0x268) / 640,
                               (int)(g_pGraphics->resY * 0x1a6) / 480 - ((int)(g_pGraphics->resY * 0x18) / 480) * (shown + 2),
@@ -4606,6 +4607,8 @@ BOOL RallyData_ClearStageDepthBuffer(void)
    Per-frame handlers of the rally-data menu screens (0x410c80..0x411020).
    -------------------------------------------------------------------------- */
 
+static int g_debugCameraView=-1;
+void DebugOverlays_RequestView(int view) { g_debugCameraView=view; }
 void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *, int, int);
 void RallyData_DrawViewEndFrameOverlay(CallbackStateMachine *, int);
 void RallyData_DrawLoadingProgress(int progress, char drawScene, BYTE alpha);
@@ -4660,9 +4663,9 @@ void RallyData_RunChallengeLoadingScreen(int param1, char param2)
                 sprintf(CFrontend::m_stringDest, g_strFpsFormat0x00516e14, Graphics_GetFrameRate());
                 Font_DrawText(0, CFrontend::m_stringDest, 0, 0, (int *)colour, 9);
                 if (CGraphics::GetSelectedRenderDeviceSurfaceCaps() == 2)
-                    sprintf(CFrontend::m_stringDest, g_strHardwareTl0x00516d54);
+                    sprintf(CFrontend::m_stringDest, "%s", g_strHardwareTl0x00516d54);
                 else
-                    sprintf(CFrontend::m_stringDest, g_strSoftwareTl0x00516d40);
+                    sprintf(CFrontend::m_stringDest, "%s", g_strSoftwareTl0x00516d40);
                 Font_DrawText(0, CFrontend::m_stringDest, 0, 0x5a, (int *)colour, 9);
             }
             RallyData_DrawFadedLoadingText(0xff);
@@ -5507,7 +5510,7 @@ void RallyData_UpdateSplitDisplayAndStageRecord(int car)
             int t = g_stageSplitData[car].times[0];
             if (g_stageLeaderTime == 0 || g_stageLeaderTime > t) {
                 g_stageLeaderTime = t;
-                sprintf(g_stageLeader.name, (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + (char)car));
+                sprintf(g_stageLeader.name, "%s", (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + (char)car));
             }
         }
     } else {
@@ -5767,13 +5770,13 @@ void RallyData_FormatResultDriverName(int driver, int split, int useLongName, in
     int row;
     char *name;
 
-    sprintf(CFrontend::m_stringDest, CMain::m_logFileBlankLine);
+    sprintf(CFrontend::m_stringDest, "%s", CMain::m_logFileBlankLine);
     if (useSplit != 0)
         entry = StageTiming_GetSplitDriverIDForPosition(driver, split);
     else
         entry = StageTiming_GetSplitTableEntry(StageUI_GetRaceEndEventCount(), StageTiming_GetSplitIndexValue(driver));
     if (entry == -1) {
-        sprintf(CFrontend::m_stringDest, CMain::m_logFileBlankLine);
+        sprintf(CFrontend::m_stringDest, "%s", CMain::m_logFileBlankLine);
         return;
     }
     for (row = 0; row < (BYTE)CGameInfo::GetConfiguredPlayerCount(); row++) {
@@ -5798,7 +5801,7 @@ void RallyData_FormatResultDriverName(int driver, int split, int useLongName, in
             name = CAIHelper::GetNameForID(Knockout_GetCurrentDriverField((unsigned int *)entry));
     }
 done:
-    sprintf(CFrontend::m_stringDest, name);
+    sprintf(CFrontend::m_stringDest, "%s", name);
     CGenericFileLoader::StrUpperPolish((BYTE *)CFrontend::m_stringDest);
 }
 
@@ -6012,12 +6015,12 @@ void RallyData_DrawProjectedChallengeScene(int param1, int param2)
     if (Race_GetFlag38108() == 0)
         Menu_CallCallback2(StageObject_GetInRaceActionMenu());
     Game_PrepareScene(g_unk0x00536be0, g_unk0x00536be4, rect, 0);
+    DebugOverlays_RequestView(0); // paused fixed-projection scene still needs late tuning UI
     Game_DrawSceneViewport(g_unk0x00536be0, g_unk0x00536be4, rect, 0, 1);
     // OpenCMR2: camera effects — dirt on the lens and a sun lens flare,
     // drawn over the finished frame ([video] video.camera_effects).
     CameraEffects_DrawOverlays(rect);
     TuningPanel_NotePausedDraw("challenge scene (fixed projection)");
-    TuningPanel_DrawPaused();
     Graphics_PresentFrameAndResetCounters();
 }
 
@@ -6044,7 +6047,7 @@ int g_windscreenWiperManualFrames = 0;
 // the row and 6 resets all rows to the values they had when the panel was first opened this launch (after any menu edits), 7 saves the shown values to opencmr2.ini. Changes are
 // per launch until saved. While open, these keys are removed from the game's keyboard state (see CInput::ReadKeyboardState).
 static bool g_tuneOpen = false, g_tuneSnapshotTaken = false;
-// F10 cycles 0 = debug info only (the start), 1 = debug info and adjustments, 2 = nothing. g_tuneOpen means "adjustments shown" (mode 1) and is what
+// F10 cycles (game/TuningMode.h) 0 = debug info only (the start), 1 = debug info and adjustments, 2 = nothing, 3 = frame rate only. g_tuneOpen means "adjustments shown" (mode 1) and is what
 // captures the adjustment keys. g_tuneEngaged is separate: once F10 was pressed, the tuned look stays live (paused scene too) in every mode, so both
 // overlays can be hidden to judge the effects.
 static int g_tuneMode = 0;
@@ -6078,13 +6081,13 @@ static void TuneSet(const TuningRow &r, int v)
     char k[40]; TuneCamKey(TuneCamType(), k, sizeof k); Sys_SetOptionTemporary(k, v);
 }
 static unsigned g_tuneSavedStamp = 0, g_tuneFrame = 0;
-// Sprite/triangle layer 4 is the BACKGROUND layer: Game_DrawSceneViewport draws it before the 3D scene, so the scene covers it. Layers 3, 2, 1 are drawn after the scene. Layer 1 holds only 1023 sprites and the debug pane uses it, so the panel and the camera readout use layer 3.
+// Sprite/triangle layer 4 is the BACKGROUND layer: Game_DrawSceneViewport draws it before the 3D scene, so the scene covers it. Layers 3, 2, 1 are drawn after the scene. Layer 1 holds only 1023 sprites and the debug pane uses it, so debug UI uses its emptied layer3 queue in a dedicated late pass above the pause wash.
 static const int kTuneOverlayLayer = 3;
-static bool g_tuneDrawn = false;  // set by every TuningPanel_Draw; the paused-scene draw skips when another path already drew this frame
 static TuningEdges g_tuneEdges;
 bool TuningPanel_IsOpen(void) { return g_tuneOpen; }
 bool TuningPanel_PreviewActive(void) { return g_tuneEngaged; }
-bool TuningPanel_InfoShown(void) { return g_tuneMode != 2; }
+bool TuningPanel_InfoShown(void) { return TuningMode_InfoShown(g_tuneMode); }
+bool TuningPanel_FpsOnly(void) { return TuningMode_FpsOnly(g_tuneMode); }
 int TuningPanel_ToggleKey(void)
 {
     static int checked = -1, result = kTuningToggleDefault;
@@ -6113,7 +6116,7 @@ void TuningPanel_Update(void)
     }
     int count = 0;
     const TuningRow *rows = Tuning_Rows(count);
-    if (g_tuneEdges.Edge(0, Input_IsKeyDown(TuningPanel_ToggleKey()) != 0)) { g_tuneMode = (g_tuneMode + 1) % 3; g_tuneOpen = g_tuneMode == 1; g_tuneEngaged = true; }
+    if (g_tuneEdges.Edge(0, Input_IsKeyDown(TuningPanel_ToggleKey()) != 0)) { g_tuneMode = TuningMode_Next(g_tuneMode); g_tuneOpen = TuningMode_AdjustShown(g_tuneMode); g_tuneEngaged = true; }
     bool pressed[7];
     static TuningRepeat repeat;
     double nowMs = Sys_GetTicksPrecise();
@@ -6133,18 +6136,26 @@ void TuningPanel_Update(void)
     bool changed = false;
     if (prevRow) g_tuneRow = Tuning_Select(g_tuneRow, -1, count);
     if (nextRow) g_tuneRow = Tuning_Select(g_tuneRow, 1, count);
-    if (down || up) {
+    if ((down || up) && !(Sys_GetOption("video.drone_locked",0)&&Tuning_DroneParameter(rows[g_tuneRow]))) {
         const TuningRow &r = rows[g_tuneRow];
+        int dronePreset[32]={};
+        if(!strcmp(r.key,"video.drone_locked"))for(int i=0;i<count;i++)dronePreset[i]=Sys_GetOption(rows[i].key,rows[i].fallback);
         TuneSet(r, Tuning_Step(r, TuneGet(r), up ? 1 : -1));
+        // Lock freezes chosen parameters, not adaptive camera motion. Save
+        // the drone preset immediately through the existing INI save path.
+        if(!strcmp(r.key,"video.drone_locked")){
+            for(int i=0;i<count;i++)if(Tuning_DroneParameter(rows[i]))Sys_SetOption(rows[i].key,dronePreset[i]);
+            Sys_SetOption("video.drone_locked",Sys_GetOption("video.drone_locked",0));
+        }
         changed = true;
     }
-    if (resetRow) {
+    if (resetRow && !(Sys_GetOption("video.drone_locked",0)&&(Tuning_DroneParameter(rows[g_tuneRow])||!strcmp(rows[g_tuneRow].key,"video.drone_locked")))) {
         if (TuneIsCamMove(rows[g_tuneRow])) TuneSet(rows[g_tuneRow], g_camMoveSnapshot[TuneCamType()]);   // back to this camera's opening state (override or none)
         else Sys_SetOptionTemporary(rows[g_tuneRow].key, g_tuneSnapshot[g_tuneRow]);
         changed = true;
     }
     if (resetAll) {
-        for (int i = 0; i < count; ++i) if (!TuneIsCamMove(rows[i])) Sys_SetOptionTemporary(rows[i].key, g_tuneSnapshot[i]);
+        for (int i = 0; i < count; ++i) if (!TuneIsCamMove(rows[i])&&!(Sys_GetOption("video.drone_locked",0)&&(Tuning_DroneParameter(rows[i])||!strcmp(rows[i].key,"video.drone_locked")))) Sys_SetOptionTemporary(rows[i].key, g_tuneSnapshot[i]);
         for (int t = 0; t < 16; ++t) { char k[40]; TuneCamKey(t, k, sizeof k); Sys_SetOptionTemporary(k, g_camMoveSnapshot[t]); }
         changed = true;
     }
@@ -6155,21 +6166,114 @@ void TuningPanel_Update(void)
     }
     if (changed) EffectSettings::Apply();
 }
+// OpenCMR2 replay controls (keyboard): , slower  . faster  Space pause  Tab next camera. Active only while player 0's stream is playing back.
+// The recorded controls still run through the unchanged physics; only the time that feeds the step count is scaled (Car.cpp).
+#include "ReplayControls.h"
+#include "FreeCam.h"
+#include "ReplayStream.h"
+int Race_GetPlayerRecordField4(BYTE index);
+int View_GetActiveCameraMode(BYTE index);
+BYTE View_GetActiveCameraFlags(BYTE index);
+void View_SwitchCamera(BYTE view, int type, int param, BYTE target, int blend);
+int View_FindFreeModeSlot(unsigned char view);
+ReplayStream *Race_GetPlayerRecordPointer(int index);
+static ReplayControls g_replayControls;
+static TuningEdges g_replayEdges;
+bool ReplayControls_Active(void) { return Race_GetPlayerRecordField4(0) != 0; }
+float ReplayControls_TimeScale(void) { return ReplayControls_Active() ? g_replayControls.Scale() : 1.0f; }
+// A replay key is usable when it is not on the game's refusal list (Esc, Return, arrows, [ ], C, F1/F2 ...). Space is allowed here although the list refuses it
+// for the F10 key: replay is the one place it is free, because the recorded controls run the car and live driving keys do nothing. The same reasoning drops the
+// driving-binding check: a key bound to a driving action is still a replay key while a replay plays, and the game does not see it (Input.cpp clears it).
+static bool ReplayKeyUsable(int key)
+{
+    return key == INPUT_KEY_SPACE || Tuning_ToggleKeyAllowed(key);
+}
+bool ReplayControls_KeyIsReplayKey(int key) { return ReplayControls_Active() && ReplayKeyUsable(key) && (key == kReplayKeySlower || key == kReplayKeyFaster || key == kReplayKeyPause || key == kReplayKeyCamera); }
+int View_CycleReplayCamera(unsigned char view);
+void View_UpdateCamera(BYTE view);
+int View_FreeCamActive(void);
+void View_FreeCamStop(void);
+void View_FreeCamFrame(unsigned char view, const FreeCamInput *in, int reset);
+static const int kFreeCamKeys[] = {0x11, 0x1f, 0x1e, 0x20, 0x10, 0x12, 0x13, 0x2a, 0x36, 0xc8, 0xd0, 0xcb, 0xcd};
+bool ReplayControls_KeyIsFreeCamKey(int key)
+{
+    if (!ReplayControls_Active() || !View_FreeCamActive()) return false;
+    for (int k : kFreeCamKeys) if (k == key) return true;
+    return false;
+}
+static void ReplayControls_CycleCamera(void)
+{
+    View_CycleReplayCamera(0);
+    // The camera blend advances per sim step. While paused no step runs, so finish the blend by hand (camera state only) and the new view shows at once.
+    if (g_replayControls.paused)
+        for (int i = 0; i < 20; i++) View_UpdateCamera(0);
+}
+void ReplayControls_Update(void)
+{
+    if (!ReplayControls_Active()) { g_replayControls.Reset(); View_FreeCamStop(); return; }   // replay over or stage changed: the free camera never carries over
+    if (ReplayKeyUsable(kReplayKeySlower) && g_replayEdges.Edge(0, Input_IsKeyDown(kReplayKeySlower) != 0)) g_replayControls.Slower();
+    if (ReplayKeyUsable(kReplayKeyFaster) && g_replayEdges.Edge(1, Input_IsKeyDown(kReplayKeyFaster) != 0)) g_replayControls.Faster();
+    if (ReplayKeyUsable(kReplayKeyPause) && g_replayEdges.Edge(2, Input_IsKeyDown(kReplayKeyPause) != 0)) g_replayControls.TogglePause();
+    if (ReplayKeyUsable(kReplayKeyCamera) && g_replayEdges.Edge(3, Input_IsKeyDown(kReplayKeyCamera) != 0)) ReplayControls_CycleCamera();
+    if (View_FreeCamActive()) {   // arrows and WASD are free in replay: the recorded controls drive the car
+        FreeCamInput in = {};
+        in.forward = Input_IsKeyDown(0x11) != 0; in.back = Input_IsKeyDown(0x1f) != 0; in.left = Input_IsKeyDown(0x1e) != 0; in.right = Input_IsKeyDown(0x20) != 0;
+        in.down = Input_IsKeyDown(0x10) != 0; in.up = Input_IsKeyDown(0x12) != 0; in.fast = Input_IsKeyDown(0x2a) != 0 || Input_IsKeyDown(0x36) != 0;
+        in.lookUp = Input_IsKeyDown(0xc8) != 0; in.lookDown = Input_IsKeyDown(0xd0) != 0; in.turnLeft = Input_IsKeyDown(0xcb) != 0; in.turnRight = Input_IsKeyDown(0xcd) != 0;
+        View_FreeCamFrame(0, &in, g_replayEdges.Edge(4, Input_IsKeyDown(0x13) != 0) ? 1 : 0);
+    }
+}
+// Small bottom-centre line: replay time (the stage clock, which the re-run reproduces), speed, camera. Drawn only while replaying.
+static const char *ReplayCameraName(int type)
+{
+    switch (type) { case 7: return "auto"; case 4: return "chase"; case 5: return "drone/chase"; case 1: return "car"; case 2: return "bonnet"; case 3: return "cockpit"; case 10: return "bumper"; default: return "view"; }
+}
+void ReplayControls_Draw(void)
+{
+    if (!ReplayControls_Active()) return;
+    char clock[40], speed[24], text[120];
+    clock[0] = 0;
+    ReplayStream *stream = Race_GetPlayerRecordPointer(0);
+    if (stream != NULL && stream->type == 0 && stream->pFrames != NULL && stream->pLaneSamples != NULL && stream->lane >= 0 && stream->lane < stream->laneCount) {
+        // Elapsed and total from the recorded control packets (steps), not the stage clock, so both use one unit. Total is cached per lane.
+        static ReplayStream *cachedStream = NULL; static int cachedLane = -1, cachedPackets = -1; static long cachedTotal = 0;
+        const unsigned char *packets = (const unsigned char *)stream->pFrames + stream->samplesPerLane * stream->lane * 4;
+        int count = stream->pLaneSamples[stream->lane];
+        if (cachedStream != stream || cachedLane != stream->lane || cachedPackets != count) { cachedStream = stream; cachedLane = stream->lane; cachedPackets = count; cachedTotal = ReplayStepsTotal(packets, count); }
+        int frame = stream->frame < 0 ? 0 : stream->frame > count ? count : stream->frame;
+        float rate = Car_Get(0)->simulationRateHz;
+        if (rate > 1.0f && count > 0) {
+            char a[16], b[16];
+            ReplayClock_FormatCentiseconds((int)(ReplayStepsBefore(packets, frame, stream->field_0x21) * 100.0f / rate), a, sizeof a);
+            ReplayClock_FormatCentiseconds((int)(cachedTotal * 100.0f / rate), b, sizeof b);
+            snprintf(clock, sizeof clock, "%s / %s", a, b);
+        }
+    }
+    if (!clock[0]) ReplayClock_FormatCentiseconds(StageTiming_GetClockTime(), clock, sizeof clock);   // not a controls stream: the stage clock only, no total
+    g_replayControls.Label(speed, sizeof speed);
+    snprintf(text, sizeof text, "replay %s  %s  cam %s  , . space tab", clock, speed, View_FreeCamActive() ? "free (wasd qe arrows r)" : ReplayCameraName(View_GetActiveCameraMode(0)));
+    DebugOverlayLayout layout = DebugOverlayLayout::For(g_pGraphics->resX, g_pGraphics->resY, 1);
+    int width = std::min((int)strlen(text) * layout.font * 6 / 10 + 2 * layout.pad, g_pGraphics->resX - 2 * layout.x);
+    short panel[4] = {(short)((g_pGraphics->resX - width) / 2), (short)(g_pGraphics->resY - layout.height - layout.y), (short)width, (short)layout.height};
+    BYTE background[4] = {12, 16, 22, 150}, colour[4] = {240, 246, 255, 255};
+    Sprite_FillRect(NULL, panel, background, kTuneOverlayLayer);
+    Font_DrawTextScaled(1, text, panel[0] + layout.pad, panel[1] + layout.pad, layout.font, width - 2 * layout.pad, colour, kTuneOverlayLayer);
+}
 void TuningPanel_Draw(void)
 {
     if (!g_tuneOpen) return;
-    g_tuneDrawn = true;
     int count = 0;
     const TuningRow *rows = Tuning_Rows(count);
-    DebugOverlayLayout layout = DebugOverlayLayout::For(g_pGraphics->resX, g_pGraphics->resY, count + 3);
+    int visible=std::min(count,12),first=std::max(0,std::min(g_tuneRow-visible/2,count-visible));
+    DebugOverlayLayout layout = DebugOverlayLayout::For(g_pGraphics->resX, g_pGraphics->resY, visible + 3);
     short panel[4] = {(short)(g_pGraphics->resX - layout.width - layout.x), (short)(g_pGraphics->resY * 23 / 100), (short)layout.width, (short)layout.height};
     BYTE background[4] = {12, 16, 22, 220}, colour[4] = {240, 246, 255, 255}, lit[4] = {110, 255, 140, 255};
     Sprite_FillRect(NULL, panel, background, kTuneOverlayLayer);
     char text[96];
     int tx = panel[0] + layout.pad, ty = panel[1] + layout.pad, row = 0;
-    snprintf(text, sizeof text, "TUNING  1/2 row  3/4 value");
+    snprintf(text, sizeof text, "TUNING  1/2 row  3/4 value (%d/%d)",g_tuneRow+1,count);
     Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour, kTuneOverlayLayer);
-    for (int i = 0; i < count; ++i) {
+    for (int i = first; i < first+visible; ++i) {
         if (TuneIsCamMove(rows[i])) {
             char k[40]; int t = TuneCamType(); TuneCamKey(t, k, sizeof k);
             snprintf(text, sizeof text, "%s Camera type %d move (%s) 0.05 units: %d", i == g_tuneRow ? ">" : " ", t, Sys_GetOption(k, kCamMoveUnset) == kCamMoveUnset ? "family" : "own", TuneGet(rows[i]));
@@ -6179,16 +6283,9 @@ void TuningPanel_Draw(void)
     }
     snprintf(text, sizeof text, "5 row reset  6 all to opening  7 save");
     Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour, kTuneOverlayLayer);
-    snprintf(text, sizeof text, g_tuneSavedStamp && g_tuneFrame - g_tuneSavedStamp < 100 ? "saved to opencmr2.ini; F10: next view" : "F10: nothing next; per launch until saved");
+    snprintf(text, sizeof text, g_tuneSavedStamp && g_tuneFrame - g_tuneSavedStamp < 100 ? "saved to opencmr2.ini; F10: next view" : "F10: hidden -> FPS only -> full; unsaved");
     Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour, kTuneOverlayLayer);
 }
-// The paused scene (render callback of Race_UpdatePauseState) never reaches the per-view overlay that normally draws the panel.
-void TuningPanel_DrawPaused(void)
-{
-    if (!g_tuneDrawn) TuningPanel_Draw();
-    g_tuneDrawn = false;
-}
-
 // Returns 1 when the wiper key was just pressed this frame (edge trigger),
 // 0 otherwise. Resets the edge after reading.
 int WindscreenWiperKeyPressed(void)
@@ -6390,6 +6487,41 @@ char g_strOtherPolygons0x00516de4[22] = " Other Polygons: %d  ";
 // GLOBAL: CMR2 0x00516dfc
 char g_strScenePolygons0x00516dfc[22] = " Scene Polygons: %d  ";
 
+static void DebugCameraReadout_Draw(int param2)
+{
+    // OpenCMR2: the camera readout, big and high contrast, short lines so nothing clips. Names are only what the source states; the rest are numbers.
+    if (Graphics_DebugDrawWanted() && TuningPanel_InfoShown() && !TuningPanel_FpsOnly() && (CGameInfo::IsInRaceMenuOpen() == 0 || TuningPanel_PreviewActive())) {
+        int vt = 0, dr = 0, zr = 0, fy = 0, fs = 70;
+        AttractCapture_ViewSignature((int)param2, &vt, &dr);
+        View_GetEffectiveProjection(param2, &zr, &fy, &fs);
+        double vd = 0, hd = 0, cd = 0, cf = 0, cs = 0, cu = 0;
+        View_GetMeasuredFov(param2, &vd, &hd);
+        View_GetCameraCarOffset(param2, &cd, &cf, &cs, &cu);
+        int sp = 0, sh = 0; SpeedFov_GetStatus((int)param2, &sp, &sh);
+        int eff = View_CameraMoveStep(vt, (int)param2);
+        const char *name = vt == 3 ? "COCKPIT" : vt == 2 ? "BONNET" : (vt >= 4 && vt <= 6) ? (dr && vt == 5 ? "CHASE (DRONE VARIANT)" : "CHASE") : vt == 1 || vt == 10 ? "CAR-MOUNTED (UNNAMED IN SOURCE)" : "UNNAMED IN SOURCE";
+        // Compact: three short lines at the debug text size, bottom-left, clear of the right-hand panel and the speedometer.
+        char big[3][112];
+        snprintf(big[0], 112, "Camera %s type %d | FOV %.1f v %.1f h", name, vt, vd, hd);
+        snprintf(big[1], 112, "Widening x%.2f (speed FOV %d, speed %d)", sp > 0 ? 1.0 + (sp > 500 ? 500 : sp) * (sh / 65536.0) / 100.0 : 1.0, sp, sh * 100 / 65536);
+        snprintf(big[2], 112, "Fwd(+)/back(-) %+.2f side %+.2f up %+.2f dist %.2f | move %+.2f", cf, cs, cu, cd, eff / 65536.0);
+        int bigFont = std::clamp((int)g_pGraphics->resY / 64, 14, 24), bigLine = bigFont + bigFont / 4, pad = bigFont / 2;
+        int bw = (int)g_pGraphics->resX * 46 / 100, bx = (int)g_pGraphics->resX * 2 / 100;
+        int bh = 3 * bigLine + 2 * pad, by = (int)g_pGraphics->resY - bh - (int)g_pGraphics->resY * 3 / 100;
+        short bp[4] = {(short)bx, (short)by, (short)bw, (short)bh};
+        BYTE bbg[4] = {0, 0, 0, 170}, bfg[4] = {255, 236, 90, 255}, bwhite[4] = {255, 255, 255, 255};
+        Sprite_FillRect(NULL, bp, bbg, kTuneOverlayLayer);
+        for (int k = 0; k < 3; ++k) Font_DrawTextScaled(1, big[k], bx + pad, by + pad + k * bigLine, bigFont, bw - 2 * pad, k == 0 ? bfg : bwhite, kTuneOverlayLayer);
+    }
+}
+void DebugOverlays_DrawLate(void)
+{
+    if(g_debugCameraView<0) return;
+    TuningPanel_Draw();ReplayControls_Draw();
+    DebugCameraReadout_Draw(g_debugCameraView);
+    g_debugCameraView=-1;
+}
+
 // Per-view frame update of the rally data screens: prepares the cars of the
 // view, streams their shadow geometry, refreshes the on-screen elements and,
 // when the graphics debug flag (bit 2) is set, prints the FPS / polygon /
@@ -6538,9 +6670,8 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
     }
     Graphics_SetShadowGeometryState(!CGameInfo::IsRecordFlagSet(0xf));
     View_SetPlayerProjection(param2);
-    TuningPanel_Draw();
     if (Graphics_DebugDrawWanted() && TuningPanel_InfoShown()) {
-        if(Sys_GetOption("video.debug_draw",OPENCMR2_DEBUG_DRAW_DEFAULT)==1){
+        if(TuningPanel_FpsOnly()||Sys_GetOption("video.debug_draw",OPENCMR2_DEBUG_DRAW_DEFAULT)==1){
             char text[32];snprintf(text,sizeof text,"FPS %.1f",Graphics_GetFrameRate());BYTE color[4]={240,246,255,255};
             BYTE background[4]={12,16,22,220};short panel[4]={8,8,128,22};
             Sprite_FillRect(NULL,panel,background,1);
@@ -6552,10 +6683,10 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         BYTE colour[4] = {240, 246, 255, 255};
         unsigned long long tick=0;unsigned frame=0,changes=0;
         bool spectator=SceneryPack_GetAnimationStatus(&tick,&frame,&changes);
-        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?6:5)+11+5+2+5);   // +5: the Speed FOV, FOV dolly, FOV preview and footer rows were drawn below the panel in the 12:04 native screenshot (panel ended at "Measured")
+        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?6:5)+11+5+2+5+2);   // +5: the Speed FOV, FOV dolly, FOV preview and footer rows were drawn below the panel in the 12:04 native screenshot (panel ended at "Measured")
         short panel[4] = {(short)layout.x,(short)layout.y,(short)layout.width,(short)layout.height};
         Sprite_FillRect(NULL, panel, background, 1);
-        char text[96];
+        char text[160];
         snprintf(text, sizeof(text), "FPS %.1f | draws %u", Graphics_GetFrameRate(), Gfx_GetFrameDrawCalls());
         Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad,layout.font,layout.width-2*layout.pad,colour);
         snprintf(text, sizeof(text), "Triangles %u | vertices %u", Gfx_GetFrameTriangles(), Gfx_GetFrameVertices());
@@ -6573,16 +6704,43 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         {   // Wall-clock ms spent in the scenery sidecar draws last frame (diagnostic build), next to the frame time.
             static unsigned long long prn=0,ptn=0,pcl=0;unsigned long long rn=0,tn=0,cl=0;
             SceneryPack_GetTimeTotals(&rn,&tn,&cl);
-            snprintf(text,sizeof(text),"Scenery CPU ms: all %.2f (whole trees %.2f) %llu calls | frame %.1f ms",(tn-ptn)/1e6,(rn-prn)/1e6,cl-pcl,Graphics_GetFrameRate()>0?1000.0/Graphics_GetFrameRate():0.0);
+            static unsigned long long pwm=0,psb=0;unsigned long long wm=0,sb=0;SceneryPack_GetTimeSplit(&wm,&sb);
+            snprintf(text,sizeof(text),"Scenery CPU ms: all %.2f | whole trees %.2f (wind math %.2f, record draws %.2f) %llu calls",(tn-ptn)/1e6,(rn-prn)/1e6,(wm-pwm)/1e6,(sb-psb)/1e6,cl-pcl);
+            pwm=wm;psb=sb;
             prn=rn;ptn=tn;pcl=cl;
             Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?5:4)*layout.line,layout.font,layout.width-2*layout.pad,colour);
+        }
+        static char hitchText[200]="";
+        {   // Same-interval split (diagnostic): everything below is a difference between two consecutive pane draws, so all numbers cover the same frame.
+            static double pt=0,pe=0,pw=0;static unsigned long long ptn2=0;
+            double now=Sys_GetTicksPrecise(),ex=0,wt=0;Gfx_GetPresentTimeTotals(&ex,&wt);
+            unsigned long long rn=0,tn=0,cl=0;SceneryPack_GetTimeTotals(&rn,&tn,&cl);
+            double interval=pt>0?now-pt:0,sc=(tn-ptn2)/1e6;
+            snprintf(text,sizeof(text),"Frame split ms: interval %.1f | executor encode+submit %.1f (swapchain wait %.1f) | scenery %.1f | rest %.1f",interval,ex-pe,wt-pw,sc,interval-(ex-pe)-sc);
+            {   // Worst single frame over ~5 s windows (diagnostic): hitches that a one-frame readout misses. Timing only, no cause claimed.
+                static double winStart=0,worst=0,wEx=0,wSc=0,lastWorst=0,lWEx=0,lWSc=0;static unsigned over25=0,frames=0,lastOver=0,lastFrames=0;
+                const unsigned long long presents=Gfx_GetPresentCount();static unsigned long long prevPresents=0;
+                if(prevPresents==0||presents!=prevPresents+1){   // frames were presented without this pane (pane off, menu, pause): restart the window, but keep a genuine long single frame
+                    winStart=0;worst=0;over25=0;frames=0;lastFrames=0;snprintf(hitchText,sizeof(hitchText),"Hitch block: collecting 5 s after pane/menu gap");interval=0;
+                } else if(interval>0){
+                    if(winStart==0)winStart=now;
+                    frames++;if(interval>25.0)over25++;
+                    if(interval>worst){worst=interval;wEx=ex-pe;wSc=sc;}
+                }
+                prevPresents=presents;
+                if(now-winStart>=5000.0&&winStart>0){lastWorst=worst;lWEx=wEx;lWSc=wSc;lastOver=over25;lastFrames=frames;worst=0;over25=0;frames=0;winStart=now;}
+                if(lastFrames)snprintf(hitchText,sizeof(hitchText),"Last full 5 s block: worst frame %.1f ms (executor %.1f, scenery %.1f) | over 25 ms: %u of %u",lastWorst,lWEx,lWSc,lastOver,lastFrames);
+            }
+            pt=now;pe=ex;pw=wt;ptn2=tn;
+            Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?6:5)*layout.line,layout.font,layout.width-2*layout.pad,colour);
         }
         unsigned treeDraws=0,windDraws=0,originalTrees=0;
         SceneryPack_GetTreeStatus(&treeDraws,&windDraws,&originalTrees);
         snprintf(text,sizeof(text),"Tree draws %u | wind %u | original %u",treeDraws,windDraws,originalTrees);
         Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?3:2)*layout.line,layout.font,layout.width-2*layout.pad,colour);
-        int row=spectator?6:5;
+        int row=spectator?7:6;
         auto line=[&](const char*s,const BYTE*c=nullptr){Font_DrawTextScaled(1,(char*)s,layout.x+layout.pad,layout.y+layout.pad+row++*layout.line,layout.font,layout.width-2*layout.pad,(BYTE*)(c?c:colour));};
+        if(hitchText[0])line(hitchText);
         for(int i=0;i<3;i++)line(Sys_GetLaunchSummary(i));
         GfxEffectStatus status=Gfx_GetEffectStatus();
         auto effect=[&](unsigned bit){return status.submitted<0?"?":!(status.requested&bit)?"off":status.encoded&bit?"enc":"skip";};
@@ -6600,7 +6758,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             BYTE lit[4]={110,255,140,255},dim[4]={150,160,170,255};
             GfxDofStatus dof=Gfx_GetDofStatus();
             const char *dofWhy[]={"unknown","depth_of_field off","no sampled depth","range or blur is 0","pass unavailable","encoded","not a race frame"};
-            int tv=Sys_GetOption("video.tunnel_vision",100);
+            int tv=Sys_GetOption("video.tunnel_vision",130);
             bool gl=false,dofOn=dof.reason==5;   // both backends report this status now
             if(gl)snprintf(text,sizeof text,"DoF pass: n/a (OpenGL backend)");
             else if(dofOn&&dof.blur<=0.0f)snprintf(text,sizeof text,"DoF pass: encoded for tunnel vision only (depth blur 0)");
@@ -6635,7 +6793,8 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             int viewType=0,drone=0,zoomRaw=0,fovYRaw=0,fovSet=70;
             AttractCapture_ViewSignature((int)param2,&viewType,&drone);
             View_GetEffectiveProjection(param2,&zoomRaw,&fovYRaw,&fovSet);
-            snprintf(text,sizeof text,"Camera: type %d%s (live, view %d)",viewType,(drone&&viewType==5)?" drone":"",(int)param2);
+            if(drone&&viewType==5)snprintf(text,sizeof text,"Camera: type %d drone (live, view %d), video.drone_distance %d%% in effect",viewType,(int)param2,Sys_GetOption("video.drone_distance",50));
+            else snprintf(text,sizeof text,"Camera: type %d%s (live, view %d)",viewType,(drone&&viewType==5)?" drone":"",(int)param2);
             line(text);
             snprintf(text,sizeof text,"video.fov number %d (legacy scale, 70 original, higher = wider; not an angle); zoom x%.2f (camera base x%.2f), proj scale %.2f",fovSet,zoomRaw/65536.0,g_viewZooms[param2&1]/65536.0,fovYRaw/65536.0);
             line(text);
@@ -6653,33 +6812,11 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
              if(viewType==3){int cw=0,cs=0;View_GetCockpitShift(param2,&cw,&cs);snprintf(text,sizeof text,"Cockpit eye shift setting %d: view widened x%.2f, eye moved %+.3f model units along camera forward (0.2 = driver mount height)",Sys_GetOption("video.cockpit_eye_shift",0),cw/65536.0,cs/65536.0);line(text);}}
         }
         line("enc=encoded; skip=requested, not encoded");
+        snprintf(text,sizeof text,"Sun glare %d%%: restrained eye response; sun/depth/cloud gated (not pixel proof)",Sys_GetOption("video.sun_glare",0));line(text);
         line("Previous frame; encoded is not pixel proof");
         }
     }
-    // OpenCMR2: the camera readout, big and high contrast, short lines so nothing clips. Names are only what the source states; the rest are numbers.
-    if (Graphics_DebugDrawWanted() && TuningPanel_InfoShown() && (CGameInfo::IsInRaceMenuOpen() == 0 || TuningPanel_PreviewActive())) {
-        int vt = 0, dr = 0, zr = 0, fy = 0, fs = 70;
-        AttractCapture_ViewSignature((int)param2, &vt, &dr);
-        View_GetEffectiveProjection(param2, &zr, &fy, &fs);
-        double vd = 0, hd = 0, cd = 0, cf = 0, cs = 0, cu = 0;
-        View_GetMeasuredFov(param2, &vd, &hd);
-        View_GetCameraCarOffset(param2, &cd, &cf, &cs, &cu);
-        int sp = 0, sh = 0; SpeedFov_GetStatus((int)param2, &sp, &sh);
-        int eff = View_CameraMoveStep(vt, (int)param2);
-        const char *name = vt == 3 ? "COCKPIT" : vt == 2 ? "BONNET" : (vt >= 4 && vt <= 6) ? (dr && vt == 5 ? "CHASE (DRONE VARIANT)" : "CHASE") : vt == 1 || vt == 10 ? "CAR-MOUNTED (UNNAMED IN SOURCE)" : "UNNAMED IN SOURCE";
-        // Compact: three short lines at the debug text size, bottom-left, clear of the right-hand panel and the speedometer.
-        char big[3][112];
-        snprintf(big[0], 112, "Camera %s type %d | FOV %.1f v %.1f h", name, vt, vd, hd);
-        snprintf(big[1], 112, "Widening x%.2f (speed FOV %d, speed %d)", sp > 0 ? 1.0 + (sp > 150 ? 150 : sp) * (sh / 65536.0) / 100.0 : 1.0, sp, sh * 100 / 65536);
-        snprintf(big[2], 112, "Fwd(+)/back(-) %+.2f side %+.2f up %+.2f dist %.2f | move %+.2f", cf, cs, cu, cd, eff / 65536.0);
-        int bigFont = std::clamp((int)g_pGraphics->resY / 64, 14, 24), bigLine = bigFont + bigFont / 4, pad = bigFont / 2;
-        int bw = (int)g_pGraphics->resX * 46 / 100, bx = (int)g_pGraphics->resX * 2 / 100;
-        int bh = 3 * bigLine + 2 * pad, by = (int)g_pGraphics->resY - bh - (int)g_pGraphics->resY * 3 / 100;
-        short bp[4] = {(short)bx, (short)by, (short)bw, (short)bh};
-        BYTE bbg[4] = {0, 0, 0, 170}, bfg[4] = {255, 236, 90, 255}, bwhite[4] = {255, 255, 255, 255};
-        Sprite_FillRect(NULL, bp, bbg, kTuneOverlayLayer);
-        for (int k = 0; k < 3; ++k) Font_DrawTextScaled(1, big[k], bx + pad, by + pad + k * bigLine, bigFont, bw - 2 * pad, k == 0 ? bfg : bwhite, kTuneOverlayLayer);
-    }
+    DebugOverlays_RequestView(param2);
     CarDamage_UpdateOrderedCarsOffRoadState(pOrder, (short)orderCount, g_viewScreenRect, maskedView);
     if (CGameInfo::GetGameModeOptionBit19() != 0) {
         if (CGameInfo::GetConfiguredGameMode() != 0xa) {
@@ -8088,7 +8225,7 @@ void RallyData_ResetStageClockAndRecords(int keepName)
     }
     if (keepName == 0) {
         g_stageLeaderTime = 0;
-        sprintf(g_stageLeader.name, CMain::m_logFileBlankLine);
+        sprintf(g_stageLeader.name, "%s", CMain::m_logFileBlankLine);
     }
     if (CGameInfo::GetConfiguredGameMode() == 5 || CGameInfo::GetConfiguredGameMode() == 6 || CGameInfo::GetConfiguredGameMode() == 7 ||
         CGameInfo::GetConfiguredGameMode() == 4 || CGameInfo::GetConfiguredGameMode() == 11 || CGameInfo::GetConfiguredGameMode() == 12 ||

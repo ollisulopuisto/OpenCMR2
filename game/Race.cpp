@@ -1,4 +1,5 @@
 #include "SpeedFov.h"
+#include "SpeedLookPolicy.h"
 #include "render/speed_streak.h"
 #include "EffectAmounts.h"
 #include "France1Textures.h"
@@ -586,11 +587,11 @@ void Race_BuildSelectionPaths(void)
     char name[4];
     int table[8] = { 6, 3, 1, 4, 0, 2, 5, 7 };
 
-    sprintf(buf, CMain::m_logFileBlankLine);
+    sprintf(buf, "%s", CMain::m_logFileBlankLine);
     if (CGameInfo::GetGraphicsOptionBits27To28() == 0) {
-        sprintf(buf, g_str0x00519468);
+        sprintf(buf, "%s", g_str0x00519468);
     } else {
-        sprintf(buf, g_str0x00519464);
+        sprintf(buf, "%s", g_str0x00519464);
     }
     if (CGameInfo::GetConfiguredGameMode() == 5 || CGameInfo::GetConfiguredGameMode() == 6 ||
         CGameInfo::GetConfiguredGameMode() == 7 || CGameInfo::GetConfiguredGameMode() == 0xb ||
@@ -1098,7 +1099,7 @@ void Race_DrawPlayerCallSlots(unsigned int player, int *pViewRect)
 
     pCallFlag = g_raceWrongWayFlags;
     if (pCallFlag[player] != 0 || InRaceMenu_IsPlayerEditingCarSetup(player) != 0) {
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x57));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x57));
         Race_DrawPlayerMessage(CFrontend::m_stringDest, &g_raceCallTextColour, player, 1, -1, -1);
     }
 
@@ -4667,12 +4668,31 @@ void StageObject_InterpolateHeadlightGlows(int t);
 
 // OpenCMR2: hands the speed-driven look settings (tunnel vision, speed streak, vapor trails) to the renderer from the car speed. Visual only.
 // Also called while paused with the tuning panel open, so a changed setting reaches the frozen scene.
+void AttractCapture_ViewSignature(int view, int *type, int *drone);
+int Race_GetPlayerRecordField4(BYTE index);
+void ReplayControls_Update(void);
+bool View_IsDroneCamera(int view);   // Car.cpp: the camera operator's drone is the active camera of that player
 void Race_ApplySpeedEffectParams(void)
 {
+    {
+        int viewType = 0, viewDrone = 0; AttractCapture_ViewSignature(0, &viewType, &viewDrone);
+        if (SpeedLook_VaporOff(Race_GetPlayerRecordField4(0) != 0)) Gfx_ClearVaporTrail();   // replay: air vortices off in every view, saved setting untouched
+        // Replay: only the interior view (type 3) keeps the effects. Drone camera: never. See SpeedLookPolicy.h. Settings are not rewritten.
+        if (SpeedLook_ScreenEffectsOff(viewType, Race_GetPlayerRecordField4(0) != 0, View_IsDroneCamera(0), Sys_GetOption("video.speed_effects", 1) != 0)) {
+            Gfx_ClearSpeedEffects();   // targets and eased values to 0: no residual blur or lines after a camera switch
+            if (!SpeedLook_VaporOff(Race_GetPlayerRecordField4(0) != 0)) Gfx_SetVaporTrail(SpeedStreak_Strength((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0), Sys_GetOption("video.vapor_trails", 0) != 0 ? 100 : 0)); // world-space trails: off in replay, as set while driving
+            return;
+        }
+    }
+    {   // Cockpit (camera type 3) only: the interior's own depth keeps it out of the tunnel-vision blur. Unit: tenths of a world unit, default 16 = 1.6.
+        int type = 0, drone = 0; AttractCapture_ViewSignature(0, &type, &drone);
+        int tenths = Sys_GetOption("video.cockpit_blur_clear", 16); if (tenths < 0) tenths = 0; if (tenths > 60) tenths = 60;
+        Gfx_SetTunnelNearClear(type == 3 ? tenths / 10.0f : 0.0f);
+    }
     // OpenCMR2: speed-driven tunnel vision (visual only; reads speed, changes nothing in the sim).
     {
         float speedUnits = SpeedFov_HeldRatio((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0)); // hold: overdo test only
-        int strength = Sys_GetOption("video.tunnel_vision", 100); // 0..200, adjustable; 0 = off; above 100 is the experimental overdrive
+        int strength = Sys_GetOption("video.tunnel_vision", 130); // 0..200, adjustable; 0 = off; above 100 is the experimental overdrive
         if (strength < 0) strength = 0;
         if (strength > 200) strength = 200;
         Gfx_SetSpeedFocus(speedUnits * (float)strength / 100.0f);
@@ -4680,7 +4700,7 @@ void Race_ApplySpeedEffectParams(void)
     // OpenCMR2: speed streak (visual only): directional radial streak, 0 = off (default). Same speed ratio and overdo hold as above.
     Gfx_SetSpeedStreak(SpeedStreak_Strength((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0), Sys_GetOption("video.speed_streak", 0)));
     // OpenCMR2: vapor trails (visual only, video.vapor_trails 0/1, default off): same speed ratio and overdo hold; the renderer eases and fades them in.
-    Gfx_SetVaporTrail(SpeedStreak_Strength((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0), Sys_GetOption("video.vapor_trails", 0) != 0 ? 100 : 0));
+    Gfx_SetVaporTrail(SpeedLook_VaporOff(Race_GetPlayerRecordField4(0) != 0) ? 0.0f : SpeedStreak_Strength((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0), Sys_GetOption("video.vapor_trails", 0) != 0 ? 100 : 0));
 }
 
 // Per-frame race update: advances the stage timing, the particle and dash
@@ -4721,6 +4741,7 @@ void Race_UpdateFrameEffects(int param_1)
     }
     WindscreenWiper_UpdateInput();
     TuningPanel_NoteSite("race-step");TuningPanel_Update();
+    ReplayControls_Update();
     if ((BYTE)RallyData_IsChampionshipFinalStage()) {
         StageObject_UpdateDebris(param_1);
     }

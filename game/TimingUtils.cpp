@@ -117,7 +117,7 @@ void FrontendDraw_DrawStageTimes(int unused)
                 pColour = (int *)g_colourText0x0052496c;
             Font_DrawText(0, (char *)NetPlayers_GetClassificationRecord(i), (int)(g_pGraphics->resX * 0x96) / 0x280, (int)(g_pGraphics->resY * 0x14) / 0x1e0 * i + (int)(g_pGraphics->resY * 0x82) / 0x1e0, pColour, 10);
             if (NetPlayers_GetClassificationTime(i) == -1)
-                sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x200));
+                sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x200));
             else
                 FormatCentisecondsAsMinSecMSec(NetPlayers_GetClassificationTime(i), CFrontend::m_stringDest);
             Font_DrawText(0, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 0xfa) / 0x280, (int)(g_pGraphics->resY * 0x14) / 0x1e0 * i + (int)(g_pGraphics->resY * 0x82) / 0x1e0, pColour, 10);

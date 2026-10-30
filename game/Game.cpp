@@ -919,9 +919,9 @@ void Game_DrawMovieFrameAndCredits(CallbackStateMachine *p1, BYTE p2)
         Font_DrawText(0, CFrontend::m_stringDest, 0, 0, (int *)white, 9);
     }
     if (CGameInfo::GetGameRegion() == 3)
-        sprintf(CFrontend::m_stringDest, g_strBinkCreditPl0x00523d1c);
+        sprintf(CFrontend::m_stringDest, "%s", g_strBinkCreditPl0x00523d1c);
     else
-        sprintf(CFrontend::m_stringDest, g_strBinkCredit0x00523cd8);
+        sprintf(CFrontend::m_stringDest, "%s", g_strBinkCredit0x00523cd8);
     Font_DrawText(0, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 0x140) / 0x280,
                   (int)(g_pGraphics->resY * 0x15e) / 0x1e0, (int *)black, 10);
     Game_DrawSceneViewport(g_splashSceneRoot, g_splashCamera, &viewport, 0, 1);
@@ -1756,7 +1756,7 @@ bool CGame::InitializeNetworkSubsystem(void) {
     FreeNetworkReceiveBuffer();
     
     for (i = 0; i < 10; i++) {
-        sprintf(m_connections[i].name, CMain::m_logFileBlankLine);
+        sprintf(m_connections[i].name, "%s", CMain::m_logFileBlankLine);
         m_connections[i].pConnection = NULL;
     }
 
@@ -1873,7 +1873,7 @@ void CGame::ClearConnections(void)
     int i;
 
     for (i = 0; i < 10; i++) {
-        sprintf(m_connections[i].name, CMain::m_logFileBlankLine);
+        sprintf(m_connections[i].name, "%s", CMain::m_logFileBlankLine);
         if (m_connections[i].pConnection != NULL) {
             CFileBuffer::FreeGenericFileBuffer(m_connections[i].pConnection);
             m_connections[i].pConnection = NULL;
@@ -2301,12 +2301,14 @@ void Game_DrawDeferredObjects(void)
         }
         if (g_depthSortDrawLists != 0)
             qsort(sorted, CGame::m_deferredDrawCount, sizeof(sorted[0]), Game_CompareDeferredDistance);
+        SceneryPack_BeginBatch();
         for (i = 0; i < (unsigned int)CGame::m_deferredDrawCount; i++) {
             pObject = sorted[i].pObject;
             if (SceneryPack_Draw((StageObject *)pObject,pObject->matrix)) {
                 pObject->pMesh->flags |= 8; // preserve next-frame visibility bookkeeping
                 continue;
             }
+            SceneryPack_FlushBatch(); // keep recorded order before a non-replacement draw
             int texture = pObject->pMesh->pTriangles->textures[0];
             // OpenCMR2: an animated scenery object draws its current frame
             // ([video] video.animated_scenery) instead of the base texture.
@@ -2321,6 +2323,7 @@ void Game_DrawDeferredObjects(void)
             pObject->pMesh->flags |= 8;
             Graphics_DrawMeshLOD(pObject->pMesh, 1, 0, 0);
         }
+        SceneryPack_EndBatch();
         CGame::m_deferredDrawCount = 0;
     }
 }
@@ -2965,6 +2968,10 @@ int Game_DrawSceneViewport(SceneNode *pRoot, SceneNode *pCamera, void *pRect, in
     ScreenLine2D_Draw(1);
     Tri2D_DrawLayer(1);
     Sprite_DrawLayer(1);
+    // Debug UI is queued only now, above the pause wash/menu. A second flush
+    // uses the emptied layer3 queue, avoiding overflow in the layer1 HUD.
+    DebugOverlays_DrawLate();
+    Tri2D_DrawLayer(3);Sprite_DrawLayer(3);
     CGraphics::SetCullMode(CGame::GetSectorDrawState());
     Graphics_UpdateFrameStatistics();
     Gfx_EndScene();

@@ -20,6 +20,9 @@ target_compile_options(cmr2_game PRIVATE
     "SHELL:-include ${CMAKE_CURRENT_SOURCE_DIR}/port/msvcrt.h"
     -fms-extensions
     -Wno-everything
+    # Everything above stays muted, but a format string that is not a literal is a real defect class (a '%' in a
+    # localized or file-loaded string reads missing arguments). All 131 were fixed; keep this one visible.
+    -Wformat-security
     -ferror-limit=0)
 target_link_libraries(cmr2_game PUBLIC SDL3::SDL3)
 
@@ -45,6 +48,15 @@ list(TRANSFORM GAME_QIFIST_UNITS APPEND .cpp)
 set_source_files_properties(${GAME_QIFIST_UNITS} TARGET_DIRECTORY cmr2_game
     PROPERTIES COMPILE_DEFINITIONS CMR2_QIFIST)
 
+# Refresh embedded identity even after checkout or tracked edits without reconfigure.
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated")
+add_custom_target(opencmr2_build_identity
+    COMMAND ${CMAKE_COMMAND} -DSOURCE=${PROJECT_SOURCE_DIR}
+      -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/generated/build_identity.h
+      -P ${PROJECT_SOURCE_DIR}/cmake/BuildIdentity.cmake
+    BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/generated/build_identity.h
+    VERBATIM)
+
 # Platform layer plus the game objects; tests link this too.
 add_library(opencmr2_platform STATIC
     platform/sys.cpp
@@ -55,6 +67,8 @@ add_library(opencmr2_platform STATIC
     $<TARGET_OBJECTS:cmr2_game>)
 target_sources(opencmr2_platform PRIVATE diagnostics/observer.cpp diagnostics/timing.cpp)
 target_compile_definitions(opencmr2_platform PRIVATE OPENCMR2_SOURCE_ROOT="${PROJECT_SOURCE_DIR}")
+add_dependencies(opencmr2_platform opencmr2_build_identity)
+target_include_directories(opencmr2_platform PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 target_include_directories(opencmr2_platform PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${GAME_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/port/compat)
 target_link_libraries(opencmr2_platform PUBLIC SDL3::SDL3)
 
@@ -159,7 +173,7 @@ if(OPENCMR2_SHADERS_MSL OR OPENCMR2_RENDERER_GL)
 endif()
 
 set(SHADER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/render/shaders)
-set(SHADER_SOURCES fixed3d.vert fixedtl.vert fixed.frag clear.vert clear.frag motionblur.vert motionblur.frag brightpass.frag blur.frag composite.frag particle.vert particle.frag shadow.vert shadow.frag lens_grime.frag dof.frag godRays.frag colorGrading.frag spatial_aa.frag dust_volume.frag dust_composite.frag clouds.frag temporal.frag speedstreak.frag)
+set(SHADER_SOURCES fixed3d.vert fixedtl.vert fixed.frag clear.vert clear.frag motionblur.vert motionblur.frag brightpass.frag blur.frag composite.frag particle.vert particle.frag shadow.vert shadow.frag lens_grime.frag dof.frag godRays.frag colorGrading.frag spatial_aa.frag dust_volume.frag dust_composite.frag clouds.frag temporal.frag speedstreak.frag sun_glare.frag)
 set(SHADER_FILES)
 foreach(shader IN LISTS SHADER_SOURCES)
     set(output ${CMAKE_CURRENT_BINARY_DIR}/shaders/${shader}.spv)
@@ -299,3 +313,6 @@ endif()
 target_include_directories(opencmr2_platform PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated
     ${PROJECT_SOURCE_DIR}/third_party/stb)
 target_link_libraries(opencmr2_platform PRIVATE opencmr2_bink opencmr2_net)
+
+add_dependencies(opencmr2 opencmr2_build_identity)
+target_include_directories(opencmr2 PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
