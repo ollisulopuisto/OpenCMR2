@@ -2689,6 +2689,7 @@ struct Executor : GfxExecutor {
                                   carRegion.u0, carRegion.v0, carRegion.u1, carRegion.v1,
                                   (float)blurShown, carPosMin, carPosMax, 0.02f };
             if (!blurShown) for (int k = 8; k < 16; ++k) uniforms[k] = 0.0f;
+            if (!blurShown) uniforms[8] = Gfx_GetTunnelNearClear();   // peripheral mode: cockpit interior depth clear (see dof.frag)
             static int blurLogCounter = 0;
             if (Sys_GetOption("video.blur_mode", 0) != 0 && (blurLogCounter++ % 120) == 0)
                 Sys_Log("blur mode: whole scene except car requested, %s; car rect u %.3f..%.3f v %.3f..%.3f (0..1, v downwards), view depth %.2f..%.2f world units, %d vertices; native pixels unverified",

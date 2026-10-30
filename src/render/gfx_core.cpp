@@ -567,6 +567,9 @@ extern "C" void Gfx_SetVaporTrail(float strength)
         s_executor->SetVaporTrail(strength);
 }
 
+static float s_tunnelNearClear=0;
+extern "C" void Gfx_SetTunnelNearClear(float worldUnits){s_tunnelNearClear=worldUnits>0?worldUnits:0;}
+extern "C" float Gfx_GetTunnelNearClear(void){return s_tunnelNearClear;}
 extern "C" void Gfx_SetSpeedFocus(float speed)
 {
     if (s_executor != NULL)
