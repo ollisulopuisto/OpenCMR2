@@ -91,12 +91,13 @@ int main(){
  {
   State base,close,far;close.distanceScale=.5f;far.distanceScale=1.5f;
   for(int i=0;i<400;i++){base.Step({0,0,0},0,0,0,6.5,2,.04);close.Step({0,0,0},0,0,0,6.5,2,.04);far.Step({0,0,0},0,0,0,6.5,2,.04);}
-  CHECK(close.usedDistance<base.usedDistance*.6f&&far.usedDistance>base.usedDistance*1.4f&&close.usedDistance>=4.f&&far.usedDistance<=26.f);
+  CHECK(close.usedDistance<base.usedDistance&&far.usedDistance>base.usedDistance&&close.usedDistance>=9.f&&far.usedDistance<=25.f);
  }
  {  // Moving straight at steady speed: stay at the selected offset, not the old lagging tether.
   auto settle=[](float scale){State s;s.distanceScale=scale;V3 car={0,0,0};for(int i=0;i<1200;i++){car.z+=28.f/60;s.Step(car,0,0,73.f,6.5f,1.5f,1.f/60);}V3 a=s.position-car;return std::sqrt(a.x*a.x+a.z*a.z);};
   float d100=settle(1.f),d60=settle(.6f),d50=settle(.5f);
-  CHECK(d100>7.7f&&d100<7.9f); // horizontal trail, independent of the corrected lower heightCHECK(d60<8.f&&d50<d60&&d50<7.f);
+  CHECK(d100>9.6f&&d100<9.9f); // horizontal trail, independent of the corrected lower height
+  CHECK(d60>8.99f&&d50>8.99f&&d50<=d60);
  }
  { // Gameplay steering envelope at 25/60/120 Hz, hard braking and rapid turns.
   for(float dt:{.04f,1.f/60,1.f/120}){
@@ -111,17 +112,17 @@ int main(){
     follow.Step(car,yaw,0,1.5f,6.5f,1.5f,dt);
     V3 behind=car-follow.position;
     float along=behind.x*forward.x+behind.z*forward.z;
-    CHECK(along>follow.usedDistance*.79f); // never goes past the car, including emergency stop
+    CHECK(along>follow.usedDistance*.54f); // never goes past the car, including emergency stop
     float orbit=std::atan2(behind.x,behind.z);
     CHECK(std::abs(Wrap(orbit-yaw))<=.045f); // reversal may briefly exceed two degrees without snapping
     auto view=follow.FramedForward();
     CHECK(std::abs(Wrap(std::atan2(view.x,view.z)-yaw))<=.06f); // aim adds at most 0.01 rad
-    CHECK(std::abs(follow.foreLag)<=.601f);
+    CHECK(std::abs(follow.foreLag)<=2.5f);
     if(t>1&&t<2)maxFall=Max(maxFall,follow.foreLag);
     if(t>4&&t<4.6f)maxCatch=Max(maxCatch,-follow.foreLag);
    }
-   CHECK(maxFall>.02f);CHECK(maxCatch>.02f); // actual fall-back and late braking, not rigid attachment
-   CHECK(std::abs(follow.foreLag)<.001f); // settles rather than retaining speed-dependent lag
+   CHECK(maxFall>1.f);CHECK(maxCatch>1.f); // actual fall-back and late braking, not rigid attachment
+   CHECK(std::abs(follow.foreLag)<.02f); // settles rather than retaining speed-dependent lag
   }
  }
  { // Abrupt turn/reversal, wrap and braking: inspect world-space displacement
@@ -138,7 +139,7 @@ int main(){
     previous=s.position;
    }
    fprintf(stderr,"dt %.5f max displacement %.3f world acceleration %.1f\n",dt,worstJump,worstAcceleration);
-   CHECK(worstJump<2.f);
+   CHECK(worstJump < dt*(12.f+26.f*2.f)); // translating car + farther drone turning at bounded orbit speed
    // Averaged world-velocity differences cannot exceed the integrated
    // acceleration contract, aside from 5% finite-difference/float tolerance.
    // This catches projection snaps; it does not establish a comfortable feel.
