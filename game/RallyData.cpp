@@ -6588,7 +6588,9 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             snprintf(text,sizeof(text),"Frame split ms: interval %.1f | executor encode+submit %.1f (swapchain wait %.1f) | scenery %.1f | rest %.1f",interval,ex-pe,wt-pw,sc,interval-(ex-pe)-sc);
             {   // Worst single frame over ~5 s windows (diagnostic): hitches that a one-frame readout misses. Timing only, no cause claimed.
                 static double winStart=0,worst=0,wEx=0,wSc=0,lastWorst=0,lWEx=0,lWSc=0;static unsigned over25=0,frames=0,lastOver=0,lastFrames=0;
-                if(interval>0){
+                if(interval>2000.0){   // pane was off, paused or the menu was open: discard this gap and restart the window
+                    winStart=0;worst=0;over25=0;frames=0;lastFrames=0;hitchText[0]=0;
+                } else if(interval>0){
                     if(winStart==0)winStart=now;
                     frames++;if(interval>25.0)over25++;
                     if(interval>worst){worst=interval;wEx=ex-pe;wSc=sc;}
