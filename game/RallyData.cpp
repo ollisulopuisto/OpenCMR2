@@ -6157,7 +6157,7 @@ void TuningPanel_Update(void)
     }
     if (changed) EffectSettings::Apply();
 }
-// OpenCMR2 replay controls (keyboard): , slower  . faster  / pause  Tab next camera. Active only while player 0's stream is playing back.
+// OpenCMR2 replay controls (keyboard): , slower  . faster  Space pause  Tab next camera. Active only while player 0's stream is playing back.
 // The recorded controls still run through the unchanged physics; only the time that feeds the step count is scaled (Car.cpp).
 #include "ReplayControls.h"
 #include "ReplayStream.h"
