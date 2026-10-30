@@ -33,6 +33,16 @@ struct ReplayClock {
         return real - (int)std::floor(lag);
     }
 };
+// Position in a type 0 (recorded controls) lane. Each 4-byte packet holds the controls for max(count, 1) sim steps, count = byte 2 & 0x3f
+// (Replay_DecodeInputPacket advances to the next packet once its step counter reaches count). Steps are sim ticks, 25 per second by default.
+inline int ReplayPacketSteps(const unsigned char *packet) { int c = packet[2] & 0x3f; return c < 1 ? 1 : c; }
+inline long ReplayStepsBefore(const unsigned char *packets, int packetIndex, int counter)
+{
+    long steps = 0;
+    for (int i = 0; i < packetIndex; ++i) steps += ReplayPacketSteps(packets + i * 4);
+    return steps + (counter > 0 ? counter : 0);
+}
+inline long ReplayStepsTotal(const unsigned char *packets, int packetCount) { return ReplayStepsBefore(packets, packetCount, 0); }
 inline void ReplayClock_FormatCentiseconds(int cs, char *out, size_t n)
 {
     if (cs < 0) cs = 0;

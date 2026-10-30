@@ -16,4 +16,8 @@ int main(){
  int s0=k.Frame(real,.5f);for(int i=0;i<100;i++){real+=16;k.Frame(real,.5f);}int s1=k.Frame(real,.5f);CHECK(std::abs((s1-s0)-800)<=2);
  int f0=s1;for(int i=0;i<100;i++){real+=16;int n=k.Frame(real,4.f);CHECK(n>=f0);f0=n;}CHECK(std::abs((f0-s1)-6400)<=4);
  char tm[16];ReplayClock_FormatCentiseconds(11760,tm,sizeof tm);CHECK(!strcmp(tm,"1:57.60"));ReplayClock_FormatCentiseconds(-5,tm,sizeof tm);CHECK(!strcmp(tm,"0:00.00"));
+ // Packet runs: byte 2 low 6 bits = steps in the run (0 counts as 1).
+ unsigned char pk[16]={0,0,3,0, 0,0,0,0, 0,0,0x3f,0, 0,0,0x80|1,0};
+ CHECK(ReplayPacketSteps(pk)==3&&ReplayPacketSteps(pk+4)==1&&ReplayPacketSteps(pk+8)==63&&ReplayPacketSteps(pk+12)==1);
+ CHECK(ReplayStepsTotal(pk,4)==68);CHECK(ReplayStepsBefore(pk,2,0)==4);CHECK(ReplayStepsBefore(pk,2,5)==9);CHECK(ReplayStepsBefore(pk,0,0)==0);
  puts("replay controls ok");return 0;}

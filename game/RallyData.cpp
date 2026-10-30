@@ -6158,11 +6158,13 @@ void TuningPanel_Update(void)
 // OpenCMR2 replay controls (keyboard): , slower  . faster  / pause  Tab next camera. Active only while player 0's stream is playing back.
 // The recorded controls still run through the unchanged physics; only the time that feeds the step count is scaled (Car.cpp).
 #include "ReplayControls.h"
+#include "ReplayStream.h"
 int Race_GetPlayerRecordField4(BYTE index);
 int View_GetActiveCameraMode(BYTE index);
 BYTE View_GetActiveCameraFlags(BYTE index);
 void View_SwitchCamera(BYTE view, int type, int param, BYTE target, int blend);
 int View_FindFreeModeSlot(unsigned char view);
+ReplayStream *Race_GetPlayerRecordPointer(int index);
 static ReplayControls g_replayControls;
 static TuningEdges g_replayEdges;
 bool ReplayControls_Active(void) { return Race_GetPlayerRecordField4(0) != 0; }
@@ -6180,15 +6182,14 @@ static bool ReplayKeyUsable(int key)
     return true;
 }
 bool ReplayControls_KeyIsReplayKey(int key) { return ReplayControls_Active() && ReplayKeyUsable(key) && (key == kReplayKeySlower || key == kReplayKeyFaster || key == kReplayKeyPause || key == kReplayKeyCamera); }
+int View_CycleReplayCamera(unsigned char view);
+void View_UpdateCamera(BYTE view);
 static void ReplayControls_CycleCamera(void)
 {
-    // Order: automatic trackside (7), chase 4, drone/chase 5, car-mounted 1, bonnet 2, cockpit 3 where available, then back to automatic. The game's own
-    // mode step covers 4..5 and 1..3 (it skips modes that are not available); the wrap from 5 to 1 is replaced by the automatic camera.
-    int cur = View_GetActiveCameraMode(0);
-    BYTE car = View_GetActiveCameraFlags(0);
-    if (cur == 7) { View_SwitchCamera(0, 4, 0xffff, car, 1); return; }
-    int next = View_FindFreeModeSlot(0);
-    if (next < cur) View_SwitchCamera(0, 7, 0xffff, car, 0);
+    View_CycleReplayCamera(0);
+    // The camera blend advances per sim step. While paused no step runs, so finish the blend by hand (camera state only) and the new view shows at once.
+    if (g_replayControls.paused)
+        for (int i = 0; i < 20; i++) View_UpdateCamera(0);
 }
 void ReplayControls_Update(void)
 {
@@ -6206,8 +6207,25 @@ static const char *ReplayCameraName(int type)
 void ReplayControls_Draw(void)
 {
     if (!ReplayControls_Active()) return;
-    char clock[16], speed[24], text[96];
-    ReplayClock_FormatCentiseconds(StageTiming_GetClockTime(), clock, sizeof clock);
+    char clock[40], speed[24], text[120];
+    clock[0] = 0;
+    ReplayStream *stream = Race_GetPlayerRecordPointer(0);
+    if (stream != NULL && stream->type == 0 && stream->pFrames != NULL && stream->pLaneSamples != NULL && stream->lane >= 0 && stream->lane < stream->laneCount) {
+        // Elapsed and total from the recorded control packets (steps), not the stage clock, so both use one unit. Total is cached per lane.
+        static ReplayStream *cachedStream = NULL; static int cachedLane = -1, cachedPackets = -1; static long cachedTotal = 0;
+        const unsigned char *packets = (const unsigned char *)stream->pFrames + stream->samplesPerLane * stream->lane * 4;
+        int count = stream->pLaneSamples[stream->lane];
+        if (cachedStream != stream || cachedLane != stream->lane || cachedPackets != count) { cachedStream = stream; cachedLane = stream->lane; cachedPackets = count; cachedTotal = ReplayStepsTotal(packets, count); }
+        int frame = stream->frame < 0 ? 0 : stream->frame > count ? count : stream->frame;
+        float rate = Car_Get(0)->simulationRateHz;
+        if (rate > 1.0f && count > 0) {
+            char a[16], b[16];
+            ReplayClock_FormatCentiseconds((int)(ReplayStepsBefore(packets, frame, stream->field_0x21) * 100.0f / rate), a, sizeof a);
+            ReplayClock_FormatCentiseconds((int)(cachedTotal * 100.0f / rate), b, sizeof b);
+            snprintf(clock, sizeof clock, "%s / %s", a, b);
+        }
+    }
+    if (!clock[0]) ReplayClock_FormatCentiseconds(StageTiming_GetClockTime(), clock, sizeof clock);   // not a controls stream: the stage clock only, no total
     g_replayControls.Label(speed, sizeof speed);
     snprintf(text, sizeof text, "replay %s  %s  cam %s  , . / tab", clock, speed, ReplayCameraName(View_GetActiveCameraMode(0)));
     DebugOverlayLayout layout = DebugOverlayLayout::For(g_pGraphics->resX, g_pGraphics->resY, 1);
