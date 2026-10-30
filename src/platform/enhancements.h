@@ -178,7 +178,7 @@ inline const char *EnhancementHelp(){return
 "                              see runtime log. temporal_aa = PARTIAL stage (SDL_GPU only,\n"
 "                              camera reprojection, no object velocity), default off.\n"
 "  --speed-fov 0..500          Widen the regular cameras' view with speed (percent); default 0 = off\n"
-"  --drone-distance 50..150     Drone camera distance, percent of the default (default 50; overrides opencmr2.ini)\n"
+"  --drone-distance 50..150     Drone camera distance, percent of the default (default 60; overrides opencmr2.ini)\n"
 "  --speed-fov-cockpit 0..100  Cockpit camera: share of --speed-fov it uses, percent (default 25; overrides opencmr2.ini)\n"
 "  --tunnel-vision 0..200      Tunnel vision strength, percent (default 150; overrides opencmr2.ini; --test-preset overdo sets 150 too)\n"
 "  --tunnel-lines 0|1          Radial lines inside the tunnel-vision zone (default 1; overrides opencmr2.ini)\n"
