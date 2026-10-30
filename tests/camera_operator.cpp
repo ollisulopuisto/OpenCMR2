@@ -94,9 +94,9 @@ int main(){
   CHECK(close.usedDistance<base.usedDistance*.6f&&far.usedDistance>base.usedDistance*1.4f&&close.usedDistance>=4.f&&far.usedDistance<=26.f);
  }
  {  // Moving straight at steady speed: stay at the selected offset, not the old lagging tether.
-  auto settle=[](float scale){State s;s.distanceScale=scale;V3 car={0,0,0};for(int i=0;i<1200;i++){car.z+=28.f/60;s.Step(car,0,0,73.f,6.5f,1.5f,1.f/60);}V3 a=s.position-car;return a.Length();};
+  auto settle=[](float scale){State s;s.distanceScale=scale;V3 car={0,0,0};for(int i=0;i<1200;i++){car.z+=28.f/60;s.Step(car,0,0,73.f,6.5f,1.5f,1.f/60);}V3 a=s.position-car;return std::sqrt(a.x*a.x+a.z*a.z);};
   float d100=settle(1.f),d60=settle(.6f),d50=settle(.5f);
-  CHECK(d100>9.f&&d100<11.f);CHECK(d60<8.f&&d50<d60&&d50<7.f);
+  CHECK(d100>7.7f&&d100<7.9f); // horizontal trail, independent of the corrected lower heightCHECK(d60<8.f&&d50<d60&&d50<7.f);
  }
  { // Gameplay steering envelope at 25/60/120 Hz, hard braking and rapid turns.
   for(float dt:{.04f,1.f/60,1.f/120}){
@@ -155,6 +155,20 @@ int main(){
    CHECK(std::abs(Wrap(right.heading+yaw))<=.0351f);
    CHECK(std::abs(left.position.x+right.position.x)<.001f);
    CHECK(std::abs(left.position.z-right.position.z)<.001f);
+  }
+ }
+ { // Read the road ahead, including close distance, bends and terrain.
+  for(float sc:{.5f,.6f,1.f,1.5f})for(bool bank:{false,true}){
+   State s;s.distanceScale=sc;s.lensSpeedGain=0;V3 car;RoadPreview r;
+   r.valid=true;r.bend=.8f;r.near={0,0,16};r.far={0,0,40};
+   for(int i=0;i<600;i++){
+    if(s.ready)s.position.y-=s.terrainLift;
+    s.Step(car,0,0,1.5f,6.5f,1.5f,.04f,&r);
+    float trailBefore=s.position.z;
+    if(bank)s.ConstrainTerrain(car,.04f,[](V3 p,float&y){y=p.z<-1?4.f:0;return true;});
+    CHECK(s.position.z==trailBefore); // terrain must never collapse trailing distance
+    auto f=s.FramedForward();CHECK(f.z>.90f); // pitch remains within about26 degrees of horizontal
+   }
   }
  }
  { // Discontinuous corridor samples must not teleport the drone upwards.

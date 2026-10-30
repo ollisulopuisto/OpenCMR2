@@ -64,7 +64,7 @@ struct State{
  void Step(V3 car,float carHeading,float steering,float speed,float distance,float height,float dt,const RoadPreview*road=nullptr){
   Guard(car);
   if(!std::isfinite(steering)||!std::isfinite(speed)||!std::isfinite(distance)||!std::isfinite(height)||!std::isfinite(carHeading)||!std::isfinite(dt)||dt<=0||dt>.2f||!std::isfinite(car.x)||!std::isfinite(car.y)||!std::isfinite(car.z)){Reset();return;}
-  distance=Clamp(distance*1.5f,9.f,14.f);height=Clamp(height*3.f,7.f,10.f);
+  distance=Clamp(distance*1.5f,9.f,14.f);
   // Speed-dependent distance: pull back at low speed to show scenery, fly closer at
   // speed. Smoothed (about 1.3 s) so it never pumps; steering/physics are untouched.
   float speedUnit=Clamp(speed/1.5f,0.f,1.f);
@@ -72,7 +72,7 @@ struct State{
   if(!pullbackReady){pullback=wantedPull;pullbackReady=true;}
   pullback+=(wantedPull-pullback)*(1-std::exp(-dt/1.3f));
   distance=Clamp(distance*pullback,7.f,17.f)*distanceScale; // distanceScale: user knob, 1 = default
-  distance=Clamp(distance,4.f,26.f);usedDistance=distance;height=Clamp(height*(1.f+.2f*(pullback-1.f)),6.f,11.f);height*=.5f+.5f*Clamp(distanceScale,0.f,1.f);
+  distance=Clamp(distance,4.f,26.f);usedDistance=distance;
   bool roadValid=road&&road->valid;
   RoadPreview filtered;
   if(roadValid){
@@ -88,7 +88,10 @@ struct State{
   float wantedLift=Clamp((bend-.06f)/.64f,0.f,1.f)*4.f;
   float liftTime=wantedLift>curveLift?.55f:1.7f;
   curveLift+=(wantedLift-curveLift)*(1-std::exp(-dt/liftTime));
-  height+=curveLift*Clamp(distanceScale,0.f,1.f); // the curve lift follows the distance knob, so a closer drone stays closer in bends
+  // Keep the drone low enough to look down the road at every distance knob.
+  // Previously a 4-unit trailing distance retained 5-7 units of height before
+  // terrain lift, then lower-third framing forced a steep overhead aim.
+  height=Clamp(distance*.38f+curveLift*.15f,1.5f,distance*.48f);
   float orbitHeading=carHeading; // gameplay: the driver needs a view from behind, even on a different route tangent
   float delta=ready?Wrap(carHeading-lastHeading):0;
   if(ready&&((car-lastCar).Length()>25.f||std::abs(delta)>.8f)){Reset();delta=0;}
@@ -169,7 +172,7 @@ struct State{
   const float carY=car.y;
   auto ground=[&](V3 point,float&y){float v=0;if(!rawQuery(point,v)||!std::isfinite(v)||v>carY+15.f||v<carY-60.f)return false;y=v;return true;};
   if(!ready||dt<=0||dt>.2f)return;
-  V3 original=position,base=position;float required=0;
+  V3 base=position;float required=0;
   auto liftFor=[&](V3 camera){
    float lift=0;
    auto corridor=[&](V3 target){
@@ -186,20 +189,13 @@ struct State{
    return Max(0.f,lift);
   };
   required=liftFor(base);
-  // A tall bank should pull the drone in, not send it to TV-helicopter height.
-  // Test bounded alternatives along the trailing direction. Safety may shorten
-  // the distance, but does not introduce an outside-bend orbit.
-  if(required>3.f){
-   float cost=required;
-   for(int alternative=1;alternative<=3;alternative++){
-    float fraction=1.f-.2f*alternative;
-    V3 candidate=car+(original-car)*fraction;candidate.y=original.y;
-    if((candidate-car).Length()<5.f)continue;
-    float lift=liftFor(candidate),score=lift+(candidate-original).Length()*.35f;
-    if(score<cost){cost=score;base=candidate;required=lift;}
-   }
-  }
-  required=Clamp(required,0.f,8.f);
+  // Never pull horizontally toward the car to clear terrain: this collapsed
+  // the trailing distance while retaining height and forced an overhead view.
+  // Do not trade away the road view for unlimited corridor clearance. As with
+  // bounded rise, a real bank can clip; this remains a ground heuristic.
+  float trail=std::sqrt((base.x-car.x)*(base.x-car.x)+(base.z-car.z)*(base.z-car.z));
+  float liftBudget=Max(0.f,trail*.65f-(base.y-car.y));
+  required=Clamp(required,0.f,Max(0.f,liftBudget));
   position=base;
   // A discontinuous corridor/triangle sample must not teleport the camera
   // upwards. Rise at most 3 units/s; preserve the accepted slow 2 units/s
