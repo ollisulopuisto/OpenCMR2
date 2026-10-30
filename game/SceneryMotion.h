@@ -1,6 +1,7 @@
 #ifndef OPENCMR2_SCENERY_MOTION_H
 #define OPENCMR2_SCENERY_MOTION_H
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 // Stage simulation clock only. Source geometry remains immutable; base fixed.
 namespace SceneryMotion {
