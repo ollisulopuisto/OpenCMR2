@@ -11,7 +11,7 @@ h, f = rd("src/render/speed_lines.h"), rd("src/render/shaders/speedstreak.frag")
 for hn, fn in (("kSpeedLinesInner", "LINES_INNER"), ("kSpeedLinesFade", "LINES_FADE"), ("kSpeedLinesRays", "LINES_RAYS"), ("kSpeedLinesOnset", "LINES_ONSET"), ("kSpeedLinesFull", "LINES_FULL"), ("kSpeedLinesOpacity", "LINES_OPACITY")):
     hv = re.search(hn + r"\s*=\s*([0-9.]+)f;", h); fv = re.search(r"const float " + fn + r"\s*=\s*([0-9.]+);", f)
     need(hv and fv and float(hv.group(1)) == float(fv.group(1)), fn + " differs between header and shader")
-need("speedLines(c * vec2(settings.y, 1.0), settings.z, 0.0)" in f, "lines must use the aspect corrected radius and the time uniform")
+need("speedLines(c * vec2(settings.y, 1.0), settings.z, 0.0, 1.0)" in f, "lines must use the aspect corrected radius and the time uniform")
 need("settings.w" in f, "lines amount must come from settings.w")
 need("previous" not in f, "no previous frame")
 need(f.count("sampler2D") == 2, "scene plus depth for vapor trail occlusion")
