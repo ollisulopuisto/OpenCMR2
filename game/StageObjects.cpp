@@ -519,7 +519,12 @@ BYTE g_stageSurfaceMap[48] = {
 BYTE g_trailColor[8][4];
 // GLOBAL: CMR2 0x00588750
 int g_trailFrame;
-extern BYTE g_trailPointUsed[8][4][200];
+// OpenCMR2: the skid-mark ring holds up to TRAIL_MAX points per wheel. The original size, 200, stays the default; video.tire_track_length (0 = original 200, else 200..TRAIL_MAX)
+// lengthens the player car's ring only (AI cars keep 200), so the geometry drawn per frame stays bounded. Time-based expiry never runs in this port
+// (a point's age is only ever set to 0), so the ring size is what decides how long marks stay.
+#define TRAIL_MAX 1500
+extern BYTE g_trailPointUsed[8][4][TRAIL_MAX];
+int StageObject_TrailRing(int car);
 // One point of a wheel's skid mark ring (200 per wheel and car).
 struct TrailPoint {
     int age;                // 0x00 frames since it was laid
@@ -533,7 +538,7 @@ struct TrailPoint {
     BYTE flags : 4;
     BYTE pad;
 };
-extern TrailPoint g_trailPoints[8][4][200];
+extern TrailPoint g_trailPoints[8][4][TRAIL_MAX];
 extern int g_unk0x00549b20[8][4];
 extern FixVector g_carTyreTrailCenters[8][4];
 
@@ -1227,7 +1232,8 @@ void CarEffects_DrawTyreMarks(int index)
 
     if (index >= 8 || CGameInfo::GetGraphicsOptionBits25To26() == 2)
         return;
-    base = index * 800;
+    base = index * 4 * TRAIL_MAX;
+    const int ring = StageObject_TrailRing(index);
     pHead = g_unk0x00549ba0[index];
     a.u = 0;
     a.v = 0;
@@ -1237,23 +1243,23 @@ void CarEffects_DrawTyreMarks(int index)
     d.v = 0x10000;
     c.u = 0;
     c.v = 0x10000;
-    for (wheel = 4; wheel != 0; wheel--, pHead++, base += 200) {
+    for (wheel = 4; wheel != 0; wheel--, pHead++, base += TRAIL_MAX) {
         j = 0;
         do {
             found = 0;
-            cur = (*pHead - j + 200) % 200;
+            cur = ((*pHead % ring) - j + ring) % ring;
             step = g_stageSurfaceInfo[8].flags;
             if (step > 1) {
-                k = cur - step + 200;
+                k = cur - step + ring;
                 do {
                     if (found)
                         break;
                     step--;
                     k++;
                     if ((&g_trailPointUsed[0][0][0])[base + cur] == 0 ||
-                        (&g_trailPointUsed[0][0][0])[base + k % 200] == 0)
+                        (&g_trailPointUsed[0][0][0])[base + k % ring] == 0)
                         continue;
-                    pPrev = TRAIL_POINT(k % 200 + base);
+                    pPrev = TRAIL_POINT(k % ring + base);
                     pCur = TRAIL_POINT(base + cur);
                     found = pCur->frame == pPrev->frame + step;
                     if (found != 1)
@@ -1329,7 +1335,7 @@ void CarEffects_DrawTyreMarks(int index)
                 } while (step > 1);
             }
             j += step;
-        } while (j <= 199);
+        } while (j <= ring - 1);
     }
 }
 #undef TRAIL_POINT
@@ -5187,7 +5193,7 @@ void StageObject_AdvanceFlaggedCarSlotCounters(int car)
         for (i = 0; i < 4; i++) {
             if (g_unk0x005885a0[car][i] != 0) {
                 g_unk0x005885a0[car][i] = 0;
-                g_unk0x00549ba0[car][i] = (g_unk0x00549ba0[car][i] + 1) % 200;
+                g_unk0x00549ba0[car][i] = (g_unk0x00549ba0[car][i] + 1) % StageObject_TrailRing(car);
             }
         }
     }
@@ -5234,7 +5240,7 @@ void StageObject_UpdateSkidTrails(int carIndex)
             baseColour[1] = 0xff;
             baseColour[2] = 0xff;
         }
-        for (pointIndex = 0; pointIndex < 200; pointIndex++) {
+        for (pointIndex = 0; pointIndex < TRAIL_MAX; pointIndex++) {
             pPoint = &g_trailPoints[carIndex][wheel][pointIndex];
             if (g_trailPointUsed[carIndex][wheel][pointIndex] != 0 &&
                 pPoint->age > (shortLifetime ? g_stageSurfaceInfo[8].flags << 2 : g_stageSurfaceInfo[8].flags * 0x50)) {
@@ -5320,8 +5326,8 @@ void StageObject_UpdateSkidTrails(int carIndex)
                 g_unk0x00543708[carIndex][wheel] = 0;
                 g_unk0x00549b20[carIndex][wheel] = 1;
             }
-            g_trailPoints[carIndex][wheel][(g_unk0x00549ba0[carIndex][wheel] + 1) % 200].alphaLeft = 0;
-            g_trailPoints[carIndex][wheel][(g_unk0x00549ba0[carIndex][wheel] + 1) % 200].alphaRight = 0;
+            g_trailPoints[carIndex][wheel][(g_unk0x00549ba0[carIndex][wheel] + 1) % StageObject_TrailRing(carIndex)].alphaLeft = 0;
+            g_trailPoints[carIndex][wheel][(g_unk0x00549ba0[carIndex][wheel] + 1) % StageObject_TrailRing(carIndex)].alphaRight = 0;
         } else if (g_unk0x00543708[carIndex][wheel] != 0 || g_unk0x00549b20[carIndex][wheel] != 0) {
             g_unk0x005885a0[carIndex][wheel] = 1;
         }
@@ -7754,11 +7760,17 @@ void StageObject_CreateRecordGlows(void)
 // Skid mark points of every car wheel: a used flag and a 0x28-byte record
 // for each of the 200 points.
 // GLOBAL: CMR2 0x00548220
-BYTE g_trailPointUsed[8][4][200];
+BYTE g_trailPointUsed[8][4][TRAIL_MAX];
 // GLOBAL: CMR2 0x00549b20
 int g_unk0x00549b20[8][4];
 // GLOBAL: CMR2 0x00549da0
-TrailPoint g_trailPoints[8][4][200];
+TrailPoint g_trailPoints[8][4][TRAIL_MAX];
+int StageObject_TrailRing(int car)
+{
+    if (car != 0) return 200;
+    int n = Sys_GetOption("video.tire_track_length", 0);
+    return n <= 200 ? 200 : n > TRAIL_MAX ? TRAIL_MAX : n;
+}
 
 // Clears every wheel's skid marks and trail state.
 // FUNCTION: CMR2 0x00465530
@@ -7771,7 +7783,7 @@ void CarSkid_ClearWheelTrails(void)
     int *q;
 
     for (car = 0; car < 8; car++) {
-        for (point = 0; point < 200; point++) {
+        for (point = 0; point < TRAIL_MAX; point++) {
             for (wheel = 0; wheel < 4; wheel++) {
                 g_trailPointUsed[car][wheel][point] = 0;
                 g_trailPoints[car][wheel][point].age = 0;

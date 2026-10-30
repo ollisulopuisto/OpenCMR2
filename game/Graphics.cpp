@@ -1578,7 +1578,7 @@ void CGraphics::AllocateSharedVertexBuffers(void)
         m_unk0x006dd890 += 0x17700;
     }
 
-    m_pTextureManager->pVertexBuffer1 = Gfx_CreateVertexBuffer(0x1800);
+    m_pTextureManager->pVertexBuffer1 = Gfx_CreateVertexBuffer(0x6000);
     m_unk0x006dd890 += 0x48000;
 
     m_pTextureManager->pVertexBuffer2 = Gfx_CreateVertexBuffer(0x7080);
