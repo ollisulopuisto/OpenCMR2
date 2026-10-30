@@ -4668,8 +4668,25 @@ void StageObject_InterpolateHeadlightGlows(int t);
 // OpenCMR2: hands the speed-driven look settings (tunnel vision, speed streak, vapor trails) to the renderer from the car speed. Visual only.
 // Also called while paused with the tuning panel open, so a changed setting reaches the frozen scene.
 void AttractCapture_ViewSignature(int view, int *type, int *drone);
+int Race_GetPlayerRecordField4(BYTE index);
+// During replay playback only the interior view (camera type 3, the cockpit/dashboard) keeps tunnel vision and the speed streak: the user allowed
+// "dashboard / inside the car". Bonnet and bumper views (1, 2, 10) sit outside the cabin, so they count as external with chase 4-6, trackside 7, blends 8
+// and the replay camera 9. Only while player 0's stream is playing back, so driving is unchanged. The user's settings are not touched.
+bool Race_ExternalReplayView(int viewType, bool replayPlaying)
+{
+    if (!replayPlaying) return false;
+    return viewType != 3;
+}
 void Race_ApplySpeedEffectParams(void)
 {
+    {
+        int viewType = 0, viewDrone = 0; AttractCapture_ViewSignature(0, &viewType, &viewDrone);
+        if (Race_ExternalReplayView(viewType, Race_GetPlayerRecordField4(0) != 0)) {
+            Gfx_ClearSpeedEffects();   // targets and eased values to 0: no residual blur or lines after a camera switch
+            Gfx_SetVaporTrail(SpeedStreak_Strength((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0), Sys_GetOption("video.vapor_trails", 0) != 0 ? 100 : 0)); // world-space trails stay as set
+            return;
+        }
+    }
     {   // Cockpit (camera type 3) only: the interior's own depth keeps it out of the tunnel-vision blur. Unit: tenths of a world unit, default 16 = 1.6.
         int type = 0, drone = 0; AttractCapture_ViewSignature(0, &type, &drone);
         int tenths = Sys_GetOption("video.cockpit_blur_clear", 16); if (tenths < 0) tenths = 0; if (tenths > 60) tenths = 60;
