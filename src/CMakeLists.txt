@@ -88,8 +88,12 @@ set_property(TARGET opencmr2 APPEND PROPERTY LINK_DEPENDS
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/source-index.json
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/car-index.json
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/requirements.txt
+    ${PROJECT_SOURCE_DIR}/tools/scenery-patch/finland1_roads.py
+    ${PROJECT_SOURCE_DIR}/tools/scenery-patch/finland1-roads.json
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/road_prepare.py
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/road_pair.py
+    ${PROJECT_SOURCE_DIR}/tools/scenery-patch/uprez_prepare.py
+    ${PROJECT_SOURCE_DIR}/tools/scenery-patch/uprez-textures.json
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/france1_prepare.py
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/france1-textures.json
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/road_periodic.py
@@ -103,9 +107,13 @@ add_custom_command(TARGET opencmr2 POST_BUILD
         ${PROJECT_SOURCE_DIR}/tools/scenery-patch/car-index.json
         ${PROJECT_SOURCE_DIR}/tools/scenery-patch/source-index.json
         ${PROJECT_SOURCE_DIR}/tools/scenery-patch/requirements.txt
-        ${PROJECT_SOURCE_DIR}/tools/scenery-patch/road_prepare.py
+        ${PROJECT_SOURCE_DIR}/tools/scenery-patch/finland1_roads.py
+    ${PROJECT_SOURCE_DIR}/tools/scenery-patch/finland1-roads.json
+    ${PROJECT_SOURCE_DIR}/tools/scenery-patch/road_prepare.py
         ${PROJECT_SOURCE_DIR}/tools/scenery-patch/road_pair.py
-        ${PROJECT_SOURCE_DIR}/tools/scenery-patch/france1_prepare.py
+        ${PROJECT_SOURCE_DIR}/tools/scenery-patch/uprez_prepare.py
+    ${PROJECT_SOURCE_DIR}/tools/scenery-patch/uprez-textures.json
+    ${PROJECT_SOURCE_DIR}/tools/scenery-patch/france1_prepare.py
         ${PROJECT_SOURCE_DIR}/tools/scenery-patch/france1-textures.json
         ${PROJECT_SOURCE_DIR}/tools/scenery-patch/road_periodic.py
         ${PROJECT_SOURCE_DIR}/tools/scenery-patch/export-evidence.py

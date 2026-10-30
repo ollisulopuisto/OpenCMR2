@@ -350,6 +350,7 @@ struct Executor : GfxExecutor {
     int dofFocalRange = 50;      // 0..100, in-focus band width
     int dofMaxBlur = 30;         // 0..100, max blur radius
     GfxDofStatus dofStatus = {0, 0, 0, 0, 0};
+    bool speedEffectsSuppressed=false;
     float speedFocusTarget = 0.0f, speedFocusSmooth = 0.0f; // 0..1 tunnel vision; smoothed per frame
     Uint64 speedFocusTicks = 0;
     float speedStreakTarget = 0.0f, speedStreakSmooth = 0.0f, speedStreakClock = 0.0f; Uint64 speedStreakTicks = 0; // 0..1, smoothed in real time
@@ -844,16 +845,17 @@ struct Executor : GfxExecutor {
 
     void SetSpeedFocus(float speed) override
     {
-        speedFocusTarget = !(speed > 0.0f) ? 0.0f : speed > kTunnelMaxStrength ? kTunnelMaxStrength : speed;
+        speedFocusTarget = speedEffectsSuppressed || !(speed > 0.0f) ? 0.0f : speed > kTunnelMaxStrength ? kTunnelMaxStrength : speed;
     }
 
+    void SetSpeedEffectsSuppressed(bool v) override {speedEffectsSuppressed=v;if(v)ClearSpeedEffects();}
     void ClearSpeedEffects() override { speedFocusTarget = speedFocusSmooth = 0.0f; speedStreakTarget = speedStreakSmooth = 0.0f; }
     void ClearVaporTrail() override { vaporTarget = vaporSmooth = 0.0f; vaporHistory.Reset(); vaporHavePrev = vaporHaveDir = false; }   // no fade-out and no stored trail points
 
     // OpenCMR2: god rays / volumetric lighting. `enabled` turns it on/off,
     // `intensity` (0..255) scales the effect strength.
     void SetVaporTrail(float strength) override { vaporTarget = !(strength > 0.0f) ? 0.0f : strength > 1.0f ? 1.0f : strength; }
-    void SetSpeedStreak(float strength) override { speedStreakTarget = !(strength > 0.0f) ? 0.0f : strength > 1.0f ? 1.0f : strength; }
+    void SetSpeedStreak(float strength) override { speedStreakTarget = speedEffectsSuppressed || !(strength > 0.0f) ? 0.0f : strength > 1.0f ? 1.0f : strength; }
 
     void SetGodRays(BOOL enabled, int intensity) override
     {

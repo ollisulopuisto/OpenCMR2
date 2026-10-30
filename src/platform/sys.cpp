@@ -649,7 +649,7 @@ bool PrepareEnhancementPack(bool cars=false,bool roads=false,bool textures=false
 #ifdef OPENCMR2_SOURCE_ROOT
     roots.emplace_back(fs::path(OPENCMR2_SOURCE_ROOT)/"tools"/"scenery-patch");
 #endif
-    for(const auto &root:roots)if(fs::is_regular_file(root/(textures?"france1_prepare.py":roads?"road_prepare.py":"prepare.py"))){helper=root/(textures?"france1_prepare.py":roads?"road_prepare.py":"prepare.py");break;}
+    for(const auto &root:roots)if(fs::is_regular_file(root/(textures?(s_enhancements.textures=="uprez"?"uprez_prepare.py":"france1_prepare.py"):roads?(s_enhancements.roads=="finland1"?"finland1_roads.py":"road_prepare.py"):"prepare.py"))){helper=root/(textures?(s_enhancements.textures=="uprez"?"uprez_prepare.py":"france1_prepare.py"):roads?(s_enhancements.roads=="finland1"?"finland1_roads.py":"road_prepare.py"):"prepare.py");break;}
     if(helper.empty()){fprintf(stderr,"Enhancement preparation helper missing beside executable. Rebuild/reinstall this release; no files changed.\n");return false;}
     const fs::path cache=fs::path(s_userDir)/"enhancements";
     if(fs::is_symlink(cache)){fprintf(stderr,"Refusing symlink enhancement cache; select a regular profile directory.\n");return false;}
@@ -685,7 +685,7 @@ bool PrepareEnhancementPack(bool cars=false,bool roads=false,bool textures=false
         if(pos==text.npos)continue;
         std::string value=text.substr(pos+marker.size());value=value.substr(0,value.find_first_of("\r\n"));
         std::error_code ec;auto selected=fs::canonical(value,ec);if(ec)continue;
-        auto parent=fs::canonical(cache,ec);if(ec||selected.parent_path()!=parent||(!cars&&!fs::is_regular_file(selected/(textures?"france1-textures.tsv":roads?"road-pair.tsv":"manifest.tsv"))))continue;
+        auto parent=fs::canonical(cache,ec);if(ec||selected.parent_path()!=parent||(!cars&&!fs::is_regular_file(selected/(textures?(s_enhancements.textures=="uprez"?"uprez-textures.tsv":"france1-textures.tsv"):roads?"road-pair.tsv":"manifest.tsv"))))continue;
         if(textures){s_textureDir=WithSlash(selected.u8string());}
         else if(roads){s_roadDir=WithSlash(selected.u8string());}
         else if(cars){
@@ -828,8 +828,8 @@ bool Platform_Init(int argc, char **argv)
         fprintf(stderr,"--install-enhancement-deps is only meaningful with --trees shell/crossed or --spectators animated.\n");Platform_Shutdown();return false;
     }
     if(!s_enhancements.cars.empty()&&s_enhancements.cars!="original"&&s_enhancements.modsDir.empty()){fprintf(stderr,"--cars needs --mods-dir PATH to the folder containing the original car ZIPs; see --help-enhancements. Nothing downloaded.\n");Platform_Shutdown();return false;}
-    if(s_enhancements.textures=="france1"&&!PrepareEnhancementPack(false,false,true)){Platform_Shutdown();return false;}
-    if(s_enhancements.roads=="curved"&&!PrepareEnhancementPack(false,true)){Platform_Shutdown();return false;}
+    if((s_enhancements.textures=="france1"||s_enhancements.textures=="uprez")&&!PrepareEnhancementPack(false,false,true)){Platform_Shutdown();return false;}
+    if((s_enhancements.roads=="curved"||s_enhancements.roads=="finland1")&&!PrepareEnhancementPack(false,true)){Platform_Shutdown();return false;}
     if(s_enhancements.NeedsPack()&&!PrepareEnhancementPack()) {Platform_Shutdown();return false;}
     if(!s_enhancements.cars.empty()&&s_enhancements.cars!="original"){
         if(!PrepareEnhancementPack(true)){Platform_Shutdown();return false;}

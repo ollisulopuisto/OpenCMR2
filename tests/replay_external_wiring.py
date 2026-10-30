@@ -21,3 +21,12 @@ for f in ("src/render/gfx_gpu.cpp", "src/render/gfx_gl.cpp"):
     need(re.search(r"void ClearSpeedEffects\(\) override \{ speedFocusTarget = speedFocusSmooth = 0\.0f; speedStreakTarget = speedStreakSmooth = 0\.0f; \}", rd(f)), f + " must zero targets and eased values")
 need("Gfx_ClearSpeedEffects" in rd("src/port/gfx.h") and "Gfx_ClearSpeedEffects" in rd("src/render/gfx_core.cpp"), "C entry point missing")
 print("replay external wiring ok" if ok else "FAILED"); sys.exit(0 if ok else 1)
+
+# Render-time defence is independent of the earlier physics update ordering.
+fixed=rd("game/FixedPoint.cpp")
+projection=fixed[fixed.index("void View_SetPlayerProjection(unsigned int player)"):fixed.index("// Layout of one force-feedback slot")]
+need("Gfx_SetSpeedEffectsSuppressed(View_IsDroneCamera(player));" in projection,"drone exclusion at actual rendered view")
+for backend in ("src/render/gfx_gl.cpp","src/render/gfx_gpu.cpp"):
+    b=rd(backend)
+    need("speedEffectsSuppressed=v;if(v)ClearSpeedEffects();" in b,"clear eased blur/streak immediately")
+    need("speedFocusTarget = speedEffectsSuppressed ||" in b and "speedStreakTarget = speedEffectsSuppressed ||" in b,"reject late speed writes for drone")

@@ -17,13 +17,14 @@ extern "C" void*__wrap__ZN18CGenericFileLoader8FindFileEP11GenericFilePcPhPjh(Ge
 extern "C" int __wrap__ZN5CGame16RegisterCallbackEPvS0_(void*p,void*){if(callbackFail)return -1;release=(void(*)())p;return 1;}
 extern "C" void __wrap__Z24Track_ResearchExactEdgesb(bool enabled){exact=enabled;}
 int main(int argc,char**argv){
- if(argc!=3)return 2;sources=argv[1];pack=argv[2];files.reserve(20);GenericFile a={};
+ if(argc!=3&&argc!=4)return 2;sources=argv[1];pack=argv[2];const char*stage=argc==4?argv[3]:"fra01";files.reserve(20);GenericFile a={};
  CurvedRoad_Begin(&a,"fin10");if(CurvedRoad_Render()||CurvedRoad_Contact()||exact)return 3;
- mismatch=true;CurvedRoad_Begin(&a,"fra01");if(CurvedRoad_Render()||CurvedRoad_Contact()||exact)return 4;
- mismatch=false;callbackFail=true;CurvedRoad_Begin(&a,"fra01");if(CurvedRoad_Render()||CurvedRoad_Contact()||exact)return 11;callbackFail=false;CurvedRoad_Begin(&a,"fra01");if(!CurvedRoad_Render()||!CurvedRoad_Contact()||!release||!exact)return 5;
+ mismatch=true;CurvedRoad_Begin(&a,stage);if(CurvedRoad_Render()||CurvedRoad_Contact()||exact)return 4;
+ mismatch=false;callbackFail=true;CurvedRoad_Begin(&a,stage);if(CurvedRoad_Render()||CurvedRoad_Contact()||exact)return 11;callbackFail=false;CurvedRoad_Begin(&a,stage);if(!CurvedRoad_Render()||!release)return 5;
+ if(!strcmp(stage,"fin01")){if(CurvedRoad_Contact()||exact)return 12;}else if(!CurvedRoad_Contact()||!exact)return 13;
  // A missed release cannot reuse a prior pair for a different stage.
  CurvedRoad_Begin(&a,"fin10");if(CurvedRoad_Render()||CurvedRoad_Contact())return 6;
  release();if(CurvedRoad_Render()||CurvedRoad_Contact()||exact)return 7;
- pack+="/absent";CurvedRoad_Begin(&a,"fra01");if(CurvedRoad_Render()||CurvedRoad_Contact()||exact)return 8;
+ pack+="/absent";CurvedRoad_Begin(&a,stage);if(CurvedRoad_Render()||CurvedRoad_Contact()||exact)return 8;
  puts("road runtime: exact-source pair, unsupported/wrong/missing originals fallback, stale-stage guard and release pass");
 }

@@ -111,6 +111,20 @@ if(argc<2)return 0;base=argv[1];legacy=argc>2&&!strcmp(argv[2],"legacy");separat
    Gfx_Shutdown();std::filesystem::remove_all(temporary);puts("exact-byte scenery routing: stage archives, loose textures, animation frames, modified bytes and reset pass");return 0;
  }
 
+ if(argc>2&&!strcmp(argv[2],"owned")){
+  std::ifstream input(base+"/manifest.tsv");std::string line;unsigned routed=0;
+  std::ifstream ids(base+"/source-identities.tsv");std::map<std::string,std::string> hashes;while(std::getline(ids,line)){auto p=SceneryFormat::Split(line,'\t');if(p.size()==3)hashes[p[0]]=p[2];}
+  // Owned source bytes provided in a private directory, not repository fixtures.
+  while(std::getline(input,line)){SceneryFormat::Entry entry;if(!SceneryFormat::ParseEntry(line,entry))continue;
+   std::ifstream f(std::string(argv[3])+"/"+entry.archive+"/"+entry.source+".dds",std::ios::binary);std::vector<char> bytes((std::istreambuf_iterator<char>(f)),{});CHECK(!bytes.empty());
+   CHECK(SceneryIdentity::SHA256(bytes.data(),bytes.size())==hashes[entry.archive+"/"+entry.source+".dds"]);
+   // DDS width/height are original dimensions used by source-fit routing.
+   source.width=(unsigned char)bytes[16]|((unsigned char)bytes[17]<<8);source.height=(unsigned char)bytes[12]|((unsigned char)bytes[13]<<8);
+   snprintf(source.name,sizeof source.name,"%s.dds",entry.source.c_str());SceneryPack_RegisterSource(&source,bytes.data(),bytes.size());
+   CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(!captured.empty());routed++;
+  }
+  CHECK(routed>100);SceneryPack_Clear();Gfx_Shutdown();printf("owned actual manifest source-fit runtime draws=%u; GPU execution stubbed\n",routed);return 0;
+ }
  if(legacy){CHECK(!SceneryPack_Draw(&object,(float*)&billboard));
  CHECK(logs.find("frahit.bfl/tre_md1")!=std::string::npos&&logs.find("source-canvas-1 header")!=std::string::npos);
  auto logged=logs;CHECK(!SceneryPack_Draw(&object,(float*)&billboard));CHECK(logs==logged);strcpy(source.name,"spc_mn9a.dds");CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(draws==1);SceneryPack_Clear();Gfx_Shutdown();puts("headerless legacy tree rejected; spectator preserved: pass");return 0;}

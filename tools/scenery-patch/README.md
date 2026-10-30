@@ -321,3 +321,31 @@ people on multi-person cards; existing authored forearm poses remain. This is
 receive the same fixed-base4.5%height wind as verified original tree cards.
 Unsupported source identities remain original. Native appearance, culling,
 reflection alignment and performance remain unverified.
+
+## Integrated experimental asset preset
+
+`opencmr2 --data /path/to/owned/game --asset-upgrades` prepares and selects the
+supported broader trees/bushes, animated2D spectators, opaque Finland1/France1
+2x ground textures, and Finland1 visual-only road-edge geometry. This combines
+existing individual options; put overrides after the preset. It does not alter
+originals, saved driver data, controls, or profiles. Use `--prepare-only` first.
+The private cache is regenerated/reverified from the player's owned sources.
+No generated art is in this repository or release package.
+
+Finland hi/lo have separate render gates. Original contact HPC, FIN barriers,
+AI route and surfaces are retained; no exact-edge physics mode is enabled.
+New visual vertices are inside and projected onto original terrain. Interior
+triangulation remains visually different by up to3.65cm at sampled centroids;
+no claim of native driving/appearance/performance acceptance.
+
+`--textures uprez` currently loads86exact-source opaque outputs:41Finland1
+materials in hi/lo and4France1 road variants, with full mip chains. Finland
+uses explicit clamp filtering matching the ground-parts sampler, while the
+existing France road policy stays periodic. The source UV dimensions remain
+unchanged. Unknown sources, foliage/people/font atlases remain original.
+This is2x interpolation, not AI restoration or the complete644-asset pack.
+
+Broader vegetation produces132mappings:84trees/bushes and48spectator variants.
+Two narrow birches use fixed cutouts after shell previews failed visual review.
+The76multi-tree strips and6shadow masks are not converted. Unsupported barriers,
+hedges and Greece1 are still open. Native Metal must still be tested.

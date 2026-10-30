@@ -556,3 +556,15 @@ lighting, not weather simulation, ground cloud shadows or a full atmospheric mod
 
 Source-inspected, untested prototype. Native Mac appearance, alignment, sun
 projection and frame-time cost are not verified. Optimization is a later pass.
+
+### Integrated experimental asset subset
+
+After building, add `--asset-upgrades` to the game command. Put this preset
+before any individual flags that should override it. It prepares a private
+read-only cache from your owned data and enables broader supported trees/bushes,
+animated 2D spectators, Finland1 visual-only road-edge curves and opaque
+Finland1/France1 ground2x textures. Original contact/FIN/AI route and surface
+files stay unchanged. Unsupported stages, atlases and strips stay original.
+This is not the complete texture/hedge pack and not native-Metal acceptance.
+Use `--prepare-only` to validate/generate without starting a race. Dependencies
+are not downloaded without `--install-enhancement-deps`.
