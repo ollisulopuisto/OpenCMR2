@@ -401,6 +401,7 @@ void TuningPanel_DrawPaused(void);
 bool TuningPanel_IsOpen(void);
 bool TuningPanel_PreviewActive(void);
 bool TuningPanel_InfoShown(void);
+bool TuningPanel_FpsOnly(void);
 int TuningPanel_ToggleKey(void);
 
 // OpenCMR2: motion blur between frames. `video.motion_blur` is 0 (off) to
