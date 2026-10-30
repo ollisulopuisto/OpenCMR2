@@ -39,6 +39,7 @@ const StageObject *diagnosticObject=nullptr;
 bool diagnosticArticulated=false;
 unsigned diagnosticFrame=0,diagnosticChanges=0;uint64_t diagnosticTime=0;
 static unsigned long long timeWindMathNs=0,timeSubmitNs=0;
+static unsigned long long windBatchSmall=0,windBatchLarge=0,windBatchTrees=0;
 // Timers. depth counters keep a flush that runs inside a draw from being counted twice.
 static unsigned long long timeReplacementNs=0,timeOtherNs=0,timeCalls=0;static int drawDepth=0,replacementDepth=0;static std::vector<GfxVertex> windScratch;
 unsigned long long crowdDrawsTotal=0,crowdTrianglesTotal=0,treeTrianglesTotal=0,treeRustledVerticesTotal=0;
@@ -357,6 +358,8 @@ static bool DrawReplacement(StageObject *object,const float *billboard,unsigned 
 
 void FlushTrees(){
     if(pendingTrees.Empty())return;
+    const size_t batchSize=pendingTrees.Size();
+    if(batchSize<8)++windBatchSmall;else ++windBatchLarge;windBatchTrees+=batchSize;
     double t0=Sys_GetTicksPrecise();
     // Workers touch only their own output slot and read the shared, now immutable, part data.
     pendingTrees.ComputeAll(treePool(),[](const PendingTree &t,std::vector<std::vector<GfxVertex>> &out){
@@ -365,7 +368,7 @@ void FlushTrees(){
             const Part &p=(*t.parts)[k];out[k].resize(p.vertices.size());
             SceneryMotion::WindPart(p.vertices.data(),out[k].data(),p.wind.data(),p.vertices.size(),t.frame);
         }
-    });
+    },8); // Keep tiny batches on caller: no worker wake/wait for 1..7 trees.
     double t1=Sys_GetTicksPrecise();
     pendingTrees.RecordAll([](const PendingTree &t,std::vector<std::vector<GfxVertex>> &out){
         State(t.m);
@@ -380,7 +383,15 @@ void FlushTrees(){
 }
 void SceneryPack_BeginBatch(){treeBatch=true;}
 void SceneryPack_FlushBatch(){FlushTrees();}
-void SceneryPack_EndBatch(){FlushTrees();treeBatch=false;}
+void SceneryPack_EndBatch(){
+    FlushTrees();treeBatch=false;
+    static uint64_t loggedAt=0;static unsigned long long small=0,large=0,trees=0;
+    if(animationTime<loggedAt){loggedAt=animationTime;small=windBatchSmall;large=windBatchLarge;trees=windBatchTrees;}
+    if(animationTime-loggedAt>=65536ull*25){
+        if(windBatchTrees!=trees)Sys_Log("tree wind batches: %llu small(serial), %llu large(pool), %llu trees since last log",windBatchSmall-small,windBatchLarge-large,windBatchTrees-trees);
+        loggedAt=animationTime;small=windBatchSmall;large=windBatchLarge;trees=windBatchTrees;
+    }
+}
 
 bool SceneryPack_GetAnimationStatus(unsigned long long *tick,unsigned *frame,unsigned *changes){
     if(!diagnosticObject)return false;
