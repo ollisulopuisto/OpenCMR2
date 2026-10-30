@@ -1,4 +1,5 @@
 #include "CameraMove.h"
+#include "TuningMode.h"
 #include "EffectAmounts.h"
 #include "TuningPanel.h"
 #include "FovPreview.h"
@@ -6044,7 +6045,7 @@ int g_windscreenWiperManualFrames = 0;
 // the row and 6 resets all rows to the values they had when the panel was first opened this launch (after any menu edits), 7 saves the shown values to opencmr2.ini. Changes are
 // per launch until saved. While open, these keys are removed from the game's keyboard state (see CInput::ReadKeyboardState).
 static bool g_tuneOpen = false, g_tuneSnapshotTaken = false;
-// F10 cycles 0 = debug info only (the start), 1 = debug info and adjustments, 2 = nothing. g_tuneOpen means "adjustments shown" (mode 1) and is what
+// F10 cycles (game/TuningMode.h) 0 = debug info only (the start), 1 = debug info and adjustments, 2 = nothing, 3 = frame rate only. g_tuneOpen means "adjustments shown" (mode 1) and is what
 // captures the adjustment keys. g_tuneEngaged is separate: once F10 was pressed, the tuned look stays live (paused scene too) in every mode, so both
 // overlays can be hidden to judge the effects.
 static int g_tuneMode = 0;
@@ -6084,7 +6085,8 @@ static bool g_tuneDrawn = false;  // set by every TuningPanel_Draw; the paused-s
 static TuningEdges g_tuneEdges;
 bool TuningPanel_IsOpen(void) { return g_tuneOpen; }
 bool TuningPanel_PreviewActive(void) { return g_tuneEngaged; }
-bool TuningPanel_InfoShown(void) { return g_tuneMode != 2; }
+bool TuningPanel_InfoShown(void) { return TuningMode_InfoShown(g_tuneMode); }
+bool TuningPanel_FpsOnly(void) { return TuningMode_FpsOnly(g_tuneMode); }
 int TuningPanel_ToggleKey(void)
 {
     static int checked = -1, result = kTuningToggleDefault;
@@ -6113,7 +6115,7 @@ void TuningPanel_Update(void)
     }
     int count = 0;
     const TuningRow *rows = Tuning_Rows(count);
-    if (g_tuneEdges.Edge(0, Input_IsKeyDown(TuningPanel_ToggleKey()) != 0)) { g_tuneMode = (g_tuneMode + 1) % 3; g_tuneOpen = g_tuneMode == 1; g_tuneEngaged = true; }
+    if (g_tuneEdges.Edge(0, Input_IsKeyDown(TuningPanel_ToggleKey()) != 0)) { g_tuneMode = TuningMode_Next(g_tuneMode); g_tuneOpen = TuningMode_AdjustShown(g_tuneMode); g_tuneEngaged = true; }
     bool pressed[7];
     static TuningRepeat repeat;
     double nowMs = Sys_GetTicksPrecise();
@@ -6621,7 +6623,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
     TuningPanel_Draw();
     ReplayControls_Draw();
     if (Graphics_DebugDrawWanted() && TuningPanel_InfoShown()) {
-        if(Sys_GetOption("video.debug_draw",OPENCMR2_DEBUG_DRAW_DEFAULT)==1){
+        if(TuningPanel_FpsOnly()||Sys_GetOption("video.debug_draw",OPENCMR2_DEBUG_DRAW_DEFAULT)==1){
             char text[32];snprintf(text,sizeof text,"FPS %.1f",Graphics_GetFrameRate());BYTE color[4]={240,246,255,255};
             BYTE background[4]={12,16,22,220};short panel[4]={8,8,128,22};
             Sprite_FillRect(NULL,panel,background,1);
@@ -6636,7 +6638,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?6:5)+11+5+2+5+1);   // +5: the Speed FOV, FOV dolly, FOV preview and footer rows were drawn below the panel in the 12:04 native screenshot (panel ended at "Measured")
         short panel[4] = {(short)layout.x,(short)layout.y,(short)layout.width,(short)layout.height};
         Sprite_FillRect(NULL, panel, background, 1);
-        char text[96];
+        char text[160];
         snprintf(text, sizeof(text), "FPS %.1f | draws %u", Graphics_GetFrameRate(), Gfx_GetFrameDrawCalls());
         Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad,layout.font,layout.width-2*layout.pad,colour);
         snprintf(text, sizeof(text), "Triangles %u | vertices %u", Gfx_GetFrameTriangles(), Gfx_GetFrameVertices());
@@ -6766,7 +6768,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         }
     }
     // OpenCMR2: the camera readout, big and high contrast, short lines so nothing clips. Names are only what the source states; the rest are numbers.
-    if (Graphics_DebugDrawWanted() && TuningPanel_InfoShown() && (CGameInfo::IsInRaceMenuOpen() == 0 || TuningPanel_PreviewActive())) {
+    if (Graphics_DebugDrawWanted() && TuningPanel_InfoShown() && !TuningPanel_FpsOnly() && (CGameInfo::IsInRaceMenuOpen() == 0 || TuningPanel_PreviewActive())) {
         int vt = 0, dr = 0, zr = 0, fy = 0, fs = 70;
         AttractCapture_ViewSignature((int)param2, &vt, &dr);
         View_GetEffectiveProjection(param2, &zr, &fy, &fs);
