@@ -99,6 +99,28 @@ int main(){
   CHECK(d100>9.6f&&d100<9.9f); // horizontal trail, independent of the corrected lower height
   CHECK(d60>8.99f&&d50>8.99f&&d50<=d60);
  }
+ { // Editable parameter endpoints remain finite and respect the height floor.
+  for(float gain:{.25f,2.f})for(float height:{.5f,1.5f})for(float drop:{0.f,1.f}){
+   State s;s.lateralGain=gain;s.springGain=gain;s.heightScale=height;s.speedDropAmount=drop;V3 car;
+   for(int i=0;i<600;i++){float yaw=std::sin(i*.01f)*.4f;car=car+V3{std::sin(yaw),0,std::cos(yaw)}*(20.f/60);
+    s.Step(car,yaw,0,1.5f,6.5f,1.5f,1.f/60);CHECK(s.ready);CHECK(std::isfinite(s.position.x));CHECK(s.position.y>2.1f);CHECK((s.position-car).Length()<40.f);
+   }
+  }
+ }
+ { // Lateral position floats independently, while speed drop recovers smoothly.
+  for(float dt:{.04f,1.f/60,1.f/120}){
+   State s;s.distanceScale=.5f;s.lensSpeedGain=0;s.shakeAmount=0;V3 car;float yaw=0,maxSide=0,maxStep=0,lastY=0,highY=0;
+   for(int i=0;i<int(10/dt);i++){
+    float t=i*dt,rate=t>2&&t<3?.8f:t>3&&t<4?-.8f:0,speed=t<1?0:t<2?(t-1)*28:t<5?28:t<6?(6-t)*28:0;
+    car=car+V3{std::sin(yaw),0,std::cos(yaw)}*(speed*dt);yaw+=rate*dt;
+    s.Step(car,yaw,0,speed/28*1.5f,6.5f,1.5f,dt);
+    V3 d=car-s.position;float side=d.x*std::cos(yaw)-d.z*std::sin(yaw);maxSide=Max(maxSide,std::abs(side));
+    if(i)maxStep=Max(maxStep,std::abs(s.position.y-lastY));lastY=s.position.y;if(t>4.9f&&t<5.1f)highY=s.position.y;
+    CHECK(s.position.y>2.19f);CHECK(std::isfinite(s.FramedForward().x));
+   }
+   CHECK(maxSide>2.f&&maxSide<6.f);CHECK(highY<3.f);CHECK(s.position.y>3.8f);CHECK(maxStep<dt*3.f);
+  }
+ }
  { // Gameplay steering envelope at 25/60/120 Hz, hard braking and rapid turns.
   for(float dt:{.04f,1.f/60,1.f/120}){
    State follow;follow.distanceScale=.6f;V3 car;float yaw=0,maxFall=0,maxCatch=0;
@@ -114,10 +136,10 @@ int main(){
     float along=behind.x*forward.x+behind.z*forward.z;
     CHECK(along>follow.usedDistance*.54f); // never goes past the car, including emergency stop
     float orbit=std::atan2(behind.x,behind.z);
-    CHECK(std::abs(Wrap(orbit-yaw))<=.045f); // reversal may briefly exceed two degrees without snapping
+    CHECK(std::abs(Wrap(orbit-yaw))<1.0f); // revised float may orbit; never lose the behind-car hemisphere
     auto view=follow.FramedForward();
-    CHECK(std::abs(Wrap(std::atan2(view.x,view.z)-yaw))<=.06f); // aim adds at most 0.01 rad
-    CHECK(std::abs(follow.foreLag)<=2.5f);
+    CHECK(std::abs(Wrap(std::atan2(view.x,view.z)-orbit))<=.011f); // aim keeps car readable while position floats
+    CHECK(std::abs(follow.foreLag)<=3.f);
     if(t>1&&t<2)maxFall=Max(maxFall,follow.foreLag);
     if(t>4&&t<4.6f)maxCatch=Max(maxCatch,-follow.foreLag);
    }

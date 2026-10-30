@@ -13,9 +13,11 @@ public:
     bool Empty()const{return jobs.empty();}
     size_t Size()const{return jobs.size();}
     void Clear(){jobs.clear();computed=false;}
-    template<class Compute> void ComputeAll(ParallelWork::Pool &pool,Compute fn){
+    template<class Compute> void ComputeAll(ParallelWork::Pool &pool,Compute fn,size_t minimumParallelJobs=2){
         if(outs.size()<jobs.size())outs.resize(jobs.size());
-        pool.Run(jobs.size(),[&](size_t i){fn(jobs[i],outs[i]);});
+        // Fragmented transparent batches can cost more to wake than to compute.
+        if(jobs.size()<minimumParallelJobs){for(size_t i=0;i<jobs.size();i++)fn(jobs[i],outs[i]);}
+        else pool.Run(jobs.size(),[&](size_t i){fn(jobs[i],outs[i]);});
         computed=true;
     }
     template<class Record> void RecordAll(Record fn){

@@ -30,10 +30,15 @@ int main(){
  std::string windArgs[]={"test","--tree-wind","off"};char *wv[]={windArgs[0].data(),windArgs[1].data(),windArgs[2].data()};
  error.clear();i=1;CHECK(e.Consume(i,3,wv,error)&&error.empty());e.Apply();CHECK(e.overrides["video.tree_wind"]==0);
  {EnhancementOptions t;std::string e2;auto run=[&](std::vector<std::string> a){std::vector<char*> v;for(auto&x:a)v.push_back(x.data());e2.clear();for(int k=1;k<(int)v.size();k++)if(!t.Consume(k,(int)v.size(),v.data(),e2))return false;return true;};
+  CHECK(run({"t","--sun-glare","40"})&&e2.empty()&&t.overrides["video.sun_glare"]==40);
+  CHECK(run({"t","--sun-glare","101"})&&!e2.empty());CHECK(run({"t","--sun-glare","-1"})&&!e2.empty());
   CHECK(run({"t","--speed-fov","12","--speed-motes-stretch=60","--speed-motes-amount","250"})&&e2.empty());
   CHECK(t.overrides["video.speed_fov"]==12&&t.overrides["video.speed_motes_stretch"]==60&&t.overrides["video.speed_motes_amount"]==250);
   CHECK(run({"t","--speed-fov","501"})&&!e2.empty());CHECK(run({"t","--speed-fov","x"})&&!e2.empty());CHECK(run({"t","--speed-motes-stretch","101"})&&!e2.empty());
   CHECK(run({"t","--speed-motes-amount","301"})&&!e2.empty());CHECK(run({"t","--test-preset","bad"})&&!e2.empty());
+  CHECK(run({"t","--camera-roll","30"})&&e2.empty());
+  CHECK(t.overrides["video.camera_roll"]==30);
+  CHECK(run({"t","--camera-roll","101"})&&!e2.empty());
   CHECK(run({"t","--drone-distance","50","--speed-fov-cockpit=25","--cockpit-blur-clear","16"})&&e2.empty());
   CHECK(t.overrides["video.drone_distance"]==50&&t.overrides["video.speed_fov_cockpit"]==25&&t.overrides["video.cockpit_blur_clear"]==16);
   CHECK(run({"t","--drone-distance","49"})&&!e2.empty());CHECK(run({"t","--drone-distance","151"})&&!e2.empty());CHECK(run({"t","--speed-fov-cockpit","101"})&&!e2.empty());CHECK(run({"t","--cockpit-blur-clear","61"})&&!e2.empty());

@@ -1353,7 +1353,15 @@ extern "C" const char *Sys_GetInstallSetting(const char *name)
 
 extern "C" int Sys_GetOption(const char *name, int fallback)
 {
-    auto it=s_enhancements.overrides.find(Lower(name));
+    std::string key=Lower(name);
+    if(key.compare(0,12,"video.drone_")==0&&key!="video.drone_locked"){
+    auto lock=s_enhancements.overrides.find("video.drone_locked");
+    bool locked=(lock==s_enhancements.overrides.end()?Platform_GetSettingInt("video.drone_locked",0):lock->second)!=0;
+    // Saved locked drone parameters win over stale launch flags on the next run.
+    // The lock itself remains live-editable; adaptive camera motion still runs.
+    if(locked)return Platform_GetSettingInt(name,fallback);
+    }
+    auto it=s_enhancements.overrides.find(key);
     return it==s_enhancements.overrides.end()?Platform_GetSettingInt(name, fallback):it->second;
 }
 

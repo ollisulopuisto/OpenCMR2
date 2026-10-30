@@ -22,6 +22,7 @@ inline const EffectAmountRow* EffectAmount_Rows(int &count){
  {"Camera shake %","video.camera_shake_amount",100,101},
  {"Lens dirt","video.lens_dirt",1,2},
  {"Lens dirt %","video.lens_dirt_amount",100,101},
+ {"Sun glare % (0 off)","video.sun_glare",0,101},
  {"Lens flare","video.lens_flare",1,2},
  {"Lens flare %","video.lens_flare_amount",100,101},
  {"Dust plume","video.dust_plume",1,2},

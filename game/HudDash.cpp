@@ -1,3 +1,4 @@
+#include "CornerCameraRoll.h"
 #include "CameraOperator.h"
 #include "port/sys.h"
 #include <stdio.h>
@@ -883,6 +884,7 @@ void ChaseCamera_Start(CameraRecord *param_1, FixMatrix *param_2, int param_3)
 
     BYTE prevMode = pSettings->index < 8 ? g_playerCameraMode[pSettings->index] : 0xff;
     CameraOperator_Reset(pSettings->index);
+    CornerCameraRoll_Reset(pSettings->index);
     index = pSettings->view;
     g_playerCameraMode[pSettings->index] = (BYTE)param_3;
     if (pSettings->index < 8) {
@@ -938,6 +940,7 @@ void ChaseCamera_Update(CameraRecord *param_1, FixMatrix *param_2, int param_3)
 
     FixVector operatorOffset;ChaseCamera_GetViewOffset(&operatorOffset,param_1);
     CameraOperator_Update(param_1,param_2,&operatorOffset,g_chaseCameraPitch[2+param_1->view]);
+    CornerCameraRoll_Update(param_1,param_2);
     index = param_1->index;
     pUp = &g_chaseCameraOffsets[2 + index];
     pRight = &g_chaseCameraViewOffsets[2 + index];

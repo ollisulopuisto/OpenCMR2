@@ -1,3 +1,4 @@
+#include "CornerCameraRoll.h"
 #include "CameraOperator.h"
 #include "EffectAmounts.h"
 #include "port/sys.h"
@@ -1094,6 +1095,7 @@ void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef)
     pObj->lookDistance = v;
     pObj->field_0x50 = v - 0x10000;
     CameraOperator_Apply(pObj);
+    CornerCameraRoll_Apply(pObj);
 }
 
 extern CarPartSet *g_physicsPartSet;

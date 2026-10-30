@@ -33,9 +33,9 @@ static Log Reference(const std::vector<Step> &steps,bool honourClear){
         (void)honourClear;
     }return log;
 }
-static Log Batched(const std::vector<Step> &steps,unsigned threads,bool flushBeforeRebuild){
+static Log Batched(const std::vector<Step> &steps,unsigned threads,bool flushBeforeRebuild,size_t minimumParallelJobs=2){
     PartData parts[4];for(int i=0;i<4;i++)Rebuild(parts[i],i);Log log;ParallelWork::Pool pool(threads);OrderedBatch<Job,Out> b;
-    auto flush=[&]{if(b.Empty())return;b.ComputeAll(pool,[](const Job &j,Out &o){Compute(j,o);});b.RecordAll([&](const Job &j,Out &o){log.add("tree",j.part,&o);});};
+    auto flush=[&]{if(b.Empty())return;b.ComputeAll(pool,[](const Job &j,Out &o){Compute(j,o);},minimumParallelJobs);b.RecordAll([&](const Job &j,Out &o){log.add("tree",j.part,&o);});};
     for(auto &s:steps){
         if(s.op==TREE)b.Push(Job{s.part,s.frame,parts[s.part].version,&parts[s.part]});
         else if(s.op==OTHER){flush();log.add("other",s.part,nullptr);}
@@ -47,8 +47,8 @@ static Log Batched(const std::vector<Step> &steps,unsigned threads,bool flushBef
 int main(void){
     for(unsigned seed=1;seed<=40;seed++){
         auto steps=Make(seed,400,false);auto ref=Reference(steps,false);
-        for(unsigned th:{1u,2u,4u,0u}){
-            auto got=Batched(steps,th,true);
+        for(unsigned th:{1u,2u,4u,0u})for(size_t minimum:{2u,8u}){
+            auto got=Batched(steps,th,true,minimum);
             if(got.e!=ref.e){printf("FAIL seed %u threads %u: record log differs from immediate drawing (%zu vs %zu entries)\n",seed,th,got.e.size(),ref.e.size());failures++;break;}
         }
     }
@@ -66,5 +66,12 @@ int main(void){
     { ParallelWork::Pool pool(2);OrderedBatch<Job,Out> b;PartData d;Rebuild(d,0);Log log;
       for(int r=0;r<5;r++){for(int i=0;i<r+1;i++)b.Push(Job{0,(float)i,d.version,&d});b.ComputeAll(pool,[](const Job&j,Out&o){Compute(j,o);});b.RecordAll([&](const Job&j,Out&o){log.add("tree",j.part,&o);});}
       if(log.e.size()!=15){puts("FAIL: reuse");failures++;} }
+    // Both serial small-batch and worker large-batch routes preserve exact output values.
+    for(int count:{1,2,7,8,16}){ParallelWork::Pool pool(8);OrderedBatch<int,std::vector<int>> b;
+      for(int i=0;i<count;i++)b.Push(i);
+      b.ComputeAll(pool,[](const int &j,std::vector<int>&o){o={j,j*j,0x112233};},8);
+      int next=0;b.RecordAll([&](const int&j,const std::vector<int>&o){if(j!=next++||o!=std::vector<int>{j,j*j,0x112233})failures++;});
+      if(next!=count)failures++;
+    }
     puts(failures?"FAILED":"ok");return failures?1:0;
 }
