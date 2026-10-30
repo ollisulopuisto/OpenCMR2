@@ -87,7 +87,9 @@ bool France1Textures_Apply(Texture *texture,const void*bytes,unsigned size){
   Gfx_UnlockTexture(replacement,0,i);offset+=a*b*4;a=std::max(1u,a/2);b=std::max(1u,b/2);
  }
  originals[texture]=texture->pSurface;
- if(uprez&&std::string(source->file).find("tresh")==0)verifiedCutouts[texture]=texture->pSurface;
+ if(uprez){std::string file=source->file;
+  if(file.find("tresh")==0||file.find("tre_w2")==0||file.find("tre_wl")==0||file.find("bsh_st1")==0)verifiedCutouts[texture]=texture->pSurface;
+ }
  Gfx_SetTextureReplacement(texture->pSurface,replacement); // original dimensions/UVs survive rollback
  Sys_Log("textures: source2x applied %s (%ux%u, %u mips)",source->file,w,h,levels);return true;
 }

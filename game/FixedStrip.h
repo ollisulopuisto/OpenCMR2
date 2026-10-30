@@ -7,14 +7,39 @@
 // collision records, placement, bounding box or physics vertices are edited.
 namespace FixedStrip {
 struct Vertex { MeshVertexF source; float depth,weight;float lo[3],hi[3];unsigned short indices[3];float bary[3]; };
-inline bool Build(const MeshVertexF *v,int count,const unsigned short *ix,int n,std::vector<Vertex>&out){
+inline bool Build(const MeshVertexF *v,int count,const unsigned short *ix,int n,std::vector<Vertex>&out,bool sourceWarp=false){
  if(!v||!ix||count<4||count>2000||n<6||n>12000||n%6)return false;
  std::vector<Vertex> result;
  for(int p=0;p<n;p+=6){
   unsigned short ids[4];int used=0;
   for(int j=0;j<6;j++){if(ix[p+j]>=count)return false;bool found=false;for(int k=0;k<used;k++)if(ids[k]==ix[p+j])found=true;if(!found){if(used==4)return false;ids[used++]=ix[p+j];}}
   if(used!=4)return false;MeshVertexF q[4];for(int k=0;k<4;k++)q[k]=v[ids[k]];
-  ScenerySourceFit::Fit fit;if(!ScenerySourceFit::Build(q,4,fit))return false;
+  ScenerySourceFit::Fit fit;
+  if(!ScenerySourceFit::Build(q,4,fit)){
+   // Exact-source France quads are intentionally warped. Keep each original
+   // triangle domain, never flatten/reproject its original diagonal or edges.
+   if(!sourceWarp)return false;unsigned corners=0;float height2=0;
+   for(int k=0;k<4;k++){
+    float u=q[k].textureCoordinates[0][0],sv=q[k].textureCoordinates[0][1];
+    if((u!=0&&u!=1)||(sv!=0&&sv!=1))return false;
+    unsigned bit=1u<<(int(u)+2*int(sv));if(corners&bit)return false;corners|=bit;
+    const float*pos=(const float*)&q[k];for(int c=0;c<6;c++)if(!std::isfinite(pos[c]))return false;
+   }
+   if(corners!=15)return false;float normal[3]={};
+   for(int t=0;t<2;t++){
+    const float*a=(const float*)&v[ix[p+t*3]],*b=(const float*)&v[ix[p+t*3+1]],*c=(const float*)&v[ix[p+t*3+2]];
+    float ab[3],ac[3];for(int k=0;k<3;k++){ab[k]=b[k]-a[k];ac[k]=c[k]-a[k];}
+    float nn[3]={ab[1]*ac[2]-ab[2]*ac[1],ab[2]*ac[0]-ab[0]*ac[2],ab[0]*ac[1]-ab[1]*ac[0]};
+    float length=std::sqrt(nn[0]*nn[0]+nn[1]*nn[1]+nn[2]*nn[2]);if(!std::isfinite(length)||length<1e-5)return false;
+    for(int k=0;k<3;k++)normal[k]+=nn[k]/length;
+   }
+   float length=std::sqrt(normal[0]*normal[0]+normal[1]*normal[1]+normal[2]*normal[2]);if(length<1)return false;
+   for(int k=0;k<3;k++)fit.normal[k]=normal[k]/length;
+   for(int a=0;a<4;a++)for(int b=a+1;b<4;b++)if(q[a].textureCoordinates[0][0]==q[b].textureCoordinates[0][0]){
+    float h2=0;for(int k=0;k<3;k++){float d=((float*)&q[a])[k]-((float*)&q[b])[k];h2+=d*d;}height2=std::max(height2,h2);
+   }
+   fit.height=std::sqrt(height2);if(fit.height<1e-5)return false;
+  }
   // Keep the exact two original diagonal domains and their winding/colours.
   const int steps=3;
   for(int t=0;t<2;t++){

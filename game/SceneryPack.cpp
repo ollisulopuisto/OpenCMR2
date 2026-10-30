@@ -463,7 +463,7 @@ bool SceneryPack_DrawFixedPart(Mesh *mesh,MeshPart *part){
  if(!mesh||!part||!Sys_GetOption("video.scenery_overrides",1)||!Sys_GetOption("video.tree_overrides",1)||
     !Sys_GetOption("video.texture_uprez",0)||!(mesh->flags&0x800)||mesh->flags&2||part->texture<0||unsigned(part->texture)>=CGraphics::m_textureCount)return false;
  Texture*source=CGraphics::GetTextureBuffer()[part->texture];if(!source||!source->pSurface||!mesh->pVertexData||!part->pData)return false;
- auto name=Stem(source->name);if(name.compare(0,5,"tresh"))return false;
+ auto name=Stem(source->name);if(name.compare(0,5,"tresh")&&name.compare(0,6,"tre_w2")&&name.compare(0,6,"tre_wl")&&name.compare(0,7,"bsh_st1"))return false;
  // DDS identities are added by the private texture helper, independently of the
  // individual billboard pack. A same-named modified source never enters here.
  if(!France1Textures_IsVerifiedCutout(source))return false;
@@ -477,7 +477,7 @@ bool SceneryPack_DrawFixedPart(Mesh *mesh,MeshPart *part){
    indices.push_back(j);original.append((const char*)&v[j].x,12);original.append((const char*)v[j].textureCoordinates[0],8);
   }
   auto hash=SceneryIdentity::SHA256(original.data(),original.size());bool known=false;for(auto h:fixedStripSources)if(hash==h){known=true;break;}
-  if(known)data.ready=FixedStrip::Build(v,mesh->field_0x10,indices.data(),indices.size(),data.vertices);
+  if(known)data.ready=FixedStrip::Build(v,mesh->field_0x10,indices.data(),indices.size(),data.vertices,name.compare(0,5,"tresh")!=0);
   if(data.ready&&fixedParts.empty())Sys_Log("scenery: fixed source strip relief active %s (%zu triangles in first part); visual only, not individual3Dtrees",name.c_str(),data.vertices.size()/3);
   found=fixedParts.emplace(part,std::move(data)).first;
  }

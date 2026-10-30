@@ -509,3 +509,27 @@ not native Metal acceptance. CPU-rasterized submitted vertices/source pixels
 inspected privately. Native appearance/performance/culling remain open.
 Actual binary --asset-upgrades --prepare-only resolves all three private
 cache roots from owned archives. No merge, hosted run or release requested.
+
+
+## France1fixed hedge/tree-wall follow-up (30 October2026)
+
+Separate candidate off185bef5ab3, prior pinned deliveries unchanged. Live owned
+France1hi/lo originals recovered; stage identities match runtime gates. Original
+fixed `bsh_st1a-f` hedges and `tre_w2a-d`/`tre_wla` walls added to exact
+position/UV allowlist. Most source quads are warped, so preserve both original
+triangle domains/diagonal, barycentric mapping and edge coordinates rather than
+relaxing full-canvas billboard planar fit. Warped support only after exact source
+gate; Finland stays strict planar. Source vertices/physics/collision untouched.
+All generated positions remain within original quad AABBs. Material/world/live
+light/fog states remain original. This is shallow relief, not a solid3Dhedge.
+
+Added12hedge and6France barbed-wire texture variants. Total186indexed private
+2xoutputs, all actual hi/lo runtime upload/all-mip comparisons, stage/identity/
+reset guards pass. Six shadow masks original. Both France hi/lo actual temp.sht
+runtime probes accept749material runs, submit50,868triangles;748parts move,
+one degenerate-axis part stays still; source bytes immutable and bounds pass.
+Finland regression remains785accepted/1nonplanar retained/43,740triangles/
+783moving. Runtime executor stubbed, native Metal/culling/FPS unverified.
+Private CPU raster of actual submitted France hedge/wall vertices inspected.
+Greece still source-blocked, no repeated ask. All-track/solid reconstruction
+remains open. No human merge, hosted run or release requested.
