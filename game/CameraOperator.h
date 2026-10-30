@@ -71,8 +71,9 @@ struct State{
   float wantedPull=1.3f-.5f*speedUnit;
   if(!pullbackReady){pullback=wantedPull;pullbackReady=true;}
   pullback+=(wantedPull-pullback)*(1-std::exp(-dt/1.3f));
-  distance=Clamp(distance*pullback,7.f,17.f)*distanceScale; // distanceScale: user knob, 1 = default
-  distance=Clamp(distance,4.f,26.f);usedDistance=distance;
+  // Drone stand-off is distinct from the original 5-6-unit chase camera.
+  // The 50..150 knob scales stand-off within 9..25 units, never collapsing to 4.
+  distance=Clamp(distance*pullback*(.75f+.5f*distanceScale),9.f,25.f);usedDistance=distance;
   bool roadValid=road&&road->valid;
   RoadPreview filtered;
   if(roadValid){
@@ -91,7 +92,7 @@ struct State{
   // Keep the drone low enough to look down the road at every distance knob.
   // Previously a 4-unit trailing distance retained 5-7 units of height before
   // terrain lift, then lower-third framing forced a steep overhead aim.
-  height=Clamp(distance*.38f+curveLift*.15f,1.5f,distance*.48f);
+  height=Clamp(distance*.45f+curveLift*.25f,3.8f,distance*.58f);
   float orbitHeading=carHeading; // gameplay: the driver needs a view from behind, even on a different route tangent
   float delta=ready?Wrap(carHeading-lastHeading):0;
   if(ready&&((car-lastCar).Length()>25.f||std::abs(delta)>.8f)){Reset();delta=0;}
@@ -119,7 +120,14 @@ struct State{
    V3 anchor=lastCar+(car-lastCar)*(float(i)/steps);
    V3 desired=anchor+V3{-std::sin(heading)*distance,height,-std::cos(heading)*distance};
    V3 desiredVelocity=movement+V3{-std::cos(heading)*distance*headingRate,0,std::sin(heading)*distance*headingRate};
-   V3 acceleration=(desired-position)*625.f-(velocity-desiredVelocity)*50.f;
+   V3 error=desired-position,relativeVelocity=velocity-desiredVelocity;
+   V3 longitudinal={std::sin(heading),0,std::cos(heading)};
+   float e=error.x*longitudinal.x+error.z*longitudinal.z;
+   float v=relativeVelocity.x*longitudinal.x+relativeVelocity.z*longitudinal.z;
+   // Independent longitudinal spring: about1-2units of transient lag under
+   // hard acceleration/braking, then settles. Turn/lateral spring stays fast.
+   V3 acceleration=(error-longitudinal*e)*625.f-(relativeVelocity-longitudinal*v)*50.f
+       +longitudinal*(e*16.f-v*8.f);
    float n=acceleration.Length();if(n>FollowAccelerationLimit)acceleration=acceleration*(FollowAccelerationLimit/n);
    velocity=velocity+acceleration*h;position=position+velocity*h;
   }
@@ -128,7 +136,7 @@ struct State{
   foreLag=-along-distance;
   // Emergency safety boundary is behind the car. Ordinary braking never
   // reaches it; discontinuous teleports/inputs prioritize not overtaking.
-  float minimum=distance*.8f;
+  float minimum=distance*.55f;
   if(along>-minimum){position=position-forward*(along+minimum);float v=velocity.x*forward.x+velocity.z*forward.z;if(v>forwardSpeed)velocity=velocity-forward*(v-forwardSpeed);}
   V3 target=car+V3{std::sin(carHeading)*Clamp(speed*3.f,2.f,5.f),1.2f,std::cos(carHeading)*Clamp(speed*3.f,2.f,5.f)};
   if(roadValid){target=road->near;target.y=car.y+1.2f;}

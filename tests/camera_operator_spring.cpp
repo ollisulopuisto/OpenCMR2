@@ -29,13 +29,11 @@ int main(){
  g_chaseCameraOffsets[2]={0,65536,0};g_chaseCameraViewOffsets[2]={65536,0,0};
  ChaseCamera_Update(&record,&body,0);
  CHECK(g_chaseCameraViewOffsets[2].x!=0); // original basis spring no longer bypassed
- // Intended distance chain at rest with the default knob (drone_distance 60): offset z 1.0 -> clamp 9, x pullback 1.3
- // at standstill = 11.7, x scale 0.6 = ~7.0 behind, height ~5.9. Assert the intent, not the stale pre-knob -8.
- CHECK(record.matrix.position.z < -6*65536 && record.matrix.position.z > -8*65536); // ~7m behind: distant, not attached
- CHECK(std::abs(record.matrix.position.x) < 65536/4); // centred behind, not thrown to the wrong side
- {float sx=record.matrix.position.x/65536.f,sy=record.matrix.position.y/65536.f,sz=record.matrix.position.z/65536.f;
-  float sep=std::sqrt(sx*sx+sy*sy+sz*sz);
-  CHECK(sep < 10.1f);} // inside the rest tether (~9.7): no spring overshoot past the intended distance
+ // Drone at60 now stands farther from the car than the unchanged chase.
+ CHECK(record.matrix.position.z < -11*65536 && record.matrix.position.z > -13*65536);
+ CHECK(std::abs(record.matrix.position.x)<65536/4);
+ CHECK(record.matrix.position.y>4*65536 && record.matrix.position.y<7*65536);
+ CHECK(record.matrix.forward.z>59000); // forward road, not overhead
  CHECK(record.zoom>0xa000);
  CHECK(g_chaseCameraLag[0]==0xe0000); // never mutate saved spring
  // Actual built camera must now follow behind a turn within about two degrees,
@@ -51,6 +49,37 @@ int main(){
  for(int i=0;i<80;i++)ChaseCamera_Update(&record,&body,0);
  CHECK(record.zoom<tight);car.steeringInput=0;
  body.right={0,0,65536};body.forward={-65536,0,0};
+ // Same car/body/speed/turn, actual classic and drone Update/BuildMatrix output.
+ car.speed=98304;body.position={0,0,0};body.right={0,0,65536};body.forward={-65536,0,0};
+ FixVector savedOffsets[6],savedViews[6];memcpy(savedOffsets,g_chaseCameraOffsets,sizeof savedOffsets);memcpy(savedViews,g_chaseCameraViewOffsets,sizeof savedViews);
+ extern void ChaseCamera_SetOffset(BYTE,FixVector*);FixVector configured={0,98304,425984};ChaseCamera_SetOffset(0,&configured);
+ extern void ChaseCamera_SetPitch(BYTE,short);ChaseCamera_SetPitch(0,0x2d);
+ Sys_SetOption("video.drone_distance",50);
+ for(int variant=0;variant<2;variant++){
+  g_droneVariant[0]=variant;CameraOperator_Reset(0);record.matrix={};
+  g_chaseCameraOffsets[2]={0,65536,0};g_chaseCameraViewOffsets[2]={0,0,65536};
+  for(int i=0;i<300;i++)ChaseCamera_Update(&record,&body,0);
+  auto&m=record.matrix;
+  printf("perspective %d %g %g %g %g %g %g %g\n",variant,m.position.x/65536.f,m.position.y/65536.f,m.position.z/65536.f,m.forward.x/65536.f,m.forward.y/65536.f,m.forward.z/65536.f,record.zoom/40960.f);
+  if(variant==1){CHECK(m.position.z<-8.9f*65536);CHECK(m.position.y>3.8f*65536);}
+ }
+ // Actual updater under acceleration/cruise/braking: visibly independent,
+ // but keeps the car and road in frame. Hold the exact same heading.
+ for(int hz:{25,60,120}){
+  g_physicsTimeStep=int(65536.f*25/hz);body.position={0,0,0};CameraOperator_Reset(0);g_droneVariant[0]=1;
+  float carZ=0,maxLag=0,minLag=0;
+  for(int i=0;i<hz*10;i++){
+   float t=float(i)/hz,v=t<1?0:t<2?(t-1)*28:t<4?28:t<5?(5-t)*28:0;
+   carZ+=v/hz;body.position.z=int(carZ*65536);ChaseCamera_Update(&record,&body,0);
+   float trail=carZ-record.matrix.position.z/65536.f,lag=trail-9.f;
+   maxLag=std::max(maxLag,lag);minLag=std::min(minLag,lag);
+   CHECK(trail>6.5f&&trail<11.5f);CHECK(record.matrix.forward.z>59000);
+  }
+  CHECK(maxLag>1.f&&minLag<-1.f);CHECK(std::abs(carZ-record.matrix.position.z/65536.f-9.f)<.02f);
+ }
+ g_physicsTimeStep=65536;body.position={0,0,0};
+ memcpy(g_chaseCameraOffsets,savedOffsets,sizeof savedOffsets);memcpy(g_chaseCameraViewOffsets,savedViews,sizeof savedViews);
+ g_droneVariant[0]=1;
  Sys_SetOption("video.camera_operator",0);
  g_chaseCameraOffsets[2]={0,65536,0};g_chaseCameraViewOffsets[2]={65536,0,0};
  ChaseCamera_Update(&record,&body,0);
