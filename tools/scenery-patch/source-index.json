@@ -1426,5 +1426,75 @@
     "height": 128,
     "kind": "tree",
     "category": "individual-bush"
+  },
+  "finlot.bfl/bsh_01.dds": {
+    "sha256": "cc6f79ce69fe78803ed5acfae5ce4527a7997a9a1882e8220987d728e52423ac",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-bush"
+  },
+  "finlot.bfl/bsh_02.dds": {
+    "sha256": "d17c64c6ec3e6bd8264ed2c51b43e5ab49f11067f97ebe97d3511c14907dc46e",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-bush"
+  },
+  "finlot.bfl/shr_01.dds": {
+    "sha256": "f1d49e2c29e46190677cf3b209a425ff0442fbc05dbdcf399f896f6f532030c5",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "individual-bush"
+  },
+  "finlot.bfl/shr_02.dds": {
+    "sha256": "cf927e20d8a10212b7d6dcf986b8d09811998e2abff07c9d0b64f523617a8c71",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "individual-bush"
+  },
+  "fralot.bfl/bsh_md1a.dds": {
+    "sha256": "32fd7dcb0a561c0c5c2978255d1af006495ff8c959b97d7aafc261f68d59147a",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "individual-bush"
+  },
+  "fralot.bfl/bsh_md2a.dds": {
+    "sha256": "f2ba7198a4efb3bee4f5b8ac734f122e7f270cf15ca12f11ef65ef299d9edf6f",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "individual-bush"
+  },
+  "fralot.bfl/bsh_md3.dds": {
+    "sha256": "02fcfcb8b9eeff29e1c7c06ef3ca824092a7d0798a89c8b5c662c34037551bfa",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "individual-bush"
+  },
+  "fralot.bfl/bsh_pn1a.dds": {
+    "sha256": "fd38656bf6f59b15a6a420896195bd166c066c39335af3cf50729ff4fe55a8f3",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "individual-bush"
+  },
+  "fralot.bfl/bsh_pn2.dds": {
+    "sha256": "9ba0ca29e23299b28ba22e0f912dda8cbc9e351e8ab59e11069b87dd01e7c756",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "individual-bush"
+  },
+  "fralot.bfl/bsh_md4a.dds": {
+    "sha256": "39799e80ef688aec7267b29bfceb6b8209ec7bdc24243deb140181142a77cfca",
+    "width": 64,
+    "height": 64,
+    "kind": "tree",
+    "category": "individual-bush"
   }
 }
