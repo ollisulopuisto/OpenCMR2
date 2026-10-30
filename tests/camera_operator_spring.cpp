@@ -38,13 +38,14 @@ int main(){
   CHECK(sep < 10.1f);} // inside the rest tether (~9.7): no spring overshoot past the intended distance
  CHECK(record.zoom>0xa000);
  CHECK(g_chaseCameraLag[0]==0xe0000); // never mutate saved spring
- // Actual built camera must not rotate its world position around the car on
- // a turn, and zoom must survive BuildMatrix's original default assignment.
- auto worldBefore=record.matrix.position;auto forwardBefore=record.matrix.forward;
+ // Actual built camera must now follow behind a turn within about two degrees,
+ // and zoom must survive BuildMatrix's original default assignment.
  body.right.x=32768;body.right.z=56756;body.forward.x=-56756;body.forward.z=32768;
- ChaseCamera_Update(&record,&body,0);
- CHECK(std::abs(record.matrix.position.x-worldBefore.x)<1000);
- CHECK(std::abs(record.matrix.forward.x-forwardBefore.x)<1000);
+ for(int i=0;i<20;i++)ChaseCamera_Update(&record,&body,0);
+ {float yaw=std::atan2(record.matrix.forward.x/65536.f,record.matrix.forward.z/65536.f);
+  CHECK(std::abs(CameraOperator::Wrap(yaw-.5235988f))<.036f);
+  float behind=record.matrix.position.x/65536.f*.5f+record.matrix.position.z/65536.f*.8660254f;
+  CHECK(behind < -5.f);}
  CHECK(record.zoom>0xa000);
  car.steeringInput=65536;int tight=record.zoom;
  for(int i=0;i<80;i++)ChaseCamera_Update(&record,&body,0);

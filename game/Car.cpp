@@ -8495,7 +8495,13 @@ extern BYTE g_playerCameraMode[8];
 extern BYTE g_droneVariant[8];
 static int g_speedFovShown[2], g_speedFovPct[2];
 // The camera operator's drone is the active camera of this player (same test the operator itself uses).
-bool View_IsDroneCamera(int view) { return view >= 0 && view < 8 && g_playerCameraMode[view] == 4 && g_droneVariant[view] && Sys_GetOption("video.camera_operator", 0); }
+bool View_IsDroneCamera(int view) {
+    if (view < 0 || view >= 2 || !Sys_GetOption("video.camera_operator", 0)) return false;
+    unsigned slot = g_activeViewRecord[view];
+    if (slot > 1) return false;
+    unsigned record = slot + unsigned(view) * 2;
+    return g_viewRecords[record].type == 5 && g_playerCameraMode[record] == 4 && g_droneVariant[record];
+}
 // Diagnostics overlay: the effective percent setting and the eased 0..65536 speed ratio of a view.
 void SpeedFov_GetStatus(int view, int *pct, int *shown) { *pct = g_speedFovPct[view & 1]; *shown = g_speedFovShown[view & 1]; }
 // Called by View_SetPlayerProjection once per rendered view (not from the logic step, whose cadence did not track the

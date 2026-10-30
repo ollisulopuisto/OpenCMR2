@@ -4,6 +4,9 @@
 
 namespace CameraOperator {
 inline const char* Label(bool enabled){return enabled?"drone: on":"drone: off";}
+// These are gameplay tuning values, not measured drone physics. Native feel
+// remains an acceptance gate. Exposed here so tests check the actual contract.
+constexpr float FollowAccelerationLimit=800.f;
 inline float Max(float a,float b){return a>b?a:b;}
 inline float Clamp(float x,float a,float b){return x<a?a:x>b?b:x;}
 inline float Wrap(float x){return std::atan2(std::sin(x),std::cos(x));}
@@ -47,6 +50,7 @@ struct State{
  bool ready=false;V3 position,velocity,aim,aimVelocity,lastCar,roadAhead;bool hasRoad=false;
  float terrainLift=0,curveLift=0,pullback=1.f; // pullback: smoothed speed-dependent distance scale
  bool pullbackReady=false;
+ float foreLag=0; // diagnostic longitudinal lag, not a clamped displacement
  float bendSmooth=0;V3 nearSmooth;bool previewReady=false; // low-pass of the route preview so node crossings do not step the framing
  float heading=0,headingRate=0,lastHeading=0,turn=0,zoom=1.7f,zoomRate=0,pitch=0,lensSpeedGain=.3f,shakeAmount=1.f,shakePhase=0,shakeRight=0,shakeUp=0,distanceScale=1.f,usedDistance=0; // lensSpeedGain: zoom change at full speed (+ = tighter lens, - = wider lens)
  void Reset(){*this=State{};}
@@ -85,34 +89,44 @@ struct State{
   float liftTime=wantedLift>curveLift?.55f:1.7f;
   curveLift+=(wantedLift-curveLift)*(1-std::exp(-dt/liftTime));
   height+=curveLift*Clamp(distanceScale,0.f,1.f); // the curve lift follows the distance knob, so a closer drone stays closer in bends
-  float orbitHeading=roadValid?std::atan2(road->tangent.x,road->tangent.z):carHeading;
+  float orbitHeading=carHeading; // gameplay: the driver needs a view from behind, even on a different route tangent
   float delta=ready?Wrap(carHeading-lastHeading):0;
   if(ready&&((car-lastCar).Length()>25.f||std::abs(delta)>.8f)){Reset();delta=0;}
-  if(!ready){ready=true;heading=orbitHeading;lastHeading=carHeading;lastCar=car;position=car+V3{-std::sin(heading)*distance,height,-std::cos(heading)*distance};aim=car+V3{0,1,0};velocity={};}
+  if(!ready){ready=true;heading=orbitHeading;lastHeading=carHeading;lastCar=car;foreLag=0;position=car+V3{-std::sin(heading)*distance,height,-std::cos(heading)*distance};aim=car+V3{0,1,0};velocity={};}
   hasRoad=roadValid;if(roadValid)roadAhead=road->far;
   float measured=delta/dt;lastHeading=carHeading;
   turn+=(Clamp(std::abs(measured)*1.8f+std::abs(steering)*.8f,0.f,1.f)-turn)*(1-std::exp(-dt/.3f));
-  // Independent trailing orbit heading: car can rotate without rotating camera.
-  float accel=Clamp(3.f*Wrap(orbitHeading-heading)-3.f*headingRate,-.7f,.7f);
-  headingRate=Clamp(headingRate+accel*dt,-.65f,.65f);heading=Wrap(heading+headingRate*dt);
-  V3 desired=car+V3{-std::sin(heading)*distance,height,-std::cos(heading)*distance};
-  if(roadValid){
-   // Outside the upcoming bend opens the view. Right-hand bend -> left of
-   // route, even while the car is sliding with the opposite body heading.
-   V3 right={road->tangent.z,0,-road->tangent.x};
-   desired=desired+right*(-Clamp(road->bend*9.f,-6.f,6.f)*Clamp(distanceScale,0.f,1.f));
+  // Fast damped heading follow, not a multi-second sideways orbit.
+  // Substeps keep the critically damped follower stable at low simulation
+  // rates. No angular clamp: an abrupt input may briefly exceed the normal
+  // couple-degree lag instead of teleporting the camera onto its boundary.
+  int steps=int(std::ceil(dt/.005f));float h=dt/steps;
+  for(int i=0;i<steps;i++){
+   float angularAcceleration=Clamp(6400.f*Wrap(orbitHeading-heading)-160.f*headingRate,-60.f,60.f);
+   headingRate+=angularAcceleration*h;
+   heading=Wrap(heading+headingRate*h);
   }
-  // Second-order world-space chase. Never re-add car position at draw time.
-  V3 acceleration=(desired-position)*4.f-velocity*4.f;
-  float magnitude=acceleration.Length();if(magnitude>35.f)acceleration=acceleration*(35.f/magnitude);
-  velocity=velocity+acceleration*dt;position=position+velocity*dt;
-  // Keep framing safe on very long high-speed transients, but do not rigidly
-  // rotate the position offset with the car. This is a tether, not attachment.
-  V3 away=position-car;float separation=away.Length();
-  // The tether is what holds the camera near the car at speed (the spring chase lags a moving car). It stays 1.3 x the intended offset at the
-  // default knob (100) and tightens to 1.0 x at 50, so a lower drone_distance really brings the camera closer at speed.
-  float tether=std::sqrt(distance*distance+height*height)*(1.f+.3f*Clamp((distanceScale-.5f)/.5f,0.f,1.f));
-  if(separation>tether){position=car+away*(tether/separation);}
+  V3 forward={std::sin(carHeading),0,std::cos(carHeading)};
+  V3 movement=(car-lastCar)*(1.f/dt);
+  float forwardSpeed=movement.x*forward.x+movement.z*forward.z;
+  // Fast world-space spring. Position and velocity are integrated, not
+  // reconstructed from a clamped relative offset. Input jumps change bounded
+  // acceleration rather than instantly moving the camera sideways/forward.
+  for(int i=0;i<steps;i++){
+   V3 anchor=lastCar+(car-lastCar)*(float(i)/steps);
+   V3 desired=anchor+V3{-std::sin(heading)*distance,height,-std::cos(heading)*distance};
+   V3 desiredVelocity=movement+V3{-std::cos(heading)*distance*headingRate,0,std::sin(heading)*distance*headingRate};
+   V3 acceleration=(desired-position)*625.f-(velocity-desiredVelocity)*50.f;
+   float n=acceleration.Length();if(n>FollowAccelerationLimit)acceleration=acceleration*(FollowAccelerationLimit/n);
+   velocity=velocity+acceleration*h;position=position+velocity*h;
+  }
+  V3 away=position-car;
+  float along=away.x*forward.x+away.z*forward.z;
+  foreLag=-along-distance;
+  // Emergency safety boundary is behind the car. Ordinary braking never
+  // reaches it; discontinuous teleports/inputs prioritize not overtaking.
+  float minimum=distance*.8f;
+  if(along>-minimum){position=position-forward*(along+minimum);float v=velocity.x*forward.x+velocity.z*forward.z;if(v>forwardSpeed)velocity=velocity-forward*(v-forwardSpeed);}
   V3 target=car+V3{std::sin(carHeading)*Clamp(speed*3.f,2.f,5.f),1.2f,std::cos(carHeading)*Clamp(speed*3.f,2.f,5.f)};
   if(roadValid){target=road->near;target.y=car.y+1.2f;}
   V3 aimAcceleration=(target-aim)*12.f-aimVelocity*5.5f;
@@ -130,8 +144,8 @@ struct State{
   zoomRate+=(8.f*(wanted-zoom)-5.f*zoomRate)*dt;
   zoom=Clamp(zoom+zoomRate*dt,1.15f,1.9f);lastCar=car;
  }
- // Look direction keeps the player in the lower third while allowing the
- // independent aim to pan horizontally. Projection uses original 2.080*fov
+ // Look direction keeps the player in the lower third, with tightly bounded
+ // horizontal framing so route preview cannot hide the steering direction. Projection uses original 2.080*fov
  // times .625 base zoom. Custom FOV/tilt may intentionally alter this.
  V3 FramedForward()const{
   V3 f=Unit(aim-position),toCar=lastCar+V3{0,1.f,0}-position;
@@ -141,7 +155,8 @@ struct State{
   float target=carElevation+std::atan(.30f/(1.3f*zoom));
   lookElevation=Clamp(lookElevation,target-.015f,target+.015f);
   float carYaw=std::atan2(toCar.x,toCar.z),aimYaw=std::atan2(f.x,f.z);
-  float yaw=carYaw+Clamp(Wrap(aimYaw-carYaw),-.16f,.16f);
+  float yaw=carYaw+Clamp(Wrap(aimYaw-carYaw),-.01f,.01f);
+
   V3 flat={std::sin(yaw),0,std::cos(yaw)};
   return {flat.x*std::cos(lookElevation),std::sin(lookElevation),flat.z*std::cos(lookElevation)};
  }
@@ -172,8 +187,8 @@ struct State{
   };
   required=liftFor(base);
   // A tall bank should pull the drone in, not send it to TV-helicopter height.
-  // Test bounded alternatives along the existing inertial direction. This is
-  // a safety correction only, not a new car-attached nominal camera path.
+  // Test bounded alternatives along the trailing direction. Safety may shorten
+  // the distance, but does not introduce an outside-bend orbit.
   if(required>3.f){
    float cost=required;
    for(int alternative=1;alternative<=3;alternative++){
@@ -186,9 +201,11 @@ struct State{
   }
   required=Clamp(required,0.f,8.f);
   position=base;
-  // Rise before collision if possible; never ease through known terrain.
-  // Fall slowly after a crest so camera doesn't track every car bump.
-  terrainLift=required>terrainLift?required:Max(required,terrainLift-dt*2.f);
+  // A discontinuous corridor/triangle sample must not teleport the camera
+  // upwards. Rise at most 3 units/s; preserve the accepted slow 2 units/s
+  // descent. This is a ground-height heuristic, not collision clearance:
+  // a sudden real obstruction can clip while the bounded rise catches up.
+  terrainLift=required>terrainLift?Clamp(required,terrainLift,terrainLift+dt*3.f):Max(required,terrainLift-dt*2.f);
   position.y+=terrainLift;
   if(terrainLift>0&&velocity.y<0)velocity.y=0;
   // Safety net: a camera this far from the car is a failure, not a framing. Start over behind the car next step.

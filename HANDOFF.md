@@ -371,3 +371,76 @@ blend/distance+shadowgroupingnotinthischeckpoint; see docs/EFFECT-AMOUNTS.md.
 Merged to main, all source-only and not native-verified on the Mac: #137 camera readout, per-type camera move, F10 panel, tyre debris, tyre-track length/history; #138 `--all-trees`, `--tree-coverage`, `--spectator-gain`; #139/#140 bush index entries; #141 test-only CI fix; #142 F10 panel drawn on sprite layer 3 (layer 4 draws before the 3D scene); #143 `--tree-rustle 0..300` (default 100) and `--spectator-irregular 0|1` (default 1), texture-coordinate shift only.
 #144 caches the crowd mesh template (counts logged, no timing claim). Bush converter path: no stem when the source canopy reaches the ground, crossed planes for the Finland leaf-strip bushes.
 Open: whole-stage tyre-track persistence, Hi/Lo and other-rally exporter coverage, bsh_st1/forest/hedge strips, drone FPS profile (needs native profile), curved-road generalisation, native confirmation of #137/#142/#143, macOS CI never started.
+
+## Gameplay-first drone follow (30 October 2026)
+
+Claim: feat/drone-gameplay-follow, based on the batch-9 CI-fix lineage.
+The clarified voice request supersedes the independent route-tangent orbit:
+steering readability wins, with light inertia rather than a detached TV camera.
+Normal continuous-turn orbit lag stays near two degrees; abrupt inputs may
+briefly exceed that rather than snap onto a hard angular clamp. A substepped
+world-position/velocity spring bounds acceleration, with angular-velocity
+feed-forward for fast lateral tracking. Route preview still supports lift,
+but no longer selects an outside-bend orbit. Acceleration creates a small
+fall-back; braking approach settles without overtaking the car. A behind-car
+emergency boundary remains for extreme discontinuous inputs, not normal stops.
+Existing terrain, reset, opt-in/classic and per-camera paths
+remain. No new setting or default enablement.
+
+Four focused local CTests pass, including actual ChaseCamera_Update and
+CameraOperator_Update/Apply wiring. New fixtures cover 25/60/120Hz, turns,
+reversals, heading wrap, left/right symmetry, emergency stopping and settling.
+Old tests requiring a detached orbit were replaced because they contradict
+the clarified request, not relaxed as a substitute for intended behavior.
+Native Mac gameplay/feel/graphics/performance remain unverified. No hosted
+run or publication until the approved CI limits are merged and verified.
+
+Broad local build was attempted, not green: unchanged SceneryMotion.h lacks
+a direct size_t declaration under this compiler (animated_scenery tests).
+A standalone compile of the base header reproduces it. No suppression or
+unrelated fix is included in this camera patch.
+
+Continuity follow-up: removed the initial hard angular and fore/aft clamps.
+World-position finite-difference acceleration stays below 850 units/s^2 in
+25/60/120Hz discontinuous heading-wrap, reversal and braking fixtures; normal
+trace max orbit 1.73 degrees, view 2.31 degrees, lag -0.44..0.035 world units.
+Approximate gameplay feel is not a literal two-degree invariant. Adjacent
+SceneryMotion cstddef fix has its own commit with standalone red/green proof.
+Full build now succeeds; full CTest run is 125/130, with five aborts in
+network, frontend and controller paths (Zig runtime safety checks in unchanged
+code). Those failures are not suppressed and baseline reruns remain needed.
+
+Exact baseline comparison completed: all files changed by this candidate were
+restored to 3861bc9, retaining ONLY the isolated cstddef build prerequisite;
+the same compiler, runtime configuration and five test targets were used. All
+five failures reproduced at the same unchanged code paths. Candidate source
+was then restored and four focused camera tests passed again. The acceleration
+assertion now derives from the actual 800-unit/s^2 integration cap plus 5%
+finite-difference/float tolerance, not an arbitrary margin above one trace.
+That cap is an unvalidated gameplay tuning choice, not physical proof of feel.
+Emergency braking is mathematically continuous but still rapid in the trace.
+
+## Current native-regression candidate (30 October 2026, 16:11 EET)
+
+Integrated merged batch9 ef25e57. User screenshots show drone with tunnel and
+streak active; View_IsDroneCamera incorrectly used player index for arrays
+indexed by alternating camera-record slot. It now maps active slot + player*2
+and requires actual type5. Linked regression covers both players/slots, stale
+record/classic rejection and speed-FOV bypass; old query fails, fix passes.
+Space replay helper was already fixed in batch9; added linked actual raw-key
+update pause/hold/release/resume/reset test, passing without runtime code edit.
+Terrain samples could raise by 8 units immediately but descend slowly. Added
+alternating sample red/green test; limit rise to3units/s, preserve2units/s
+descent. Ground corridor remains heuristic: abrupt true obstacles may clip.
+Nine focused CTests pass. Native screenshot's FPS drop remains open: nested
+scenery/tree/wind timers cannot be added or subtracted into a GPU conclusion.
+Camera roll is separate future opt-in work, not in this candidate. All patches
+reviewable, merges owner-led, CI intentionally skipped on old stack workflow.
+
+Startup identity: compiled Git SHA/branch/exact-tag/tracked-dirty status now
+prints before startup and with --version. Always-run CMake generator refreshes
+on rebuild (write only on change), no runtime Git dependency. Source archives
+explicitly report metadata unavailable. Temp-repo regression covers commit,
+branch, exact tag, dirty edit, detached checkout and stable unchanged output.
+Current full build succeeds; 127/132 tests pass, same five previously reproduced
+local Zig runtime baseline aborts. Nine focused camera/replay checks pass.

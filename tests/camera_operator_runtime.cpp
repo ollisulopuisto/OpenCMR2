@@ -17,9 +17,10 @@ extern "C" int Sys_GetOption(const char*,int){return enabled;}
 int main(){
  CameraRecord record={};record.index=0;record.car=0;g_playerCameraMode[0]=4;
  FixMatrix body={};body.up.y=body.right.z=65536;car.pWorld=&body;car.speed=98304;
- CameraOperator_Update(&record,&body);CameraOperator_Apply(&record);auto first=record;
- body.right.x=32768;body.right.z=56756;CameraOperator_Update(&record,&body);CameraOperator_Apply(&record);
- CHECK(std::abs(record.matrix.position.x-first.matrix.position.x)<1000);CHECK(record.zoom>0xa000);
+ CameraOperator_Update(&record,&body);CameraOperator_Apply(&record);
+ body.right.x=32768;body.right.z=56756;for(int i=0;i<20;i++)CameraOperator_Update(&record,&body);CameraOperator_Apply(&record);
+ {float yaw=std::atan2(record.matrix.forward.x/65536.f,record.matrix.forward.z/65536.f);CHECK(std::abs(CameraOperator::Wrap(yaw-.5235988f))<.036f);}
+ CHECK(record.zoom>0xa000);
  auto once=record;CameraOperator_Apply(&record);CHECK(!memcmp(&record,&once,sizeof record));
  float straight=record.zoom;car.steeringInput=65536;
  for(int i=0;i<80;i++)CameraOperator_Update(&record,&body);
@@ -33,7 +34,9 @@ int main(){
  for(int i=0;i<5;i++){nodes[i].position.x=coords[i][0]*65536;nodes[i].position.z=coords[i][1]*65536;}
  g_routeNodes=nodes;g_routeNodeCount=5;CameraOperator_Reset(0);body.right.x=-32768;body.right.z=56756;
  for(int i=0;i<150;i++)CameraOperator_Update(&record,&body);
- CameraOperator_Apply(&record);CHECK(record.matrix.position.x < -2*65536);
+ CameraOperator_Apply(&record);
+ {float orbit=std::atan2(-record.matrix.position.x/65536.f,-record.matrix.position.z/65536.f);
+  CHECK(std::abs(CameraOperator::Wrap(orbit+.5235988f))<.036f);} // body-heading follow wins over conflicting route tangent
  g_routeNodes=nullptr;g_routeNodeCount=0;
  enabled=false;auto off=record;CameraOperator_Apply(&record);CHECK(!memcmp(&record,&off,sizeof record));CameraOperator_Update(&record,&body);
  enabled=true;CameraOperator_Apply(&record);CHECK(!memcmp(&record,&off,sizeof record)); // not ready until next simulation step
