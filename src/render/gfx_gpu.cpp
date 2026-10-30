@@ -843,6 +843,8 @@ struct Executor : GfxExecutor {
         speedFocusTarget = !(speed > 0.0f) ? 0.0f : speed > kTunnelMaxStrength ? kTunnelMaxStrength : speed;
     }
 
+    void ClearSpeedEffects() override { speedFocusTarget = speedFocusSmooth = 0.0f; speedStreakTarget = speedStreakSmooth = 0.0f; }
+
     // OpenCMR2: god rays / volumetric lighting. `enabled` turns it on/off,
     // `intensity` (0..255) scales the effect strength.
     void SetVaporTrail(float strength) override { vaporTarget = !(strength > 0.0f) ? 0.0f : strength > 1.0f ? 1.0f : strength; }

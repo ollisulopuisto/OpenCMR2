@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+"""External replay cameras drop tunnel vision and the speed streak at once; inside-car views and driving keep them. Source wiring only, not a native check."""
+import pathlib, re, sys
+r = pathlib.Path(__file__).resolve().parents[1]
+rd = lambda p: (r / p).read_text()
+ok = True
+def need(c, m):
+    global ok
+    if not c: print("FAIL", m); ok = False
+race = rd("game/Race.cpp")
+m = re.search(r"bool Race_ExternalReplayView\(int viewType, bool replayPlaying\)\s*\{(.*?)\n\}", race, re.S)
+need(m is not None, "classifier missing")
+body = m.group(1) if m else ""
+need("if (!replayPlaying) return false;" in body, "driving must never be classified external")
+types = set(int(x) for x in re.findall(r"viewType == (\d+)", body))
+need(types == {4, 5, 6, 7, 8, 9}, "external types must be chase 4-6, trackside 7, blend 8, replay 9")
+need(not types & {1, 2, 3, 10}, "inside-car and car-mounted views must keep the effects")
+need("Race_GetPlayerRecordField4(0) != 0" in race and "Gfx_ClearSpeedEffects();" in race, "must clear on external replay views")
+need("Gfx_SetVaporTrail(" in race.split("Gfx_ClearSpeedEffects();")[1].split("return;")[0], "vapor trails must stay on the world-space path")
+need("virtual void ClearSpeedEffects()" in rd("src/render/gfx_internal.h"), "executor hook missing")
+for f in ("src/render/gfx_gpu.cpp", "src/render/gfx_gl.cpp"):
+    need(re.search(r"void ClearSpeedEffects\(\) override \{ speedFocusTarget = speedFocusSmooth = 0\.0f; speedStreakTarget = speedStreakSmooth = 0\.0f; \}", rd(f)), f + " must zero targets and eased values")
+need("Gfx_ClearSpeedEffects" in rd("src/port/gfx.h") and "Gfx_ClearSpeedEffects" in rd("src/render/gfx_core.cpp"), "C entry point missing")
+print("replay external wiring ok" if ok else "FAILED"); sys.exit(0 if ok else 1)

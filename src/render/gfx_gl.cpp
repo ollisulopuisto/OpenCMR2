@@ -570,6 +570,7 @@ struct Executor : GfxExecutor {
         dofOn = on != 0; dofFocus = std::clamp(focus, 0, 100); dofRange = std::clamp(range, 0, 100); dofBlur = std::clamp(blur, 0, 100);
     }
     void SetSpeedFocus(float speed) override { speedFocusTarget = !(speed > 0.0f) ? 0.0f : speed > kTunnelMaxStrength ? kTunnelMaxStrength : speed; }
+    void ClearSpeedEffects() override { speedFocusTarget = speedFocusSmooth = 0.0f; speedStreakTarget = speedStreakSmooth = 0.0f; }
     void SetSpeedStreak(float strength) override { speedStreakTarget = !(strength > 0.0f) ? 0.0f : strength > 1.0f ? 1.0f : strength; }
     void SetGodRays(BOOL on, int amount) override { raysOn = on != 0; raysAmount = std::clamp(amount, 0, 255); }
     void SetColorGrading(int temp, int tint, int saturation, int contrast) override {

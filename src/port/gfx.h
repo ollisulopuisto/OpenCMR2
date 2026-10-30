@@ -282,6 +282,8 @@ void Gfx_SetDepthOfField(BOOL enabled, int focalDistance, int focalRange, int ma
    1 = fast). With depth_of_field on, the sharp zone narrows toward the middle of the screen and the
    focus band gets shallower as it rises. Purely visual. SDL_GPU only. */
 void Gfx_SetSpeedFocus(float speed);
+/* OpenCMR2: drop the eased tunnel vision and speed streak at once (targets and eased values to 0), for views where they must not show, e.g. external replay cameras. */
+void Gfx_ClearSpeedEffects(void);
 /* OpenCMR2 cockpit view: pixels nearer than this view distance (world units, the interior) stay out of the tunnel-vision blur. 0 = off. SDL_GPU only. */
 void Gfx_SetTunnelNearClear(float worldUnits);
 float Gfx_GetTunnelNearClear(void);
