@@ -8,12 +8,13 @@ def need(c, m):
     global ok
     if not c: print("FAIL", m); ok = False
 race = rd("game/Race.cpp")
-m = re.search(r"bool Race_ExternalReplayView\(int viewType, bool replayPlaying\)\s*\{(.*?)\n\}", race, re.S)
+pol = rd("game/SpeedLookPolicy.h")
+m = re.search(r"bool SpeedLook_ExternalReplayView\(int viewType, bool replayPlaying\)\s*\{(.*?)\n\}", pol, re.S)
 need(m is not None, "classifier missing")
 body = m.group(1) if m else ""
 need("if (!replayPlaying) return false;" in body, "driving must never be classified external")
 need("return viewType != 3;" in body, "only the interior view (type 3) may keep the effects during replay")
-need("Race_GetPlayerRecordField4(0) != 0" in race and "Gfx_ClearSpeedEffects();" in race, "must clear on external replay views")
+need("SpeedLook_ScreenEffectsOff(viewType, Race_GetPlayerRecordField4(0) != 0, View_IsDroneCamera(0))" in race and "Gfx_ClearSpeedEffects();" in race, "must clear on external replay views")
 need("Gfx_SetVaporTrail(" in race.split("Gfx_ClearSpeedEffects();")[1].split("return;")[0], "vapor trails must stay on the world-space path")
 need("virtual void ClearSpeedEffects()" in rd("src/render/gfx_internal.h"), "executor hook missing")
 for f in ("src/render/gfx_gpu.cpp", "src/render/gfx_gl.cpp"):
