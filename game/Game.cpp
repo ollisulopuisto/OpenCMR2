@@ -1446,7 +1446,7 @@ BOOL CGame::UpdateInRaceCallbackMachine(void)
             InRaceMenu_UpdateStateMachineFrame(&g_raceCallbackStorage.machine);
             // OpenCMR2: while the in-race (Esc) menu is open neither the race step nor Race_UpdatePauseState runs, so the live tuning panel
             // never saw a key. Tune from here (visual settings only; the simulation is not advanced) and rebuild view 0's camera.
-            TuningPanel_Update();
+            TuningPanel_NoteSite("esc-menu");TuningPanel_Update();
             if (TuningPanel_PreviewActive()) { View_RefreshForTuning(); Race_ApplySpeedEffectParams(); }
             InRaceMenu_AdvanceScreenEntries(&g_raceCallbackStorage.machine);
             AdvanceCallbackStateTimers(&g_raceCallbackStorage.machine);

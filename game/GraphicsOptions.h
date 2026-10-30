@@ -389,6 +389,10 @@ inline bool WindscreenWiper_Toggle(bool enabled, bool pressed) { return pressed 
 int WindscreenWiperKeyPressed(void);
 void WindscreenWiper_UpdateInput(void);
 void TuningPanel_Update(void);
+// Diagnostics only: names the caller of the next TuningPanel_Update (race step, pause tick, Esc menu) for the tuning log lines. No behaviour.
+void TuningPanel_NoteSite(const char *site);
+// Diagnostics only: the paused scene draw reports itself, once per second at most.
+void TuningPanel_NotePausedDraw(const char *what);
 void View_RefreshForTuning(void);
 void View_GetCameraCarOffset(unsigned view, double *dist, double *fwd, double *side, double *up);
 void Race_ApplySpeedEffectParams(void);

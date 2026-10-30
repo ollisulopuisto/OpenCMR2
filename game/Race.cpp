@@ -3991,7 +3991,7 @@ void Race_UpdatePauseState(CallbackStateMachine *p, BYTE index)
     CInput::UpdateAllAvailableDevices();
     // The race logic step (which normally runs the live tuning panel) does not run while paused: tune from here, once per pause tick.
     // Visual settings only; the simulation is not advanced. Panel keys are already filtered out of the keyboard state read above.
-    TuningPanel_Update();
+    TuningPanel_NoteSite("pause-tick");TuningPanel_Update();
     if (TuningPanel_PreviewActive()) { View_RefreshForTuning(); Race_ApplySpeedEffectParams(); }
     Input_TranslatePedalsToMenuKeys();
     pDev = CInput::GetAvailableDeviceRecord(0);
@@ -4720,7 +4720,7 @@ void Race_UpdateFrameEffects(int param_1)
         }
     }
     WindscreenWiper_UpdateInput();
-    TuningPanel_Update();
+    TuningPanel_NoteSite("race-step");TuningPanel_Update();
     if ((BYTE)RallyData_IsChampionshipFinalStage()) {
         StageObject_UpdateDebris(param_1);
     }
