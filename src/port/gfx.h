@@ -344,6 +344,8 @@ DWORD Gfx_GetFrameDrawCalls(void);
 /* OpenCMR2 diagnostics: ms inside the frame executor and, of that, the swapchain wait, summed since launch. */
 void Gfx_NoteSwapchainWait(double ms);
 void Gfx_GetPresentTimeTotals(double *execMs, double *waitMs);
+/* OpenCMR2 diagnostics: number of Present() calls since launch (monotonic). */
+unsigned long long Gfx_GetPresentCount(void);
 DWORD Gfx_GetFrameVertices(void);
 DWORD Gfx_GetFrameIndices(void);
 DWORD Gfx_GetFrameTriangles(void);

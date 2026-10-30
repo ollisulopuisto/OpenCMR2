@@ -647,11 +647,13 @@ extern "C" void Gfx_EndScene(void)
 
 // OpenCMR2 diagnostics: wall-clock ms inside the frame executor (where the recorded frame is encoded and submitted) and, of that, the wait for
 // the swapchain image, summed since launch. Measurement only; two clock reads per frame.
-static double s_execTotalMs=0,s_waitTotalMs=0;
+static double s_execTotalMs=0,s_waitTotalMs=0;static unsigned long long s_presentCount=0;
+extern "C" unsigned long long Gfx_GetPresentCount(void){return s_presentCount;}
 extern "C" void Gfx_NoteSwapchainWait(double ms){s_waitTotalMs+=ms;}
 extern "C" void Gfx_GetPresentTimeTotals(double *execMs,double *waitMs){if(execMs)*execMs=s_execTotalMs;if(waitMs)*waitMs=s_waitTotalMs;}
 static void Present(BOOL vsync, bool stretch)
 {
+    s_presentCount++;
     s_raceWorld=false;
     s_pendingDust.clear(); // never leak an unflushed view into a later frame
     if (FILE *trace = TraceFile())
