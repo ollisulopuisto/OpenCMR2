@@ -409,3 +409,13 @@ SceneryMotion cstddef fix has its own commit with standalone red/green proof.
 Full build now succeeds; full CTest run is 125/130, with five aborts in
 network, frontend and controller paths (Zig runtime safety checks in unchanged
 code). Those failures are not suppressed and baseline reruns remain needed.
+
+Exact baseline comparison completed: all files changed by this candidate were
+restored to 3861bc9, retaining ONLY the isolated cstddef build prerequisite;
+the same compiler, runtime configuration and five test targets were used. All
+five failures reproduced at the same unchanged code paths. Candidate source
+was then restored and four focused camera tests passed again. The acceleration
+assertion now derives from the actual 800-unit/s^2 integration cap plus 5%
+finite-difference/float tolerance, not an arbitrary margin above one trace.
+That cap is an unvalidated gameplay tuning choice, not physical proof of feel.
+Emergency braking is mathematically continuous but still rapid in the trace.

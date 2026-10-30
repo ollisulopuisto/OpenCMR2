@@ -138,7 +138,11 @@ int main(){
     previous=s.position;
    }
    fprintf(stderr,"dt %.5f max displacement %.3f world acceleration %.1f\n",dt,worstJump,worstAcceleration);
-   CHECK(worstJump<2.f);CHECK(worstAcceleration<850.f); // same acceleration bound across dt, not a 1/dt snap
+   CHECK(worstJump<2.f);
+   // Averaged world-velocity differences cannot exceed the integrated
+   // acceleration contract, aside from 5% finite-difference/float tolerance.
+   // This catches projection snaps; it does not establish a comfortable feel.
+   CHECK(worstAcceleration<=FollowAccelerationLimit*1.05f);
   }
  }
  { // Heading wrap and mirrored left/right turns have the same bounded response.

@@ -4,6 +4,9 @@
 
 namespace CameraOperator {
 inline const char* Label(bool enabled){return enabled?"drone: on":"drone: off";}
+// These are gameplay tuning values, not measured drone physics. Native feel
+// remains an acceptance gate. Exposed here so tests check the actual contract.
+constexpr float FollowAccelerationLimit=800.f;
 inline float Max(float a,float b){return a>b?a:b;}
 inline float Clamp(float x,float a,float b){return x<a?a:x>b?b:x;}
 inline float Wrap(float x){return std::atan2(std::sin(x),std::cos(x));}
@@ -114,7 +117,7 @@ struct State{
    V3 desired=anchor+V3{-std::sin(heading)*distance,height,-std::cos(heading)*distance};
    V3 desiredVelocity=movement+V3{-std::cos(heading)*distance*headingRate,0,std::sin(heading)*distance*headingRate};
    V3 acceleration=(desired-position)*625.f-(velocity-desiredVelocity)*50.f;
-   float n=acceleration.Length();if(n>800.f)acceleration=acceleration*(800.f/n);
+   float n=acceleration.Length();if(n>FollowAccelerationLimit)acceleration=acceleration*(FollowAccelerationLimit/n);
    velocity=velocity+acceleration*h;position=position+velocity*h;
   }
   V3 away=position-car;
