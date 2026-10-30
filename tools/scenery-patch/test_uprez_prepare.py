@@ -4,6 +4,16 @@ from unittest.mock import patch
 from PIL import Image
 import uprez_prepare as u
 class Tests(unittest.TestCase):
+ def test_runtime_metadata_and_stage_coverage(self):
+  import json,re
+  root=Path(__file__).resolve().parents[2]
+  table=(root/'game/UprezSources.inc').read_text();actual=re.findall(r'\{"([0-9a-f]{64})","([^"]+)","([0-9a-f]{64})"\}',table)
+  self.assertEqual(actual,[(r['sha256'],r['output'],r['output_sha256'])for r in u.INDEX])
+  self.assertEqual(len({r['output']for r in u.INDEX}),len(u.INDEX))
+  for archive in ['frahit.bfl','fralot.bfl']:
+   selected=[r for r in u.INDEX if r['archive']==archive and r.get('usage')]
+   self.assertEqual(len(selected),51)
+   self.assertTrue(all(r['repeat']==[False,False]and r['stage']=='fra01'for r in selected))
  def test_source_refusal(self):
   with self.assertRaises(ValueError):u.encode(b'wrong',u.INDEX[0])
  def test_cutout_refusal(self):

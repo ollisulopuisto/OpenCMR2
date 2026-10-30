@@ -386,3 +386,17 @@ an executor stub; that does not establish native GPU appearance or FPS.
 France hi and lo each accept749original material runs,50,868submitted
 triangles,748moving parts. The lone degenerate-axis part remains still.
 This is shallow strip relief, not a solid fully3Dhedge or individual trees.
+
+
+### France1opaque terrain coverage
+
+`--textures=uprez` adds51France1opaque terrain materials, hi and lo:102new
+outputs,288indexed outputs total. Selected from original temp.c3dmaterial
+usage, not every texture in the archive. Source terrain UVs stay in0..1and
+material clamp routing is retained. All new filtering uses explicit edge clamp.
+Bridge/cropped/alpha materials are excluded rather than assumed safe atlases.
+This is2xinterpolation, not AI-restored detail. No geometry, physics or collision
+change. All288outputs pass actual runtime upload/all-mip/stage/identity/reset
+checks with owned originals and stubbed executor. Native appearance/FPS open.
+Runtime manifest limit raised to128KiB because the expanded metadata exceeds
+the former32KiB limit; original bounded read and exact source/output checks stay.

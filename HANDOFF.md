@@ -533,3 +533,22 @@ Finland regression remains785accepted/1nonplanar retained/43,740triangles/
 Private CPU raster of actual submitted France hedge/wall vertices inspected.
 Greece still source-blocked, no repeated ask. All-track/solid reconstruction
 remains open. No human merge, hosted run or release requested.
+
+
+## France1opaque terrain2x follow-up (30 October2026)
+
+Separate off186b527069, no prior pin changed. Actual original France1temp.c3d
+material/UV/alpha inventory found51uncovered opaque terrain materials after
+excluding bridge/cropped/alpha materials. New hi/lo102outputs bring exact-source
+2xmanifest to288. Explicit edge-clamp filtering follows original material clamp
+routing, UV dimensions and originals unchanged. No new detail/physics claim.
+Runtime manifest bound raised32KiBto128KiB: expanded manifest exceeded old bound;
+real upload test caught the all-textures refusal before publication. Added test
+for runtime metadata synchronization, unique output names and51-per-archive
+coverage/policy. Six focused recipe tests pass, full build succeeds and136/141
+normal tests pass with same5baseline Zig aborts. All288owned-source runtime
+uploads/all-mips/stage/identity/reset checks pass, including rectangular terrain.
+Inspected actual uploaded mip0vsoriginal pixels privately, no native GPU claim.
+Original broad644scope not claimed; object/atlas texture coverage, other stages,
+solid geometry and Greece originals remain open. No merges, tags, dispatches,
+releases or artifact writes requested. Exact commands/source PR for human test.

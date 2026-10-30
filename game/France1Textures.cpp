@@ -60,7 +60,7 @@ bool France1Textures_Apply(Texture *texture,const void*bytes,unsigned size){
  if(uprez){for(auto&s:uprezSources)if(hash==s.hash){source=&s;break;}}
  else for(auto&s:sources)if(hash==s.hash){source=&s;break;}if(!source)return false;
  std::filesystem::path root(Sys_GetTextureDirectory());std::vector<char> manifest,raw;
- if(!Read(root/(uprez?"uprez-textures.tsv":"france1-textures.tsv"),manifest,32768))return false;
+ if(!Read(root/(uprez?"uprez-textures.tsv":"france1-textures.tsv"),manifest,131072))return false;
  std::istringstream in(std::string(manifest.begin(),manifest.end()));std::string line;if(!std::getline(in,line)||line!=(uprez?"OPENCMR2-UPREZ-TEXTURES-1":"OPENCMR2-FRANCE1-TEXTURES-1"))return false;
  std::string expected;while(std::getline(in,line)){
   std::istringstream row(line);std::string h,file,digest;if(!std::getline(row,h,'\t')||!std::getline(row,file,'\t')||!std::getline(row,digest))return false;

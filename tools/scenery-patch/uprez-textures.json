@@ -2900,6 +2900,1638 @@
       "output": "bsh_st1f-fralot.rgba",
       "stage": "fra01",
       "output_sha256": "d522ed4306b0dbeff4ab7d0a30d8fce55c5fd074b420eb95770e508d86953e2c"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "tc_1a.dds",
+      "sha256": "7b411b4698fed30e612cf1f52c080c5bbd20ed4e8e0f058793096c2e90b390bb",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "tc_1a-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "c56247adc23fd131ab8cb51d25c45abd07950d4af60b86cb12f90b2177ec33e8"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "tc_1b.dds",
+      "sha256": "87e4e4691a7f1dea8dc2e4f07f910e24ff70cd92e2c10754b4a01944090a10d5",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "tc_1b-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "852e0d16b72e58f3bd728180248c8393752098bc75997966703ea4a302fcdc88"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "gr_1a.dds",
+      "sha256": "8e24d9e94826176aae4bb948b7ce0988cd44004565be41a9fa2edae8c48a00b8",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "gr_1a-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "757de25f4097b92759aee84805266b744e32c2e85e28ca1454030406e6e226b3"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "gr_1b.dds",
+      "sha256": "8b185b791f41d3df5e94b03bddfe73f9a4b375d72602a940663374455e216464",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "gr_1b-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "d7b9fecc7e71d0ffe08640f84f3fbf222a5b860f68281cfdc2cf96cf7a58b6fc"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "gr_mg1c.dds",
+      "sha256": "e2820bf54161f54783972c07768cada9b0349fedb463268d2ac3cd730984bc6c",
+      "bytes": 8320,
+      "width": 64,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "gr_mg1c-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "3a5f00dc52f2e38425715460c6243a99e42c89ddb1b5b3589ef2d05be1266a83"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "gr_mg1d.dds",
+      "sha256": "ac2700c21f77c7422d433da1bf3ab09efb2552004e9b9b82ae22b4c020505e0b",
+      "bytes": 8320,
+      "width": 64,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "gr_mg1d-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "11366202ee07f062dd7ce5dc5222812b282845774e069d48e1d789e78f932862"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "m_mg1a.dds",
+      "sha256": "36ecdaff40128a0fffdcf8744be775540e128a8afeab9c3f425eb528e06065ed",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg1a-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "d617b553306a75e452e582a083b778cdc0557e4d8842823bc2143ec23cae7c28"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "m_mg1b.dds",
+      "sha256": "cd9016c766c10f1b40b652c9a7004d34d3030191ec9fc36ec4fbafb3e16ae8d9",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg1b-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "a3a9f23be1469420e8c2fa4958c1a1b1fbe20f1b981ad22b7703ef9dde87abfd"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "m_mg1c.dds",
+      "sha256": "3953de82c5b3577c1d55c5263f7e97b8df5fe622d365e8fc3afec870e7ba8f47",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg1c-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "67b90ba597b58f33fe3ffe4afe329df4c2b5b24286933d554a6e67be041abc5f"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "tp_1a.dds",
+      "sha256": "80c27859b49f6ec8be6ac45a75f514ea0602098e4d8b773878681d71887b8ecd",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "tp_1a-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "4aaa915246ad6f7d050db20d59b7c70576be2278e6563b7e159e49bb5310c926"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "tp_1c.dds",
+      "sha256": "d82682160e4b644fe03aaf76532028a7ddd1b35d9be11772ebdca7f2e4680dd0",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "tp_1c-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "c1a1934ab3f88bbed4049a4c96cb906ab9074a47ad129144cf8ca55931c976ee"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "tp_1b.dds",
+      "sha256": "e1592a2c88515cce9c4c6f1212b29094f4a8b96cab09276fdf6a31238aaa5ee5",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "tp_1b-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "44e02ae27a9d9cdbf995a1bb3c28b5f29d55d4e9dd76acc74f2ef7167eed7e71"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "tp_1d.dds",
+      "sha256": "dc29a1daffc18cb94a7f28c70af54e4085ff197250b596afd12a79854d7e843c",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "tp_1d-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "8b38b31a84c419a1c92b2ca0f5786d52f6c589b80a14bbfae23e7c9aebcc3e5d"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "tl_1a.dds",
+      "sha256": "a8107f16457cc02415fdba40d890a27edac6859f40de991730d58680bb98f134",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "tl_1a-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "6e5dd538b5712c198aff76234ac5fc666c04bd34675cfd02408cb60287a2a86e"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "tl_1b.dds",
+      "sha256": "c222b2f46bb3bc4551b8c81d2baa413e72d5c8ff633b4d06d98b1225d6c93c55",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "tl_1b-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "d90f6d437da448ea123f9143a68e28ae566f162d8dfbe396bda6b4869f8109b5"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "bk_rk1a.dds",
+      "sha256": "22ff5136c360204451286956827356430ced40ed69f3a5f6387041c46af3c935",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bk_rk1a-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "e2df3312e95ce9c489a3125315bad2de02128700fcdfea45873e008f7270ab00"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "bk_rk1b.dds",
+      "sha256": "15f31f3f61672778ac3ba83cbd9ed0e58f4d6da7cd122a160a04dd012d9e182d",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bk_rk1b-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "d8cd2458c143e3a26fe91cfd22c065b8bf8fd7bcc00ac5cf0db2b370e547dc0b"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "bk_rk1c.dds",
+      "sha256": "5c0d784967f151a606e930d8fc754c6e927dc52969011d5d4dfd187b620cd838",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bk_rk1c-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "384bce2a6ba626778b1a9ab0b31ee3e921bc1fa05574a0a0ca50275bbc483d82"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "bk_gr1a.dds",
+      "sha256": "a78999bdce90956c5546b688c7b2916760e820f738efc4e23770e0668136239d",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bk_gr1a-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "44702bcbe06ebf40b28e9e3972c15bde26cf8d6c260df0af9be686941eb3f65c"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "bk_gr1b.dds",
+      "sha256": "bafe1e8888c984a53cef4d29659fea8a477ff5287c6915cd880e9a5a24707ab5",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bk_gr1b-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "9bcc3aacd4cdf462ac8069067deb7385de21f43262a07f4280c9e10017af54e0"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "bk_gr1c.dds",
+      "sha256": "102557dc9937bf9b0d3a87454af90be746181136a252730b8bf501436129b744",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bk_gr1c-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "c844354c72c37f00ca13fea4c245b1f041fed5e225be5993b9160773464f8c46"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "gr_rk1pa.dds",
+      "sha256": "b1f6310ca5e3b3560f5e9faad9058db0bef4c48155d261accc301167072651cc",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "gr_rk1pa-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "f7c280b1e16825e0e143a2ff72d885a57230f45284fce8a3c60eb2557d770571"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "gr_rk1pb.dds",
+      "sha256": "6d67abc85e3d87eb4c4c76ed4ac9153ad605f2caa1579f2a1473ad0736b99fb1",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "gr_rk1pb-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "60e9f40ed11d665309f95b34e4eafccae4342cecb2a830c82b8ffd4d4912114e"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "ttm_1a.dds",
+      "sha256": "13a1be928b349a3212c6b27d4753b7b3bcc0f940b9e5eb183015c622b00a87d0",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ttm_1a-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "5d8ced46a6ae066f780bce19ef5bc042bc685a9a36ce481e8c0a9040b22615a2"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "ttm_1b.dds",
+      "sha256": "119ce2ba7394ae5d75ae2278e0b657e9af569668adb2ef69cba50a4c107bfb9e",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ttm_1b-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "43a48d19c8031d03909b338ddf6f2c82b3cae45f95b2c663fad66e3b98c22eb6"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "m_mg2b.dds",
+      "sha256": "7dbf6e129932e732840aa3aef2484ddd5baa3f41d89f455fe9e2639dd489c7fe",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg2b-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "1d547a991e3c7f4bb5a31a7802daa2d2fa3716aa43db58700ba1357f1c8ff78e"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "m_mg2c.dds",
+      "sha256": "83abd72f802973e2e24d2686b54a7157edeeb2c49a401bc59e37568f347521d4",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg2c-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "ca479094c81b209332ad963d54f4d9a95ba54c6aa4b012916e72d79a8005aded"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "m_mg1m.dds",
+      "sha256": "438bdb0aeafeea0cd38a779cf5a8fe25355739f3b91d4c52857115a00d87e8f2",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg1m-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "47a8395d89f236348360f48146a6109c5b32e964e5ec7a8891857b8f14d90d07"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "m_mg1e.dds",
+      "sha256": "9719d0b11d496cb78ad6015648cbea6749eea2ba8ec9a3b5187f488fc9aa711c",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg1e-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "5bc6ae1e712c7a8f8b1dc40790b118e4393b8f48fa51fd61ccf2a29740141842"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "m_mg1f.dds",
+      "sha256": "fe4c79d5c37d84d8e92f01bd07e0ca392a6895e2946eaf248813288817449817",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg1f-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "3d6b2b18c40e539224a0af58e735cbd24b1b7a0e08d0f479398f858491745469"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "m_mg1g.dds",
+      "sha256": "1a5bbde5a671d208bfa56a4538d7ebfca7c85b2946ac8d6d68a6c2419ff3e9dd",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg1g-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "a073935463f3734715d1939fd80dfdbe617275f6bfb4c74c5c80eb2abf205e0a"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "m_mg1n.dds",
+      "sha256": "c5e8c9b8473d342e83439ca8b2e95217813015dd336f12d3ec58c5b2c75fa0c7",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg1n-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "96b6f6b6c13440133a049d86ebc960d9386839c89da29a03fa5e2486a4f3bd8a"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "m_mg1o.dds",
+      "sha256": "5769ad95948d376052df3045403ed3b9456bdeb339679284bda054d366a8de7d",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg1o-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "b7ca9fc1be77b3fe50b7efa4a7ad42b418b2f3e4043c1bb4b93aa04d2350cdf8"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "m_mg2a.dds",
+      "sha256": "36a8741e339c2c8f165132a834066d6c34d29076c9e5855e7b59c27afb94d719",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg2a-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "cb4a35d4c7438ff925501cb256c27eef9adcff7e76b580ee69a5e1d8b94cbba9"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "m_sdea.dds",
+      "sha256": "8b3d1f15d695848943b6e4604c4b36552c287ebb6f3c9989ac9eac22c90e8273",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_sdea-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "218bf4ec3636a5d8ccc9455c3f63c8ba7792986b8f982679388157c0fa6d978b"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "m_sded.dds",
+      "sha256": "77b6f03c06fd8613348cc3583a8ba43c5e0f2bdcc09f1be47420106a41e71974",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_sded-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "86efc071ac8ea4f8780466af750d7cc6fb5af453c63ed5230391fb572a5106f0"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "m_sdec.dds",
+      "sha256": "8e76135450c64baa51c6f648699464d7bf6b4a2ed5f02705d73285282eee7cea",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_sdec-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "ebc8404c5ed252cb687c336d092a1236b21e5cb05b66b3759f4d18b0dd365ce8"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "gr_md2pb.dds",
+      "sha256": "151f0633b6a4cb5bd5d2ca631a3335ab80e5ad9525d9452a5adb460c1ea1e3ae",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "gr_md2pb-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "097a58d6fa685cc0b4b9d59bf26bba734b26e42a586ed6d0378205376e608754"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "rk1_gr1a.dds",
+      "sha256": "0002e84965aa93f4ef0a7eeb887339e0d5d4ae054ced1cca58147dd2a4188d30",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rk1_gr1a-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "518d22d14d19e6d3a1e12085a402df46fefda82f7fedfec5777b88d883104fe7"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "rk1_gr1b.dds",
+      "sha256": "2e8fd0299a40bfdca381f8bd13f6f0c6c180e71c674108c3d4dfaf2b71f2039e",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rk1_gr1b-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "57889e648b0e5e8c2561d7749088ace08c21639fda73d885b0cc19b824fe0603"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "rk1_gr1c.dds",
+      "sha256": "130499a4a5e069ccb1edca9eaf5509df0d933175a0b4618a2d4a33aa7d9c704d",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rk1_gr1c-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "737d93e12220a8f489e081e9f970edc37f48412472072f8858865b57c2c25219"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "rk1_gr1d.dds",
+      "sha256": "b8b755a920a6d23b5cc984e3da3a91b662400ef8f7d407444b3d3dcd9c2ad77b",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rk1_gr1d-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "5dc361e185104ef953e2329bf03219d147e8de4fbf559f8c898231cc3b8c6ca0"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "rk_1a.dds",
+      "sha256": "30df34f1b909b9aed6f6f834d17c3fb48990323ddf0da08a89f626f85a92557a",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rk_1a-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "50e9a5510659e171e2014285ed67e3b9006af0db43c34e5ecce6d076a49bc239"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "rk_1b.dds",
+      "sha256": "373bc9017d904f4d1b5600c946589d7330aa1caf3634680cf8bd35c06c17425d",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rk_1b-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "20015f12561bb11fb781dec29683a0876cddda56364142f07c3b5ca1d6f5c30d"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "rk_1c.dds",
+      "sha256": "f8fd85479ec647fa5ab7ff1941aee3c71e13ec8a629218f20d9746d491d20cd5",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rk_1c-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "f420d4cb3295b3c018b4154a1c784230b586e4ee6a0dc15d75e4c0362594f186"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "rk_1d.dds",
+      "sha256": "3b1014ebdae55439a0b17b1ad88c4b513fc164fdb7623d4e296af0a0a40ccf28",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rk_1d-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "d503614b36e4e319a5caa5d7c4bee9ff7147d513ada413a499aa39de589730a6"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "gr_md2pa.dds",
+      "sha256": "967625ec1c92b0348bbbe7e8210b9074a47a42741b2b566ee457eb369ba4689b",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "gr_md2pa-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "7680f8e9c362c5c351d6a18dabec47600ebfaaf5721a12d4eda2b3b7e13deb37"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "m_mg2e.dds",
+      "sha256": "5fcb9d288cd4740cc923a46cdcc83e6ec0278699a0737b4bc57d051525950ca7",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg2e-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "1bb28ac5e2eb88e7519b60d384fcba9050dfbe98f6752cdb53d4f87c0bff97e3"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "bk_wla.dds",
+      "sha256": "5aff34d31d4293867f0914dc8fe4b2dcbbf55eccd9c0e63d70b0ad3c7b2cf73f",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bk_wla-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "75dc4ce8d9ff40f86325b346d1c793743991fb76c7cdbd506940f93f33da527d"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "bk_wlc.dds",
+      "sha256": "dd0d2cf061d25f159c4f8aabc895d401a6bf216800a07e52625ffb9694121742",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bk_wlc-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "9ee842a0130b1be0135be3a8c08817447c3ef0769bd8651cc23b90007783f395"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "bk_wlb.dds",
+      "sha256": "09d3db84456cee671c1cc605fe225d8e8ef7ab3ec1f9731a2ac73416cba17292",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bk_wlb-frahit.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "bf2b161599d8257a73c95ceaca1d91c8c862a6ecba6e6169ff69175acde75bfd"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "tc_1a.dds",
+      "sha256": "b64a9e92a9fdc5a3b1b887ae6549105393fd28be3389886e5fcf9425098b3b54",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "tc_1a-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "1d275b45057a3d71d39f114bfe14773d165cfc85394f6f1e8bb0d4bdc082e219"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "tc_1b.dds",
+      "sha256": "516dd90eb48c27c35ded940ead8f3d7f48df3d48ee1dc14e0ec8a411e2aaf5ba",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "tc_1b-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "22dd9cd66324998ae0ed9a1fa49f63695f69b59788551782ed59720e522cd6c3"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "gr_1a.dds",
+      "sha256": "0987f47f9eed57b6256c12a491e9492517a964f12008faf5bd0daf6953d88ff8",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "gr_1a-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "e2a6f785245b4afc366d0ccfad0cad6e2c8e851ec7bb992be74a1002b8343acc"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "gr_1b.dds",
+      "sha256": "aee4236cb7886518b5dc1911ec5114ec71df97d4f543538144954181261b31d5",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "gr_1b-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "11a64da83e40af22468f64299a6727eb2a8027e101ae41718c05d266f85106c6"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "gr_mg1c.dds",
+      "sha256": "233dc38658db0cabcee8414d1354c39203f192b05f9f791002acfa45454b0deb",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "gr_mg1c-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "63a73b986c2c16e04862d6d50df1ae5163c2852eb18f9904f2b0d3a7f756edb7"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "gr_mg1d.dds",
+      "sha256": "9033e837d0b3124e1772833cecc9c4d260d13c98f515946d469378eb9218ea3e",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "gr_mg1d-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "7d6ba1f3f4609e7290d9d0647ea2648e5cb0b2836c40c44ba809b82cb1d6ae49"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "m_mg1a.dds",
+      "sha256": "9b850b8123e14abc331c3d4e6a99937605eb7fed62ef5aabc4d44981cd4c6388",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg1a-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "60d3a28bc4ce69a080dd57d62dab5a189b262a1a66a6cc5c964c7b19dfecfeff"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "m_mg1b.dds",
+      "sha256": "a8b6b39386337113d49be898676d51716b5c11555d6cc2765d50b00aaa9979cf",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg1b-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "a16782356a35310da352b4e102df399c2fab7de60483a31e33015bf17dd562f2"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "m_mg1c.dds",
+      "sha256": "ab81324927b05c710aa0b377910b5adf76461d497ecd2c8fff499491cfd417a4",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg1c-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "58bfa173b88e6cf5595bfa926637142c8096c6dc33d3cc856e32c5edfbf6de0b"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "tp_1a.dds",
+      "sha256": "d1e0ee2ed50ea7d32cfec265daad1246100a7603d368e53538fb8ae47344009a",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "tp_1a-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "94b1b5741e4f0c085e151f4c6025aa89968f2f93d6ce29497aa21e66811d6115"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "tp_1c.dds",
+      "sha256": "47ecbbdaaedd20b7a05b08c27a3a19980cb42f139f25662de4cc2b94b813d97f",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "tp_1c-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "988812866ce71f5c7f26c4f512a9b2fcbc049b9576b4e2a2392b515051a77e2d"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "tp_1b.dds",
+      "sha256": "2685b63e8e4b0282b296f03eb177d6d0a82b3faa390ba7bda27b341e78e04ab3",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "tp_1b-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "c30621701a911b6f838de323aa004c4a12b5cbb5eb04051e3a01f1275eb91cc1"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "tp_1d.dds",
+      "sha256": "71226354f28f60eb06b9f2abd09bb88fbd16e52ee238e4f90d116a455d50e45b",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "tp_1d-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "a6d6894ee5237040836e78b1dd7d3ba7e7bf8074d9ceb75ac7f82424e4deb665"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "tl_1a.dds",
+      "sha256": "1ae56b9728681b6d3318064dbb3f666e428802573240d46d812fb10055f219c2",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "tl_1a-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "0e20ec27dbe013ff18cabfa9cea59c9f359286efcdcfd04adc67654b473a1841"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "tl_1b.dds",
+      "sha256": "efa8dfd1825b62adf0191aaaaf4bb9910839a17064df2d3fbc907d6a207d995d",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "tl_1b-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "bd212e0afba0f6935e76452918755edf89771e3fe640549e7ddc3e01ca576cb7"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "bk_rk1a.dds",
+      "sha256": "038f54727a94f8b410541ce1cab4f527c8145b3139321cfb20eaa18ee960d834",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bk_rk1a-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "d31fccdea044cbdca3a000fd5fe344621f84b7204c13d155e356576d22a976c9"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "bk_rk1b.dds",
+      "sha256": "e43491ab7f13f067ba858d675ee11a370d464cc1082e1caffbc8c5bc6d17b536",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bk_rk1b-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "cecaee0a7b04d5203a07168b859d8d10f3d7688cdca19c81ef6e0ca50f79d570"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "bk_rk1c.dds",
+      "sha256": "c5dac6546d75107baeb09fa924a664ae2c9008cce09e8252d8ff9914d5500e90",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bk_rk1c-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "60c959943ead56d51957863e68985d56677527a5b26bb29e9d20ccee118899f3"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "bk_gr1a.dds",
+      "sha256": "dc36d85ee284f64449fe7c2f9dfc3a3f0c179a63b5d7addcc6c3b5643655cf05",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bk_gr1a-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "686f0a49f211bbc298d583e397981710709765e21aa4323413cf5a9ee28f3fc5"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "bk_gr1b.dds",
+      "sha256": "d5302bd31c73df48a197e596fda6662cded483e2b20c56d016e4edf16de1e84d",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bk_gr1b-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "07c6932a16024cf357ff44447da50e5ec2fec320bc08fa5226d4572bdcef3134"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "bk_gr1c.dds",
+      "sha256": "a553ddbd416e814303a892c20c03020d697e1480c94b9c294a6bebada7552af1",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bk_gr1c-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "0265e6a55a9570bba15eaf1ded8824c79c3046c5626419e5e020aa87ebb8dff9"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "gr_rk1pa.dds",
+      "sha256": "8c775ae4ea66430baea49e89f93430cf9a3461294a5f4ff506f70dbc7c4cff1e",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "gr_rk1pa-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "8853ef7523bbf6a0c9043ec21ca4262bd924ab30c5b94576da0299393c8c5b7e"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "gr_rk1pb.dds",
+      "sha256": "37b390348b5a211a783b8d519473f5915c357b22c81e78bfea1cf73d6d937b68",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "gr_rk1pb-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "e7c0ffa8951690729e263f83ade596b82b2fa8426b9e8c5be9417eec4e506ee6"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "ttm_1a.dds",
+      "sha256": "f2b96c0961ae2984f9eeb271b64befed0051979968588f1bb7f8fe77b2e1d338",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ttm_1a-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "7a58e3520388986d1d92da25d77168ad961417e77c6c1d876137d5f3f76dca80"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "ttm_1b.dds",
+      "sha256": "74e3577d3d99b8ad227b7b97bb0cdc98ef62b71b0e2a99b334b4f255371a80d4",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "ttm_1b-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "7ca839ad6c068b2d41a204cb82528d6220a50e29528b997228a45bd6a4461e6a"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "m_mg2b.dds",
+      "sha256": "8019e2f1d42e2443ba718c9a64cad2051339b1e413bcbbd793f9435bd4dde545",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg2b-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "1c924a4f347225dc33d69e362ea44c5ff1de80d82117b2178065945ef926a724"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "m_mg2c.dds",
+      "sha256": "f38683c7faa953252216847a3aac23aa58ea4832bd02d547a343e158d337e484",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg2c-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "aaf8ed58132c95a54b272f2d527bd34584097e403bf1723696d7d3e28164eb33"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "m_mg1m.dds",
+      "sha256": "d66d8a9346f9992189d43b1e7a73a0047250df56021d84f3e4aaafed38783203",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg1m-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "ab211cb001f1e39b2202db783da6b0f0158cc0fdd62f27bbee6ff8b50dc119d1"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "m_mg1e.dds",
+      "sha256": "85629d3242d5c098359072fa10904422fa14d5ec927c2765f815cafe252cef33",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg1e-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "d4324929c6bfd1d3b7977dbb99d292ae65aaa21dd052a8f48d83a03e4e7cda53"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "m_mg1f.dds",
+      "sha256": "5e4b0d5d8f870980bb9d56a128feeaa63a924b5ddbad7b4c7e28c023d527ef8c",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg1f-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "32b81c9e8d069f88ab158be4fce98592e560c868a208e889a0a5b4ae16551e40"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "m_mg1g.dds",
+      "sha256": "d211f8c795c7374bd6eed426409ee55bb15e6a5cc5ef2b8ebf2bb9b8f0380973",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg1g-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "2f919bba9ce41e90bbb0a597dec5fb4567c6e5b58a38f7829387c0eb81652b31"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "m_mg1n.dds",
+      "sha256": "ea3e063b9ae0deff54e14869c11eadda4cb9ea2fee63fa9351f1327077cb806d",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg1n-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "733b516d4c1d0e626c31a1498e1c647f220a944fd8f706f4ebddfce2a23e3ca2"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "m_mg1o.dds",
+      "sha256": "14b52683389ef104d9136423d74bf21322f6cf8151d97c59e5467bc6feb565c5",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg1o-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "52ef5711eb004c4f80ee3d5d9416ecac5793277c95df300532f64b9ef87cfddb"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "m_mg2a.dds",
+      "sha256": "2bbf000ded14e138e89e3e826e983d65fa75a74e799e3e1d04c1cea9156cf013",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg2a-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "3a4df9e77c3a70894c97eee5dbe22ea2f64860610c83e4f6948057c8dd44af5b"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "m_sdea.dds",
+      "sha256": "6581799ed8ef8d404ba2263ffb126b2c3823c441f333ce85e51faca7379d6ff8",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_sdea-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "ed19a376060323e6b509fe17bdaccc29729e90a06a76ced098f74f71dab96a48"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "m_sded.dds",
+      "sha256": "be9b627ad59c784a34f0af331a7eac791da8758a429e52006d07b6394b471751",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_sded-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "1bbf9c52c67ca098ebe7aa8a834ecba22de59f0e57aef24b39d280a91852771d"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "m_sdec.dds",
+      "sha256": "8919497ec01a0e36675c95395bda05a8ba15396cb0a74db49e4a79186e290b3a",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_sdec-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "999e33e783109d1d1c2255f54545d01434422cb6ac9d5047a961cd904b482b2c"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "gr_md2pb.dds",
+      "sha256": "d4434f3eb916ec6f7bbbe4c908c06e6e1b0adf07bcfb92265a5ff7f63e0007b9",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "gr_md2pb-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "40f440109d9ae86c781f82f03c5be3f7804f4a8e65695a7f6ec6ec61dae85d8d"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "rk1_gr1a.dds",
+      "sha256": "7be31b0895e1204e370ad89da76b9df6badc75821a69e3ecafbfcf214270d768",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rk1_gr1a-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "e606b1c1cf3090104ca4f058bf3ff3471e3130d9b84360c1c480442ba97720c9"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "rk1_gr1b.dds",
+      "sha256": "886e05f75415469142bdc9bab05245f3b75610a109797f806d3b56601fb85a72",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rk1_gr1b-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "c03a3a2d605250fc93c689eafc29a5d339a045c34016c0f5eb638f2a6c5cff17"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "rk1_gr1c.dds",
+      "sha256": "59716a29b969b1699fe9df4353e34ec01c7d9f9134608ba0206a2aeeb2b42c64",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rk1_gr1c-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "1f8c022a870469721f21461fd39cd69a2fff39cc151022dd37b736f69d9dd63d"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "rk1_gr1d.dds",
+      "sha256": "ba681647a904451bac4e7d97e2e77153d73bafd3bccdcf6c6057303a8c2bb54d",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rk1_gr1d-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "875c104f9de2b20c5707a639a0066a4abe46b5a4ce1faee8f69fdc79027b48ef"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "rk_1a.dds",
+      "sha256": "a23fecbc0e775d7f8aff06a54959fad10ce1e1adb31f7fd60323474674c3b039",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rk_1a-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "50c76bba576a00cfa3e696aeeeb9085f37f2484d231b1259a45540c6cbad4eeb"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "rk_1b.dds",
+      "sha256": "0fdacfdf288b5bb436345093b441e8365cbeb7e64018739110340a99e0ff9e3f",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rk_1b-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "e2b4995abe1e787671c35d57e7fee4c9847c17479580b074cd8a16346442a967"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "rk_1c.dds",
+      "sha256": "7abef3395543f92bc38318737fc738c2f3ee86d39d1b1f07f733d805c9203797",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rk_1c-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "a21fe059896b175aff827760334b0851a383b75a26366826e3c750fdc747fb02"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "rk_1d.dds",
+      "sha256": "34de788c29aa10c279b571f844ff31a5cab4e6f723933cb001924902a0254c3b",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rk_1d-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "d40c1990affc4296a3879857a7ff1d9ee37ba49889d59927e34f75d6fcbccafb"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "gr_md2pa.dds",
+      "sha256": "242739ba243680557845fa6df6e4c66314d7bab9d55156385c4facd2c6533a32",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "gr_md2pa-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "a75aa7506b8118c151f539a28e0665cc9620bfcfb3a634ba47511fdd90f15e23"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "m_mg2e.dds",
+      "sha256": "82a0b8b824e8966f7eb74364b4db2a43249f1993fd07279df965afa7e4085ef5",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "m_mg2e-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "adcb27c8426477c88fc757d772c66b1bf6db78fb2598c269dcbf18e36cb1faa6"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "bk_wla.dds",
+      "sha256": "aa28c2d38c81780d9371c99a8e2158eeb4464ae6de90c51790042c3f555b4c5c",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bk_wla-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "941a6fe0f1c7b37504ddfadb7973551113506281884a37256f0209d5b53f7f11"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "bk_wlc.dds",
+      "sha256": "3b156271019f5158bd70c976e1ca897b30a7de86f35099d75dec542004d734b0",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bk_wlc-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "b972c0b506c7659248472549994c318855e3ce85802dddb02cac930a0bc26489"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "bk_wlb.dds",
+      "sha256": "434b708af548ac6ecdb6c30ea5c3843dbb550355f295d1a4b21cb706e0515483",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bk_wlb-fralot.rgba",
+      "stage": "fra01",
+      "usage": "original France1 temp.c3d full-canvas opaque terrain material; original terrain draw clamp policy",
+      "output_sha256": "c7aeb1bae05979979085277536df6031b23c0350f9600e05527a3c2212d366e3"
     }
   ]
 }
