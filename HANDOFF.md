@@ -579,3 +579,17 @@ all338digests regenerated/reviewed and runtime upload/all-mip/stage/reset tested
 11helper tests pass. Full application build,136/141CTest with5same known Zig
 baseline aborts. Native ARM/gameplay/FPS still unverified. This repair targets
 main338directly;190opaque-object expansion stays separate and unchanged.
+
+## Native frontend camera readout lifetime crash (31 October2026)
+
+User ARM report pins crash to View_GetCameraCarOffset Car.cpp8419, via debug
+readout during frontend challenge scene after world replacement. Null-only
+Car_Getchecks permit stale freed slots/unspawned matrix pointers. Presentation
+lookup now checks current buffer/count, exact slot membership and embedded
+physicsMatrix identity before reading. Also guards adjacent speed-FOV/move
+presentation readers. No legacy allocator/physics/source geometry changes.
+Regression uses freed pointer poison, exact reported invalid pWorld, new table
+before spawn, smaller replacement allocation and both valid views. Old main
+aborts the regression on invalid-pointer dereference (Zig null-page check);
+repair passes. Full build and137/142CTest,
+same5baseline Zig aborts. Native Mac stage transition retest still pending.

@@ -8405,12 +8405,25 @@ void View_RefreshForTuning(void)
     CameraState_Copy(VIEW_STATE(index), pActive);
 }
 
+// Presentation-only lookup. Car_FreeTable leaves legacy slot pointers behind,
+// and a new table can be visible before spawn initializes its matrix pointer.
+// Never inspect a stale slot or follow an uninitialized pWorld from an overlay.
+static Car *View_GetLivePresentationCar(unsigned view)
+{
+    if (view >= 2 || !g_carBuffer || g_carCount <= 0 || g_carCount > 40 ||
+        view >= (unsigned)g_carCount) return nullptr;
+    Car *expected = g_carBuffer + view;
+    if (g_cars[view] != expected) return nullptr;
+    if (expected->pWorld != &expected->physicsMatrix) return nullptr;
+    return expected;
+}
+
 // OpenCMR2 debug overlay: camera position relative to the car, measured this frame, in world units, along the car body matrix axes
 // (forward is the matrix forward axis, + ahead of the car, - behind). dist is the straight distance.
 void View_GetCameraCarOffset(unsigned view, double *dist, double *fwd, double *side, double *up)
 {
     BYTE v = (BYTE)(view & 1);
-    Car *car = Car_Get(v);
+    Car *car = View_GetLivePresentationCar(view);
     *dist = *fwd = *side = *up = 0;
     if (!car || !car->pWorld) return;
     double d[3] = {(double)(VIEW_STATE(v)->matrix.position.x - car->position.x) / 65536.0, (double)(VIEW_STATE(v)->matrix.position.y - car->position.y) / 65536.0, (double)(VIEW_STATE(v)->matrix.position.z - car->position.z) / 65536.0};
@@ -8521,7 +8534,7 @@ int View_SpeedFovZoom(BYTE view, int zoom)
     if (pct <= 0 || view >= 2) { shown[view & 1] = 0; return zoom; }
     if (pct > kSpeedFovMaxPct) pct = kSpeedFovMaxPct;
     if (View_IsDroneCamera(view)) { shown[view] = 0; return zoom; }   // no speed FOV in the drone; the eased value is reset so the dolly and readouts see no widening
-    Car *car = Car_Get(view);
+    Car *car = View_GetLivePresentationCar(view);
     int target = SpeedFov_HeldTarget(SpeedFov_Target(car ? car->speed : 0), Sys_GetOption("video.speed_fov_hold", 0));
     double now = Sys_GetTicksPrecise();
     int elapsed = lastMs[view] == 0.0 ? 1000 : (int)(now - lastMs[view]);
@@ -8553,7 +8566,7 @@ int View_CameraMoveStep(int cameraType, int view)
         setting = CameraMove_Effective(Sys_GetOption(tk, kCamMoveUnset), Sys_GetOption(key, 0));
     }
     if (setting == 0) return 0;
-    Car *car = Car_Get(view & 1);
+    Car *car = View_GetLivePresentationCar((unsigned)view);
     int ratio = SpeedFov_HeldTarget(SpeedFov_Target(car ? car->speed : 0), Sys_GetOption("video.speed_fov_hold", 0));
     return (int)((long long)setting * 0xCCC * ratio / 65536);
 }
