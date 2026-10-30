@@ -368,3 +368,21 @@ and physics vertices remain untouched. Generated positions and wind stay within 
 bounds, leaving existing culling bounds unchanged; native culling, appearance and performance
 remain unverified. Use `--trees original` to retain original strip geometry,
 `--tree-wind off` for static relief, or `--textures original` to retain originals.
+
+
+### France1hedges/tree walls
+
+The France1follow-up adds exact original `temp.sht` material runs for
+`bsh_st1a-f`, `tre_w2a-d` and `tre_wla`. Most source quads are nonplanar, so their two ORIGINAL triangle domains and diagonal are retained.
+No plane fitting or original-edge flattening: only barycentric subdivision,
+small bounded relief and fixed-perimeter wind. Warped-quad support is allowed
+only after the exact France source-position/UV hash gate; unknown/cropped or
+malformed quads still refuse. Finland retains its strict planar rule.
+
+Twelve France hedge texture variants and six barbed-wire fence variants bring
+the exact-source texture total to186. Fences remain texture-only. All186have
+actual runtime upload/all-mip comparisons against owned hi/lo originals with
+an executor stub; that does not establish native GPU appearance or FPS.
+France hi and lo each accept749original material runs,50,868submitted
+triangles,748moving parts. The lone degenerate-axis part remains still.
+This is shallow strip relief, not a solid fully3Dhedge or individual trees.

@@ -573,7 +573,7 @@ are not downloaded without `--install-enhancement-deps`.
 ### Private fixed-strip / fence follow-up
 
 `--asset-upgrades` also prepares exact-source2x forest-strip and wooden-fence
-cutouts. Finland1matching forest material runs gain bounded visual relief and
+cutouts. Finland1forest and France1hedge/tree-wall material runs gain bounded visual relief and
 optional wind without changing collision/driving; fences get texture filtering
 only. See `tools/scenery-patch/README.md` for coverage and rollback flags.
 Source interpolation adds no new artwork detail. Native appearance/FPS remain
