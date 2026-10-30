@@ -22,8 +22,20 @@ def run(argv):
     subprocess.run([str(x) for x in argv], check=True)
 
 
-def recipe_key(mode):
+def extras_args(all_trees, gain):
+    # Only non-default experimental options add converter flags; the default recipe stays byte-identical to before.
+    out = []
+    if all_trees:
+        out.append('--all-trees')
+    if gain != 1.0:
+        out += ['--animation-gain', str(gain)]
+    return out
+
+
+def recipe_key(mode, all_trees=False, gain=1.0):
     h = hashlib.sha256(mode.encode())
+    for extra in extras_args(all_trees, gain):
+        h.update(extra.encode())
     for name in FILES:
         h.update((HERE / name).read_bytes())
     return h.hexdigest()[:16]
@@ -65,7 +77,7 @@ def inventory(folder):
     return result
 
 
-def prepare(data, cache, mode, install=False):
+def prepare(data, cache, mode, install=False, all_trees=False, gain=1.0):
     data = data.resolve(strict=True)
     if cache.is_symlink():
         raise ValueError("Symlink cache is not supported")
@@ -76,12 +88,13 @@ def prepare(data, cache, mode, install=False):
     if cache.is_symlink():
         raise ValueError('Symlink cache is not supported')
     command = python_command(cache, install)
-    key = recipe_key(mode)
+    key = recipe_key(mode, all_trees, gain)
+    extra = extras_args(all_trees, gain)
     pack = cache / ('scenery-' + mode + '-' + key)
     # Always reverify original archives, even when a cached derived pack exists.
     # check-only requires new/empty output, so use an absent path inside a temp.
     with tempfile.TemporaryDirectory(prefix='.verify-', dir=cache) as tmp:
-        run(command + [HERE / 'convert.py', '--input-dir', data, '--output-dir', Path(tmp) / 'unused', '--tree-geometry', mode, '--check-only'])
+        run(command + [HERE / 'convert.py', '--input-dir', data, '--output-dir', Path(tmp) / 'unused', '--tree-geometry', mode] + extra + ['--check-only'])
     if pack.is_symlink():
         raise ValueError("Symlink pack is not supported")
     if pack.exists():
@@ -96,7 +109,7 @@ def prepare(data, cache, mode, install=False):
         # Converter already stages atomically, then make helper completion atomic too.
         with tempfile.TemporaryDirectory(prefix='.prepare-', dir=cache) as tmp:
             stage = Path(tmp) / 'pack'
-            run(command + [HERE / 'convert.py', '--input-dir', data, '--output-dir', stage, '--tree-geometry', mode])
+            run(command + [HERE / 'convert.py', '--input-dir', data, '--output-dir', stage, '--tree-geometry', mode] + extra)
             (stage / 'prepared.json').write_text(json.dumps({'recipe': key, 'files': inventory(stage)}, sort_keys=True))
             # Never replace an existing destination, including a concurrent generation.
             if pack.exists():
@@ -176,6 +189,8 @@ def main():
     ap.add_argument('--cars')
     ap.add_argument('--mods-dir', type=Path)
     ap.add_argument('--install-deps', action='store_true')
+    ap.add_argument('--all-trees', action='store_true')
+    ap.add_argument('--animation-gain', type=float, default=1.0)
     args = ap.parse_args()
     try:
         data = args.input_dir.resolve(strict=True)
@@ -189,7 +204,7 @@ def main():
                 raise ValueError('--cars requires --mods-dir with owned ZIPs')
             prepare_cars(args.mods_dir, cache, args.cars)
         elif args.mode:
-            prepare(data, cache, args.mode, args.install_deps)
+            prepare(data, cache, args.mode, args.install_deps, args.all_trees, args.animation_gain)
         else:
             raise ValueError('No preparation mode selected')
     except (OSError, ValueError, subprocess.CalledProcessError) as e:

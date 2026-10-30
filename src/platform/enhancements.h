@@ -9,6 +9,7 @@ struct EnhancementOptions {
     std::string captureDir;int captureInterval=5,captureCount=7;
     std::string trees, spectators, names, cars, modsDir, carNames, roads, textures;
     bool installDependencies=false,prepareOnly=false;
+    std::string treeCoverage;int spectatorGain=100;   // experimental pack options: --tree-coverage reviewed|all, --spectator-gain 100..400 (percent)
     std::string testPreset;
     std::map<std::string,int> overrides;
     bool Consume(int &i,int argc,char **argv,std::string &error) {
@@ -18,7 +19,7 @@ struct EnhancementOptions {
         if(equal!=key.npos){inlineValue=key.substr(equal+1);key.resize(equal);}
         if(equal==key.npos && key=="--prepare-only"){prepareOnly=true;return true;}
         if(equal==key.npos && key=="--install-enhancement-deps"){installDependencies=true;return true;}
-        if(key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect"&&key!="--attract-capture"&&key!="--capture-interval"&&key!="--capture-count"&&key!="--speed-fov"&&key!="--speed-motes-stretch"&&key!="--speed-motes-amount"&&key!="--speed-motes-size"&&key!="--dof-blur-max-px"&&key!="--speed-streak"&&key!="--speed-hold"&&key!="--cockpit-eye-shift"&&key!="--camera-move-chase"&&key!="--camera-move-cockpit"&&key!="--camera-move-car"&&key!="--fov-dolly-curve"&&key!="--tire-debris"&&key!="--tire-track-length"&&key!="--tire-track-history"&&key!="--camera-move-type"&&key!="--fov-preview"&&key!="--dof-focus-car"&&key!="--test-preset")return false;
+        if(key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect"&&key!="--attract-capture"&&key!="--capture-interval"&&key!="--capture-count"&&key!="--speed-fov"&&key!="--speed-motes-stretch"&&key!="--speed-motes-amount"&&key!="--speed-motes-size"&&key!="--dof-blur-max-px"&&key!="--speed-streak"&&key!="--speed-hold"&&key!="--tree-coverage"&&key!="--spectator-gain"&&key!="--cockpit-eye-shift"&&key!="--tree-coverage"&&key!="--spectator-gain"&&key!="--camera-move-chase"&&key!="--camera-move-cockpit"&&key!="--camera-move-car"&&key!="--fov-dolly-curve"&&key!="--tire-debris"&&key!="--tire-track-length"&&key!="--tire-track-history"&&key!="--camera-move-type"&&key!="--fov-preview"&&key!="--dof-focus-car"&&key!="--test-preset")return false;
         if(equal==std::string::npos && i+1>=argc){error="Missing value for "+key;return true;}
         std::string value=equal==std::string::npos?argv[++i]:inlineValue;
         if(key=="--textures"){if(value!="original"&&value!="france1")error="--textures expects original or france1";else textures=value;}
@@ -26,6 +27,8 @@ struct EnhancementOptions {
         if(key=="--tree-wind"){if(value!="on"&&value!="off")error="--tree-wind expects on or off";else overrides["video.tree_wind"]=value=="on";}
         if(key=="--car-names"){if(value!="original"&&value!="skin")error="--car-names expects original or skin";else carNames=value;}
         if(key=="--trees") {if(value!="original"&&value!="shell"&&value!="crossed")error="--trees expects original, shell or crossed";else trees=value;}
+        if(key=="--tree-coverage"){if(value!="reviewed"&&value!="all")error="--tree-coverage expects reviewed or all";else treeCoverage=value;}
+        if(key=="--spectator-gain"){char *end=nullptr;long n=strtol(value.c_str(),&end,10);if(value.empty()||*end||n<100||n>400)error="--spectator-gain expects 100..400";else spectatorGain=(int)n;}
         if(key=="--spectators"){if(value!="original"&&value!="animated")error="--spectators expects original or animated";else spectators=value;}
         if(key=="--driver-names"){if(value!="original"&&value!="real"&&value!="sidecar")error="--driver-names expects original, real or sidecar";else names=value;}
         if(key=="--effect"){
@@ -127,6 +130,9 @@ inline const char *EnhancementHelp(){return
 "                              Prepare/cache selected experimental tree mode\n"
 "                              Only3high-source mappings; shell is tiered;\n"
 "                              crossed is fixed cutouts, not full3Dtrees\n"
+"  --tree-coverage reviewed|all Experimental: all 64 individual trees + 10 bushes, adaptive crown/stem\n"
+"                              (default reviewed = the 3 mappings); needs --trees shell|crossed; native unverified\n"
+"  --spectator-gain 100..400   Experimental: percent of spectator sway/arm swing (default 100); needs --spectators animated\n"
 "  --textures original|france1 Exact-source France1 opaque road2x filter\n"
 "                              Only t_1a/b high+low; not restored detail\n"
 "                              Other stages stay original; native unverified\n"

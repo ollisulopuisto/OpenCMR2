@@ -145,6 +145,14 @@ class PrepareTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'Incomplete'):
                 p.prepare_cars(mods, self.cache, 'one')
 
+    def test_experimental_options_change_recipe_only_when_set(self):
+        base = p.recipe_key('shell')
+        self.assertEqual(base, p.recipe_key('shell', False, 1.0))
+        self.assertNotEqual(base, p.recipe_key('shell', True, 1.0))
+        self.assertNotEqual(base, p.recipe_key('shell', False, 2.0))
+        self.assertNotEqual(p.recipe_key('shell', False, 2.0), p.recipe_key('shell', False, 3.0))
+        self.assertEqual(p.extras_args(False, 1.0), [])
+        self.assertEqual(p.extras_args(True, 2.5), ['--all-trees', '--animation-gain', '2.5'])
 
 if __name__ == '__main__':
     unittest.main()

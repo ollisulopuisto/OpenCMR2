@@ -7,14 +7,33 @@ import numpy as np,math,json
 # Full-canvas source-fit contract. No restored artwork is bundled or fetched.
 TREE_CANDIDATES={('frahit.bfl','tre_md1'),('frahit.bfl','tre_md4'),('finhit.bfl','tre_fir1')}
 root=None
-def tree(a,rel):
+def crown_profile(alpha):
+ # Species-independent crown/stem split from the alpha mask alone. A row is crown while it is at least 22% as wide as the widest row;
+ # everything below the last such row is stem. Returns (crown_bottom fraction, last opaque row).
+ h=alpha.shape[0];widths=(alpha>=128).sum(axis=1);opaque=np.where(widths>0)[0]
+ if len(opaque)<4:raise ValueError('Empty source alpha')
+ wide=np.where(widths>=max(2,0.22*widths.max()))[0]
+ return float(min(.95,max(.45,(wide.max()+1)/h))),int(opaque.max())
+
+def is_sparse(alpha):
+ # Sparse crowns (conifers, thin birches): less than half of the crown's bounding box is opaque. A smooth shell would be mostly holes,
+ # so these use the crossed-plane form, which keeps the source branches intact.
+ cb,_=crown_profile(alpha);crown=alpha[:round(alpha.shape[0]*cb)]>=128
+ cols=np.where(crown.any(0))[0];ys=np.where(crown.any(1))[0]
+ if len(cols)<2 or len(ys)<2:return True
+ return crown.sum()/((cols.max()-cols.min()+1)*(ys.max()-ys.min()+1))<.50
+
+def tree(a,rel,adaptive=False):
  name=Path(a['texture']).stem;src=Image.open(a['path']).convert('RGBA');a=np.array(src);h,w=a.shape[:2];p=root/rel;p.mkdir(parents=True,exist_ok=True)
  # Source projection, not circumference repetition. Source alpha is retained.
  crown_bottom=.74 if name.startswith('tre_md') else .88
+ last_row=round(h*.94)
+ if adaptive:crown_bottom,last_row=crown_profile(a[:,:,3])
  cut=round(h*crown_bottom)
  # Opaque stem-only texels; no nearest-fill transparency or ground colors.
  bark=[]
- for y in range(round(h*.78),round(h*.94)):
+ bark_rows=range(min(cut+2,last_row-2),max(cut+3,last_row-1)) if adaptive else range(round(h*.78),round(h*.94))
+ for y in bark_rows:
   ix=np.where(a[y,:,3]>=220)[0];ix=ix[(ix>w*.3)&(ix<w*.7)]
   if len(ix)<2:continue
   center=int(np.median(ix));half=max(1,min(3,len(ix)//4));row=a[y,max(0,center-half):center+half+1];row=row[row[:,3]>=220]
@@ -27,6 +46,10 @@ def tree(a,rel):
   ix=np.where(a[y,:,3]>=128)[0]
   if len(ix):rows.append((y,ix.min(),ix.max()+1))
  if len(rows)<2:raise ValueError("Insufficient crown silhouette "+name)
+ if adaptive and len(rows)>=5:
+  # Smooth the silhouette so tiered branches become one shell, not a stack of discs; the source alpha still cuts the holes.
+  lo_s=np.convolve(np.pad([r[1] for r in rows],2,mode='edge'),np.ones(5)/5,mode='valid');hi_s=np.convolve(np.pad([r[2] for r in rows],2,mode='edge'),np.ones(5)/5,mode='valid')
+  rows=[(r[0],int(round(l)),int(round(hh))) for r,l,hh in zip(rows,lo_s,hi_s)]
  extent=w
  verts=[]
  for y,lo,hi in rows:
@@ -59,7 +82,8 @@ def tree(a,rel):
   atlas[iy,:,:3]=np.clip(rgb*255,0,255).astype('uint8');atlas[iy,:,3]=np.clip(alpha*255,0,255).astype('uint8')
  Image.fromarray(atlas).save(p/'crown.tga')
  # Stem diameter measured from source opaque pixels, capped at 6% source width.
- stemwidth=min(w*.06,np.median([np.sum(a[y,:,3]>=220) for y in range(round(h*.82),round(h*.90))]))
+ stem_rows=range(min(cut+2,last_row-2),max(cut+3,last_row-1)) if adaptive else range(round(h*.82),round(h*.90))
+ stemwidth=min(w*.06,np.median([np.sum(a[y,:,3]>=220) for y in stem_rows]))
  radius=max(.005,stemwidth/extent*(w/h)/2);stemtop=1-crown_bottom+.035
  for j in range(8):
   t=j*math.tau/8;v=(j+1)*math.tau/8;q=[(radius*math.cos(t),0,radius*math.sin(t)),(radius*math.cos(t)*.7,stemtop,radius*.7*math.sin(t)),(radius*math.cos(v)*.7,stemtop,radius*.7*math.sin(v)),(radius*math.cos(v),0,radius*math.sin(v))];uv=[(0,0),(0,1),(1,1),(1,0)];nm=(math.cos((t+v)/2),0,math.sin((t+v)/2))
@@ -128,7 +152,7 @@ def articulated_spectator(src):
  d.polygon([(86,14),(86,11),(89,10),(91,12),(89,15)],fill=(58,50,43,255))
  poses=[]
  for angle in [0,10,20,10]:
-  im=base.copy();im.alpha_composite(arm.rotate(angle,resample=Image.Resampling.BICUBIC,center=(68,14)));poses.append(im)
+  im=base.copy();im.alpha_composite(arm.rotate(gained(angle),resample=Image.Resampling.BICUBIC,center=(68,14)));poses.append(im)
  return poses
 
 # Authored masks are normalized to the original128pxFranceatlases.
@@ -300,6 +324,11 @@ FINLAND_LIMBS = {'spc_ma02': {'angles': [0, -7, -14, -7],
                           [117, 41]]}}
 FOREGROUND_LIMBS.update(FINLAND_LIMBS)
 FOREGROUND_LIMBS.update(EXPANDED_LIMBS)
+ANIM_GAIN=1.0  # --animation-gain: scales the spectators' sway distance and arm swing angle; 1.0 is the reviewed original
+
+def gained(angle):
+ return max(-110.0,min(110.0,angle*ANIM_GAIN))
+
 def foreground_limb_poses(src,name):
  original_size=src.size
  if src.size!=(128,128):src=src.resize((128,128),Image.Resampling.NEAREST)
@@ -331,7 +360,7 @@ def foreground_limb_poses(src,name):
    points,color=plates[name];ImageDraw.Draw(base).polygon(points,fill=color)
   poses=[]
   for angle in r['angles']:
-   im=base.copy();im.alpha_composite(arm.rotate(angle,resample=Image.Resampling.BICUBIC,center=tuple(r['pivot'])));poses.append(im)
+   im=base.copy();im.alpha_composite(arm.rotate(gained(angle),resample=Image.Resampling.BICUBIC,center=tuple(r['pivot'])));poses.append(im)
  return [im.resize((original_size[0]*2,original_size[1]*2),Image.Resampling.NEAREST) for im in poses]
 
 def spectator(a,rel):
@@ -345,7 +374,12 @@ def spectator(a,rel):
  # Subtle upper-body sway: original cutout remapped, lower 30% and feet fixed. No invented limbs.
  yy,xx=np.mgrid[:h,:w]
  for i in range(12):
-  weight=np.clip((.70-yy/h)/.70,0,1)**2;dx=np.rint(math.sin(i*math.tau/12)*max(1,w*.009)*weight).astype(int);sx=xx-dx;ok=(sx>=0)&(sx<w);out=np.zeros_like(ar);out[ok]=ar[yy[ok],sx[ok]];path=p/f'frame-{i:02}.tga';Image.fromarray(out).save(path,compression=None);frames.append(str(rel/path.name))
+  weight=np.clip((.70-yy/h)/.70,0,1)**2;dx=np.rint(math.sin(i*math.tau/12)*max(1,w*.009)*ANIM_GAIN*weight).astype(int);sx=xx-dx;ok=(sx>=0)&(sx<w)
+  sy=yy
+  if ANIM_GAIN>1.0:
+   # Above gain 1 the sway-only people also bob: the upper body rises and settles twice per loop (lower 30 percent and feet stay put), so a pure shear is not the only motion.
+   lift=np.rint(abs(math.sin(i*math.tau/12*2))*h*.012*(ANIM_GAIN-1.0)*np.clip((.70-yy/h)/.70,0,1)).astype(int);sy=yy+lift;ok&=(sy<h)
+  out=np.zeros_like(ar);out[ok]=ar[sy[ok],sx[ok]];path=p/f'frame-{i:02}.tga';Image.fromarray(out).save(path,compression=None);frames.append(str(rel/path.name))
  return frames
 
 def read_archive(path, name, index):
@@ -393,8 +427,12 @@ def main():
  ap.add_argument('--input-dir',type=Path,required=True)
  ap.add_argument('--output-dir',type=Path,required=True)
  ap.add_argument('--tree-geometry',choices=['shell','crossed'],default='shell',help='Experimental fixed cutout alternative; neither mode has native visual acceptance')
+ ap.add_argument('--animation-gain',type=float,default=1.0,help='Experimental: multiply spectator sway distance and arm swing angle (1.0 to 4.0, default 1.0 = unchanged); not native-verified')
+ ap.add_argument('--all-trees',action='store_true',help='Experimental: also convert every other individual tree texture (adaptive crown/stem; not native-verified). Default keeps the 3 reviewed mappings.')
  ap.add_argument('--check-only',action='store_true',help='Verify originals without creating output')
  args=ap.parse_args()
+ if not 1.0<=args.animation_gain<=4.0:ap.error("--animation-gain expects 1.0..4.0")
+ global ANIM_GAIN;ANIM_GAIN=args.animation_gain
  global root
  root=args.output_dir.resolve();inp=args.input_dir.resolve()
  if not inp.is_dir():ap.error('Input must be an existing directory.')
@@ -427,6 +465,10 @@ def main():
     source=Path(tmp)/archive/leaf;source.parent.mkdir(exist_ok=True);source.write_bytes(data[key]);a['path']=str(source)
     if rec.get('category')=='individual-tree' and (archive,Path(leaf).stem) in TREE_CANDIDATES:
      asset=(crossed_tree if args.tree_geometry=='crossed' else tree)(a,Path('trees')/rel);rows.append('\t'.join(['tree',archive,leaf,asset,'','1']));status='source-fitted-interpolated'
+    elif rec.get('category')=='individual-tree' and args.all_trees:
+     # Every other individual tree: crown/stem split from its own alpha. Sparse crowns use crossed planes, dense ones the smoothed shell.
+     sparse=args.tree_geometry=='crossed' or is_sparse(np.array(Image.open(a['path']).convert('RGBA'))[:,:,3])
+     asset=crossed_tree(a,Path('trees')/rel) if sparse else tree(a,Path('trees')/rel,adaptive=True);rows.append('\t'.join(['tree',archive,leaf,asset,'','1']));status='adaptive-crossed' if sparse else 'adaptive-shell'
     elif rec.get('category')=='spectator':
      frames=spectator(a,Path('spectators')/rel);rows.append('\t'.join(['spectator',archive,leaf,frames[0],','.join(frames),'6' if len(frames)==4 else '5']));status='articulated-forearm' if len(frames)==4 else 'upper-body-sway'
     else:status='retained-original'
