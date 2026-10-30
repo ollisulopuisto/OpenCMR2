@@ -1356,5 +1356,75 @@
     "height": 64,
     "kind": "spectator",
     "category": "spectator"
+  },
+  "finhit.bfl/bsh_01.dds": {
+    "sha256": "b2c31a10c81dc220a5d10c032a76c432119a5a605a3ae2aaa9347082f25164a1",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-bush"
+  },
+  "finhit.bfl/bsh_02.dds": {
+    "sha256": "f73b6f4b47a43f93757c86baa86a96db152a29d0af73ae5cebcce0115c193952",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-bush"
+  },
+  "finhit.bfl/shr_01.dds": {
+    "sha256": "8bc3b055a059b44eaf3db512ae435da4f689c53c0c065f568e875c621c3560e9",
+    "width": 128,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-bush"
+  },
+  "finhit.bfl/shr_02.dds": {
+    "sha256": "12201af977ef2159a06c35e9b6a1f0e91a46f882fdd46757a13ea125a515565e",
+    "width": 256,
+    "height": 256,
+    "kind": "tree",
+    "category": "individual-bush"
+  },
+  "frahit.bfl/bsh_md1a.dds": {
+    "sha256": "5d4bb07c692a13f398f0bdae31ee059d9dd779e1c8d21bed1b193c588fb7bda1",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-bush"
+  },
+  "frahit.bfl/bsh_md2a.dds": {
+    "sha256": "f51489e16e4d21db6e6722a33cb3c7a62c1d6724eb0260644aa32dc20bff28f0",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-bush"
+  },
+  "frahit.bfl/bsh_md3.dds": {
+    "sha256": "9888377112af7b48911e17715fea28161ed3b4baaec4b58dc3c5f99961f49ce1",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-bush"
+  },
+  "frahit.bfl/bsh_md4a.dds": {
+    "sha256": "78543829e700662d92b9e78084c9376a8a7513889f3a58c05bdd1f23de8156f4",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-bush"
+  },
+  "frahit.bfl/bsh_pn1a.dds": {
+    "sha256": "f587279fbd1383e77f3540569e4dd70aa5ec351e060410c104ba1390c35d8ae8",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-bush"
+  },
+  "frahit.bfl/bsh_pn2.dds": {
+    "sha256": "161def6c4505d230076ee5275c06dd3a98b67caef9dfac767c496d35094f2ca5",
+    "width": 128,
+    "height": 128,
+    "kind": "tree",
+    "category": "individual-bush"
   }
 }

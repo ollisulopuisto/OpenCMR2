@@ -465,7 +465,7 @@ def main():
     source=Path(tmp)/archive/leaf;source.parent.mkdir(exist_ok=True);source.write_bytes(data[key]);a['path']=str(source)
     if rec.get('category')=='individual-tree' and (archive,Path(leaf).stem) in TREE_CANDIDATES:
      asset=(crossed_tree if args.tree_geometry=='crossed' else tree)(a,Path('trees')/rel);rows.append('\t'.join(['tree',archive,leaf,asset,'','1']));status='source-fitted-interpolated'
-    elif rec.get('category')=='individual-tree' and args.all_trees:
+    elif rec.get('category') in ('individual-tree','individual-bush') and args.all_trees:
      # Every other individual tree: crown/stem split from its own alpha. Sparse crowns use crossed planes, dense ones the smoothed shell.
      sparse=args.tree_geometry=='crossed' or is_sparse(np.array(Image.open(a['path']).convert('RGBA'))[:,:,3])
      asset=crossed_tree(a,Path('trees')/rel) if sparse else tree(a,Path('trees')/rel,adaptive=True);rows.append('\t'.join(['tree',archive,leaf,asset,'','1']));status='adaptive-crossed' if sparse else 'adaptive-shell'
