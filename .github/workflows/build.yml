@@ -2,7 +2,6 @@ name: build
 
 on:
   push:
-    branches: [main]
     tags: ['v*']
     paths-ignore:
       - 'docs/**'
@@ -27,6 +26,7 @@ concurrency:
 jobs:
   # 32-bit x86 reference build on the same Ubuntu LTS as native Linux.
   linux-x86:
+    if: github.event_name != 'pull_request'
     timeout-minutes: 45
     runs-on: ubuntu-24.04
     env:
@@ -66,11 +66,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - runner: ubuntu-24.04
-            arch: x86_64
-          - runner: ubuntu-24.04-arm
-            arch: arm64
+        # PRs get one Linux check; tags/manual retain both release architectures.
+        include: ${{ fromJSON(github.event_name == 'pull_request' && '[{"runner":"ubuntu-24.04","arch":"x86_64"}]' || '[{"runner":"ubuntu-24.04","arch":"x86_64"},{"runner":"ubuntu-24.04-arm","arch":"arm64"}]') }}
     runs-on: ${{ matrix.runner }}
     steps:
       - run: |
@@ -87,18 +84,21 @@ jobs:
       - run: cmake --build --preset linux
       - run: ctest --timeout 120 --preset linux
       - name: Package
+        if: github.event_name != 'pull_request'
         run: |
           python3 tools/package_release.py --binary build/linux/src/opencmr2 \
             --library build/linux/src/libSDL3.so.0 \
             --license build/linux/_deps/sdl3-src/LICENSE.txt \
             --output dist/OpenCMR2-Linux-${{ matrix.arch }}.tar.gz
       - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
         with:
           name: OpenCMR2-Linux-${{ matrix.arch }}
           path: dist/*
           if-no-files-found: error
 
   macos:
+    if: github.event_name != 'pull_request'
     timeout-minutes: 60
     runs-on: macos-14
     steps:
@@ -124,6 +124,7 @@ jobs:
           if-no-files-found: error
 
   windows:
+    if: github.event_name != 'pull_request'
     timeout-minutes: 60
     runs-on: windows-2022
     steps:
@@ -160,6 +161,7 @@ jobs:
           if-no-files-found: error
 
   android:
+    if: github.event_name != 'pull_request'
     timeout-minutes: 90
     runs-on: ubuntu-24.04
     steps:
