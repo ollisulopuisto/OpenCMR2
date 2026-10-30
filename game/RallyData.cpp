@@ -6016,6 +6016,7 @@ void RallyData_DrawProjectedChallengeScene(int param1, int param2)
     // OpenCMR2: camera effects — dirt on the lens and a sun lens flare,
     // drawn over the finished frame ([video] video.camera_effects).
     CameraEffects_DrawOverlays(rect);
+    TuningPanel_NotePausedDraw("challenge scene (fixed projection)");
     TuningPanel_DrawPaused();
     Graphics_PresentFrameAndResetCounters();
 }
@@ -6060,8 +6061,19 @@ static int TuneGet(const TuningRow &r)
     char k[40]; int t = TuneCamType(); TuneCamKey(t, k, sizeof k);
     return CameraMove_Effective(Sys_GetOption(k, kCamMoveUnset), Sys_GetOption(CameraMove_FamilyKey(t), 0));
 }
+static const char *g_tuneSite = "?";
+void TuningPanel_NoteSite(const char *site) { g_tuneSite = site; }
+void TuningPanel_NotePausedDraw(const char *what)
+{
+    static double last = 0;
+    double now = Sys_GetTicksPrecise();
+    if (now - last < 1000.0) return;
+    last = now;
+    Sys_Log("tuning diag: draw %s (tuning engaged=%d open=%d, race menu open=%d)", what, (int)TuningPanel_PreviewActive(), (int)TuningPanel_IsOpen(), (int)CGameInfo::IsInRaceMenuOpen());
+}
 static void TuneSet(const TuningRow &r, int v)
 {
+    Sys_Log("tuning diag: set %s=%d from %s (race menu open=%d)", r.key, v, g_tuneSite, (int)CGameInfo::IsInRaceMenuOpen());
     if (!TuneIsCamMove(r)) { Sys_SetOptionTemporary(r.key, v); return; }
     char k[40]; TuneCamKey(TuneCamType(), k, sizeof k); Sys_SetOptionTemporary(k, v);
 }
@@ -6095,6 +6107,10 @@ extern "C" double Sys_GetTicksPrecise(void);
 void TuningPanel_Update(void)
 {
     ++g_tuneFrame;
+    {   // Diagnostics: log once when the calling site changes while tuning is engaged, so a pause entry point that never reaches the panel shows in the log.
+        static const char *lastSite = nullptr;
+        if (g_tuneEngaged && lastSite != g_tuneSite) { lastSite = g_tuneSite; Sys_Log("tuning diag: panel update now called from %s (open=%d mode=%d)", g_tuneSite, (int)g_tuneOpen, g_tuneMode); }
+    }
     int count = 0;
     const TuningRow *rows = Tuning_Rows(count);
     if (g_tuneEdges.Edge(0, Input_IsKeyDown(TuningPanel_ToggleKey()) != 0)) { g_tuneMode = (g_tuneMode + 1) % 3; g_tuneOpen = g_tuneMode == 1; g_tuneEngaged = true; }
@@ -6536,7 +6552,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         BYTE colour[4] = {240, 246, 255, 255};
         unsigned long long tick=0;unsigned frame=0,changes=0;
         bool spectator=SceneryPack_GetAnimationStatus(&tick,&frame,&changes);
-        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?4:3)+11+5+2+5);   // +5: the Speed FOV, FOV dolly, FOV preview and footer rows were drawn below the panel in the 12:04 native screenshot (panel ended at "Measured")
+        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?6:5)+11+5+2+5);   // +5: the Speed FOV, FOV dolly, FOV preview and footer rows were drawn below the panel in the 12:04 native screenshot (panel ended at "Measured")
         short panel[4] = {(short)layout.x,(short)layout.y,(short)layout.width,(short)layout.height};
         Sprite_FillRect(NULL, panel, background, 1);
         char text[96];
@@ -6548,11 +6564,24 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             snprintf(text,sizeof(text),"Crowd tick %llu | frame %u | changes %u",tick,frame,changes);
             Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+2*layout.line,layout.font,layout.width-2*layout.pad,colour);
         }
+        {   // Per-frame scenery counts (differences of running totals; counts, not timing).
+            static unsigned long long pcd=0,pct=0,ptt=0,ptu=0;unsigned long long cd=0,ct=0,tt=0,tu=0;
+            SceneryPack_GetFrameTotals(&cd,&ct,&tt,&tu);
+            snprintf(text,sizeof(text),"This frame: crowd %llu cards %llu tris | trees %llu tris, %llu rustled verts",cd-pcd,ct-pct,tt-ptt,tu-ptu);
+            pcd=cd;pct=ct;ptt=tt;ptu=tu;
+            Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?4:3)*layout.line,layout.font,layout.width-2*layout.pad,colour);        }
+        {   // Wall-clock ms spent in the scenery sidecar draws last frame (diagnostic build), next to the frame time.
+            static unsigned long long prn=0,ptn=0,pcl=0;unsigned long long rn=0,tn=0,cl=0;
+            SceneryPack_GetTimeTotals(&rn,&tn,&cl);
+            snprintf(text,sizeof(text),"Scenery CPU ms: all %.2f (whole trees %.2f) %llu calls | frame %.1f ms",(tn-ptn)/1e6,(rn-prn)/1e6,cl-pcl,Graphics_GetFrameRate()>0?1000.0/Graphics_GetFrameRate():0.0);
+            prn=rn;ptn=tn;pcl=cl;
+            Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?5:4)*layout.line,layout.font,layout.width-2*layout.pad,colour);
+        }
         unsigned treeDraws=0,windDraws=0,originalTrees=0;
         SceneryPack_GetTreeStatus(&treeDraws,&windDraws,&originalTrees);
         snprintf(text,sizeof(text),"Tree draws %u | wind %u | original %u",treeDraws,windDraws,originalTrees);
         Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?3:2)*layout.line,layout.font,layout.width-2*layout.pad,colour);
-        int row=spectator?4:3;
+        int row=spectator?6:5;
         auto line=[&](const char*s,const BYTE*c=nullptr){Font_DrawTextScaled(1,(char*)s,layout.x+layout.pad,layout.y+layout.pad+row++*layout.line,layout.font,layout.width-2*layout.pad,(BYTE*)(c?c:colour));};
         for(int i=0;i<3;i++)line(Sys_GetLaunchSummary(i));
         GfxEffectStatus status=Gfx_GetEffectStatus();
@@ -6638,18 +6667,18 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         int sp = 0, sh = 0; SpeedFov_GetStatus((int)param2, &sp, &sh);
         int eff = View_CameraMoveStep(vt, (int)param2);
         const char *name = vt == 3 ? "COCKPIT" : vt == 2 ? "BONNET" : (vt >= 4 && vt <= 6) ? (dr && vt == 5 ? "CHASE (DRONE VARIANT)" : "CHASE") : vt == 1 || vt == 10 ? "CAR-MOUNTED (UNNAMED IN SOURCE)" : "UNNAMED IN SOURCE";
-        char big[5][96];
-        snprintf(big[0], 96, "CAMERA %s  type %d", name, vt);
-        snprintf(big[1], 96, "FOV %.1f deg vert, %.1f horiz (measured)", vd, hd);
-        snprintf(big[2], 96, "Widening x%.2f (speed FOV %d%%, speed %d%%)", sp > 0 ? 1.0 + (sp > 150 ? 150 : sp) * (sh / 65536.0) / 100.0 : 1.0, sp, sh * 100 / 65536);
-        snprintf(big[3], 96, "Camera vs car: FWD/BACK %+.2f  side %+.2f  up %+.2f  (dist %.2f)", cf, cs, cu, cd);
-        snprintf(big[4], 96, "+ ahead, - behind. Manual move %+.2f", eff / 65536.0);
-        int bigFont = std::clamp((int)g_pGraphics->resY / 32, 20, 44), bigLine = bigFont + bigFont / 3, pad = bigFont / 2;
-        int bw = (int)g_pGraphics->resX * 56 / 100, bx = (int)g_pGraphics->resX * 2 / 100, by = (int)g_pGraphics->resY * 52 / 100;
-        short bp[4] = {(short)bx, (short)by, (short)bw, (short)(5 * bigLine + 2 * pad)};
-        BYTE bbg[4] = {0, 0, 0, 215}, bfg[4] = {255, 236, 90, 255}, bwhite[4] = {255, 255, 255, 255};
+        // Compact: three short lines at the debug text size, bottom-left, clear of the right-hand panel and the speedometer.
+        char big[3][112];
+        snprintf(big[0], 112, "Camera %s type %d | FOV %.1f v %.1f h", name, vt, vd, hd);
+        snprintf(big[1], 112, "Widening x%.2f (speed FOV %d, speed %d)", sp > 0 ? 1.0 + (sp > 150 ? 150 : sp) * (sh / 65536.0) / 100.0 : 1.0, sp, sh * 100 / 65536);
+        snprintf(big[2], 112, "Fwd(+)/back(-) %+.2f side %+.2f up %+.2f dist %.2f | move %+.2f", cf, cs, cu, cd, eff / 65536.0);
+        int bigFont = std::clamp((int)g_pGraphics->resY / 64, 14, 24), bigLine = bigFont + bigFont / 4, pad = bigFont / 2;
+        int bw = (int)g_pGraphics->resX * 46 / 100, bx = (int)g_pGraphics->resX * 2 / 100;
+        int bh = 3 * bigLine + 2 * pad, by = (int)g_pGraphics->resY - bh - (int)g_pGraphics->resY * 3 / 100;
+        short bp[4] = {(short)bx, (short)by, (short)bw, (short)bh};
+        BYTE bbg[4] = {0, 0, 0, 170}, bfg[4] = {255, 236, 90, 255}, bwhite[4] = {255, 255, 255, 255};
         Sprite_FillRect(NULL, bp, bbg, kTuneOverlayLayer);
-        for (int k = 0; k < 5; ++k) Font_DrawTextScaled(1, big[k], bx + pad, by + pad + k * bigLine, bigFont, bw - 2 * pad, k == 0 ? bfg : bwhite, kTuneOverlayLayer);
+        for (int k = 0; k < 3; ++k) Font_DrawTextScaled(1, big[k], bx + pad, by + pad + k * bigLine, bigFont, bw - 2 * pad, k == 0 ? bfg : bwhite, kTuneOverlayLayer);
     }
     CarDamage_UpdateOrderedCarsOffRoadState(pOrder, (short)orderCount, g_viewScreenRect, maskedView);
     if (CGameInfo::GetGameModeOptionBit19() != 0) {

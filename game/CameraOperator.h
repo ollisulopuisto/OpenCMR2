@@ -57,7 +57,7 @@ struct State{
   if(!pullbackReady){pullback=wantedPull;pullbackReady=true;}
   pullback+=(wantedPull-pullback)*(1-std::exp(-dt/1.3f));
   distance=Clamp(distance*pullback,7.f,17.f)*distanceScale; // distanceScale: user knob, 1 = default
-  distance=Clamp(distance,4.f,26.f);usedDistance=distance;height=Clamp(height*(1.f+.2f*(pullback-1.f)),6.f,11.f);
+  distance=Clamp(distance,4.f,26.f);usedDistance=distance;height=Clamp(height*(1.f+.2f*(pullback-1.f)),6.f,11.f);height*=.5f+.5f*Clamp(distanceScale,0.f,1.f);
   bool roadValid=road&&road->valid;
   // Actual upcoming route geometry, not steering or car yaw, raises the
   // operator before a corner. Descend more slowly when preview straightens.
@@ -81,7 +81,7 @@ struct State{
    // Outside the upcoming bend opens the view. Right-hand bend -> left of
    // route, even while the car is sliding with the opposite body heading.
    V3 right={road->tangent.z,0,-road->tangent.x};
-   desired=desired+right*(-Clamp(road->bend*9.f,-6.f,6.f));
+   desired=desired+right*(-Clamp(road->bend*9.f,-6.f,6.f)*Clamp(distanceScale,0.f,1.f));
   }
   // Second-order world-space chase. Never re-add car position at draw time.
   V3 acceleration=(desired-position)*4.f-velocity*4.f;

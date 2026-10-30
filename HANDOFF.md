@@ -367,3 +367,7 @@ No profile/save migration. BothGL/Metalruntimefoundationshumanmerged69. Actual
 menu-coordinateillustrationinspected, notnativeatlas. Lensoverlaysretainexisting
 projectedchallengepath, nofalsegameplayclaim. Auto-weather/autofocus/reflection
 blend/distance+shadowgroupingnotinthischeckpoint; see docs/EFFECT-AMOUNTS.md.
+## Session checkpoint (PRs #137-#145)
+Merged to main, all source-only and not native-verified on the Mac: #137 camera readout, per-type camera move, F10 panel, tyre debris, tyre-track length/history; #138 `--all-trees`, `--tree-coverage`, `--spectator-gain`; #139/#140 bush index entries; #141 test-only CI fix; #142 F10 panel drawn on sprite layer 3 (layer 4 draws before the 3D scene); #143 `--tree-rustle 0..300` (default 100) and `--spectator-irregular 0|1` (default 1), texture-coordinate shift only.
+#144 caches the crowd mesh template (counts logged, no timing claim). Bush converter path: no stem when the source canopy reaches the ground, crossed planes for the Finland leaf-strip bushes.
+Open: whole-stage tyre-track persistence, Hi/Lo and other-rally exporter coverage, bsh_st1/forest/hedge strips, drone FPS profile (needs native profile), curved-road generalisation, native confirmation of #137/#142/#143, macOS CI never started.
