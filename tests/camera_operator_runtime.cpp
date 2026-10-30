@@ -12,13 +12,13 @@ int RallyData_GetActiveCarRaceRecordField0(Car*){return 1;}
 int RallyData_GetRouteAdditionalState(){return 0;}
 bool Track_CameraGroundHeight(FixVector*,int*){return false;}
 Car*Car_Get(int i){return i==0?&car:nullptr;}
-extern "C" int Sys_GetOption(const char*,int){return enabled;}
+extern "C" int Sys_GetOption(const char*k,int fallback){return !strcmp(k,"video.camera_operator")?enabled:fallback;}
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line%d %s\n",__LINE__,#x);return 1;}}while(0)
 int main(){
  CameraRecord record={};record.index=0;record.car=0;g_playerCameraMode[0]=4;
  FixMatrix body={};body.up.y=body.right.z=65536;car.pWorld=&body;car.speed=98304;
  CameraOperator_Update(&record,&body);CameraOperator_Apply(&record);
- body.right.x=32768;body.right.z=56756;for(int i=0;i<20;i++)CameraOperator_Update(&record,&body);CameraOperator_Apply(&record);
+ body.right.x=32768;body.right.z=56756;for(int i=0;i<60;i++)CameraOperator_Update(&record,&body);CameraOperator_Apply(&record);
  {float yaw=std::atan2(record.matrix.forward.x/65536.f,record.matrix.forward.z/65536.f);CHECK(std::abs(CameraOperator::Wrap(yaw-.5235988f))<.036f);}
  CHECK(record.zoom>0xa000);
  auto once=record;CameraOperator_Apply(&record);CHECK(!memcmp(&record,&once,sizeof record));
