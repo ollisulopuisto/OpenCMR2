@@ -6155,6 +6155,86 @@ void TuningPanel_Update(void)
     }
     if (changed) EffectSettings::Apply();
 }
+// OpenCMR2 replay controls (keyboard): , slower  . faster  / pause  Tab next camera. Active only while player 0's stream is playing back.
+// The recorded controls still run through the unchanged physics; only the time that feeds the step count is scaled (Car.cpp).
+#include "ReplayControls.h"
+#include "ReplayStream.h"
+int Race_GetPlayerRecordField4(BYTE index);
+int View_GetActiveCameraMode(BYTE index);
+BYTE View_GetActiveCameraFlags(BYTE index);
+void View_SwitchCamera(BYTE view, int type, int param, BYTE target, int blend);
+int View_FindFreeModeSlot(unsigned char view);
+ReplayStream *Race_GetPlayerRecordPointer(int index);
+static ReplayControls g_replayControls;
+static TuningEdges g_replayEdges;
+bool ReplayControls_Active(void) { return Race_GetPlayerRecordField4(0) != 0; }
+float ReplayControls_TimeScale(void) { return ReplayControls_Active() ? g_replayControls.Scale() : 1.0f; }
+// A replay key is usable when it is not a default driving/menu key and not bound to a driving action on an attached keyboard.
+static bool ReplayKeyUsable(int key)
+{
+    if (!Tuning_ToggleKeyAllowed(key)) return false;
+    for (int device = 0; device < CInput::CountAttachedInputDevices(); device++) {
+        DeviceInfo *info = CInput::GetAvailableDeviceRecord(device);
+        if (info && info->field_0x0 == 1)
+            for (int action = 0; action < 9; action++)
+                if ((&info->keyboard.field_0x468)[action] == key) return false;
+    }
+    return true;
+}
+bool ReplayControls_KeyIsReplayKey(int key) { return ReplayControls_Active() && ReplayKeyUsable(key) && (key == kReplayKeySlower || key == kReplayKeyFaster || key == kReplayKeyPause || key == kReplayKeyCamera); }
+int View_CycleReplayCamera(unsigned char view);
+void View_UpdateCamera(BYTE view);
+static void ReplayControls_CycleCamera(void)
+{
+    View_CycleReplayCamera(0);
+    // The camera blend advances per sim step. While paused no step runs, so finish the blend by hand (camera state only) and the new view shows at once.
+    if (g_replayControls.paused)
+        for (int i = 0; i < 20; i++) View_UpdateCamera(0);
+}
+void ReplayControls_Update(void)
+{
+    if (!ReplayControls_Active()) { g_replayControls.Reset(); return; }
+    if (ReplayKeyUsable(kReplayKeySlower) && g_replayEdges.Edge(0, Input_IsKeyDown(kReplayKeySlower) != 0)) g_replayControls.Slower();
+    if (ReplayKeyUsable(kReplayKeyFaster) && g_replayEdges.Edge(1, Input_IsKeyDown(kReplayKeyFaster) != 0)) g_replayControls.Faster();
+    if (ReplayKeyUsable(kReplayKeyPause) && g_replayEdges.Edge(2, Input_IsKeyDown(kReplayKeyPause) != 0)) g_replayControls.TogglePause();
+    if (ReplayKeyUsable(kReplayKeyCamera) && g_replayEdges.Edge(3, Input_IsKeyDown(kReplayKeyCamera) != 0)) ReplayControls_CycleCamera();
+}
+// Small bottom-centre line: replay time (the stage clock, which the re-run reproduces), speed, camera. Drawn only while replaying.
+static const char *ReplayCameraName(int type)
+{
+    switch (type) { case 7: return "auto"; case 4: return "chase"; case 5: return "drone/chase"; case 1: return "car"; case 2: return "bonnet"; case 3: return "cockpit"; case 10: return "bumper"; default: return "view"; }
+}
+void ReplayControls_Draw(void)
+{
+    if (!ReplayControls_Active()) return;
+    char clock[40], speed[24], text[120];
+    clock[0] = 0;
+    ReplayStream *stream = Race_GetPlayerRecordPointer(0);
+    if (stream != NULL && stream->type == 0 && stream->pFrames != NULL && stream->pLaneSamples != NULL && stream->lane >= 0 && stream->lane < stream->laneCount) {
+        // Elapsed and total from the recorded control packets (steps), not the stage clock, so both use one unit. Total is cached per lane.
+        static ReplayStream *cachedStream = NULL; static int cachedLane = -1, cachedPackets = -1; static long cachedTotal = 0;
+        const unsigned char *packets = (const unsigned char *)stream->pFrames + stream->samplesPerLane * stream->lane * 4;
+        int count = stream->pLaneSamples[stream->lane];
+        if (cachedStream != stream || cachedLane != stream->lane || cachedPackets != count) { cachedStream = stream; cachedLane = stream->lane; cachedPackets = count; cachedTotal = ReplayStepsTotal(packets, count); }
+        int frame = stream->frame < 0 ? 0 : stream->frame > count ? count : stream->frame;
+        float rate = Car_Get(0)->simulationRateHz;
+        if (rate > 1.0f && count > 0) {
+            char a[16], b[16];
+            ReplayClock_FormatCentiseconds((int)(ReplayStepsBefore(packets, frame, stream->field_0x21) * 100.0f / rate), a, sizeof a);
+            ReplayClock_FormatCentiseconds((int)(cachedTotal * 100.0f / rate), b, sizeof b);
+            snprintf(clock, sizeof clock, "%s / %s", a, b);
+        }
+    }
+    if (!clock[0]) ReplayClock_FormatCentiseconds(StageTiming_GetClockTime(), clock, sizeof clock);   // not a controls stream: the stage clock only, no total
+    g_replayControls.Label(speed, sizeof speed);
+    snprintf(text, sizeof text, "replay %s  %s  cam %s  , . / tab", clock, speed, ReplayCameraName(View_GetActiveCameraMode(0)));
+    DebugOverlayLayout layout = DebugOverlayLayout::For(g_pGraphics->resX, g_pGraphics->resY, 1);
+    int width = std::min((int)strlen(text) * layout.font * 6 / 10 + 2 * layout.pad, g_pGraphics->resX - 2 * layout.x);
+    short panel[4] = {(short)((g_pGraphics->resX - width) / 2), (short)(g_pGraphics->resY - layout.height - layout.y), (short)width, (short)layout.height};
+    BYTE background[4] = {12, 16, 22, 150}, colour[4] = {240, 246, 255, 255};
+    Sprite_FillRect(NULL, panel, background, kTuneOverlayLayer);
+    Font_DrawTextScaled(1, text, panel[0] + layout.pad, panel[1] + layout.pad, layout.font, width - 2 * layout.pad, colour, kTuneOverlayLayer);
+}
 void TuningPanel_Draw(void)
 {
     if (!g_tuneOpen) return;
@@ -6539,6 +6619,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
     Graphics_SetShadowGeometryState(!CGameInfo::IsRecordFlagSet(0xf));
     View_SetPlayerProjection(param2);
     TuningPanel_Draw();
+    ReplayControls_Draw();
     if (Graphics_DebugDrawWanted() && TuningPanel_InfoShown()) {
         if(Sys_GetOption("video.debug_draw",OPENCMR2_DEBUG_DRAW_DEFAULT)==1){
             char text[32];snprintf(text,sizeof text,"FPS %.1f",Graphics_GetFrameRate());BYTE color[4]={240,246,255,255};

@@ -4017,6 +4017,9 @@ BYTE g_carSimulationClockFlags;
 int g_carSimulationEpochMs;
 // GLOBAL: CMR2 0x0053bd40
 int g_carSimulationFrameMs;
+#include "ReplayControls.h"
+float ReplayControls_TimeScale(void);   // 1 unless a replay is playing; pause/slow/fast from the replay keys (RallyData.cpp)
+static ReplayClock g_replayClock;
 // GLOBAL: CMR2 0x0053a374
 int g_carSimulationPreviousMs;
 // GLOBAL: CMR2 0x005113a0
@@ -4060,7 +4063,7 @@ int Car_UpdateEngineNoteFalloff(int *pOut)
         g_carSimulationClockFlags |= 4;
         g_carSimulationPreviousMs = CMain::GetFrameTime();
     }
-    g_carSimulationFrameMs = CMain::GetFrameTime();
+    g_carSimulationFrameMs = g_replayClock.Frame(CMain::GetFrameTime(), ReplayControls_TimeScale());   // OpenCMR2: replay pause/slow/fast scale the real time that feeds the step count; scale 1 = unchanged
     if (InRaceMenu_IsOpening() != 0)
         g_carSimulationPreviousMs = g_carSimulationFrameMs;
     if (Race_ConsumeTransitionLatch() != 0)
@@ -5592,6 +5595,33 @@ int View_FindFreeModeSlot(unsigned char view)
     } while (found == 0);
     View_SwitchCamera(view, mode, 0xffff, View_GetActiveCameraFlags(view), 1);
     return mode;
+}
+
+// OpenCMR2 replay camera cycle (Tab): automatic trackside (7) -> chase 4 -> chase 5 (and its drone stop when enabled) -> car-mounted 1 -> bonnet 2 -> cockpit 3
+// when it is loaded -> automatic. Computes the target before switching, so the wrap makes one switch, not two. Returns the new mode.
+int View_CycleReplayCamera(unsigned char view)
+{
+    int mode = View_GetActiveCameraMode(view);
+    BYTE flags = View_GetActiveCameraFlags(view);
+    if (mode == 7) {
+        View_SwitchCamera(view, 4, 0xffff, flags, 1);
+        return 4;
+    }
+    if (mode == 5 && Sys_GetOption("video.camera_operator", 0) != 0) {
+        BYTE activeRecord = (BYTE)(g_activeViewRecord[view & 0xff] + (char)view * 2);
+        if (activeRecord < 8 && g_dronePairDone[activeRecord] == 0)
+            return View_FindFreeModeSlot(view);   // the drone is the second stop of chase 5; it stays on mode 5
+    }
+    int next = mode;
+    do {
+        next++;
+        if (next > 5) {
+            View_SwitchCamera(view, 7, 0xffff, flags, 0);
+            return 7;
+        }
+    } while (RallyData_IsDriverViewModeAllowed(view, next) == 0);   // skips cockpit 3 when it is not loaded
+    View_SwitchCamera(view, next, 0xffff, flags, 1);
+    return next;
 }
 
 // Moves the view's mode record to the surface the camera target sits on.
