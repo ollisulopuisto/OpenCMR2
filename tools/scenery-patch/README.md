@@ -349,3 +349,66 @@ Broader vegetation produces132mappings:84trees/bushes and48spectator variants.
 Two narrow birches use fixed cutouts after shell previews failed visual review.
 The76multi-tree strips and6shadow masks are not converted. Unsupported barriers,
 hedges and Greece1 are still open. Native Metal must still be tested.
+
+
+### Fixed forest-strip follow-up
+
+`--asset-upgrades` / `--textures=uprez` now includes 76 original full-canvas
+forest-strip variants and six Finland wooden-fence variants, alongside the
+86 ground variants. Cutouts use premultiplied interpolation and per-mip alpha
+coverage matching; no AI detail, crop, atlas repaint, or original modification.
+
+Finland1 `temp.sht` forest parts additionally use an exact position/UV hash
+allowlist and planar full-canvas quad check. Successful parts are tessellated
+ninefold with small source-anchored relief and optional feet/perimeter-fixed
+wind; unrelated materials and invalid parts keep the original draw. This is a
+shallow multi-tree strip, NOT separate3Dtrees. Fence upgrades are texture-only.
+Original material binding, stage lighting, world transform, collision records,
+and physics vertices remain untouched. Generated positions and wind stay within each original quad axis-aligned
+bounds, leaving existing culling bounds unchanged; native culling, appearance and performance
+remain unverified. Use `--trees original` to retain original strip geometry,
+`--tree-wind off` for static relief, or `--textures original` to retain originals.
+
+
+### France1hedges/tree walls
+
+The France1follow-up adds exact original `temp.sht` material runs for
+`bsh_st1a-f`, `tre_w2a-d` and `tre_wla`. Most source quads are nonplanar, so their two ORIGINAL triangle domains and diagonal are retained.
+No plane fitting or original-edge flattening: only barycentric subdivision,
+small bounded relief and fixed-perimeter wind. Warped-quad support is allowed
+only after the exact France source-position/UV hash gate; unknown/cropped or
+malformed quads still refuse. Finland retains its strict planar rule.
+
+Twelve France hedge texture variants and six barbed-wire fence variants bring
+the exact-source texture total to186. Fences remain texture-only. All186have
+actual runtime upload/all-mip comparisons against owned hi/lo originals with
+an executor stub; that does not establish native GPU appearance or FPS.
+France hi and lo each accept749original material runs,50,868submitted
+triangles,748moving parts. The lone degenerate-axis part remains still.
+This is shallow strip relief, not a solid fully3Dhedge or individual trees.
+
+
+### France1opaque terrain coverage
+
+`--textures=uprez` adds51France1opaque terrain materials, hi and lo:102new
+outputs,288indexed outputs total. Selected from original temp.c3dmaterial
+usage, not every texture in the archive. Source terrain UVs stay in0..1and
+material clamp routing is retained. All new filtering uses explicit edge clamp.
+Bridge/cropped/alpha materials are excluded rather than assumed safe atlases.
+This is2xinterpolation, not AI-restored detail. No geometry, physics or collision
+change. All288outputs pass actual runtime upload/all-mip/stage/identity/reset
+checks with owned originals and stubbed executor. Native appearance/FPS open.
+Runtime manifest limit raised to128KiB because the expanded metadata exceeds
+the former32KiB limit; original bounded read and exact source/output checks stay.
+
+
+### Fixed trackside texture coverage
+
+Adds50hi/lo full-canvas fixed temp.shtmaterial variants: Finland banners,
+France banners, stone walls, guardrails and static ribbon materials.338indexed
+outputs total, all actual runtime upload/all-mip/stage/identity/reset validated
+with owned originals and stub executor. Texture filtering only, no geometry or
+physics change. Original UVs and clamp policy retained. Original/derived artwork
+stays private. No AI detail or whole644pack claim. Alpha mip histogram counting
+replaces repeated per-pixel scans; all338outputs are byte-identical to the old
+algorithm. Native Metal appearance/FPS remain open.

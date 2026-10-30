@@ -478,3 +478,93 @@ explicitly report metadata unavailable. Temp-repo regression covers commit,
 branch, exact tag, dirty edit, detached checkout and stable unchanged output.
 Current full build succeeds; 127/132 tests pass, same five previously reproduced
 local Zig runtime baseline aborts. Nine focused camera/replay checks pass.
+
+
+## Fixed Finland1 strips and cutout texture follow-up (30 October2026)
+
+Separate from pinned PR184208ffae, never changing that delivery. Added82
+full-canvas2x cutout variants:76forest-strip variants across Finland/France
+hi/lo source archives, six Finland wooden-fence variants. Source/output hashes,
+rectangular dimensions and full mip chain are checked. Premultiplied RGB and
+nearest-achievable alpha-test coverage mips; interpolation, not invented detail.
+No original or derived artwork is included. Six shadow masks stay original.
+
+Fixed Finland1forest material runs take a separate exact original position/UV
+hash allowlist and strict four-corner planar/full-canvas fit. Ninefold
+triangulation adds shallow relief and perimeter/feet-fixed optional wind, all
+clamped within original quad axis-aligned bounds. Original mesh/collision
+records, physics, placement and material/light/fog binding are untouched.
+Two degenerate-axis parts cannot sway; one nonplanar part stays original.
+This is NOT individual3Dtrees or completed universal geometry coverage. Fence
+work is texture-only. Other track geometry is unchanged. Greece sources are
+still unavailable. Existing command opts in; --trees original disables this
+geometry, --textures original disables these texture and strip paths.
+
+Full local build passes;136/141tests pass, same five known baseline Zig
+aborts. All144Finland indexed textures passed actual runtime upload/all-mip
+comparisons and stage/identity/reset guards. Actual original temp.sht probe
+accepted785material runs, retained one, submitted43,740triangles;783runs show
+wind motion and all source bytes stay immutable. Runtime executor stubbed,
+not native Metal acceptance. CPU-rasterized submitted vertices/source pixels
+inspected privately. Native appearance/performance/culling remain open.
+Actual binary --asset-upgrades --prepare-only resolves all three private
+cache roots from owned archives. No merge, hosted run or release requested.
+
+
+## France1fixed hedge/tree-wall follow-up (30 October2026)
+
+Separate candidate off185bef5ab3, prior pinned deliveries unchanged. Live owned
+France1hi/lo originals recovered; stage identities match runtime gates. Original
+fixed `bsh_st1a-f` hedges and `tre_w2a-d`/`tre_wla` walls added to exact
+position/UV allowlist. Most source quads are warped, so preserve both original
+triangle domains/diagonal, barycentric mapping and edge coordinates rather than
+relaxing full-canvas billboard planar fit. Warped support only after exact source
+gate; Finland stays strict planar. Source vertices/physics/collision untouched.
+All generated positions remain within original quad AABBs. Material/world/live
+light/fog states remain original. This is shallow relief, not a solid3Dhedge.
+
+Added12hedge and6France barbed-wire texture variants. Total186indexed private
+2xoutputs, all actual hi/lo runtime upload/all-mip comparisons, stage/identity/
+reset guards pass. Six shadow masks original. Both France hi/lo actual temp.sht
+runtime probes accept749material runs, submit50,868triangles;748parts move,
+one degenerate-axis part stays still; source bytes immutable and bounds pass.
+Finland regression remains785accepted/1nonplanar retained/43,740triangles/
+783moving. Runtime executor stubbed, native Metal/culling/FPS unverified.
+Private CPU raster of actual submitted France hedge/wall vertices inspected.
+Greece still source-blocked, no repeated ask. All-track/solid reconstruction
+remains open. No human merge, hosted run or release requested.
+
+
+## France1opaque terrain2x follow-up (30 October2026)
+
+Separate off186b527069, no prior pin changed. Actual original France1temp.c3d
+material/UV/alpha inventory found51uncovered opaque terrain materials after
+excluding bridge/cropped/alpha materials. New hi/lo102outputs bring exact-source
+2xmanifest to288. Explicit edge-clamp filtering follows original material clamp
+routing, UV dimensions and originals unchanged. No new detail/physics claim.
+Runtime manifest bound raised32KiBto128KiB: expanded manifest exceeded old bound;
+real upload test caught the all-textures refusal before publication. Added test
+for runtime metadata synchronization, unique output names and51-per-archive
+coverage/policy. Six focused recipe tests pass, full build succeeds and136/141
+normal tests pass with same5baseline Zig aborts. All288owned-source runtime
+uploads/all-mips/stage/identity/reset checks pass, including rectangular terrain.
+Inspected actual uploaded mip0vsoriginal pixels privately, no native GPU claim.
+Original broad644scope not claimed; object/atlas texture coverage, other stages,
+solid geometry and Greece originals remain open. No merges, tags, dispatches,
+releases or artifact writes requested. Exact commands/source PR for human test.
+
+
+## Cohesive terrain/trackside2x follow-up (30 October2026)
+
+Build on187cd91bdb (not yet delivered to user; user last has186). Add50original
+fixed temp.shtmaterial hi/lo variants:10Finland banner variants,40France wall/
+guardrail/banner/static-ribbon variants. Full-canvas source UV usage verified
+from actual stage meshes.338indexed2xoutputs total including187terrain.
+Texture-only, no source/geometry/physics change. All338actual runtime owned-source
+upload/all-mip/stage/identity/reset checks pass. Premultiplied alpha/mip histogram
+optimization byte-identical across all338payloads plus manifest; avoids repeated
+pixel scans. Seven recipe tests pass; full136/141same5baseline Zig aborts. Actual
+uploaded output pixels inspected privately, not native gameplay. Scope still
+excludes unknown object/atlas textures, other stages, solid reconstruction,
+shadow masks and Greece source dependency. Prior184-187pins unchanged. New
+cohesive command should replace186for user, including held187terrain coverage.

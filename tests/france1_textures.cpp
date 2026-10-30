@@ -31,15 +31,16 @@ int main(int argc,char**argv){
  CHECK(Gfx_SetVideoMode(640,480,FALSE));Texture t={};t.pSurface=Gfx_CreateTexture(8,8,GFX_FORMAT_BGRA8,1,0);D3DTextureManager manager={};manager.textureBuffer[0]=&t;France1TexturesTestAccess::Set(&manager,1);auto before=t.pSurface;char wrong[10]={};
  CHECK(!France1Textures_Apply(&t,wrong,sizeof wrong)&&t.pSurface==before);
  if(argc<4){Gfx_DestroyTexture(t.pSurface);Gfx_Shutdown();return 0;}
- uprez=argc>5;const char*stage=uprez?"fin01":"fra01";root=argv[1];geometry=read(argv[2]);auto source=read(argv[3]);GenericFile a={};
+ uprez=argc>5;const char*stage=argc>7?argv[7]:uprez?"fin01":"fra01";root=argv[1];geometry=read(argv[2]);auto source=read(argv[3]);GenericFile a={};
  France1Textures_Begin(&a,"fin10");CHECK(!France1Textures_Apply(&t,source.data(),source.size())&&t.pSurface==before);
  France1Textures_Begin(&a,stage);CHECK(!France1Textures_Apply(&t,wrong,sizeof wrong)&&t.pSurface==before);
  CHECK(France1Textures_Apply(&t,source.data(),source.size())&&t.pSurface==before&&Gfx_DrawnTexture(t.pSurface)!=before);
  GfxLockedRect lock={};CHECK(Gfx_LockTexture(Gfx_DrawnTexture(t.pSurface),0,0,&lock));CHECK(lock.pitch>0);
  if(argc>4){std::ofstream out(argv[4],std::ios::binary);int width=Gfx_DrawnTexture(t.pSurface)->width,height=Gfx_DrawnTexture(t.pSurface)->height;out<<"P6\n"<<width<<" "<<height<<"\n255\n";for(int y=0;y<height;y++)for(int x=0;x<width;x++){auto*p=(unsigned char*)lock.pixels+y*lock.pitch+x*4;char rgb[3]={(char)p[2],(char)p[1],(char)p[0]};out.write(rgb,3);}}
  Gfx_UnlockTexture(Gfx_DrawnTexture(t.pSurface),0,0);
- if(argc>6){auto payload=read(argv[6]);CHECK(payload.size()>20);unsigned w=(unsigned char)payload[8]|((unsigned char)payload[9]<<8),h=w;size_t off=20;
+ if(argc>6){auto payload=read(argv[6]);CHECK(payload.size()>20);unsigned w=(unsigned char)payload[8]|((unsigned char)payload[9]<<8),h=(unsigned char)payload[12]|((unsigned char)payload[13]<<8);size_t off=20;
  for(unsigned level=0;;level++){GfxLockedRect mip={};CHECK(Gfx_LockTexture(Gfx_DrawnTexture(t.pSurface),0,level,&mip));for(unsigned y=0;y<h;y++)for(unsigned x=0;x<w;x++){auto*d=(unsigned char*)mip.pixels+y*mip.pitch+x*4;auto*p=(unsigned char*)payload.data()+off+(y*w+x)*4;CHECK(d[0]==p[2]&&d[1]==p[1]&&d[2]==p[0]&&d[3]==p[3]);}Gfx_UnlockTexture(Gfx_DrawnTexture(t.pSurface),0,level);off+=w*h*4;if(w==1&&h==1)break;w=std::max(1u,w/2);h=std::max(1u,h/2);}CHECK(off==payload.size());}
- France1Textures_Clear();before=t.pSurface;CHECK(Gfx_DrawnTexture(t.pSurface)==before);CHECK(!France1Textures_Apply(&t,source.data(),source.size())&&t.pSurface==before);
+ if(uprez&&(std::string(argv[3]).find("tresh")!=std::string::npos||std::string(argv[3]).find("tre_w2")!=std::string::npos||std::string(argv[3]).find("tre_wl")!=std::string::npos||std::string(argv[3]).find("bsh_st1")!=std::string::npos)){CHECK(France1Textures_IsVerifiedCutout(&t));CHECK(!France1Textures_Apply(&t,wrong,sizeof wrong));CHECK(!France1Textures_IsVerifiedCutout(&t));CHECK(France1Textures_Apply(&t,source.data(),source.size()));}
+ France1Textures_Clear();CHECK(!France1Textures_IsVerifiedCutout(&t));before=t.pSurface;CHECK(Gfx_DrawnTexture(t.pSurface)==before);CHECK(!France1Textures_Apply(&t,source.data(),source.size())&&t.pSurface==before);
  Gfx_DestroyTexture(t.pSurface);Gfx_Shutdown();puts("France1 actual owned-source upload, all mips, stage/identity/reset guards pass");return 0;
 }

@@ -80,7 +80,7 @@ def main():
         files = [binary, *args.library]
     entries = [(path, f"{folder}/{path.name}") for path in files]
     helper_root = ROOT / "tools/scenery-patch"
-    for leaf in ('prepare.py', 'convert.py', 'source-index.json', 'requirements.txt', 'car-index.json', 'road_prepare.py', 'road_pair.py', 'road_contract.py', 'finland1_roads.py', 'finland1-roads.json', 'uprez_prepare.py', 'uprez-textures.json', 'france1_prepare.py', 'france1-textures.json', 'road_periodic.py', 'export-evidence.py'):
+    for leaf in ('prepare.py', 'convert.py', 'source-index.json', 'requirements.txt', 'car-index.json', 'road_prepare.py', 'road_pair.py', 'road_contract.py', 'finland1_roads.py', 'finland1-roads.json', 'uprez_prepare.py', 'uprez-textures.json', 'france1_prepare.py', 'france1-textures.json', 'road_periodic.py', 'cutout_filter.py', 'export-evidence.py'):
         entries.append((helper_root / leaf, f"{folder}/enhancements/scenery-patch/{leaf}"))
     licenses = [(ROOT / "LICENSE", "OpenCMR2-LICENSE"),
                 (ROOT / "third_party/enet/LICENSE", "ENet-LICENSE"),

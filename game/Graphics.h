@@ -1104,6 +1104,7 @@ class CGraphics {
     friend void France1Textures_Clear();
     friend struct France1TexturesTestAccess;
     friend bool SceneryPack_Draw(StageObject *, const float *);
+    friend bool SceneryPack_DrawFixedPart(Mesh *, struct MeshPart *);
 public:
     static bool InitializeDirectX(void);
     static void SetDefaults(void);

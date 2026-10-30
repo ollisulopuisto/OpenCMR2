@@ -152,7 +152,7 @@ inline const char *EnhancementHelp(){return
 "                              (default reviewed = the 3 mappings); needs --trees shell|crossed; native unverified\n"
 "  --spectator-gain 100..400   Experimental: percent of spectator sway/arm swing (default 100); needs --spectators animated\n"
 "  --textures original|france1|uprez  Exact-source opaque ground2x filter (uprez: Finland1 + France1)\n"
-"                              uprez: 41 Finland1 ground textures high+low + France1 roads; no new detail\n"
+"                              uprez: Finland1/France1 ground + forest/hedge/fence cutout2x; no new detail\n"
 "                              Other stages stay original; native unverified\n"
 "  --roads original|curved|finland1      finland1: visual-only curves, original physics/route retained\n"
 "                              Exact original source only; others stay original\n"

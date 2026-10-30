@@ -6,6 +6,7 @@ try:
  from PIL import Image
  import io
  from road_periodic import resize,mip_chain
+ from cutout_filter import levels as cutout_levels
 except ImportError:raise SystemExit('Stage textures need existing Python with Pillow; nothing installed.')
 import importlib.util
 _spec=importlib.util.spec_from_file_location('export_evidence',Path(__file__).with_name('export-evidence.py'))
@@ -17,8 +18,13 @@ LIMIT=32*1024*1024
 def encode(raw,row):
  if len(raw)!=row['bytes'] or hashlib.sha256(raw).hexdigest()!=row['sha256']:raise ValueError('Original texture differs')
  image=Image.open(io.BytesIO(raw)).convert('RGBA')
- if image.size!=(row['width'],row['height']) or image.getchannel('A').getextrema()!=(255,255):raise ValueError('Opaque source size/alpha differs')
- levels=mip_chain(resize(image,(image.width*2,image.height*2),tuple(row['repeat'])),tuple(row['repeat']))
+ if image.size!=(row['width'],row['height']):raise ValueError('Source dimensions differ')
+ if row.get('kind')=='full-canvas-cutout':
+  if row['repeat']!=[False,False]:raise ValueError('Cutout requires explicit clamp policy')
+  levels=cutout_levels(image)
+ else:
+  if image.getchannel('A').getextrema()!=(255,255):raise ValueError('Opaque source alpha differs')
+  levels=mip_chain(resize(image,(image.width*2,image.height*2),tuple(row['repeat'])),tuple(row['repeat']))
  out=b'OCMRRGBA'+struct.pack('<III',levels[0].width,levels[0].height,len(levels))
  return out+b''.join(level.tobytes()for level in levels)
 
@@ -46,7 +52,7 @@ def prepare(data,cache):
  manifest='OPENCMR2-UPREZ-TEXTURES-1\n'+''.join(r['sha256']+'\t'+r['output']+'\t'+hashlib.sha256(payloads[r['output']]).hexdigest()+'\n'for r in selected)
  payloads['uprez-textures.tsv']=manifest.encode()
  key=hashlib.sha256(manifest.encode())
- for n in ['uprez_prepare.py','uprez-textures.json','road_periodic.py','export-evidence.py']:key.update((HERE/n).read_bytes())
+ for n in ['uprez_prepare.py','uprez-textures.json','road_periodic.py','cutout_filter.py','export-evidence.py']:key.update((HERE/n).read_bytes())
  pack=cache/('uprez-textures-'+key.hexdigest()[:24]);cache.mkdir(parents=True,exist_ok=True)
  expected={n:hashlib.sha256(v).hexdigest()for n,v in payloads.items()}
  if pack.exists():
@@ -60,7 +66,7 @@ def prepare(data,cache):
    for n,raw in payloads.items():(out/n).write_bytes(raw)
    if pack.exists():raise ValueError('Concurrent texture preparation; retry')
    out.rename(pack)
- print('Finland1/France1 opaque ground2x filtering only; no restored detail, native appearance/performance unverified')
+ print('Finland1/France1 exact-source ground and full-canvas cutout2x filtering only; no restored detail, native appearance/performance unverified')
  print('OPENCMR2_TEXTURES='+str(pack));return pack
 if __name__=='__main__':
  import argparse
