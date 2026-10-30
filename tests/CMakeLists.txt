@@ -551,3 +551,8 @@ target_include_directories(parallel_trees_test PRIVATE ${PROJECT_SOURCE_DIR}/gam
 find_package(Threads REQUIRED)
 target_link_libraries(parallel_trees_test PRIVATE Threads::Threads)
 add_test(NAME parallel_trees COMMAND parallel_trees_test)
+
+add_executable(ordered_batch_test ordered_batch.cpp)
+target_include_directories(ordered_batch_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
+target_link_libraries(ordered_batch_test PRIVATE Threads::Threads)
+add_test(NAME ordered_batch COMMAND ordered_batch_test)

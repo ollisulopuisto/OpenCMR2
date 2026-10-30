@@ -1,5 +1,6 @@
 #include "SceneryMotion.h"
 #include "ParallelFor.h"
+#include "OrderedBatch.h"
 #include "CrowdMesh.h"
 #include "SceneryPack.h"
 #include "CrowdSelection.h"
@@ -45,6 +46,8 @@ unsigned loggedSecond=0,treeReplacementDraws=0,treeWindDraws=0,crowdDraws=0;unsi
 std::unordered_map<const Mesh*,CrowdMesh::Template<GfxVertex>> crowdMeshes;
 
 struct Part { std::vector<GfxVertex> vertices; PackTexture *texture=nullptr; std::vector<SceneryMotion::WindVertex> wind; float windBottom=0,windHeight=0; };
+struct PendingTree{GfxMatrix m;std::vector<Part> *parts;SceneryMotion::WindFrame frame;};
+static OrderedBatch<PendingTree,std::vector<std::vector<GfxVertex>>> pendingTrees;
 struct Asset { std::map<const Mesh*,std::vector<Part>> fitted; int sourceWidth=0,sourceHeight=0; SceneryFormat::Entry entry; std::string failure; std::set<std::string> loggedFailures; bool attempted=false,ready=false; std::vector<Part> parts; std::vector<PackTexture*> frames; };
 std::vector<Asset> assets;
 bool loaded=false,identityContract=false;
@@ -180,11 +183,10 @@ void SceneryPack_RegisterSource(Texture *texture,const void *bytes,unsigned size
 }
 void SceneryPack_RegisterArchive(GenericFile *file,const char *path){if(file&&path)archives[file]=Leaf(path);}
 struct ReactCar{float x=0,z=0,speed=0;bool valid=false;uint64_t at=0;};static ReactCar reactCars[8];
-void SceneryPack_Clear(){pendingTrees.clear();crowdMeshes.clear();assets.clear();windIdentities.clear();windLogged.clear();treeOriginalLogged.clear();archives.clear();sourceIdentities.clear();identities.clear();unmatched.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;identityContract=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;for(auto &c:reactCars)c=ReactCar();diagnosticObject=nullptr;diagnosticArticulated=false;diagnosticFrame=diagnosticChanges=loggedSecond=treeReplacementDraws=treeWindDraws=0;diagnosticTime=0;}
+void SceneryPack_Clear(){pendingTrees.Clear();crowdMeshes.clear();assets.clear();windIdentities.clear();windLogged.clear();treeOriginalLogged.clear();archives.clear();sourceIdentities.clear();identities.clear();unmatched.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;identityContract=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;for(auto &c:reactCars)c=ReactCar();diagnosticObject=nullptr;diagnosticArticulated=false;diagnosticFrame=diagnosticChanges=loggedSecond=treeReplacementDraws=treeWindDraws=0;diagnosticTime=0;}
 void SceneryPack_Advance(int step){if(step>0)animationTime+=(unsigned)step;}
 void SceneryPack_SetReactionSource(int slot,int x,int z,int speed,bool valid){if(slot<0||slot>=8)return;reactCars[slot]={x/65536.f,z/65536.f,speed/65536.f,valid,animationTime};}
-struct PendingTree{GfxMatrix m;std::vector<Part> *parts;SceneryMotion::WindFrame frame;};
-static std::vector<PendingTree> pendingTrees;static std::vector<std::vector<GfxVertex>> treeOutputs;static bool treeBatch=false;
+static bool treeBatch=false;
 static void FlushTrees();
 static ParallelWork::Pool &treePool(){
     // video.tree_threads: 0 = automatic (cores, at most 8), 1 = no worker threads. Read once.
@@ -348,32 +350,28 @@ static bool DrawReplacement(StageObject *object,const float *billboard,unsigned 
         }
         treeRustledVerticesTotal+=p.vertices.size();
     }
-    pendingTrees.push_back({m,&fitted->second,windFrame});
+    pendingTrees.Push({m,&fitted->second,windFrame});
     if(!treeBatch)FlushTrees();
     return true;
 }
 
 void FlushTrees(){
-    if(pendingTrees.empty())return;
+    if(pendingTrees.Empty())return;
     double t0=Sys_GetTicksPrecise();
-    struct Job{const Part *part;const SceneryMotion::WindFrame *frame;size_t out;};
-    static std::vector<Job> jobs;jobs.clear();
-    for(auto &t:pendingTrees)for(auto &p:*t.parts)jobs.push_back({&p,&t.frame,jobs.size()});
-    if(treeOutputs.size()<jobs.size())treeOutputs.resize(jobs.size());
     // Workers touch only their own output slot and read the shared, now immutable, part data.
-    treePool().Run(jobs.size(),[&](size_t i){
-        const Job &j=jobs[i];std::vector<GfxVertex> &dst=treeOutputs[j.out];
-        dst.resize(j.part->vertices.size());
-        SceneryMotion::WindPart(j.part->vertices.data(),dst.data(),j.part->wind.data(),j.part->vertices.size(),*j.frame);
+    pendingTrees.ComputeAll(treePool(),[](const PendingTree &t,std::vector<std::vector<GfxVertex>> &out){
+        out.resize(t.parts->size());
+        for(size_t k=0;k<t.parts->size();k++){
+            const Part &p=(*t.parts)[k];out[k].resize(p.vertices.size());
+            SceneryMotion::WindPart(p.vertices.data(),out[k].data(),p.wind.data(),p.vertices.size(),t.frame);
+        }
     });
     double t1=Sys_GetTicksPrecise();
-    size_t at=0;
-    for(auto &t:pendingTrees){
+    pendingTrees.RecordAll([](const PendingTree &t,std::vector<std::vector<GfxVertex>> &out){
         State(t.m);
-        for(auto &p:*t.parts){std::vector<GfxVertex> &o=treeOutputs[at++];Gfx_SetTexture(0,p.texture->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,o.data(),o.size());}
+        for(size_t k=0;k<t.parts->size();k++){Gfx_SetTexture(0,(*t.parts)[k].texture->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,out[k].data(),out[k].size());}
         Gfx_PopState();
-    }
-    pendingTrees.clear();
+    });
     timeWindMathNs+=(unsigned long long)((t1-t0)*1e6);timeSubmitNs+=(unsigned long long)((Sys_GetTicksPrecise()-t1)*1e6);
     // A flush from inside a draw is already inside that draw's timers; one from the batch loop is not.
     unsigned long long dt=(unsigned long long)((Sys_GetTicksPrecise()-t0)*1e6);
