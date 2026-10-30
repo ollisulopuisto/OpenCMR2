@@ -60,21 +60,24 @@ struct TrailHistory {
         return dx * dx + dz * dz > r * r;
     }
     // Calls f(cur, prev) newest to oldest for consecutive stored points. f returns true when it queued geometry; at most
-    // maxSegments segments are queued. Chunks entirely farther than radius from (rx, rz) are skipped, which is the only
+    // maxSegments segments are queued and at most maxVisits points are examined in near chunks (newest first, so the oldest
+    // near marks are the ones left out when a budget runs out). Chunks entirely farther than radius from (rx, rz) are skipped, which is the only
     // place a segment can be missed besides the budget. Work is bounded by cap / kTrailChunk chunk tests plus the points
     // of near chunks. Returns the number of segments queued.
     template <class F>
-    int Walk(int rx, int rz, long long radius, int maxSegments, F f) const
+    int Walk(int rx, int rz, long long radius, int maxSegments, int maxVisits, F f) const
     {
         int drawn = 0;
         int n = count - 1;
-        while (n >= 1 && drawn < maxSegments) {
+        int visits = 0;
+        while (n >= 1 && drawn < maxSegments && visits < maxVisits) {
             const int p = Phys(n);
             const int ch = p / kTrailChunk;
             if (ChunkFar(ch, rx, rz, radius)) {
                 n -= (p % kTrailChunk) + 1;
                 continue;
             }
+            ++visits;
             if (f(At(n), At(n - 1))) ++drawn;
             --n;
         }

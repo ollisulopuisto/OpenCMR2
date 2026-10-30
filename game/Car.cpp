@@ -8343,6 +8343,14 @@ void View_GetCameraCarOffset(unsigned view, double *dist, double *fwd, double *s
     *up = (d[0]*u->x + d[1]*u->y + d[2]*u->z) / 65536.0;
 }
 
+// Camera position of a view in fixed-point world coordinates (x, z). Used to cull tyre-mark history around the camera.
+void View_GetCameraXZ(unsigned view, int *x, int *z)
+{
+    BYTE v = (BYTE)(view & 1);
+    *x = VIEW_STATE(v)->matrix.position.x;
+    *z = VIEW_STATE(v)->matrix.position.z;
+}
+
 // Resets the cameras of a view to their records (after a restart).
 // FUNCTION: CMR2 0x00421d80
 void View_ResetCameras(int view)

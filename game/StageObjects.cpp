@@ -1294,6 +1294,10 @@ static TrailHistory<TrailPoint> g_trailHist[8][4];
 // verified natively.
 static const long long kTrailHistRadius = 150LL << 16;
 static const int kTrailHistSegmentsPerWheel = 1000;
+// Points examined in near chunks per wheel per frame. Worst case per wheel per view: 1024 chunk tests (64k point cap / 64) plus 4096 point visits.
+static const int kTrailHistVisitsPerWheel = 4096;
+void View_GetCameraXZ(unsigned view, int *x, int *z);
+static int g_trailDrawView;
 static int StageObject_TrailHistoryOption(void)
 {
     int n = Sys_GetOption("video.tire_track_history", 0);
@@ -1308,6 +1312,8 @@ static void StageObject_TrailHistoryPush(int car, int wheel, const TrailPoint &p
 // Draws the stored history of one car instead of its 200-point ring. Returns false when the option is off.
 static bool StageObject_DrawTrailHistory(int index)
 {
+    int camX, camZ;
+    View_GetCameraXZ((unsigned)g_trailDrawView, &camX, &camZ);
     if (StageObject_TrailHistoryOption() == 0)
         return false;
     const int hstep = g_stageSurfaceInfo[8].flags > 0 ? g_stageSurfaceInfo[8].flags : 1;
@@ -1315,10 +1321,7 @@ static bool StageObject_DrawTrailHistory(int index)
         const TrailHistory<TrailPoint> &h = g_trailHist[index][wheel];
         if (!h.Active() || h.count < 2)
             continue;
-        const TrailPoint &last = h.At(h.count - 1);
-        const int rx = (int)(((long long)last.left.x + last.right.x) / 2);
-        const int rz = (int)(((long long)last.left.z + last.right.z) / 2);
-        h.Walk(rx, rz, kTrailHistRadius, kTrailHistSegmentsPerWheel, [&](const TrailPoint &cur, const TrailPoint &prev) {
+        h.Walk(camX, camZ, kTrailHistRadius, kTrailHistSegmentsPerWheel, kTrailHistVisitsPerWheel, [&](const TrailPoint &cur, const TrailPoint &prev) {
             if (cur.frame != prev.frame + hstep || (prev.left.x == prev.right.x && prev.left.y == prev.right.y))
                 return false;
             return DrawTrailSegment(&cur, &prev);
@@ -8378,6 +8381,7 @@ void StageObject_UpdateRaceSkidTrails(int param_1)
     int i;
 
     if (CGameInfo::GetGraphicsOptionBits25To26() != 2) {
+        g_trailDrawView = param_1 & 0xff;
         i = 0;
         s = Car_GetOrderCount();
         if (0 < s) {
