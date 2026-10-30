@@ -1300,6 +1300,1318 @@
       ],
       "output": "lk_e1a-finlot.rgba",
       "output_sha256": "b947e2a59778c608be64ffe6027c0670c58a34245c110b275fe737797ed7d366"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "fen_wd3a.dds",
+      "sha256": "4c86d42f09bb23b52d65bc5453f74e4a68e8a6d7740b7fc970a35f0d61da02a8",
+      "bytes": 8320,
+      "width": 128,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "fen_wd3a-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "b2632a9f0bff4b36a011b143069dbc1f42b69a5185cce248cfc0c118a110c8c8"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "fen_wd3b.dds",
+      "sha256": "f0e2b190f4c214c264848ab6f45db39a6a27ccea46156a4c646235955461bab0",
+      "bytes": 8320,
+      "width": 128,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "fen_wd3b-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "5d1c881ee54e854e9d5541740e0e102da83e42872ddcb410137a75bb96b62c0d"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "fen_wd3c.dds",
+      "sha256": "9f96a1a65c36acceb4bc8fbbdedb19350c0f9d09573ddc65aa7b42223ab20197",
+      "bytes": 8320,
+      "width": 128,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "fen_wd3c-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "2b308ffd788d3c272babe61b9f91946f89546946798388030e73b053280410df"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresbg1a.dds",
+      "sha256": "7eb5136e95d6b40954c68bbe099bf673bd907d26bfc59b5aaaca61370caa9458",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresbg1a-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "09625ec556745028a33605c4c43e7636e9f87b14c4110dc632517bb75d02ff54"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresbg1b.dds",
+      "sha256": "aa34d807deecc01ae994385d2afc173f85e4ad0f795ca5909b5f3192474e7511",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresbg1b-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "e0474f51e29ecaea6a6cb3a07f4b68f99d8e52c86cab0d71f52c96a4ad27c789"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresbg1c.dds",
+      "sha256": "fb31e49c162d913f422f9de236ae850cd945f39ed33f38e3f71efcfdf221fc9e",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresbg1c-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "dbfeede181463b29a09e2a6f566cc1fad7bdb759ade5607f6bd1393d1a88ada2"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresbg1d.dds",
+      "sha256": "a9b4a25aeb1963ba76d3cec0ae1621db0f8644783e930933ae670773d2df3260",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresbg1d-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "224f80fd3ec54525b7e14a65600355c4881791fd6f70078891779e8d366cf113"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresfg1a.dds",
+      "sha256": "97683ce08e5b5f7a23aa32f3249830899306282b9482e62e197c6efd203692a5",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresfg1a-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "e0b27ce58186c7ae51781df77be9ae3e948a689e2f831005b22cd8fe86adf2e3"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresfg1b.dds",
+      "sha256": "be77c6389bfe9b533bd5e9eb86ebf9ff550c4bb76de623772f2a05cae4044e98",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresfg1b-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "af7fad068e2b9792e69380467528f28feca56978219561070cd602e27d66ecc3"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresfg1c.dds",
+      "sha256": "53c8fd9d44226f9fb00c796844c19d1ef6dd7001f92ab5e6a35b28b1b49ba330",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresfg1c-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "83fbcedc1d544e5f31b04ac235857e2bc411182129a8a42063c502f60750ecd9"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresfg1d.dds",
+      "sha256": "c0ad578cfb4c3a802f6f615d3c7f6da053388ba4a6358d277ef38f8da4dea11b",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresfg1d-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "eeb624653b6e033c7d2f38ebc0c151b59adfd4762b42fc183437f84d11a97694"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresh1ba.dds",
+      "sha256": "4882f572077e56fe00b561b911c8a98e232cdc3c4d07b531b9718e1854535eda",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh1ba-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "3a0fb617d9234b3206ab811b1167787ea18c9cc70228227a479aaa0fa3950e76"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresh1bb.dds",
+      "sha256": "194c34758931acbc351c28191fb0d6d83f129be10153c8e851942896ef340a23",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh1bb-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "5f65cb5f70697693ada3b8b3f2fa484b00c484e00a5eafd8be2b927915ae23d7"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresh1bc.dds",
+      "sha256": "eedc638071d403ff7b2ec719ab1f399d4b1bcf232517af863af26daa025d5372",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh1bc-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "13b911ccd225c48ff8d7d348aabc7374787bb92c00a349f8b5c486a5d00e23e4"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresh1bd.dds",
+      "sha256": "44df2da75d72e3c6b17a40fe528bf0b411d38d8dfad145f2155e978da1f8ba34",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh1bd-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "76b8da13b91a6e9c301cfd5056949178536c988dbbaa2cabc597bfe0b98622f3"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresh1fa.dds",
+      "sha256": "e086b69278a5ce8df84093522617b2bf66f5261ae25c7a8c2835f1503dfa204e",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh1fa-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "cb91e59003859dd3efcc8fed3bfac2156a69838f64852a4ff3620a9acc8d1e30"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresh1fb.dds",
+      "sha256": "cf2ed824a8c2318f2092c0aec1a01ce24c55cf974158cb6038d74dd53093c4d9",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh1fb-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "aaa619521c70ac50492379ec49f84271bf09b382f5abe3fae82fcbb7ffe7b4da"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresh1fc.dds",
+      "sha256": "fb9474d406064951850bb2a2aed96bd693bd0d161474bfbd3a198c8c98751d7b",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh1fc-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "ae19bbb1205341cc8a0162b91841d8d2b9b07d850eb6f490bed8cf91a3b008ae"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresh1fd.dds",
+      "sha256": "868528b82967a0c48e6e87b07c7ce8be2907e03579a66bb0b9d7e0ee98070a39",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh1fd-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "f5fea73047613acda71b7fdb14af9d5ae70351a956ce0a05a15b80e510ec4383"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresh2ba.dds",
+      "sha256": "69689fff69f42a88d141699112cb1516711c7aeb2be422ea8f3a517c7ad30369",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh2ba-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "ae982980e6a025a29744f391442903df3b2e2c45a65f9d4c27bc2b61b642fc5c"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresh2bb.dds",
+      "sha256": "a2f3a85592b5acbfd89628a040e5638f13b9a01895797400576ece61c24302ff",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh2bb-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "5aeeb9fe8bff3cc6d54c4fee475f8f91b8a33d351b933876e78e04c306d83ba2"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresh2bc.dds",
+      "sha256": "62c530f5560d464b27a3f4f8936fd7a6223e77ce0c19804c1c8df8e484cbad79",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh2bc-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "8f76ac8c486f2171cc6f4ee8d71771da9da4d10d2eee4ce06e37fae6bdba17dd"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresh2bf.dds",
+      "sha256": "58142e315061d29e9280a1ee4a178dd5f03652f6f41c715a173a4ca558b5946e",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh2bf-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "f38c4e35e364e553de9481155abe8bfa0dfaa834dfe24f9c59e589397904d6ec"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresh2fa.dds",
+      "sha256": "8084f217245e65b8af80869ab9b7dfffc3a4e6f72121a858ffc48184652c78d7",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh2fa-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "cf69793ab921662bc4c828f2d48c527221894d14b353a9d3f28551dcd94eb1e9"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresh2fb.dds",
+      "sha256": "dcafaa535886004802efd97241bff27fdcff1cd39eaee8c37fa4474323b66a87",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh2fb-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "05dc0e629fb65b4f3fb76174b57f7d9889f84e05864bf1b10b074dea669978f0"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresh2fc.dds",
+      "sha256": "f3556bbe873b8c2c2fd85f741b5de70de2f5d98c8b810053c0fe5dd30aca5ab2",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh2fc-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "d59f837fbfde94d20b8fd91b8e2f30bb64ccb2ec8411d7acf3e818d57fd1434c"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresh2ff.dds",
+      "sha256": "defd03858fa8e196f32307801aa51cf884191667a0b7eefd985f6285f4f52c28",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh2ff-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "d9ac6aa9eddcc840773afa96e78112531c1ed1e630a75b650ed79468011a4b04"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresh3a.dds",
+      "sha256": "2a1c314b939fd3168c70320fead7dd51b0fabf0d6ecbdd77e546670d3e0e255a",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh3a-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "34ca6b8135a8633803c2b11cde82667106ee81882fd0ebb526d72ea4c4efe04a"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresh3b.dds",
+      "sha256": "4d57e1d9fd27679088b8372a6a039b74495df80f1de44eab2db5b4d56ab273b6",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh3b-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "f8d0cf1a219b7d218718b155e5201594cb87900b328f03eac18478fff6705a2e"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresh3c.dds",
+      "sha256": "852873cddf04076caab2675eaa698ae26df87ee260facaa784693aa2c338d8ae",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh3c-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "b93893ae25fa7dfc496af28500234002ee26d2868111c1e97f904fff0e9006a5"
+    },
+    {
+      "archive": "finhit.bfl",
+      "member": "tresh3e.dds",
+      "sha256": "c63cfbd33981577829114c991969c8faf847946d5ad860897d7f0f4033ebb012",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh3e-finhit.rgba",
+      "stage": "fin01",
+      "output_sha256": "1de16bea5329ac220908c7060e340a0c1b03288c23f3c2fc0778e67dea42f054"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "fen_wd3a.dds",
+      "sha256": "dbf8f4aaf2abf89f5c147b40834a856aeb3cfc291f381c36cbae689b17840357",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "fen_wd3a-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "8bad4a7d45f15a3dd416775bc370a2d385abf72042638259bda6f4bf386e9172"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "fen_wd3b.dds",
+      "sha256": "21a43d1066d00cfdc92387c2240f9a93f0313b0a79b8117029f9ed09a3d89fc2",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "fen_wd3b-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "2610c3ebd9a113753f9677ffa6c4b69a0d1e7fadc5b3d3a0e1678a091474bb1e"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "fen_wd3c.dds",
+      "sha256": "5903c00188e1d823d2a7bec99116d9d69a8cb6bfaa186b9d54f16ae7d6e2b792",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "fen_wd3c-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "6a48d5d30ab826606eb48c587af56b15123fe191bb452c30626a07e5d5695fac"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresbg1a.dds",
+      "sha256": "8207ec156bd0eed6b765524f1755ac55b78bb143cf0073fc07dc13b64a7e0bed",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresbg1a-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "d25ca1537ef7f4f5071658976d0461b3a721a1b59bf113aea585b580bf35e1d1"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresbg1b.dds",
+      "sha256": "c895b2c35caa326b78bd135c0f8ff8a1a507e280036052377f70284d3f30594b",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresbg1b-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "5602120202d9ab0b6fd7db9a03fd9e13994ce544d13e08738e7f58a808b8036f"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresbg1c.dds",
+      "sha256": "7609308db3ee0fdabf1cdaa141d25a38809e65d30517283c0a577b5a734a9da3",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresbg1c-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "8e547dc1a25b31111499e27bf5ad2bd35f5e3c251026f43b46949ebc4d95f036"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresbg1d.dds",
+      "sha256": "50df86e5030df4e0f99c50e0a0aa9ee4fa66171296da20f037622f8009909609",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresbg1d-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "243d084cf229fba2e02337f252316dfa520bc7c0102df08c0d4d49d90c5ebf05"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresfg1a.dds",
+      "sha256": "92dd986b988773490ead6bf1027852f6b984a6ec0a289cc035137b7c9110c961",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresfg1a-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "2f47e06ca2efbbc8d0483fd5cf8c3c96acca204d6c4548d301cb36e2b826ccfc"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresfg1b.dds",
+      "sha256": "3f94792ef4f79374c3248689f2568dd0b4c6db648025e2d51863925c4ce4a6ff",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresfg1b-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "b6d86db4eb595c6ce62cfdf12b040143dd4771f7c710ed6c89900508bb7ebc9b"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresfg1c.dds",
+      "sha256": "8f1eba984c5aa81946defff0a205200012cb9b29f2ba0559aa528c8a47de30ce",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresfg1c-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "ffe6f8823ba56376e15435f780a6d80e80a19ef8a94257a71b746ab9bc8acc72"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresfg1d.dds",
+      "sha256": "bd5a24454c2b1635481554daac20b530bbd8094ab12abf4b987c4ed509b04f66",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresfg1d-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "16eab044da0ec24d11f5a2450c2cf4f5c0ec05613326fc27565fb27a7bfb7401"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresh1ba.dds",
+      "sha256": "b468c104f2cd1c39e70705df2d8088370a124e53fb2033e8c22ae91110c01a5e",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh1ba-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "55efac3d1827d1a2fe8aa26b3404b95fdae5f75f6e3de4bb719d7b4fd53f1c11"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresh1bb.dds",
+      "sha256": "c3d7f4f0953298aef73c840ac8e8495aa22d106e6ab39e475df4efc70946e4bb",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh1bb-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "175691de8cad9f8b98563683f810bcac0fe5f88c3284b48e3103d58fb88fc699"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresh1bc.dds",
+      "sha256": "11041a4f409f215724a7c653213ddb7124138d970571eab6cd0fe21496deca7b",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh1bc-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "2c44b11212bb95e1a15b0c08c09be0c4b301bbd8f65369b8f9246870f3774826"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresh1bd.dds",
+      "sha256": "508a1111f402123ac39ce4f522cfebc40f63b7d5c6bf02d5dcf618140223e408",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh1bd-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "6445fa0529c716baaea69830849e6b4f2be3ed03138bda95587a15452be7acea"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresh1fa.dds",
+      "sha256": "db09d4d6899c0a4f4b7d1f15b028e71aa4640c90a2ef55f6d01595c5362d9525",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh1fa-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "484053ec0ef87b4c9a059d29be588a622a9045cfbe5d7ef35b05a3d14777ade7"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresh1fb.dds",
+      "sha256": "4175bc200b0f956c8f61b26679ea1bec98aff100442f89ef6286c2deb7c89be2",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh1fb-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "d412345ac605c30d97edd33ed4c5e83ce3fd77eab6734439b83b2871d78e3a73"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresh1fc.dds",
+      "sha256": "31b9e44b0a62db976205699cec7e93f53eeaebaef6925a49f9ddb674f683994a",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh1fc-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "b5720da2050da42e565b17f53589cd849faa8255ec17caba794c552d84aeeff4"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresh1fd.dds",
+      "sha256": "80b6611a0eb839d00c47bbe820cf9071cbb9cff5384111a69cdebf77826fe614",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh1fd-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "620b3b4e6ff588cc83ef61b87b77dc40ed0cffb8302cdd703706653778512600"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresh2ba.dds",
+      "sha256": "6043f3bd69ba369ec234844b2939bf86fd86d8cb0373c72161294d8f3add2cda",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh2ba-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "e1a4be3cbd285ede1d61d11f5bdd14fd433d4109621be1ea0d3b5129d0453a9f"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresh2bb.dds",
+      "sha256": "cc3a09a7c6ace854faed93de552ae858448b284436e98a29587c63908235d419",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh2bb-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "96fbfbe90187c7c22ebc5bbb7ff21085f48a76a432afc710d97715d0251108e8"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresh2bc.dds",
+      "sha256": "f8032256460ad783b5b3180923667b3abb8e409f4eb657399844acfdee826bc0",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh2bc-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "b5ab83e591b6644afed303f6727a7687e7f0c87091729b6ff6fdfbff4e1ce649"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresh2bf.dds",
+      "sha256": "aee070d4aa40d7b0d1a891f13c6ad4ab1d1e2711c820965382903ad1a0d3b9d3",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh2bf-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "9395e30d4bbbe89cea3db9d2c6415a61b4c77f1f4624fa6a78d0342b6d142c34"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresh2fa.dds",
+      "sha256": "45a7d70ddc278762d7e88f2886edf520c974e227d773e51d58f498848de78387",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh2fa-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "9ebae981417ed1f2daaef904ba4241454fd103e45cb0fe8f98c3c6cfcbde3b9a"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresh2fb.dds",
+      "sha256": "85db80a1e411518312ead24abbdafa6fcbdf5cc465987b6b0333d16b8b3086a3",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh2fb-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "e891e225b076f9d79f1581433cba7ff37717681ec90a6d5df1e770ae19a649d8"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresh2fc.dds",
+      "sha256": "71c9cbbd2af5468e4f252f5f17623af355039a3b20d806c12c90ccae7e87401e",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh2fc-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "3b14ccddae400f58e3e2ff9d1b256eceabaca715175a193930f7595a8952bafa"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresh2ff.dds",
+      "sha256": "16cc348be68f573b4169009efbb67cf2b2020c1eb360b3642c076b5cfe92613c",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh2ff-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "7d031ebffb59fd439a8619d97d72eaa0b07bc0b47d331afd44120dbddd8cd998"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresh3a.dds",
+      "sha256": "21fe7007a547b4e70e1d459f0deca7b971d288667810efcc751f1aad9860a776",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh3a-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "493957a807dc71e91b4d859054c7fa61deb2958b3bc94b60c7769f02636a3db6"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresh3b.dds",
+      "sha256": "5cd951a6873f70c45590ca3f07229da529bc711d8384336a6ad936472fea32eb",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh3b-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "ca28c4eb9135e76959d8ea786386ef99d8133700584b860a78305d7572925815"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresh3c.dds",
+      "sha256": "19cb70b29866ee06d6bc43689ffe9b5ca85fc345d737841403554f6e27fc927e",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh3c-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "4824adec9c0cb0c8abbad7e892664aeeab8ecf8f5a785dffc45d5d68348e5b38"
+    },
+    {
+      "archive": "finlot.bfl",
+      "member": "tresh3e.dds",
+      "sha256": "f9c11e85ba59306a0e558ccfbd169d9e84d16aca7e091a035b0375a49945a319",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tresh3e-finlot.rgba",
+      "stage": "fin01",
+      "output_sha256": "bd86f863fa05a0d4aed487e08880d88fd014adc1c89f8472b91e6c44d8b72a7a"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "tre_co6a.dds",
+      "sha256": "09884707c10d33c1b3c7ceef3e6d859977c716b2114dc475f1f5cd44762738e7",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_co6a-frahit.rgba",
+      "stage": "fra01",
+      "output_sha256": "137f6b839245e723daa1c6286f95cb8ca75c6960fed71de0125c2c574ff27cb4"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "tre_cy3a.dds",
+      "sha256": "9368ca3bea9fea2f5f374df8ce4f51e9bee42f2bf66032b5f3a082795a32e6ea",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_cy3a-frahit.rgba",
+      "stage": "fra01",
+      "output_sha256": "d28e1ffb82cd6863b51b6be41221e6029662923ff1355d872d29d3e86b358795"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "tre_md3.dds",
+      "sha256": "6c9f23b690ef517af3f7cfadf64f7828ac2f965570dd4af0dbe389da4814b99f",
+      "bytes": 32896,
+      "width": 128,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_md3-frahit.rgba",
+      "stage": "fra01",
+      "output_sha256": "797c0beefdb673c3bb85b786eca15420d3b782e8a2a1b583b238a10b44d212f2"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "tre_w2a.dds",
+      "sha256": "9885f0a640340f77a67cc16222e949d969188afdc71b37ac0eb9a4460e806784",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_w2a-frahit.rgba",
+      "stage": "fra01",
+      "output_sha256": "c38f44e8284a64c7a2629c1a42d4db39da2d71045bfd63c9f0909ed043410a42"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "tre_w2b.dds",
+      "sha256": "bccc1770596860071b516a7075ba020b98ad633c0e3c19c5a1fd94e1343c8e44",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_w2b-frahit.rgba",
+      "stage": "fra01",
+      "output_sha256": "26da85815863ac01200736dd7c3e8825e7b5be654a959a279f7a506113864133"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "tre_w2c.dds",
+      "sha256": "3435e5c489beb1464d0c9375eccf730cc502dfcf692664362f803a4957b299f1",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_w2c-frahit.rgba",
+      "stage": "fra01",
+      "output_sha256": "e2ad4378d6401c24acf63f8fd1cc54d0d9d439d8ddc6a4ac65ca055dfb809c0d"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "tre_w2d.dds",
+      "sha256": "647b3beab77414e23e46cba79678177d10322c6aef59465d4ac6f64db451db51",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_w2d-frahit.rgba",
+      "stage": "fra01",
+      "output_sha256": "7ef220859636d2e2e6d2c226d811ead8b9538af000f46246a2b1f94cd723b913"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "tre_wla.dds",
+      "sha256": "49f33ce1894e2382703d203b3d1689ec245fda53765f3b4d9463e6bde5dafe80",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_wla-frahit.rgba",
+      "stage": "fra01",
+      "output_sha256": "0c8a320e28d0b7ceca35fe708546a98ec2cd2d3dd75e8c9d2e41a89d2d35eed2"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "tre_wlb.dds",
+      "sha256": "b502eef5143c05c77bf14a0dbafe02b9d63f3152cd266d321bfe1aa20a472a10",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_wlb-frahit.rgba",
+      "stage": "fra01",
+      "output_sha256": "9c06b21e265a92f79e3370380c8b15a4cce9676d093bc2df8cb74ae15d333308"
+    },
+    {
+      "archive": "frahit.bfl",
+      "member": "tre_wld.dds",
+      "sha256": "5890feb2221b26e244c1b46345368ddc67db13685a2a033b86e7beb08dcff9bc",
+      "bytes": 65664,
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_wld-frahit.rgba",
+      "stage": "fra01",
+      "output_sha256": "d3ffe3b138c28da42a0ed48e8778739e4c87f1370f4be3840c70c2d763623707"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "tre_co6a.dds",
+      "sha256": "39ddc0a23c69ec0d51839f058312051b22f8e310627407232d174fb4e63b9637",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_co6a-fralot.rgba",
+      "stage": "fra01",
+      "output_sha256": "313018aaac23fe3cfd1d454cf8fe2aeac24c555322cff3444ace3bf4ef0e9683"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "tre_cy3a.dds",
+      "sha256": "55665d8b2840ba819cfc575d5b05f5c4257686ea9d11f265862c006da5cefd53",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_cy3a-fralot.rgba",
+      "stage": "fra01",
+      "output_sha256": "5ab91a400701e30853bd29b1ea701142567115e210fa51ae15e8c47725ee88b4"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "tre_md3.dds",
+      "sha256": "75e1908044b4a941b5db443aade07cae596303e0ca906fa600a016608daf301a",
+      "bytes": 16512,
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_md3-fralot.rgba",
+      "stage": "fra01",
+      "output_sha256": "428d8ba14c90680b8fe52fa0f4fd5bd0ca17c4ca1ccecde35437a2d9b09673db"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "tre_w2a.dds",
+      "sha256": "46ed300a6d5e481b82bef40a2ded199153be7ee063c308d1fda65d8418b77c62",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_w2a-fralot.rgba",
+      "stage": "fra01",
+      "output_sha256": "484c069ee8ffa447c6d1ee6c357fa426da062847f5692866085385798aa00b14"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "tre_w2b.dds",
+      "sha256": "54c0ac3f646a3afaf5c073354c8f67adb5ce9d3109b7e56e4e9de95e0aa460b1",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_w2b-fralot.rgba",
+      "stage": "fra01",
+      "output_sha256": "1f9878c5fe091902e152dc15b9e31b3bcb1fc9c2888238da5b60dfa103a02886"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "tre_w2c.dds",
+      "sha256": "1a89b6e2eb144ce79b2e35fccdae2be53f1717c8e5d1f9091cfa515eac60dc9c",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_w2c-fralot.rgba",
+      "stage": "fra01",
+      "output_sha256": "c4c51c0edb55050494d69bbe1d72682d90733e303ff4f84e16a38029ba56cffa"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "tre_w2d.dds",
+      "sha256": "7ba4e4de99789b0bd274607a9dd6c6fb113e51786fae0402de0d93aec32ac3f7",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_w2d-fralot.rgba",
+      "stage": "fra01",
+      "output_sha256": "51ec889da38eaa9e7b29cf8f94c079335304cda507f2669e048e0dc85c811f21"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "tre_wla.dds",
+      "sha256": "ce5760eb566ed80b8e00ff8efc13012cdf763f013ee8df9088fd0e21609681e7",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_wla-fralot.rgba",
+      "stage": "fra01",
+      "output_sha256": "c68282bec37e5d6eff5c500f4744abdccda083cb9004666e8011422f2bddb506"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "tre_wlb.dds",
+      "sha256": "51e2b3ec063eed34ac1d51113e9aeac58aacb8212f3946ff330d5dfe729fd3ef",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_wlb-fralot.rgba",
+      "stage": "fra01",
+      "output_sha256": "25b1f703e46b855926efd6b6aac91ac5541c4dd090934bb1ded4fa6140394e74"
+    },
+    {
+      "archive": "fralot.bfl",
+      "member": "tre_wld.dds",
+      "sha256": "bd1a709cc5db3012ddd7e1b7857ccc07d6db92ba7eb41e3a2e3f8d0df99758a4",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_wld-fralot.rgba",
+      "stage": "fra01",
+      "output_sha256": "d8099261dd5d7af74cb396ba4c641a6f050e4257fb522d68b11e88d6490bad48"
     }
   ]
 }

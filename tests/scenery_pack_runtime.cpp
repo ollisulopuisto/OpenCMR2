@@ -154,3 +154,5 @@ if(argc<2)return 0;base=argv[1];legacy=argc>2&&!strcmp(argv[2],"legacy");separat
  printf("loaded/drawn%u actualmanifestentries\n",entries);
  SceneryPack_Clear();CHECK(!SceneryPack_Draw(&object,(float*)&billboard));Gfx_Shutdown();puts("actual pack runtime draw, matrix, frames, clear: pass");
 }
+
+bool France1Textures_IsVerifiedCutout(Texture*){return false;}

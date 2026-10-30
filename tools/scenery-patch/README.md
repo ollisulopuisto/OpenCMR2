@@ -349,3 +349,22 @@ Broader vegetation produces132mappings:84trees/bushes and48spectator variants.
 Two narrow birches use fixed cutouts after shell previews failed visual review.
 The76multi-tree strips and6shadow masks are not converted. Unsupported barriers,
 hedges and Greece1 are still open. Native Metal must still be tested.
+
+
+### Fixed forest-strip follow-up
+
+`--asset-upgrades` / `--textures=uprez` now includes 76 original full-canvas
+forest-strip variants and six Finland wooden-fence variants, alongside the
+86 ground variants. Cutouts use premultiplied interpolation and per-mip alpha
+coverage matching; no AI detail, crop, atlas repaint, or original modification.
+
+Finland1 `temp.sht` forest parts additionally use an exact position/UV hash
+allowlist and planar full-canvas quad check. Successful parts are tessellated
+ninefold with small source-anchored relief and optional feet/perimeter-fixed
+wind; unrelated materials and invalid parts keep the original draw. This is a
+shallow multi-tree strip, NOT separate3Dtrees. Fence upgrades are texture-only.
+Original material binding, stage lighting, world transform, collision records,
+and physics vertices remain untouched. Generated positions and wind stay within each original quad axis-aligned
+bounds, leaving existing culling bounds unchanged; native culling, appearance and performance
+remain unverified. Use `--trees original` to retain original strip geometry,
+`--tree-wind off` for static relief, or `--textures original` to retain originals.

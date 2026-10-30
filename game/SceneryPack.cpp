@@ -7,6 +7,9 @@
 #include "ScenerySHA256.h"
 #include "SceneryPackFormat.h"
 #include "ScenerySourceFit.h"
+#include "FixedStrip.h"
+#include "France1Textures.h"
+#include "FixedStripSources.inc"
 #include "Graphics.h"
 #include "Texture.h"
 #include "Mesh.h"
@@ -51,6 +54,8 @@ struct PendingTree{GfxMatrix m;std::vector<Part> *parts;SceneryMotion::WindFrame
 static OrderedBatch<PendingTree,std::vector<std::vector<GfxVertex>>> pendingTrees;
 struct Asset { std::map<const Mesh*,std::vector<Part>> fitted; int sourceWidth=0,sourceHeight=0; SceneryFormat::Entry entry; std::string failure; std::set<std::string> loggedFailures; bool attempted=false,ready=false; std::vector<Part> parts; std::vector<PackTexture*> frames; };
 std::vector<Asset> assets;
+struct FixedPart {bool ready=false;std::vector<FixedStrip::Vertex> vertices;std::vector<GfxVertex> scratch;};
+std::map<const MeshPart*,FixedPart> fixedParts;
 bool loaded=false,identityContract=false;
 bool treeLogged=false,spectatorLogged=false;
 std::string root;
@@ -184,7 +189,7 @@ void SceneryPack_RegisterSource(Texture *texture,const void *bytes,unsigned size
 }
 void SceneryPack_RegisterArchive(GenericFile *file,const char *path){if(file&&path)archives[file]=Leaf(path);}
 struct ReactCar{float x=0,z=0,speed=0;bool valid=false;uint64_t at=0;};static ReactCar reactCars[8];
-void SceneryPack_Clear(){pendingTrees.Clear();crowdMeshes.clear();assets.clear();windIdentities.clear();windLogged.clear();treeOriginalLogged.clear();archives.clear();sourceIdentities.clear();identities.clear();unmatched.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;identityContract=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;for(auto &c:reactCars)c=ReactCar();diagnosticObject=nullptr;diagnosticArticulated=false;diagnosticFrame=diagnosticChanges=loggedSecond=treeReplacementDraws=treeWindDraws=0;diagnosticTime=0;}
+void SceneryPack_Clear(){pendingTrees.Clear();fixedParts.clear();crowdMeshes.clear();assets.clear();windIdentities.clear();windLogged.clear();treeOriginalLogged.clear();archives.clear();sourceIdentities.clear();identities.clear();unmatched.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;identityContract=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;for(auto &c:reactCars)c=ReactCar();diagnosticObject=nullptr;diagnosticArticulated=false;diagnosticFrame=diagnosticChanges=loggedSecond=treeReplacementDraws=treeWindDraws=0;diagnosticTime=0;}
 void SceneryPack_Advance(int step){if(step>0)animationTime+=(unsigned)step;}
 void SceneryPack_SetReactionSource(int slot,int x,int z,int speed,bool valid){if(slot<0||slot>=8)return;reactCars[slot]={x/65536.f,z/65536.f,speed/65536.f,valid,animationTime};}
 static bool treeBatch=false;
@@ -450,4 +455,38 @@ void SceneryPack_GetTreeStatus(unsigned *replacements,unsigned *wind,unsigned *o
  if(replacements)*replacements=treeReplacementDraws;
  if(wind)*wind=treeWindDraws;
  if(originalSources)*originalSources=(unsigned)treeOriginalLogged.size();
+}
+
+// Called AFTER the original material/state binding. No world transform, material,
+// culling, lighting, alpha mode, collision pointer or source vertex is changed.
+bool SceneryPack_DrawFixedPart(Mesh *mesh,MeshPart *part){
+ if(!mesh||!part||!Sys_GetOption("video.scenery_overrides",1)||!Sys_GetOption("video.tree_overrides",1)||
+    !Sys_GetOption("video.texture_uprez",0)||!(mesh->flags&0x800)||mesh->flags&2||part->texture<0||unsigned(part->texture)>=CGraphics::m_textureCount)return false;
+ Texture*source=CGraphics::GetTextureBuffer()[part->texture];if(!source||!source->pSurface||!mesh->pVertexData||!part->pData)return false;
+ auto name=Stem(source->name);if(name.compare(0,5,"tresh"))return false;
+ // DDS identities are added by the private texture helper, independently of the
+ // individual billboard pack. A same-named modified source never enters here.
+ if(!France1Textures_IsVerifiedCutout(source))return false;
+ auto found=fixedParts.find(part);
+ if(found==fixedParts.end()){
+  FixedPart data;std::vector<unsigned short>indices;std::string original;
+  if(part->indexCount<6||part->indexCount>12000||part->minIndex<0)return false;
+  auto*v=(const MeshVertexF*)mesh->pVertexData;
+  for(int i=0;i<part->indexCount;i++){
+   unsigned j=unsigned(part->pData[i])+part->minIndex;if(j>=unsigned(mesh->field_0x10))return false;
+   indices.push_back(j);original.append((const char*)&v[j].x,12);original.append((const char*)v[j].textureCoordinates[0],8);
+  }
+  auto hash=SceneryIdentity::SHA256(original.data(),original.size());bool known=false;for(auto h:fixedStripSources)if(hash==h){known=true;break;}
+  if(known)data.ready=FixedStrip::Build(v,mesh->field_0x10,indices.data(),indices.size(),data.vertices);
+  if(data.ready&&fixedParts.empty())Sys_Log("scenery: fixed source strip relief active %s (%zu triangles in first part); visual only, not individual3Dtrees",name.c_str(),data.vertices.size()/3);
+  found=fixedParts.emplace(part,std::move(data)).first;
+ }
+ auto&data=found->second;if(!data.ready)return false;
+ data.scratch.resize(data.vertices.size());float wind=Sys_GetOption("video.tree_wind",0)?std::sin(float(animationTime%(65536ull*25*3600))/(65536.f*25.f)*1.2f)*.05f:0;
+ for(size_t i=0;i<data.vertices.size();i++){auto&q=data.vertices[i];auto v=q.source;
+  // Runtime lighting/fog updates rewrite original colours. Read them live.
+  auto*live=(const MeshVertexF*)mesh->pVertexData;
+  for(int colour=0;colour<2;colour++){auto*dst=(unsigned char*)&v.diffuseColour+colour*4;for(int k=0;k<4;k++){float value=0;for(int b=0;b<3;b++)value+=((const unsigned char*)&live[q.indices[b]].diffuseColour)[colour*4+k]*q.bary[b];dst[k]=(unsigned char)(value+.5f);}}
+ data.scratch[i]={std::max(q.lo[0],std::min(q.hi[0],v.x+wind*q.weight)),v.y,v.z,v.nx,v.ny,v.nz,v.diffuseColour,v.specularColour,v.textureCoordinates[0][0],v.textureCoordinates[0][1],v.textureCoordinates[1][0],v.textureCoordinates[1][1]};}
+ Gfx_DrawPrimitive(GFX_TRIANGLELIST,data.scratch.data(),data.scratch.size());return true;
 }

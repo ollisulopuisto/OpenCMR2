@@ -97,6 +97,7 @@ set_property(TARGET opencmr2 APPEND PROPERTY LINK_DEPENDS
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/france1_prepare.py
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/france1-textures.json
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/road_periodic.py
+    ${PROJECT_SOURCE_DIR}/tools/scenery-patch/cutout_filter.py
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/export-evidence.py
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/road_contract.py)
 add_custom_command(TARGET opencmr2 POST_BUILD
@@ -116,6 +117,7 @@ add_custom_command(TARGET opencmr2 POST_BUILD
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/france1_prepare.py
         ${PROJECT_SOURCE_DIR}/tools/scenery-patch/france1-textures.json
         ${PROJECT_SOURCE_DIR}/tools/scenery-patch/road_periodic.py
+    ${PROJECT_SOURCE_DIR}/tools/scenery-patch/cutout_filter.py
         ${PROJECT_SOURCE_DIR}/tools/scenery-patch/export-evidence.py
         ${PROJECT_SOURCE_DIR}/tools/scenery-patch/road_contract.py
         $<TARGET_FILE_DIR:opencmr2>/enhancements/scenery-patch)

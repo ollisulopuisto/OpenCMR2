@@ -7029,6 +7029,7 @@ void Graphics_DrawMeshPartsByTexture(Mesh *pMesh)
             pPart = *ppPart;
             CGraphics::ApplyTextureStageChange(0, CGraphics::m_pTextureManager->textureBuffer[pPart->texture]);
             Graphics_BindCarPaintDirt(CGraphics::m_pTextureManager->textureBuffer[pPart->texture]);
+            if(!SceneryPack_DrawFixedPart(pMesh,pPart))
             Gfx_DrawIndexedPrimitiveVB(GFX_TRIANGLELIST, CGraphics::m_pTextureManager->pVertexBuffers[pMesh->vertexBufferIndex], pMesh->vertexOffset + pPart->minIndex, pMesh->field_0x10 - pPart->minIndex, pPart->pData, pPart->indexCount);
             CGame::m_unk0x0059ce18 += pPart->indexCount / 3;
             i++;
@@ -7053,6 +7054,7 @@ void Graphics_MarkTexturesAndDrawMeshParts(Mesh *pMesh)
             Frontend_SetObjectField118(CGraphics::m_pTextureManager->textureBuffer[pPart->texture], 10);
             CGraphics::ApplyTextureStageChange(0, CGraphics::m_pTextureManager->textureBuffer[pPart->texture]);
             Graphics_BindCarPaintDirt(CGraphics::m_pTextureManager->textureBuffer[pPart->texture]);
+            if(!SceneryPack_DrawFixedPart(pMesh,pPart))
             Gfx_DrawIndexedPrimitiveVB(GFX_TRIANGLELIST, CGraphics::m_pTextureManager->pVertexBuffers[pMesh->vertexBufferIndex], pMesh->vertexOffset + pPart->minIndex, pMesh->field_0x10 - pPart->minIndex, pPart->pData, pPart->indexCount);
             CGame::m_unk0x0059ce18 += pPart->indexCount / 3;
             i++;

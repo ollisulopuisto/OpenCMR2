@@ -3,6 +3,8 @@
 struct StageObject;
 struct GenericFile;
 struct Texture;
+struct Mesh;struct MeshPart;
+bool SceneryPack_DrawFixedPart(Mesh*,MeshPart*);
 void SceneryPack_RegisterSource(Texture *texture, const void *bytes, unsigned size);
 // Visual-only overrides. Original meshes/collision records remain untouched.
 void SceneryPack_RegisterArchive(GenericFile *archive, const char *path);

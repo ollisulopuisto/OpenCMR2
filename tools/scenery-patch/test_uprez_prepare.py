@@ -9,6 +9,13 @@ class Tests(unittest.TestCase):
  def test_cutout_refusal(self):
   im=Image.new('RGBA',(8,8),(22,33,44,0));buf=io.BytesIO();im.save(buf,format='DDS');raw=buf.getvalue();row=dict(bytes=len(raw),sha256=hashlib.sha256(raw).hexdigest(),width=8,height=8,repeat=[True,True])
   with self.assertRaises(ValueError):u.encode(raw,row)
+ def test_cutout_nonsquare_and_mips(self):
+  im=Image.new('RGBA',(8,4),(18,90,25,0));im.paste((50,120,30,255),(2,1,6,4));buf=io.BytesIO();im.save(buf,format='DDS');raw=buf.getvalue();row=dict(bytes=len(raw),sha256=hashlib.sha256(raw).hexdigest(),width=8,height=4,repeat=[False,False],kind='full-canvas-cutout')
+  import struct
+  payload=u.encode(raw,row);self.assertEqual(struct.unpack_from('<III',payload,8),(16,8,5))
+  self.assertEqual(len(payload),20+4*(16*8+8*4+4*2+2+1))
+  row['repeat']=[True,True]
+  with self.assertRaises(ValueError):u.encode(raw,row)
  def test_missing_archive_no_write(self):
   with tempfile.TemporaryDirectory()as tmp:
    root=Path(tmp);(root/'game').mkdir()

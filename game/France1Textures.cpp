@@ -4,6 +4,7 @@
 #include "Texture.h"
 #include "Graphics.h"
 #include <map>
+#include <set>
 #include "ScenerySHA256.h"
 #include "GenericFileLoader.h"
 #include "port/sys.h"
@@ -15,6 +16,7 @@
 namespace {
 bool active=false,uprez=false;
 std::map<Texture*,GfxTexture*> originals;
+std::map<Texture*,GfxTexture*> verifiedCutouts;
 struct Source{const char *hash;const char *file;const char *output;};
 const Source sources[]={
 {"a57557d985545afa97514b5aa331484d77f30b666d2bf4e5e27f55755197c3ef","t_1a-frahit.rgba","051308909c3ca51c24e4928010967a7b65acf3cd3bafd88c31b3edd0ca38e1f8"},
@@ -37,7 +39,7 @@ void France1Textures_Clear(){
   Texture*t=CGraphics::m_pTextureManager->textureBuffer[i];auto found=originals.find(t);
   if(found!=originals.end() && t && t->pSurface==found->second)Gfx_SetTextureReplacement(t->pSurface,nullptr);
  }
- originals.clear();
+ originals.clear();verifiedCutouts.clear();
 }
 void France1Textures_Begin(GenericFile *archive,const char *stage){
  France1Textures_Clear();
@@ -49,10 +51,11 @@ void France1Textures_Begin(GenericFile *archive,const char *stage){
  auto hash=SceneryIdentity::SHA256(p,n);
  active=hash=="a78fbf25efcecb20a0cd7360c2bfc28e24ba040a028f6225a0d1f690f9eed8d0"||hash=="f5331c231abc299df2b2a42c9b0c2bb8e69ac79526a5c21f5550ed7311157c36";
  if(uprez&&!_stricmp(stage,"fin01"))active=hash=="ecfd29aac42deb799d798fa8ce2a5db840147f77a3d49c80276f93d0e8a3157b"||hash=="b613c03d3c3cd7e0e6cf14c99be09e9ace96863af520e350f0cf215176a89c35";
- Sys_Log("textures: exact-source stage ground test %s; source2x filter, no new detail; native unverified",active?"source verified":"refused");
+ Sys_Log("textures: exact-source stage texture test %s; source2x filter, no new detail; native unverified",active?"source verified":"refused");
 }
 bool France1Textures_Apply(Texture *texture,const void*bytes,unsigned size){
- if(!active||!texture||!texture->pSurface||!bytes||(size!=16512&&size!=4224))return false;
+ verifiedCutouts.erase(texture);
+ if(!active||!texture||!texture->pSurface||!bytes||(size<128||size>1024*1024))return false;
  auto hash=SceneryIdentity::SHA256(bytes,size);const Source*source=nullptr;
  if(uprez){for(auto&s:uprezSources)if(hash==s.hash){source=&s;break;}}
  else for(auto&s:sources)if(hash==s.hash){source=&s;break;}if(!source)return false;
@@ -64,8 +67,13 @@ bool France1Textures_Apply(Texture *texture,const void*bytes,unsigned size){
   if(h==hash&&file==source->file){if(!expected.empty())return false;expected=digest;}
  }
  if(expected!=source->output||!Read(root/source->file,raw,2*1024*1024)||SceneryIdentity::SHA256(raw.data(),raw.size())!=expected||raw.size()<20||memcmp(raw.data(),"OCMRRGBA",8))return false;
- unsigned w=U32(raw,8),h=U32(raw,12),levels=U32(raw,16),want=size==16512?256:128;
- if(w!=want||h!=want||levels!=(want==256?9:8))return false;
+ if(size<128||memcmp(bytes,"DDS ",4))return false;
+ const auto*dds=(const unsigned char*)bytes;
+ auto dim=[&](unsigned p){return unsigned(dds[p])|(unsigned(dds[p+1])<<8)|(unsigned(dds[p+2])<<16)|(unsigned(dds[p+3])<<24);};
+ unsigned w=U32(raw,8),h=U32(raw,12),levels=U32(raw,16);
+ if(!dim(12)||!dim(16)||dim(12)>1024||dim(16)>1024||w!=dim(16)*2||h!=dim(12)*2)return false;
+ unsigned wantLevels=1;for(unsigned a=w,b=h;a>1||b>1;a=std::max(1u,a/2),b=std::max(1u,b/2))++wantLevels;
+ if(levels!=wantLevels)return false;
  size_t total=20;unsigned a=w,b=h;for(unsigned i=0;i<levels;i++){total+=a*b*4;a=std::max(1u,a/2);b=std::max(1u,b/2);}if(total!=raw.size())return false;
  GfxTexture *replacement=Gfx_CreateTexture(w,h,GFX_FORMAT_BGRA8,levels,0);if(!replacement)return false;
  size_t offset=20;a=w;b=h;
@@ -79,6 +87,9 @@ bool France1Textures_Apply(Texture *texture,const void*bytes,unsigned size){
   Gfx_UnlockTexture(replacement,0,i);offset+=a*b*4;a=std::max(1u,a/2);b=std::max(1u,b/2);
  }
  originals[texture]=texture->pSurface;
+ if(uprez&&std::string(source->file).find("tresh")==0)verifiedCutouts[texture]=texture->pSurface;
  Gfx_SetTextureReplacement(texture->pSurface,replacement); // original dimensions/UVs survive rollback
- Sys_Log("textures: source ground2x applied %s (%ux%u, %u mips)",source->file,w,h,levels);return true;
+ Sys_Log("textures: source2x applied %s (%ux%u, %u mips)",source->file,w,h,levels);return true;
 }
+
+bool France1Textures_IsVerifiedCutout(Texture*t){auto i=verifiedCutouts.find(t);return active&&uprez&&i!=verifiedCutouts.end()&&t&&t->pSurface==i->second;}

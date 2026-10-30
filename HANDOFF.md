@@ -478,3 +478,34 @@ explicitly report metadata unavailable. Temp-repo regression covers commit,
 branch, exact tag, dirty edit, detached checkout and stable unchanged output.
 Current full build succeeds; 127/132 tests pass, same five previously reproduced
 local Zig runtime baseline aborts. Nine focused camera/replay checks pass.
+
+
+## Fixed Finland1 strips and cutout texture follow-up (30 October2026)
+
+Separate from pinned PR184208ffae, never changing that delivery. Added82
+full-canvas2x cutout variants:76forest-strip variants across Finland/France
+hi/lo source archives, six Finland wooden-fence variants. Source/output hashes,
+rectangular dimensions and full mip chain are checked. Premultiplied RGB and
+nearest-achievable alpha-test coverage mips; interpolation, not invented detail.
+No original or derived artwork is included. Six shadow masks stay original.
+
+Fixed Finland1forest material runs take a separate exact original position/UV
+hash allowlist and strict four-corner planar/full-canvas fit. Ninefold
+triangulation adds shallow relief and perimeter/feet-fixed optional wind, all
+clamped within original quad axis-aligned bounds. Original mesh/collision
+records, physics, placement and material/light/fog binding are untouched.
+Two degenerate-axis parts cannot sway; one nonplanar part stays original.
+This is NOT individual3Dtrees or completed universal geometry coverage. Fence
+work is texture-only. Other track geometry is unchanged. Greece sources are
+still unavailable. Existing command opts in; --trees original disables this
+geometry, --textures original disables these texture and strip paths.
+
+Full local build passes;136/141tests pass, same five known baseline Zig
+aborts. All144Finland indexed textures passed actual runtime upload/all-mip
+comparisons and stage/identity/reset guards. Actual original temp.sht probe
+accepted785material runs, retained one, submitted43,740triangles;783runs show
+wind motion and all source bytes stay immutable. Runtime executor stubbed,
+not native Metal acceptance. CPU-rasterized submitted vertices/source pixels
+inspected privately. Native appearance/performance/culling remain open.
+Actual binary --asset-upgrades --prepare-only resolves all three private
+cache roots from owned archives. No merge, hosted run or release requested.
