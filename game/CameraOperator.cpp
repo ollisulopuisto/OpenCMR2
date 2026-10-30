@@ -23,7 +23,8 @@ void CameraOperator_Update(CameraRecord*record,const FixMatrix*reference,const F
  auto&p=reference->position;
  CameraOperator::V3 world={p.x/65536.f,p.y/65536.f,p.z/65536.f};
  auto road=CameraOperator::PreviewRoad(world,RallyData_GetActiveCarRaceRecordField0(car),g_routeNodes?g_routeNodeCount:0,
-  RallyData_GetRouteAdditionalState()!=0,[](int i){auto&p=g_routeNodes[i].position;return CameraOperator::V3{p.x/65536.f,0,p.z/65536.f};});
+  RallyData_GetRouteAdditionalState()!=0,[](int i){auto&p=g_routeNodes[i].position;return CameraOperator::V3{p.x/65536.f,0,p.z/65536.f};},
+  1.f+.6f*CameraOperator::Clamp(car->speed/65536.f/1.5f,0.f,1.f)); // look further down the road at speed (12/30 world units at rest, up to 19.2/48)
  // Remove last terrain lift before advancing free world inertia.
  if(state.ready)state.position.y-=state.terrainLift;
  {int pct=Sys_GetOption("video.drone_speed_lens",100);if(pct<-150)pct=-150;if(pct>100)pct=100;state.lensSpeedGain=.3f*pct/100.f;} // visual lens only; 100 = previous behaviour, negative = wider at speed
