@@ -37,7 +37,9 @@ uint64_t animationTime=0;
 const StageObject *diagnosticObject=nullptr;
 bool diagnosticArticulated=false;
 unsigned diagnosticFrame=0,diagnosticChanges=0;uint64_t diagnosticTime=0;
-static unsigned long long timeWindMathNs=0,timeSubmitNs=0;static std::vector<GfxVertex> windScratch;
+static unsigned long long timeWindMathNs=0,timeSubmitNs=0;
+// Timers. depth counters keep a flush that runs inside a draw from being counted twice.
+static unsigned long long timeReplacementNs=0,timeOtherNs=0,timeCalls=0;static int drawDepth=0,replacementDepth=0;static std::vector<GfxVertex> windScratch;
 unsigned long long crowdDrawsTotal=0,crowdTrianglesTotal=0,treeTrianglesTotal=0,treeRustledVerticesTotal=0;
 unsigned loggedSecond=0,treeReplacementDraws=0,treeWindDraws=0,crowdDraws=0;unsigned long long crowdTriangles=0;
 std::unordered_map<const Mesh*,CrowdMesh::Template<GfxVertex>> crowdMeshes;
@@ -178,7 +180,7 @@ void SceneryPack_RegisterSource(Texture *texture,const void *bytes,unsigned size
 }
 void SceneryPack_RegisterArchive(GenericFile *file,const char *path){if(file&&path)archives[file]=Leaf(path);}
 struct ReactCar{float x=0,z=0,speed=0;bool valid=false;uint64_t at=0;};static ReactCar reactCars[8];
-void SceneryPack_Clear(){crowdMeshes.clear();assets.clear();windIdentities.clear();windLogged.clear();treeOriginalLogged.clear();archives.clear();sourceIdentities.clear();identities.clear();unmatched.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;identityContract=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;for(auto &c:reactCars)c=ReactCar();diagnosticObject=nullptr;diagnosticArticulated=false;diagnosticFrame=diagnosticChanges=loggedSecond=treeReplacementDraws=treeWindDraws=0;diagnosticTime=0;}
+void SceneryPack_Clear(){pendingTrees.clear();crowdMeshes.clear();assets.clear();windIdentities.clear();windLogged.clear();treeOriginalLogged.clear();archives.clear();sourceIdentities.clear();identities.clear();unmatched.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;identityContract=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;for(auto &c:reactCars)c=ReactCar();diagnosticObject=nullptr;diagnosticArticulated=false;diagnosticFrame=diagnosticChanges=loggedSecond=treeReplacementDraws=treeWindDraws=0;diagnosticTime=0;}
 void SceneryPack_Advance(int step){if(step>0)animationTime+=(unsigned)step;}
 void SceneryPack_SetReactionSource(int slot,int x,int z,int speed,bool valid){if(slot<0||slot>=8)return;reactCars[slot]={x/65536.f,z/65536.f,speed/65536.f,valid,animationTime};}
 struct PendingTree{GfxMatrix m;std::vector<Part> *parts;SceneryMotion::WindFrame frame;};
@@ -337,8 +339,8 @@ static bool DrawReplacement(StageObject *object,const float *billboard,unsigned 
     for(auto &p:fitted->second){
         treeTrianglesTotal+=p.vertices.size()/3;
         if(p.wind.size()!=p.vertices.size()||p.windBottom!=bottom||p.windHeight!=height){
-            double t0=Sys_GetTicksPrecise();
             FlushTrees(); // no pending job may read a cache that is about to change
+            double t0=Sys_GetTicksPrecise();
             p.wind.resize(p.vertices.size());
             for(size_t k=0;k<p.vertices.size();k++)p.wind[k]=SceneryMotion::MakeWindVertex(p.vertices[k].u0,p.vertices[k].v0,p.vertices[k].y,bottom,height);
             p.windBottom=bottom;p.windHeight=height;
@@ -373,7 +375,10 @@ void FlushTrees(){
     }
     pendingTrees.clear();
     timeWindMathNs+=(unsigned long long)((t1-t0)*1e6);timeSubmitNs+=(unsigned long long)((Sys_GetTicksPrecise()-t1)*1e6);
-    timeReplacementNs+=(unsigned long long)((Sys_GetTicksPrecise()-t0)*1e6); // deferred work happens outside SceneryPack_Draw's own timer
+    // A flush from inside a draw is already inside that draw's timers; one from the batch loop is not.
+    unsigned long long dt=(unsigned long long)((Sys_GetTicksPrecise()-t0)*1e6);
+    if(replacementDepth==0)timeReplacementNs+=dt;
+    if(drawDepth==0)timeOtherNs+=dt;
 }
 void SceneryPack_BeginBatch(){treeBatch=true;}
 void SceneryPack_FlushBatch(){FlushTrees();}
@@ -388,17 +393,16 @@ bool SceneryPack_GetAnimationStatus(unsigned long long *tick,unsigned *frame,uns
 }
 
 extern "C" double Sys_GetTicksPrecise(void);
-static unsigned long long timeReplacementNs=0,timeOtherNs=0,timeCalls=0;
 void SceneryPack_GetTimeSplit(unsigned long long *windMathNs,unsigned long long *submitNs){if(windMathNs)*windMathNs=timeWindMathNs;if(submitNs)*submitNs=timeSubmitNs;}
 void SceneryPack_GetTimeTotals(unsigned long long *replacementNs,unsigned long long *totalNs,unsigned long long *calls){
  if(replacementNs)*replacementNs=timeReplacementNs;if(totalNs)*totalNs=timeOtherNs;if(calls)*calls=timeCalls;
 }
 // Diagnostics: wall-clock time spent inside the scenery sidecar draws (whole-tree and card paths), nanoseconds since launch.
 // The clock reads are themselves a small cost; this build is for measuring, not for the final default.
-struct DrawTimer{double t0=Sys_GetTicksPrecise();~DrawTimer(){timeOtherNs+=(unsigned long long)((Sys_GetTicksPrecise()-t0)*1e6);++timeCalls;}};
+struct DrawTimer{double t0=Sys_GetTicksPrecise();DrawTimer(){++drawDepth;}~DrawTimer(){--drawDepth;timeOtherNs+=(unsigned long long)((Sys_GetTicksPrecise()-t0)*1e6);++timeCalls;}};
 bool SceneryPack_Draw(StageObject *object,const float *billboard){
     DrawTimer drawTimer;
-    {double t0=Sys_GetTicksPrecise();bool done=DrawReplacement(object,billboard,CGraphics::m_textureCount,CGraphics::GetTextureBuffer());timeReplacementNs+=(unsigned long long)((Sys_GetTicksPrecise()-t0)*1e6);if(done)return true;}
+    {double t0=Sys_GetTicksPrecise();++replacementDepth;bool done=DrawReplacement(object,billboard,CGraphics::m_textureCount,CGraphics::GetTextureBuffer());--replacementDepth;timeReplacementNs+=(unsigned long long)((Sys_GetTicksPrecise()-t0)*1e6);if(done)return true;}
     if(!object||!object->pMesh||!billboard||!Sys_GetOption("video.scenery_overrides",1))return false;
     auto mesh=object->pMesh;
     if(!(mesh->flags&2)||!mesh->pTriangles||mesh->triangleCount<1||mesh->triangleCount>64||!mesh->pVertexData||mesh->field_0x10<3||mesh->field_0x10>64)return false;
@@ -423,7 +427,7 @@ bool SceneryPack_Draw(StageObject *object,const float *billboard){
         auto &v=vertices[ix];float motion=SceneryMotion::Offset(v.y,bottom,height,animationTime,(unsigned)(phase*1000),true);
         out.push_back({v.x+motion,v.y,v.z,v.nx,v.ny,v.nz,v.diffuseColour,v.specularColour,v.textureCoordinates[0][0],v.textureCoordinates[0][1],0,0});
     }
-    State(*(const GfxMatrix*)billboard);Gfx_SetTexture(0,source->pSurface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,out.data(),out.size());Gfx_PopState();
+    FlushTrees();State(*(const GfxMatrix*)billboard);Gfx_SetTexture(0,source->pSurface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,out.data(),out.size());Gfx_PopState();
     ++treeWindDraws;
     if(windLogged.insert(stem).second)Sys_Log("options: tree wind active %s (original2Dcard, fixed base; NOT3Dreplacement)",stem.c_str());
     return true;
