@@ -337,8 +337,17 @@ bool SceneryPack_GetAnimationStatus(unsigned long long *tick,unsigned *frame,uns
     return true;
 }
 
+extern "C" double Sys_GetTicksPrecise(void);
+static unsigned long long timeReplacementNs=0,timeOtherNs=0,timeCalls=0;
+void SceneryPack_GetTimeTotals(unsigned long long *replacementNs,unsigned long long *totalNs,unsigned long long *calls){
+ if(replacementNs)*replacementNs=timeReplacementNs;if(totalNs)*totalNs=timeOtherNs;if(calls)*calls=timeCalls;
+}
+// Diagnostics: wall-clock time spent inside the scenery sidecar draws (whole-tree and card paths), nanoseconds since launch.
+// The clock reads are themselves a small cost; this build is for measuring, not for the final default.
+struct DrawTimer{double t0=Sys_GetTicksPrecise();~DrawTimer(){timeOtherNs+=(unsigned long long)((Sys_GetTicksPrecise()-t0)*1e6);++timeCalls;}};
 bool SceneryPack_Draw(StageObject *object,const float *billboard){
-    if(DrawReplacement(object,billboard,CGraphics::m_textureCount,CGraphics::GetTextureBuffer()))return true;
+    DrawTimer drawTimer;
+    {double t0=Sys_GetTicksPrecise();bool done=DrawReplacement(object,billboard,CGraphics::m_textureCount,CGraphics::GetTextureBuffer());timeReplacementNs+=(unsigned long long)((Sys_GetTicksPrecise()-t0)*1e6);if(done)return true;}
     if(!object||!object->pMesh||!billboard||!Sys_GetOption("video.scenery_overrides",1))return false;
     auto mesh=object->pMesh;
     if(!(mesh->flags&2)||!mesh->pTriangles||mesh->triangleCount<1||mesh->triangleCount>64||!mesh->pVertexData||mesh->field_0x10<3||mesh->field_0x10>64)return false;
