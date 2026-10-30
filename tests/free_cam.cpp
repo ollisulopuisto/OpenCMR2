@@ -1,5 +1,7 @@
 #include "FreeCam.h"
+#include "CameraOperator.h"   // the engine camera that ships: its axis formulas are the coordinate convention the free cam must reproduce
 #include <cstdio>
+#include <initializer_list>
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line%d: %s\n",__LINE__,#x);return 1;}}while(0)
 static bool near(double a, double b) { return std::fabs(a - b) < 1e-9; }
 static void Run(FreeCam &c, const FreeCamInput &in, double seconds) { for (int i = 0; i < (int)std::lround(seconds * 10); i++) c.Update(in, 0.1); }   // frames of 0.1 s
@@ -46,6 +48,21 @@ int main()
     // Start from a looking-down camera: pitch comes from the camera.
     double fd[3] = {0, -0.5, std::sqrt(0.75)}; FreeCam k; k.Start(p, fd, r);
     CHECK(near(k.pitch, std::asin(-0.5)));
+    // Convention check against CameraOperator_Apply (game/CameraOperator.cpp): y up, f = (sin h, y, cos h), r = unit(f.z, 0, -f.x), u = f x r.
+    // FreeCam must rebuild exactly those axes from the camera it starts from, hand +1, so turn/strafe/tilt match the real camera.
+    for (double h : {0.0, 0.7, 2.0, -1.3, 3.0}) for (double pt : {0.0, 0.3, -0.4}) {
+        double cf[3] = {std::cos(pt) * std::sin(h), std::sin(pt), std::cos(pt) * std::cos(h)};
+        CameraOperator::V3 f = {(float)cf[0], (float)cf[1], (float)cf[2]};
+        CameraOperator::V3 r = CameraOperator::Unit({f.z, 0, -f.x});
+        CameraOperator::V3 u = {f.y * r.z - f.z * r.y, f.z * r.x - f.x * r.z, f.x * r.y - f.y * r.x};
+        double cr[3] = {r.x, r.y, r.z};
+        FreeCam e; double pos0[3] = {1, 2, 3}; e.Start(pos0, cf, cr);
+        FreeCamAxes ax = e.Axes();
+        CHECK(e.hand == 1);
+        CHECK(std::fabs(ax.f[0] - f.x) < 1e-5 && std::fabs(ax.f[1] - f.y) < 1e-5 && std::fabs(ax.f[2] - f.z) < 1e-5);
+        CHECK(std::fabs(ax.r[0] - r.x) < 1e-5 && std::fabs(ax.r[1] - r.y) < 1e-5 && std::fabs(ax.r[2] - r.z) < 1e-5);
+        CHECK(std::fabs(ax.u[0] - u.x) < 1e-5 && std::fabs(ax.u[1] - u.y) < 1e-5 && std::fabs(ax.u[2] - u.z) < 1e-5);
+    }
     puts("free cam ok");
     return 0;
 }
