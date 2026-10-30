@@ -6588,15 +6588,17 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             snprintf(text,sizeof(text),"Frame split ms: interval %.1f | executor encode+submit %.1f (swapchain wait %.1f) | scenery %.1f | rest %.1f",interval,ex-pe,wt-pw,sc,interval-(ex-pe)-sc);
             {   // Worst single frame over ~5 s windows (diagnostic): hitches that a one-frame readout misses. Timing only, no cause claimed.
                 static double winStart=0,worst=0,wEx=0,wSc=0,lastWorst=0,lWEx=0,lWSc=0;static unsigned over25=0,frames=0,lastOver=0,lastFrames=0;
-                if(interval>2000.0){   // pane was off, paused or the menu was open: discard this gap and restart the window
-                    winStart=0;worst=0;over25=0;frames=0;lastFrames=0;hitchText[0]=0;
+                const unsigned long long presents=Gfx_GetPresentCount();static unsigned long long prevPresents=0;
+                if(prevPresents==0||presents!=prevPresents+1){   // frames were presented without this pane (pane off, menu, pause): restart the window, but keep a genuine long single frame
+                    winStart=0;worst=0;over25=0;frames=0;lastFrames=0;snprintf(hitchText,sizeof(hitchText),"Hitch block: collecting 5 s after pane/menu gap");interval=0;
                 } else if(interval>0){
                     if(winStart==0)winStart=now;
                     frames++;if(interval>25.0)over25++;
                     if(interval>worst){worst=interval;wEx=ex-pe;wSc=sc;}
                 }
+                prevPresents=presents;
                 if(now-winStart>=5000.0&&winStart>0){lastWorst=worst;lWEx=wEx;lWSc=wSc;lastOver=over25;lastFrames=frames;worst=0;over25=0;frames=0;winStart=now;}
-                if(lastFrames)snprintf(hitchText,sizeof(hitchText),"Last 5s: worst frame %.1f ms (executor %.1f, scenery %.1f) | frames over 25 ms: %u of %u",lastWorst,lWEx,lWSc,lastOver,lastFrames);
+                if(lastFrames)snprintf(hitchText,sizeof(hitchText),"Last full 5 s block: worst frame %.1f ms (executor %.1f, scenery %.1f) | over 25 ms: %u of %u",lastWorst,lWEx,lWSc,lastOver,lastFrames);
             }
             pt=now;pe=ex;pw=wt;ptn2=tn;
             Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?6:5)*layout.line,layout.font,layout.width-2*layout.pad,colour);
