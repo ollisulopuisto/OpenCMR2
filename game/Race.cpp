@@ -4669,12 +4669,13 @@ void StageObject_InterpolateHeadlightGlows(int t);
 // Also called while paused with the tuning panel open, so a changed setting reaches the frozen scene.
 void AttractCapture_ViewSignature(int view, int *type, int *drone);
 int Race_GetPlayerRecordField4(BYTE index);
-// External replay cameras (chase 4-6, drone, trackside 7, blends 8, replay camera 9) must not show tunnel vision or the speed streak. Inside-car views
-// (1, 2, 3, 10) keep them. Only while player 0's stream is playing back, so driving is unchanged. The user's settings are not touched.
+// During replay playback only the interior view (camera type 3, the cockpit/dashboard) keeps tunnel vision and the speed streak: the user allowed
+// "dashboard / inside the car". Bonnet and bumper views (1, 2, 10) sit outside the cabin, so they count as external with chase 4-6, trackside 7, blends 8
+// and the replay camera 9. Only while player 0's stream is playing back, so driving is unchanged. The user's settings are not touched.
 bool Race_ExternalReplayView(int viewType, bool replayPlaying)
 {
     if (!replayPlaying) return false;
-    return viewType == 4 || viewType == 5 || viewType == 6 || viewType == 7 || viewType == 8 || viewType == 9;
+    return viewType != 3;
 }
 void Race_ApplySpeedEffectParams(void)
 {
