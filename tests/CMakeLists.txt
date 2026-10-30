@@ -565,3 +565,7 @@ add_test(NAME camera_operator_anticipate COMMAND camera_operator_anticipate_test
 add_executable(replay_controls_test replay_controls.cpp)
 target_include_directories(replay_controls_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
 add_test(NAME replay_controls COMMAND replay_controls_test)
+
+add_executable(speed_look_policy_test speed_look_policy.cpp)
+target_include_directories(speed_look_policy_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
+add_test(NAME speed_look_policy COMMAND speed_look_policy_test)

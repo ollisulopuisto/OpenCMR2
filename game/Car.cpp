@@ -8450,6 +8450,8 @@ void View_SetCameraType(int view, int type, BYTE target, int blend)
 extern BYTE g_playerCameraMode[8];
 extern BYTE g_droneVariant[8];
 static int g_speedFovShown[2], g_speedFovPct[2];
+// The camera operator's drone is the active camera of this player (same test the operator itself uses).
+bool View_IsDroneCamera(int view) { return view >= 0 && view < 8 && g_playerCameraMode[view] == 4 && g_droneVariant[view] && Sys_GetOption("video.camera_operator", 0); }
 // Diagnostics overlay: the effective percent setting and the eased 0..65536 speed ratio of a view.
 void SpeedFov_GetStatus(int view, int *pct, int *shown) { *pct = g_speedFovPct[view & 1]; *shown = g_speedFovShown[view & 1]; }
 // Called by View_SetPlayerProjection once per rendered view (not from the logic step, whose cadence did not track the
@@ -8468,7 +8470,7 @@ int View_SpeedFovZoom(BYTE view, int zoom)
     g_speedFovPct[view & 1] = pct;
     if (pct <= 0 || view >= 2) { shown[view & 1] = 0; return zoom; }
     if (pct > kSpeedFovMaxPct) pct = kSpeedFovMaxPct;
-    if (g_playerCameraMode[view] == 4 && g_droneVariant[view] && Sys_GetOption("video.camera_operator", 0)) return zoom;
+    if (View_IsDroneCamera(view)) { shown[view] = 0; return zoom; }   // no speed FOV in the drone; the eased value is reset so the dolly and readouts see no widening
     Car *car = Car_Get(view);
     int target = SpeedFov_HeldTarget(SpeedFov_Target(car ? car->speed : 0), Sys_GetOption("video.speed_fov_hold", 0));
     double now = Sys_GetTicksPrecise();
