@@ -11,9 +11,14 @@ class Tests(unittest.TestCase):
   self.assertEqual(actual,[(r['sha256'],r['output'],r['output_sha256'])for r in u.INDEX])
   self.assertEqual(len({r['output']for r in u.INDEX}),len(u.INDEX))
   for archive in ['frahit.bfl','fralot.bfl']:
-   selected=[r for r in u.INDEX if r['archive']==archive and r.get('usage')]
+   selected=[r for r in u.INDEX if r['archive']==archive and 'temp.c3d' in r.get('usage','')]
    self.assertEqual(len(selected),51)
    self.assertTrue(all(r['repeat']==[False,False]and r['stage']=='fra01'for r in selected))
+ def test_fixed_trackside_coverage(self):
+  counts={}
+  for r in u.INDEX:
+   if 'temp.sht' in r.get('usage',''):counts[r['archive']]=counts.get(r['archive'],0)+1
+  self.assertEqual(counts,{'finhit.bfl':5,'finlot.bfl':5,'frahit.bfl':20,'fralot.bfl':20})
  def test_source_refusal(self):
   with self.assertRaises(ValueError):u.encode(b'wrong',u.INDEX[0])
  def test_cutout_refusal(self):

@@ -552,3 +552,19 @@ Inspected actual uploaded mip0vsoriginal pixels privately, no native GPU claim.
 Original broad644scope not claimed; object/atlas texture coverage, other stages,
 solid geometry and Greece originals remain open. No merges, tags, dispatches,
 releases or artifact writes requested. Exact commands/source PR for human test.
+
+
+## Cohesive terrain/trackside2x follow-up (30 October2026)
+
+Build on187cd91bdb (not yet delivered to user; user last has186). Add50original
+fixed temp.shtmaterial hi/lo variants:10Finland banner variants,40France wall/
+guardrail/banner/static-ribbon variants. Full-canvas source UV usage verified
+from actual stage meshes.338indexed2xoutputs total including187terrain.
+Texture-only, no source/geometry/physics change. All338actual runtime owned-source
+upload/all-mip/stage/identity/reset checks pass. Premultiplied alpha/mip histogram
+optimization byte-identical across all338payloads plus manifest; avoids repeated
+pixel scans. Seven recipe tests pass; full136/141same5baseline Zig aborts. Actual
+uploaded output pixels inspected privately, not native gameplay. Scope still
+excludes unknown object/atlas textures, other stages, solid reconstruction,
+shadow masks and Greece source dependency. Prior184-187pins unchanged. New
+cohesive command should replace186for user, including held187terrain coverage.
