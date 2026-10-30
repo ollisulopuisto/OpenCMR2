@@ -371,3 +371,17 @@ blend/distance+shadowgroupingnotinthischeckpoint; see docs/EFFECT-AMOUNTS.md.
 Merged to main, all source-only and not native-verified on the Mac: #137 camera readout, per-type camera move, F10 panel, tyre debris, tyre-track length/history; #138 `--all-trees`, `--tree-coverage`, `--spectator-gain`; #139/#140 bush index entries; #141 test-only CI fix; #142 F10 panel drawn on sprite layer 3 (layer 4 draws before the 3D scene); #143 `--tree-rustle 0..300` (default 100) and `--spectator-irregular 0|1` (default 1), texture-coordinate shift only.
 #144 caches the crowd mesh template (counts logged, no timing claim). Bush converter path: no stem when the source canopy reaches the ground, crossed planes for the Finland leaf-strip bushes.
 Open: whole-stage tyre-track persistence, Hi/Lo and other-rally exporter coverage, bsh_st1/forest/hedge strips, drone FPS profile (needs native profile), curved-road generalisation, native confirmation of #137/#142/#143, macOS CI never started.
+
+## PR166 conflict repair (30 October 2026)
+
+Merged current rebuild/batch-7 ae51437 into the existing F10 FPS-only head.
+The sole conflict was adjacent test registrations: retain BOTH tuning_mode
+and the newer speed_look_policy test; neither supersedes the other. Existing
+FPS-only four-state cycle, adjustment-key gate, hidden camera readout and
+160-byte overlay buffer remain unchanged. No drone candidate/stage inventory
+work included. Merge commit intentionally uses [skip ci] because the stack's
+workflow still has the old full artifact matrix even though main merged PR174.
+Local CMake build and 3/3 targeted CTests pass (tuning_mode, speed_look_policy,
+replay_external_wiring); MetalFX patch fail-closed/availability script also
+passes. Native overlay pixels remain
+unverified. Owner still performs the PR merge.
