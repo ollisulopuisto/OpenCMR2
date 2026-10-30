@@ -47,7 +47,7 @@ struct State{
  bool ready=false;V3 position,velocity,aim,aimVelocity,lastCar,roadAhead;bool hasRoad=false;
  float terrainLift=0,curveLift=0,pullback=1.f; // pullback: smoothed speed-dependent distance scale
  bool pullbackReady=false;
- float travelSpeed=0,foreLag=0; // bounded fore/aft rubber band, separate from fast steering follow
+ float foreLag=0; // diagnostic longitudinal lag, not a clamped displacement
  float bendSmooth=0;V3 nearSmooth;bool previewReady=false; // low-pass of the route preview so node crossings do not step the framing
  float heading=0,headingRate=0,lastHeading=0,turn=0,zoom=1.7f,zoomRate=0,pitch=0,lensSpeedGain=.3f,shakeAmount=1.f,shakePhase=0,shakeRight=0,shakeUp=0,distanceScale=1.f,usedDistance=0; // lensSpeedGain: zoom change at full speed (+ = tighter lens, - = wider lens)
  void Reset(){*this=State{};}
@@ -89,31 +89,41 @@ struct State{
   float orbitHeading=carHeading; // gameplay: the driver needs a view from behind, even on a different route tangent
   float delta=ready?Wrap(carHeading-lastHeading):0;
   if(ready&&((car-lastCar).Length()>25.f||std::abs(delta)>.8f)){Reset();delta=0;}
-  if(!ready){ready=true;heading=orbitHeading;lastHeading=carHeading;lastCar=car;travelSpeed=0;foreLag=0;position=car+V3{-std::sin(heading)*distance,height,-std::cos(heading)*distance};aim=car+V3{0,1,0};velocity={};}
+  if(!ready){ready=true;heading=orbitHeading;lastHeading=carHeading;lastCar=car;foreLag=0;position=car+V3{-std::sin(heading)*distance,height,-std::cos(heading)*distance};aim=car+V3{0,1,0};velocity={};}
   hasRoad=roadValid;if(roadValid)roadAhead=road->far;
   float measured=delta/dt;lastHeading=carHeading;
   turn+=(Clamp(std::abs(measured)*1.8f+std::abs(steering)*.8f,0.f,1.f)-turn)*(1-std::exp(-dt/.3f));
-  // Fast damped heading follow with a small, explicit readability envelope.
-  // Keep inertia inside the envelope, not a multi-second sideways orbit.
-  float error=Wrap(orbitHeading-heading);
-  float follow=1-std::exp(-dt/.08f);
-  headingRate+=(error/.08f-headingRate)*follow;
-  heading=Wrap(heading+headingRate*dt);
-  constexpr float yawLimit=.034906585f; // about two degrees, not a literal physical tolerance
-  heading=Wrap(carHeading+Clamp(Wrap(heading-carHeading),-yawLimit,yawLimit));
+  // Fast damped heading follow, not a multi-second sideways orbit.
+  // Substeps keep the critically damped follower stable at low simulation
+  // rates. No angular clamp: an abrupt input may briefly exceed the normal
+  // couple-degree lag instead of teleporting the camera onto its boundary.
+  int steps=int(std::ceil(dt/.005f));float h=dt/steps;
+  for(int i=0;i<steps;i++){
+   float angularAcceleration=Clamp(6400.f*Wrap(orbitHeading-heading)-160.f*headingRate,-60.f,60.f);
+   headingRate+=angularAcceleration*h;
+   heading=Wrap(heading+headingRate*h);
+  }
   V3 forward={std::sin(carHeading),0,std::cos(carHeading)};
   V3 movement=(car-lastCar)*(1.f/dt);
   float forwardSpeed=movement.x*forward.x+movement.z*forward.z;
-  // Low-pass travel speed brakes a little late. The integral creates a small
-  // acceleration fall-back, then returns to neutral at constant speed/rest.
-  travelSpeed+=(forwardSpeed-travelSpeed)*(1-std::exp(-dt/.12f));
-  foreLag=(foreLag+(forwardSpeed-travelSpeed)*dt)*std::exp(-dt*7.f);
-  foreLag=Clamp(foreLag,-.6f,.6f);
-  float trailing=Max(distance+foreLag,distance*.8f); // never overtake or pass the car
-  V3 before=position;
-  float y=position.y+(car.y+height-position.y)*(1-std::exp(-dt/.25f));
-  position=car+V3{-std::sin(heading)*trailing,y-car.y,-std::cos(heading)*trailing};
-  velocity=(position-before)*(1.f/dt);
+  // Fast world-space spring. Position and velocity are integrated, not
+  // reconstructed from a clamped relative offset. Input jumps change bounded
+  // acceleration rather than instantly moving the camera sideways/forward.
+  for(int i=0;i<steps;i++){
+   V3 anchor=lastCar+(car-lastCar)*(float(i)/steps);
+   V3 desired=anchor+V3{-std::sin(heading)*distance,height,-std::cos(heading)*distance};
+   V3 desiredVelocity=movement+V3{-std::cos(heading)*distance*headingRate,0,std::sin(heading)*distance*headingRate};
+   V3 acceleration=(desired-position)*625.f-(velocity-desiredVelocity)*50.f;
+   float n=acceleration.Length();if(n>800.f)acceleration=acceleration*(800.f/n);
+   velocity=velocity+acceleration*h;position=position+velocity*h;
+  }
+  V3 away=position-car;
+  float along=away.x*forward.x+away.z*forward.z;
+  foreLag=-along-distance;
+  // Emergency safety boundary is behind the car. Ordinary braking never
+  // reaches it; discontinuous teleports/inputs prioritize not overtaking.
+  float minimum=distance*.8f;
+  if(along>-minimum){position=position-forward*(along+minimum);float v=velocity.x*forward.x+velocity.z*forward.z;if(v>forwardSpeed)velocity=velocity-forward*(v-forwardSpeed);}
   V3 target=car+V3{std::sin(carHeading)*Clamp(speed*3.f,2.f,5.f),1.2f,std::cos(carHeading)*Clamp(speed*3.f,2.f,5.f)};
   if(roadValid){target=road->near;target.y=car.y+1.2f;}
   V3 aimAcceleration=(target-aim)*12.f-aimVelocity*5.5f;
@@ -143,7 +153,7 @@ struct State{
   lookElevation=Clamp(lookElevation,target-.015f,target+.015f);
   float carYaw=std::atan2(toCar.x,toCar.z),aimYaw=std::atan2(f.x,f.z);
   float yaw=carYaw+Clamp(Wrap(aimYaw-carYaw),-.01f,.01f);
-  yaw=lastHeading+Clamp(Wrap(yaw-lastHeading),-.034906585f,.034906585f);
+
   V3 flat={std::sin(yaw),0,std::cos(yaw)};
   return {flat.x*std::cos(lookElevation),std::sin(lookElevation),flat.z*std::cos(lookElevation)};
  }

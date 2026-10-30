@@ -41,7 +41,7 @@ int main(){
  // Actual built camera must now follow behind a turn within about two degrees,
  // and zoom must survive BuildMatrix's original default assignment.
  body.right.x=32768;body.right.z=56756;body.forward.x=-56756;body.forward.z=32768;
- ChaseCamera_Update(&record,&body,0);
+ for(int i=0;i<20;i++)ChaseCamera_Update(&record,&body,0);
  {float yaw=std::atan2(record.matrix.forward.x/65536.f,record.matrix.forward.z/65536.f);
   CHECK(std::abs(CameraOperator::Wrap(yaw-.5235988f))<.036f);
   float behind=record.matrix.position.x/65536.f*.5f+record.matrix.position.z/65536.f*.8660254f;

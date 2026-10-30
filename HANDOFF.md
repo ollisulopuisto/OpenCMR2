@@ -377,12 +377,14 @@ Open: whole-stage tyre-track persistence, Hi/Lo and other-rally exporter coverag
 Claim: feat/drone-gameplay-follow, based on the batch-9 CI-fix lineage.
 The clarified voice request supersedes the independent route-tangent orbit:
 steering readability wins, with light inertia rather than a detached TV camera.
-Position orbit and horizontal look direction are bounded to about two degrees
-from car heading. Route preview still supports height/visibility and lens
-behavior, but no longer swings the viewpoint to the outside of a bend.
-A separate bounded fore/aft travel-speed filter falls back on acceleration,
-approaches slightly after braking, settles at steady speed/rest and never
-passes the car. Existing terrain, reset, opt-in/classic and per-camera paths
+Normal continuous-turn orbit lag stays near two degrees; abrupt inputs may
+briefly exceed that rather than snap onto a hard angular clamp. A substepped
+world-position/velocity spring bounds acceleration, with angular-velocity
+feed-forward for fast lateral tracking. Route preview still supports lift,
+but no longer selects an outside-bend orbit. Acceleration creates a small
+fall-back; braking approach settles without overtaking the car. A behind-car
+emergency boundary remains for extreme discontinuous inputs, not normal stops.
+Existing terrain, reset, opt-in/classic and per-camera paths
 remain. No new setting or default enablement.
 
 Four focused local CTests pass, including actual ChaseCamera_Update and
@@ -397,3 +399,13 @@ Broad local build was attempted, not green: unchanged SceneryMotion.h lacks
 a direct size_t declaration under this compiler (animated_scenery tests).
 A standalone compile of the base header reproduces it. No suppression or
 unrelated fix is included in this camera patch.
+
+Continuity follow-up: removed the initial hard angular and fore/aft clamps.
+World-position finite-difference acceleration stays below 850 units/s^2 in
+25/60/120Hz discontinuous heading-wrap, reversal and braking fixtures; normal
+trace max orbit 1.73 degrees, view 2.31 degrees, lag -0.44..0.035 world units.
+Approximate gameplay feel is not a literal two-degree invariant. Adjacent
+SceneryMotion cstddef fix has its own commit with standalone red/green proof.
+Full build now succeeds; full CTest run is 125/130, with five aborts in
+network, frontend and controller paths (Zig runtime safety checks in unchanged
+code). Those failures are not suppressed and baseline reruns remain needed.

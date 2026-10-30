@@ -8,7 +8,9 @@ int main(){
  using namespace CameraOperator;State a,b;
  V3 car={0,0,0};a.Step(car,0,0,1.5,6.5,2,.04);
  a.Step(car, .6f,1,1.5,6.5,2,.04);
- CHECK(std::abs(Wrap(a.heading-.6f))<=.035f); // fast steering follow replaces the old independent orbit
+ CHECK(a.heading>0&&a.heading<.08f); // abrupt input does not snap onto an angular boundary
+ for(int i=0;i<15;i++)a.Step(car,.6f,1,1.5,6.5,2,.04);
+ CHECK(std::abs(Wrap(a.heading-.6f))<.035f);
  float initialZoom=a.zoom;
  for(int i=0;i<60;i++)a.Step(car,.6f,1,1.5,6.5,2,.04);
  CHECK(a.zoom<initialZoom-.1f);
@@ -111,15 +113,32 @@ int main(){
     float along=behind.x*forward.x+behind.z*forward.z;
     CHECK(along>follow.usedDistance*.79f); // never goes past the car, including emergency stop
     float orbit=std::atan2(behind.x,behind.z);
-    CHECK(std::abs(Wrap(orbit-yaw))<=.0351f);
+    CHECK(std::abs(Wrap(orbit-yaw))<=.045f); // reversal may briefly exceed two degrees without snapping
     auto view=follow.FramedForward();
-    CHECK(std::abs(Wrap(std::atan2(view.x,view.z)-yaw))<=.0351f);
+    CHECK(std::abs(Wrap(std::atan2(view.x,view.z)-yaw))<=.06f); // aim adds at most 0.01 rad
     CHECK(std::abs(follow.foreLag)<=.601f);
     if(t>1&&t<2)maxFall=Max(maxFall,follow.foreLag);
     if(t>4&&t<4.6f)maxCatch=Max(maxCatch,-follow.foreLag);
    }
    CHECK(maxFall>.02f);CHECK(maxCatch>.02f); // actual fall-back and late braking, not rigid attachment
    CHECK(std::abs(follow.foreLag)<.001f); // settles rather than retaining speed-dependent lag
+  }
+ }
+ { // Abrupt turn/reversal, wrap and braking: inspect world-space displacement
+   // derivatives, rather than only the relative lag scalar.
+  for(float dt:{.04f,1.f/60,1.f/120}){
+   State s;V3 car;V3 previous,prevVelocity;float worstJump=0,worstAcceleration=0;
+   for(int i=0;i<int(6/dt);i++){
+    float t=i*dt,heading=t<2?3.12f:t<3?-3.12f:t<4?-2.7f:3.12f;
+    float v=t<1?0:t<4?12:0;
+    car=car+V3{0,0,-v*dt};
+    s.Step(car,heading,0,1.5f,6.5f,1.5f,dt);
+    if(i>2){V3 velocity=(s.position-previous)*(1/dt);worstJump=Max(worstJump,(s.position-previous).Length());
+     worstAcceleration=Max(worstAcceleration,(velocity-prevVelocity).Length()/dt);prevVelocity=velocity;}
+    previous=s.position;
+   }
+   fprintf(stderr,"dt %.5f max displacement %.3f world acceleration %.1f\n",dt,worstJump,worstAcceleration);
+   CHECK(worstJump<2.f);CHECK(worstAcceleration<850.f); // same acceleration bound across dt, not a 1/dt snap
   }
  }
  { // Heading wrap and mirrored left/right turns have the same bounded response.

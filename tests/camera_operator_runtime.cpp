@@ -18,7 +18,7 @@ int main(){
  CameraRecord record={};record.index=0;record.car=0;g_playerCameraMode[0]=4;
  FixMatrix body={};body.up.y=body.right.z=65536;car.pWorld=&body;car.speed=98304;
  CameraOperator_Update(&record,&body);CameraOperator_Apply(&record);
- body.right.x=32768;body.right.z=56756;CameraOperator_Update(&record,&body);CameraOperator_Apply(&record);
+ body.right.x=32768;body.right.z=56756;for(int i=0;i<20;i++)CameraOperator_Update(&record,&body);CameraOperator_Apply(&record);
  {float yaw=std::atan2(record.matrix.forward.x/65536.f,record.matrix.forward.z/65536.f);CHECK(std::abs(CameraOperator::Wrap(yaw-.5235988f))<.036f);}
  CHECK(record.zoom>0xa000);
  auto once=record;CameraOperator_Apply(&record);CHECK(!memcmp(&record,&once,sizeof record));
