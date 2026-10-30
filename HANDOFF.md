@@ -568,3 +568,14 @@ uploaded output pixels inspected privately, not native gameplay. Scope still
 excludes unknown object/atlas textures, other stages, solid reconstruction,
 shadow masks and Greece source dependency. Prior184-187pins unchanged. New
 cohesive command should replace186for user, including held187terrain coverage.
+
+## Native338texture preparation repair (31 October2026)
+
+User mainb17749cc8aa6build succeeded, then source-checked texture preparation
+refused a reviewed output mismatch. Exact native ARM cause not reproduced.
+Old338recipes pass local Pillow10.4/11.3/12.3. Avoid assuming cache corruption.
+Portable integer-only resampling replaces native float Lanczos for stage-uprez;
+all338digests regenerated/reviewed and runtime upload/all-mip/stage/reset tested.
+11helper tests pass. Full application build,136/141CTest with5same known Zig
+baseline aborts. Native ARM/gameplay/FPS still unverified. This repair targets
+main338directly;190opaque-object expansion stays separate and unchanged.
