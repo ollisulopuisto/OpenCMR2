@@ -119,5 +119,22 @@ int main(){
    CHECK(worst([](V3 p,float&y){y=std::nanf("");return true;},sc,.04f,j,false)<40.f);                         // non-finite samples
   }
  }
+ {  // early-return paths: a zero, negative, oversized or NaN time step after a teleport must not leave a stale far camera
+  for(float badDt:{0.f,-.04f,.5f,(float)NAN}){
+   State s;V3 car={0,0,0};for(int i=0;i<200;i++){car.z+=.5f;s.Step(car,0,0,1.5f,6.5f,1.5f,.04f);}
+   CHECK(s.ready);car.z+=500;s.Step(car,0,0,1.5f,6.5f,1.5f,badDt);s.ConstrainTerrain(car,badDt,[](V3,float&y){y=-1.5f;return true;});
+   CHECK(!s.ready||(s.position-car).Length()<=60.f);
+   car.z+=.5f;s.Step(car,0,0,1.5f,6.5f,1.5f,.04f);CHECK((s.position-car).Length()<20.f);
+  }
+  State s;V3 car={0,0,0};for(int i=0;i<200;i++)s.Step(car,0,0,1.5f,6.5f,1.5f,.04f);
+  s.position.y=1e30f;CHECK(s.Guard(car)&&!s.ready); // far/huge
+  State t;for(int i=0;i<10;i++)t.Step(car,0,0,1.5f,6.5f,1.5f,.04f);t.position.x=NAN;CHECK(t.Guard(car)&&!t.ready);
+ }
+ {  // a bank that really needs more than the cap: the camera is held at the cap and may clip a very tall bank, but stays near the car
+  State s;V3 car={0,0,0};float worstUp=0;
+  for(int i=0;i<600;i++){car.z+=1.1f;if(s.ready)s.position.y-=s.terrainLift;s.Step(car,0,0,1.5f,6.5f,1.5f,.04f);
+   s.ConstrainTerrain(car,.04f,[](V3,float&y){y=12.f;return true;});if(s.ready)worstUp=std::max(worstUp,s.position.y);}
+  CHECK(worstUp<=11+4+8+1);
+ }
  puts("world camera position/orbit inertia, steering lens, settling, determinism/reset pass");
 }

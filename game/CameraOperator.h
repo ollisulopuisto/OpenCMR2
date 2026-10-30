@@ -47,7 +47,15 @@ struct State{
  bool pullbackReady=false;
  float heading=0,headingRate=0,lastHeading=0,turn=0,zoom=1.7f,zoomRate=0,pitch=0,lensSpeedGain=.3f,shakeAmount=1.f,shakePhase=0,shakeRight=0,shakeUp=0,distanceScale=1.f,usedDistance=0; // lensSpeedGain: zoom change at full speed (+ = tighter lens, - = wider lens)
  void Reset(){*this=State{};}
+ // A camera far from the car, or not finite, is a failure. Start over behind the car on the next valid step. Runs on every update path,
+ // including the early returns for a zero or oversized time step, so a stale state cannot survive them.
+ bool Guard(V3 car){
+  if(!ready)return false;
+  if(std::isfinite(car.x)&&std::isfinite(car.y)&&std::isfinite(car.z)&&std::isfinite(position.x)&&std::isfinite(position.y)&&std::isfinite(position.z)&&(position-car).Length()<=60.f)return false;
+  Reset();return true;
+ }
  void Step(V3 car,float carHeading,float steering,float speed,float distance,float height,float dt,const RoadPreview*road=nullptr){
+  Guard(car);
   if(!std::isfinite(steering)||!std::isfinite(speed)||!std::isfinite(distance)||!std::isfinite(height)||!std::isfinite(carHeading)||!std::isfinite(dt)||dt<=0||dt>.2f||!std::isfinite(car.x)||!std::isfinite(car.y)||!std::isfinite(car.z)){Reset();return;}
   distance=Clamp(distance*1.5f,9.f,14.f);height=Clamp(height*3.f,7.f,10.f);
   // Speed-dependent distance: pull back at low speed to show scenery, fly closer at
@@ -131,6 +139,7 @@ struct State{
  template<class Query> void ConstrainTerrain(V3 car,float dt,Query rawQuery){
   // Ground samples far from the car's own level (another surface level, a bad triangle) are ignored, and the lift is capped: it is
   // divided by a ray fraction as small as 1/24, so one wild sample used to move the camera by up to 24x its error, without limit.
+  Guard(car);
   const float carY=car.y;
   auto ground=[&](V3 point,float&y){float v=0;if(!rawQuery(point,v)||!std::isfinite(v)||v>carY+15.f||v<carY-60.f)return false;y=v;return true;};
   if(!ready||dt<=0||dt>.2f)return;
@@ -172,7 +181,7 @@ struct State{
   position.y+=terrainLift;
   if(terrainLift>0&&velocity.y<0)velocity.y=0;
   // Safety net: a camera this far from the car is a failure, not a framing. Start over behind the car next step.
-  if(!std::isfinite(position.x)||!std::isfinite(position.y)||!std::isfinite(position.z)||(position-car).Length()>60.f)Reset();
+  Guard(car);
  }
 
 };
