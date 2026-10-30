@@ -520,9 +520,9 @@ BYTE g_trailColor[8][4];
 // GLOBAL: CMR2 0x00588750
 int g_trailFrame;
 // OpenCMR2: the skid-mark ring holds up to TRAIL_MAX points per wheel. The original size, 200, stays the default; video.tire_track_length (0 = original 200, else 200..TRAIL_MAX)
-// lengthens the player car's ring only (AI cars keep 200), so the geometry drawn per frame stays bounded. Time-based expiry never runs in this port
+// lengthens the ring of every car slot (points are only laid for the viewed car of each view, so one car per view), so the geometry drawn per frame stays bounded: 4 wheels x 1000 points x 2 triangles = 8000 per view, 2 views fit the 16384-entry skid layer. Time-based expiry never runs in this port
 // (a point's age is only ever set to 0), so the ring size is what decides how long marks stay.
-#define TRAIL_MAX 1500
+#define TRAIL_MAX 1000
 extern BYTE g_trailPointUsed[8][4][TRAIL_MAX];
 int StageObject_TrailRing(int car);
 // One point of a wheel's skid mark ring (200 per wheel and car).
@@ -7767,7 +7767,7 @@ int g_unk0x00549b20[8][4];
 TrailPoint g_trailPoints[8][4][TRAIL_MAX];
 int StageObject_TrailRing(int car)
 {
-    if (car != 0) return 200;
+    (void)car;
     int n = Sys_GetOption("video.tire_track_length", 0);
     return n <= 200 ? 200 : n > TRAIL_MAX ? TRAIL_MAX : n;
 }

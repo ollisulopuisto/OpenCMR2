@@ -52,7 +52,7 @@ struct EnhancementOptions {
         }
         if(key=="--tire-track-length"){
             char *end=nullptr;long n=strtol(value.c_str(),&end,10);
-            if(value.empty()||*end||n<0||n>1500)error="--tire-track-length expects 0..1500";else overrides["video.tire_track_length"]=(int)n;
+            if(value.empty()||*end||n<0||n>1000)error="--tire-track-length expects 0..1000";else overrides["video.tire_track_length"]=(int)n;
         }
         if(key=="--tire-debris"){
             char *end=nullptr;long n=strtol(value.c_str(),&end,10);
@@ -165,7 +165,7 @@ inline const char *EnhancementHelp(){return
 "  --dof-blur-max-px 1..40     Blur radius in pixels when dof_blur is 100 (default 4)\n"
 "  --camera-move-chase|--camera-move-cockpit|--camera-move-car -200..200  Move that camera family along its forward axis by this many 0.05 model unit steps at full speed, blending from 0 standing still; + forward, - back (default 0; visual only)\n"
 "  --camera-move-type TYPE=VALUE  Per camera type (1 2 3 4 5 6 10; repeatable): same as the family move, replaces the family value for that type when not 0\n"
-"  --tire-track-length 0..1500  Optional longer tyre tracks: skid-mark points kept per wheel for the player car (default 0 = original 200; ~7x longer at 1500; marks never time out in this port, only this ring wraps; visual only, costs triangles per frame)\n"
+"  --tire-track-length 0..1000  Optional longer tyre tracks: skid-mark points kept per wheel for the viewed car (default 0 = original 200; 5x longer at 1000; marks never time out in this port, only this ring wraps; visual only, costs triangles per frame)\n"
 "  --tire-debris 0..400  Optional stronger wheel debris: average chips per wheel per effects step x100 on loose or wet ground above 10 km/h (default 0 = original; visual only, max 4 per wheel step)\n"
 "  --fov-dolly-curve 0|1  Experimental: 1 spreads the chase dolly (same 1.0 to 0.70 limits) linearly over widening 1.0 to 2.0 instead of reaching 0.70 at about x1.3 (default 0 = current curve; visual only)\n"
 "  --cockpit-eye-shift -100..100  Cockpit camera: move the eye along its forward axis as the view widens (default 0 = off; sign tuned natively; visual only)\n"

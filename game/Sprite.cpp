@@ -668,8 +668,8 @@ Quad2D g_quad2DLayerA[0x400];
 // GLOBAL: CMR2 0x00803168
 Quad2D g_quad2DLayerB[0x200];
 // GLOBAL: CMR2 0x00730fd0
-// OpenCMR2: layer C (skid marks) is 4x the original 0x800 so longer tyre tracks fit; the draw count stays what the game queues.
-#define QUAD2D_LAYER_C_MAX 0x2000
+// OpenCMR2: layer C (skid marks) is 8x the original 0x800 (one entry = one triangle) so longer tyre tracks fit; the draw count stays what the game queues.
+#define QUAD2D_LAYER_C_MAX 0x4000
 Quad2D g_quad2DLayerC[QUAD2D_LAYER_C_MAX];
 // GLOBAL: CMR2 0x007acfd0
 Quad2D g_quad2DLayerD[1];
