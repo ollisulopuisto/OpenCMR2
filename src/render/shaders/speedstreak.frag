@@ -41,7 +41,7 @@ float speedLines(vec2 pc, float time, float soft, float thin)   // soft 0 = the 
     return line * seg * zone * (0.45 + 0.55 * h);
 }
 // Vapor trails: soft lines through the projected history points of the car's rear anchors (src/render/vapor_trail.h). Visual only.
-float vaporTrails(vec2 uv, float aspect)
+float vaporTrails(vec2 uv, float aspect, float time)
 {
     float best = 0.0;
     vec2 pq = vec2(uv.x * aspect, uv.y);
@@ -63,7 +63,15 @@ float vaporTrails(vec2 uv, float aspect)
             float hw = mix(a.z, b.z, t), al = mix(a.w, b.w, t);
             float tz = 1.0 / mix(1.0 / max(trailZ[k * 7 + i].x, 1e-3), 1.0 / max(trailZ[k * 7 + i + 1].x, 1e-3), t);   // perspective-correct depth along the segment
             float vis = 1.0 - smoothstep(0.0, max(depthInfo.w, 1e-3), tz - (sceneZ + depthInfo.z));                    // hidden behind nearer geometry
-            best = max(best, (1.0 - smoothstep(0.0, hw, d)) * al * vis);
+            // Two thin strands twisting around the trail axis over a faint haze, so the trail reads as a vortex instead of one flat line. Procedural, no texture.
+            // The whole thing is about 30% fainter than the single soft line it replaces.
+            vec2 nrm = normalize(vec2(-ba.y, ba.x) + vec2(1e-6, 0.0));
+            float sd = dot(pq - pa - ba * t, nrm);
+            float sPos = float(i) + t;
+            float swirl = hw * 0.55 * sin(sPos * 1.9 - time * 3.0);
+            float strands = max(1.0 - smoothstep(0.0, hw * 0.4, abs(sd - swirl)), 1.0 - smoothstep(0.0, hw * 0.4, abs(sd + swirl)));
+            float haze = 1.0 - smoothstep(0.0, hw, d);
+            best = max(best, (0.7 * strands + 0.3 * haze) * 0.7 * al * vis);
         }
     }
     return best;
@@ -86,11 +94,11 @@ void main()
         float zoneT = smoothstep(inner, inner + 0.8, length(tc));
         // Only once the tunnel vision is really active (eased strength, so it is 0 standing still and fades in as the clear circle closes), faint and vague,
         // and only deep in the blurred area: zoneT squared keeps the lines off the edge of the clear circle.
-        float amountT = smoothstep(0.35, 1.0, clamp(tl, 0.0, 1.0));
-        float lt = speedLines(c * vec2(settings.y, 1.0), settings.z, 1.0, 0.55) * zoneT * zoneT * amountT * LINES_OPACITY * 0.18 * (1.0 + 0.3 * clamp(tl - 1.0, 0.0, 1.0));
+        float amountT = smoothstep(0.6, 1.2, clamp(tl, 0.0, 1.2));
+        float lt = speedLines(c * vec2(settings.y, 1.0), settings.z, 1.0, 0.55) * zoneT * zoneT * amountT * LINES_OPACITY * 0.12 * (1.0 + 0.3 * clamp(tl - 1.0, 0.0, 1.0));
         lines = max(lines, lt);
     }
-    lines = max(lines, vaporTrails(uv, settings.y));
+    lines = max(lines, vaporTrails(uv, settings.y, settings.z));
     if (w <= 0.0) { outColor = vec4(mix(base.rgb, vec3(0.93, 0.95, 1.0), lines), base.a); return; }
     vec2 toCenter = -c * (w * MAXLEN);
     vec3 sum = base.rgb * 2.0;
