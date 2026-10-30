@@ -23,7 +23,7 @@ def is_sparse(alpha):
  if len(cols)<2 or len(ys)<2:return True
  return crown.sum()/((cols.max()-cols.min()+1)*(ys.max()-ys.min()+1))<.50
 
-def tree(a,rel,adaptive=False):
+def tree(a,rel,adaptive=False,stem=True):
  name=Path(a['texture']).stem;src=Image.open(a['path']).convert('RGBA');a=np.array(src);h,w=a.shape[:2];p=root/rel;p.mkdir(parents=True,exist_ok=True)
  # Source projection, not circumference repetition. Source alpha is retained.
  crown_bottom=.74 if name.startswith('tre_md') else .88
@@ -85,7 +85,7 @@ def tree(a,rel,adaptive=False):
  stem_rows=range(min(cut+2,last_row-2),max(cut+3,last_row-1)) if adaptive else range(round(h*.82),round(h*.90))
  stemwidth=min(w*.06,np.median([np.sum(a[y,:,3]>=220) for y in stem_rows]))
  radius=max(.005,stemwidth/extent*(w/h)/2);stemtop=1-crown_bottom+.035
- for j in range(8):
+ for j in range(8 if stem else 0): # a dense shrub whose canopy reaches the ground has no stem in its source; a stub would be invented
   t=j*math.tau/8;v=(j+1)*math.tau/8;q=[(radius*math.cos(t),0,radius*math.sin(t)),(radius*math.cos(t)*.7,stemtop,radius*.7*math.sin(t)),(radius*math.cos(v)*.7,stemtop,radius*.7*math.sin(v)),(radius*math.cos(v),0,radius*math.sin(v))];uv=[(0,0),(0,1),(1,1),(1,0)];nm=(math.cos((t+v)/2),0,math.sin((t+v)/2))
   for f in [(0,1,2),(0,2,3)]:faces.append(('trunk',len(out)+1));out.extend([(q[i],uv[i],nm) for i in f])
  lines=[f'# opencmr2-source-canvas-1 {w} {h}','mtllib tree.mtl']
@@ -99,9 +99,9 @@ def tree(a,rel,adaptive=False):
  (p/'tree.obj').write_text('\n'.join(lines)+'\n');(p/'tree.mtl').write_text('newmtl crown\nKd 1 1 1\nd 1\nmap_Kd crown.tga\nnewmtl trunk\nKd 1 1 1\nd 1\nmap_Kd trunk.tga\n')
  return str(rel/'tree.obj')
 
-def crossed_tree(a,rel):
+def crossed_tree(a,rel,with_stem=True):
  # Explicit opt-in cutout candidate, not a full3Dtree or private restored art.
- asset=tree(a,rel);p=root/rel;src=Image.open(a['path']).convert('RGBA');ar=np.array(src);h,w=ar.shape[:2]
+ asset=tree(a,rel,stem=with_stem);p=root/rel;src=Image.open(a['path']).convert('RGBA');ar=np.array(src);h,w=ar.shape[:2]
  name=Path(a['texture']).stem;broad=name.startswith('tre_md')
  if broad:
   yy,xx=np.mgrid[:h,:w];ar[(yy>h*.72)&(abs(xx-w/2)<w*.08),3]=0
@@ -467,8 +467,13 @@ def main():
      asset=(crossed_tree if args.tree_geometry=='crossed' else tree)(a,Path('trees')/rel);rows.append('\t'.join(['tree',archive,leaf,asset,'','1']));status='source-fitted-interpolated'
     elif rec.get('category') in ('individual-tree','individual-bush') and args.all_trees:
      # Every other individual tree: crown/stem split from its own alpha. Sparse crowns use crossed planes, dense ones the smoothed shell.
-     sparse=args.tree_geometry=='crossed' or is_sparse(np.array(Image.open(a['path']).convert('RGBA'))[:,:,3])
-     asset=crossed_tree(a,Path('trees')/rel) if sparse else tree(a,Path('trees')/rel,adaptive=True);rows.append('\t'.join(['tree',archive,leaf,asset,'','1']));status='adaptive-crossed' if sparse else 'adaptive-shell'
+     alpha=np.array(Image.open(a['path']).convert('RGBA'))[:,:,3];bush=rec.get('category')=='individual-bush'
+     # Bushes: the source decides. A canopy that reaches the bottom rows has no stem, so none is built. The Finland bsh_01/02 textures are
+     # horizontal leaf strips on a palm-like trunk: a closed shell turned them into a perforated cage in the contact sheet, so they use the crossed planes that keep the strips whole.
+     leaf_strips=bush and archive in ('finhit.bfl','finlot.bfl') and Path(leaf).stem in ('bsh_01','bsh_02')
+     sparse=args.tree_geometry=='crossed' or leaf_strips or is_sparse(alpha)
+     no_stem=bush and crown_profile(alpha)[0]>=.9
+     asset=crossed_tree(a,Path('trees')/rel,with_stem=not no_stem) if sparse else tree(a,Path('trees')/rel,adaptive=True,stem=not no_stem);rows.append('\t'.join(['tree',archive,leaf,asset,'','1']));status='adaptive-crossed' if sparse else 'adaptive-shell'
     elif rec.get('category')=='spectator':
      frames=spectator(a,Path('spectators')/rel);rows.append('\t'.join(['spectator',archive,leaf,frames[0],','.join(frames),'6' if len(frames)==4 else '5']));status='articulated-forearm' if len(frames)==4 else 'upper-body-sway'
     else:status='retained-original'
