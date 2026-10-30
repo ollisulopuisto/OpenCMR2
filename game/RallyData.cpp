@@ -6579,12 +6579,23 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             prn=rn;ptn=tn;pcl=cl;
             Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?5:4)*layout.line,layout.font,layout.width-2*layout.pad,colour);
         }
+        static char hitchText[200]="";
         {   // Same-interval split (diagnostic): everything below is a difference between two consecutive pane draws, so all numbers cover the same frame.
             static double pt=0,pe=0,pw=0;static unsigned long long ptn2=0;
             double now=Sys_GetTicksPrecise(),ex=0,wt=0;Gfx_GetPresentTimeTotals(&ex,&wt);
             unsigned long long rn=0,tn=0,cl=0;SceneryPack_GetTimeTotals(&rn,&tn,&cl);
             double interval=pt>0?now-pt:0,sc=(tn-ptn2)/1e6;
             snprintf(text,sizeof(text),"Frame split ms: interval %.1f | executor encode+submit %.1f (swapchain wait %.1f) | scenery %.1f | rest %.1f",interval,ex-pe,wt-pw,sc,interval-(ex-pe)-sc);
+            {   // Worst single frame over ~5 s windows (diagnostic): hitches that a one-frame readout misses. Timing only, no cause claimed.
+                static double winStart=0,worst=0,wEx=0,wSc=0,lastWorst=0,lWEx=0,lWSc=0;static unsigned over25=0,frames=0,lastOver=0,lastFrames=0;
+                if(interval>0){
+                    if(winStart==0)winStart=now;
+                    frames++;if(interval>25.0)over25++;
+                    if(interval>worst){worst=interval;wEx=ex-pe;wSc=sc;}
+                }
+                if(now-winStart>=5000.0&&winStart>0){lastWorst=worst;lWEx=wEx;lWSc=wSc;lastOver=over25;lastFrames=frames;worst=0;over25=0;frames=0;winStart=now;}
+                if(lastFrames)snprintf(hitchText,sizeof(hitchText),"Last 5s: worst frame %.1f ms (executor %.1f, scenery %.1f) | frames over 25 ms: %u of %u",lastWorst,lWEx,lWSc,lastOver,lastFrames);
+            }
             pt=now;pe=ex;pw=wt;ptn2=tn;
             Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?6:5)*layout.line,layout.font,layout.width-2*layout.pad,colour);
         }
@@ -6594,6 +6605,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?3:2)*layout.line,layout.font,layout.width-2*layout.pad,colour);
         int row=spectator?7:6;
         auto line=[&](const char*s,const BYTE*c=nullptr){Font_DrawTextScaled(1,(char*)s,layout.x+layout.pad,layout.y+layout.pad+row++*layout.line,layout.font,layout.width-2*layout.pad,(BYTE*)(c?c:colour));};
+        if(hitchText[0])line(hitchText);
         for(int i=0;i<3;i++)line(Sys_GetLaunchSummary(i));
         GfxEffectStatus status=Gfx_GetEffectStatus();
         auto effect=[&](unsigned bit){return status.submitted<0?"?":!(status.requested&bit)?"off":status.encoded&bit?"enc":"skip";};
