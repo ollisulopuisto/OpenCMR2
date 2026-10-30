@@ -6171,17 +6171,12 @@ static ReplayControls g_replayControls;
 static TuningEdges g_replayEdges;
 bool ReplayControls_Active(void) { return Race_GetPlayerRecordField4(0) != 0; }
 float ReplayControls_TimeScale(void) { return ReplayControls_Active() ? g_replayControls.Scale() : 1.0f; }
-// A replay key is usable when it is not a default driving/menu key and not bound to a driving action on an attached keyboard.
+// A replay key is usable when it is not on the game's refusal list (Esc, Return, arrows, [ ], C, F1/F2 ...). Space is allowed here although the list refuses it
+// for the F10 key: replay is the one place it is free, because the recorded controls run the car and live driving keys do nothing. The same reasoning drops the
+// driving-binding check: a key bound to a driving action is still a replay key while a replay plays, and the game does not see it (Input.cpp clears it).
 static bool ReplayKeyUsable(int key)
 {
-    if (!Tuning_ToggleKeyAllowed(key)) return false;
-    for (int device = 0; device < CInput::CountAttachedInputDevices(); device++) {
-        DeviceInfo *info = CInput::GetAvailableDeviceRecord(device);
-        if (info && info->field_0x0 == 1)
-            for (int action = 0; action < 9; action++)
-                if ((&info->keyboard.field_0x468)[action] == key) return false;
-    }
-    return true;
+    return key == INPUT_KEY_SPACE || Tuning_ToggleKeyAllowed(key);
 }
 bool ReplayControls_KeyIsReplayKey(int key) { return ReplayControls_Active() && ReplayKeyUsable(key) && (key == kReplayKeySlower || key == kReplayKeyFaster || key == kReplayKeyPause || key == kReplayKeyCamera); }
 int View_CycleReplayCamera(unsigned char view);
@@ -6229,7 +6224,7 @@ void ReplayControls_Draw(void)
     }
     if (!clock[0]) ReplayClock_FormatCentiseconds(StageTiming_GetClockTime(), clock, sizeof clock);   // not a controls stream: the stage clock only, no total
     g_replayControls.Label(speed, sizeof speed);
-    snprintf(text, sizeof text, "replay %s  %s  cam %s  , . / tab", clock, speed, ReplayCameraName(View_GetActiveCameraMode(0)));
+    snprintf(text, sizeof text, "replay %s  %s  cam %s  , . space tab", clock, speed, ReplayCameraName(View_GetActiveCameraMode(0)));
     DebugOverlayLayout layout = DebugOverlayLayout::For(g_pGraphics->resX, g_pGraphics->resY, 1);
     int width = std::min((int)strlen(text) * layout.font * 6 / 10 + 2 * layout.pad, g_pGraphics->resX - 2 * layout.x);
     short panel[4] = {(short)((g_pGraphics->resX - width) / 2), (short)(g_pGraphics->resY - layout.height - layout.y), (short)width, (short)layout.height};

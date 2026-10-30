@@ -573,3 +573,7 @@ add_test(NAME speed_look_policy COMMAND speed_look_policy_test)
 add_executable(tuning_mode_test tuning_mode.cpp)
 target_include_directories(tuning_mode_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
 add_test(NAME tuning_mode COMMAND tuning_mode_test)
+
+add_executable(replay_camera_cycle_test replay_camera_cycle.cpp)
+target_include_directories(replay_camera_cycle_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
+add_test(NAME replay_camera_cycle COMMAND replay_camera_cycle_test)

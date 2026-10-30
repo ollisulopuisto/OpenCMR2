@@ -576,6 +576,12 @@ extern "C" void Gfx_SetSpeedFocus(float speed)
         s_executor->SetSpeedFocus(speed);
 }
 
+extern "C" void Gfx_ClearVaporTrail(void)
+{
+    if (s_executor != NULL)
+        s_executor->ClearVaporTrail();
+}
+
 extern "C" void Gfx_ClearSpeedEffects(void)
 {
     if (s_executor != NULL)

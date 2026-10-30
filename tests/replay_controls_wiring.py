@@ -15,7 +15,7 @@ need("ReplayControls_Draw();" in rally and "void ReplayControls_Draw(void)\n{\n 
 need("ReplayControls_Update();" in rd("game/Race.cpp"), "update site")
 need("ReplayControls_KeyIsReplayKey" in rd("game/Input.cpp"), "keys must not reach the game")
 need("ReplayKeyUsable(key) &&" in rally, "bound driving keys are never taken")
-need("int View_CycleReplayCamera(unsigned char view)" in rd("game/Car.cpp") and "next > 5" in rd("game/Car.cpp"), "camera cycle computes the wrap before switching")
+need("int View_CycleReplayCamera(unsigned char view)" in rd("game/Car.cpp") and "ReplayCamera_Next(mode, available)" in rd("game/Car.cpp"), "camera cycle computes the wrap before switching")
 need("View_CycleReplayCamera(0);" in rally and "View_FindFreeModeSlot" not in rally.split("static void ReplayControls_CycleCamera")[1].split("void ReplayControls_Update")[0], "no double switch through the game step")
 need("ReplayStepsTotal(packets, count)" in rally, "total from the recorded packets")
 print("replay controls wiring ok" if ok else "FAILED"); sys.exit(0 if ok else 1)

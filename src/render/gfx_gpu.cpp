@@ -844,6 +844,7 @@ struct Executor : GfxExecutor {
     }
 
     void ClearSpeedEffects() override { speedFocusTarget = speedFocusSmooth = 0.0f; speedStreakTarget = speedStreakSmooth = 0.0f; }
+    void ClearVaporTrail() override { vaporTarget = vaporSmooth = 0.0f; vaporHistory.Reset(); vaporHavePrev = vaporHaveDir = false; }   // no fade-out and no stored trail points
 
     // OpenCMR2: god rays / volumetric lighting. `enabled` turns it on/off,
     // `intensity` (0..255) scales the effect strength.

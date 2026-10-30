@@ -2,6 +2,7 @@
 #include "CameraOperator.h"
 #include "port/sys.h"
 #include "SpeedFov.h"
+#include "ReplayCameraCycle.h"
 #include <math.h>
 #include "FloatToInt.h"
 #include <stddef.h>
@@ -5597,30 +5598,31 @@ int View_FindFreeModeSlot(unsigned char view)
     return mode;
 }
 
-// OpenCMR2 replay camera cycle (Tab): automatic trackside (7) -> chase 4 -> chase 5 (and its drone stop when enabled) -> car-mounted 1 -> bonnet 2 -> cockpit 3
-// when it is loaded -> automatic. Computes the target before switching, so the wrap makes one switch, not two. Returns the new mode.
+// OpenCMR2 replay camera cycle (Tab), order in ReplayCameraCycle.h. The drone is the second stop of chase 5 when video.camera_operator is on. A mode
+// that View_SwitchCamera would refuse (trackside 7 without camera spots, an unloaded cockpit) is skipped, so a press always lands on a camera. Returns
+// the new mode, or the unchanged one when nothing else is available.
+int View_IsModeAvailable(BYTE index, int mode);
 int View_CycleReplayCamera(unsigned char view)
 {
     int mode = View_GetActiveCameraMode(view);
     BYTE flags = View_GetActiveCameraFlags(view);
-    if (mode == 7) {
-        View_SwitchCamera(view, 4, 0xffff, flags, 1);
-        return 4;
-    }
     if (mode == 5 && Sys_GetOption("video.camera_operator", 0) != 0) {
         BYTE activeRecord = (BYTE)(g_activeViewRecord[view & 0xff] + (char)view * 2);
-        if (activeRecord < 8 && g_dronePairDone[activeRecord] == 0)
-            return View_FindFreeModeSlot(view);   // the drone is the second stop of chase 5; it stays on mode 5
-    }
-    int next = mode;
-    do {
-        next++;
-        if (next > 5) {
-            View_SwitchCamera(view, 7, 0xffff, flags, 0);
-            return 7;
+        if (activeRecord < 8 && g_dronePairDone[activeRecord] == 0) {
+            int r = View_FindFreeModeSlot(view);   // the drone is the second stop of chase 5; it stays on mode 5
+            Sys_Log("replay camera: %d -> drone/chase variant (mode %d)", mode, r);
+            return r;
         }
-    } while (RallyData_IsDriverViewModeAllowed(view, next) == 0);   // skips cockpit 3 when it is not loaded
-    View_SwitchCamera(view, next, 0xffff, flags, 1);
+    }
+    unsigned available = 0;
+    for (int m = 1; m <= 7; m++) {
+        int ok = m == 7 ? View_IsModeAvailable(view, 7) : RallyData_IsDriverViewModeAllowed(view, m);
+        if (ok) available |= 1u << m;
+    }
+    int next = ReplayCamera_Next(mode, available);
+    Sys_Log("replay camera: mode %d, available mask 0x%x, next %d", mode, available, next);
+    if (next < 0) return mode;
+    View_SwitchCamera(view, next, 0xffff, flags, next == 7 ? 0 : 1);
     return next;
 }
 
