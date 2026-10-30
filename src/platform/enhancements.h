@@ -116,7 +116,7 @@ struct EnhancementOptions {
     void ApplyTestPreset(){
         if(testPreset!="overdo")return;
         static const std::pair<const char*,int> kOverdo[]={{"video.speed_motes",0},
-            {"video.speed_fov",40},{"video.speed_fov_hold",1},{"video.depth_of_field",1},{"video.dof_blur",100},{"video.dof_blur_max_px",16},{"video.tunnel_vision",150},{"video.tunnel_lines",1},{"video.motion_blur",1},{"video.motion_blur_amount",60},{"video.speed_streak",100},{"video.dof_focus_car",1}};
+            {"video.speed_fov",40},{"video.speed_fov_hold",1},{"video.depth_of_field",1},{"video.dof_blur",100},{"video.dof_blur_max_px",16},{"video.tunnel_vision",130},{"video.tunnel_lines",1},{"video.motion_blur",1},{"video.motion_blur_amount",60},{"video.speed_streak",100},{"video.dof_focus_car",1}};
         for(auto&e:kOverdo)if(!overrides.count(e.first))overrides[e.first]=e.second;
     }
     void Apply(){
@@ -180,7 +180,7 @@ inline const char *EnhancementHelp(){return
 "  --speed-fov 0..500          Widen the regular cameras' view with speed (percent); default 0 = off\n"
 "  --drone-distance 50..150     Drone camera distance, percent of the default (default 60; overrides opencmr2.ini)\n"
 "  --speed-fov-cockpit 0..100  Cockpit camera: share of --speed-fov it uses, percent (default 25; overrides opencmr2.ini)\n"
-"  --tunnel-vision 0..200      Tunnel vision strength, percent (default 150; overrides opencmr2.ini; --test-preset overdo sets 150 too)\n"
+"  --tunnel-vision 0..200      Tunnel vision strength, percent (default 130; overrides opencmr2.ini; --test-preset overdo sets 130 too)\n"
 "  --tunnel-lines 0|1          Radial lines inside the tunnel-vision zone (default 1; overrides opencmr2.ini)\n"
 "  --cockpit-blur-clear 0..60  Cockpit: tenths of a world unit; interior nearer than this stays out of the tunnel-vision blur (default 16 = 1.6; 0 = off)\n"
 "  --speed-streak 0..100       Directional radial speed streak (SDL_GPU only); default 0 = off\n""  --speed-hold 0|1            Hold speed effects at full speed (overdo sets 1); 0 = real car speed\n"
@@ -200,7 +200,7 @@ inline const char *EnhancementHelp(){return
 "  --tire-debris 0..400  Optional stronger wheel debris: average chips per wheel per effects step x100 on loose or wet ground above 10 km/h (default 0 = original; visual only, max 4 per wheel step)\n"
 "  --fov-dolly-curve 0|1  Experimental: 1 spreads the chase dolly (same 1.0 to 0.70 limits) linearly over widening 1.0 to 2.0 instead of reaching 0.70 at about x1.3 (default 0 = current curve; visual only)\n"
 "  --cockpit-eye-shift -100..100  Cockpit camera: move the eye along its forward axis as the view widens (default 0 = off; sign tuned natively; visual only)\n"
-"  --test-preset overdo        Exaggerated diagnostic look for speed lines/streak, FOV, DoF, tunnel vision 150 with lines (legacy motes off; add --effect speed_motes=on)\n"
+"  --test-preset overdo        Exaggerated diagnostic look for speed lines/streak, FOV, DoF, tunnel vision 130 with lines (legacy motes off; add --effect speed_motes=on)\n"
 "                              and motion blur. Explicit flags override it; nothing is saved\n"
 "  --attract-capture DIR       Start the attract demo at once, save PNGs of the frame at\n"
 "                              stage-clock 0, N, 2N... s into DIR (+ capture.csv), then quit\n"
