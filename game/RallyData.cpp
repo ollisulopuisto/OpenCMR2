@@ -6536,7 +6536,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         BYTE colour[4] = {240, 246, 255, 255};
         unsigned long long tick=0;unsigned frame=0,changes=0;
         bool spectator=SceneryPack_GetAnimationStatus(&tick,&frame,&changes);
-        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?5:4)+11+5+2+5);   // +5: the Speed FOV, FOV dolly, FOV preview and footer rows were drawn below the panel in the 12:04 native screenshot (panel ended at "Measured")
+        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?6:5)+11+5+2+5);   // +5: the Speed FOV, FOV dolly, FOV preview and footer rows were drawn below the panel in the 12:04 native screenshot (panel ended at "Measured")
         short panel[4] = {(short)layout.x,(short)layout.y,(short)layout.width,(short)layout.height};
         Sprite_FillRect(NULL, panel, background, 1);
         char text[96];
@@ -6553,13 +6553,19 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             SceneryPack_GetFrameTotals(&cd,&ct,&tt,&tu);
             snprintf(text,sizeof(text),"This frame: crowd %llu cards %llu tris | trees %llu tris, %llu rustled verts",cd-pcd,ct-pct,tt-ptt,tu-ptu);
             pcd=cd;pct=ct;ptt=tt;ptu=tu;
-            Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?4:3)*layout.line,layout.font,layout.width-2*layout.pad,colour);
+            Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?4:3)*layout.line,layout.font,layout.width-2*layout.pad,colour);        }
+        {   // Wall-clock ms spent in the scenery sidecar draws last frame (diagnostic build), next to the frame time.
+            static unsigned long long prn=0,ptn=0,pcl=0;unsigned long long rn=0,tn=0,cl=0;
+            SceneryPack_GetTimeTotals(&rn,&tn,&cl);
+            snprintf(text,sizeof(text),"Scenery CPU ms: all %.2f (whole trees %.2f) %llu calls | frame %.1f ms",(tn-ptn)/1e6,(rn-prn)/1e6,cl-pcl,Graphics_GetFrameRate()>0?1000.0/Graphics_GetFrameRate():0.0);
+            prn=rn;ptn=tn;pcl=cl;
+            Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?5:4)*layout.line,layout.font,layout.width-2*layout.pad,colour);
         }
         unsigned treeDraws=0,windDraws=0,originalTrees=0;
         SceneryPack_GetTreeStatus(&treeDraws,&windDraws,&originalTrees);
         snprintf(text,sizeof(text),"Tree draws %u | wind %u | original %u",treeDraws,windDraws,originalTrees);
         Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?3:2)*layout.line,layout.font,layout.width-2*layout.pad,colour);
-        int row=spectator?5:4;
+        int row=spectator?6:5;
         auto line=[&](const char*s,const BYTE*c=nullptr){Font_DrawTextScaled(1,(char*)s,layout.x+layout.pad,layout.y+layout.pad+row++*layout.line,layout.font,layout.width-2*layout.pad,(BYTE*)(c?c:colour));};
         for(int i=0;i<3;i++)line(Sys_GetLaunchSummary(i));
         GfxEffectStatus status=Gfx_GetEffectStatus();
