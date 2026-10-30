@@ -56,6 +56,14 @@ if [ "$PREPARE" = 1 ]; then
     [ -n "$DATA" ] || die "asset options need --data DIR (or CMR2_DATA)"
     [ -d "$DATA" ] || die "game data folder not found: $DATA"
     case " ${FLAGS[*]} " in
+        *" --textures "*) n=$(find "$DATA" -iname frahit.bfl 2>/dev/null | wc -l | tr -d ' ')
+            [ "$n" = 1 ] || die "--textures france1 needs exactly one frahit.bfl under $DATA, found $n" ;;
+    esac
+    case " ${FLAGS[*]} " in
+        *" --roads "*) n=$(find "$DATA" -iname fra01hi.bfl 2>/dev/null | wc -l | tr -d ' ')
+            [ "$n" = 1 ] || die "--roads curved needs exactly one fra01hi.bfl (Ballon) under $DATA, found $n" ;;
+    esac
+    case " ${FLAGS[*]} " in
         *" --trees "*|*" --spectators "*)
             for b in frahit.bfl fralot.bfl finhit.bfl finlot.bfl; do
                 n=$(find "$DATA" -iname "$b" 2>/dev/null | wc -l | tr -d ' ')
