@@ -9,6 +9,8 @@ inline bool SpeedLook_ExternalReplayView(int viewType, bool replayPlaying)
     if (!replayPlaying) return false;
     return viewType != 3;
 }
+// Replay playback, every view: no vapor trails (air vortices). Driving keeps them. The saved video.vapor_trails value is never touched.
+inline bool SpeedLook_VaporOff(bool replayPlaying) { return replayPlaying; }
 inline bool SpeedLook_ScreenEffectsOff(int viewType, bool replayPlaying, bool droneView)
 {
     return droneView || SpeedLook_ExternalReplayView(viewType, replayPlaying);

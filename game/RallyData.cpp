@@ -6157,9 +6157,10 @@ void TuningPanel_Update(void)
     }
     if (changed) EffectSettings::Apply();
 }
-// OpenCMR2 replay controls (keyboard): , slower  . faster  / pause  Tab next camera. Active only while player 0's stream is playing back.
+// OpenCMR2 replay controls (keyboard): , slower  . faster  Space pause  Tab next camera. Active only while player 0's stream is playing back.
 // The recorded controls still run through the unchanged physics; only the time that feeds the step count is scaled (Car.cpp).
 #include "ReplayControls.h"
+#include "FreeCam.h"
 #include "ReplayStream.h"
 int Race_GetPlayerRecordField4(BYTE index);
 int View_GetActiveCameraMode(BYTE index);
@@ -6171,21 +6172,26 @@ static ReplayControls g_replayControls;
 static TuningEdges g_replayEdges;
 bool ReplayControls_Active(void) { return Race_GetPlayerRecordField4(0) != 0; }
 float ReplayControls_TimeScale(void) { return ReplayControls_Active() ? g_replayControls.Scale() : 1.0f; }
-// A replay key is usable when it is not a default driving/menu key and not bound to a driving action on an attached keyboard.
+// A replay key is usable when it is not on the game's refusal list (Esc, Return, arrows, [ ], C, F1/F2 ...). Space is allowed here although the list refuses it
+// for the F10 key: replay is the one place it is free, because the recorded controls run the car and live driving keys do nothing. The same reasoning drops the
+// driving-binding check: a key bound to a driving action is still a replay key while a replay plays, and the game does not see it (Input.cpp clears it).
 static bool ReplayKeyUsable(int key)
 {
-    if (!Tuning_ToggleKeyAllowed(key)) return false;
-    for (int device = 0; device < CInput::CountAttachedInputDevices(); device++) {
-        DeviceInfo *info = CInput::GetAvailableDeviceRecord(device);
-        if (info && info->field_0x0 == 1)
-            for (int action = 0; action < 9; action++)
-                if ((&info->keyboard.field_0x468)[action] == key) return false;
-    }
-    return true;
+    return key == INPUT_KEY_SPACE || Tuning_ToggleKeyAllowed(key);
 }
 bool ReplayControls_KeyIsReplayKey(int key) { return ReplayControls_Active() && ReplayKeyUsable(key) && (key == kReplayKeySlower || key == kReplayKeyFaster || key == kReplayKeyPause || key == kReplayKeyCamera); }
 int View_CycleReplayCamera(unsigned char view);
 void View_UpdateCamera(BYTE view);
+int View_FreeCamActive(void);
+void View_FreeCamStop(void);
+void View_FreeCamFrame(unsigned char view, const FreeCamInput *in, int reset);
+static const int kFreeCamKeys[] = {0x11, 0x1f, 0x1e, 0x20, 0x10, 0x12, 0x13, 0x2a, 0x36, 0xc8, 0xd0, 0xcb, 0xcd};
+bool ReplayControls_KeyIsFreeCamKey(int key)
+{
+    if (!ReplayControls_Active() || !View_FreeCamActive()) return false;
+    for (int k : kFreeCamKeys) if (k == key) return true;
+    return false;
+}
 static void ReplayControls_CycleCamera(void)
 {
     View_CycleReplayCamera(0);
@@ -6195,11 +6201,18 @@ static void ReplayControls_CycleCamera(void)
 }
 void ReplayControls_Update(void)
 {
-    if (!ReplayControls_Active()) { g_replayControls.Reset(); return; }
+    if (!ReplayControls_Active()) { g_replayControls.Reset(); View_FreeCamStop(); return; }   // replay over or stage changed: the free camera never carries over
     if (ReplayKeyUsable(kReplayKeySlower) && g_replayEdges.Edge(0, Input_IsKeyDown(kReplayKeySlower) != 0)) g_replayControls.Slower();
     if (ReplayKeyUsable(kReplayKeyFaster) && g_replayEdges.Edge(1, Input_IsKeyDown(kReplayKeyFaster) != 0)) g_replayControls.Faster();
     if (ReplayKeyUsable(kReplayKeyPause) && g_replayEdges.Edge(2, Input_IsKeyDown(kReplayKeyPause) != 0)) g_replayControls.TogglePause();
     if (ReplayKeyUsable(kReplayKeyCamera) && g_replayEdges.Edge(3, Input_IsKeyDown(kReplayKeyCamera) != 0)) ReplayControls_CycleCamera();
+    if (View_FreeCamActive()) {   // arrows and WASD are free in replay: the recorded controls drive the car
+        FreeCamInput in = {};
+        in.forward = Input_IsKeyDown(0x11) != 0; in.back = Input_IsKeyDown(0x1f) != 0; in.left = Input_IsKeyDown(0x1e) != 0; in.right = Input_IsKeyDown(0x20) != 0;
+        in.down = Input_IsKeyDown(0x10) != 0; in.up = Input_IsKeyDown(0x12) != 0; in.fast = Input_IsKeyDown(0x2a) != 0 || Input_IsKeyDown(0x36) != 0;
+        in.lookUp = Input_IsKeyDown(0xc8) != 0; in.lookDown = Input_IsKeyDown(0xd0) != 0; in.turnLeft = Input_IsKeyDown(0xcb) != 0; in.turnRight = Input_IsKeyDown(0xcd) != 0;
+        View_FreeCamFrame(0, &in, g_replayEdges.Edge(4, Input_IsKeyDown(0x13) != 0) ? 1 : 0);
+    }
 }
 // Small bottom-centre line: replay time (the stage clock, which the re-run reproduces), speed, camera. Drawn only while replaying.
 static const char *ReplayCameraName(int type)
@@ -6229,7 +6242,7 @@ void ReplayControls_Draw(void)
     }
     if (!clock[0]) ReplayClock_FormatCentiseconds(StageTiming_GetClockTime(), clock, sizeof clock);   // not a controls stream: the stage clock only, no total
     g_replayControls.Label(speed, sizeof speed);
-    snprintf(text, sizeof text, "replay %s  %s  cam %s  , . / tab", clock, speed, ReplayCameraName(View_GetActiveCameraMode(0)));
+    snprintf(text, sizeof text, "replay %s  %s  cam %s  , . space tab", clock, speed, View_FreeCamActive() ? "free (wasd qe arrows r)" : ReplayCameraName(View_GetActiveCameraMode(0)));
     DebugOverlayLayout layout = DebugOverlayLayout::For(g_pGraphics->resX, g_pGraphics->resY, 1);
     int width = std::min((int)strlen(text) * layout.font * 6 / 10 + 2 * layout.pad, g_pGraphics->resX - 2 * layout.x);
     short panel[4] = {(short)((g_pGraphics->resX - width) / 2), (short)(g_pGraphics->resY - layout.height - layout.y), (short)width, (short)layout.height};

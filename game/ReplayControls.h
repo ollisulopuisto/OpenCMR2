@@ -5,8 +5,8 @@
 // No reverse: the replay is re-simulated from recorded inputs, so going back would mean restoring the start state and re-running, which is not done here.
 #include <cmath>
 #include <cstdio>
-// DirectInput scancodes: , slower  . faster  / pause or resume  Tab next camera (the automatic trackside camera is part of the cycle).
-static const int kReplayKeySlower = 0x33, kReplayKeyFaster = 0x34, kReplayKeyPause = 0x35, kReplayKeyCamera = 0x0f;
+// DirectInput scancodes: , slower  . faster  Space pause or resume  Tab next camera (the automatic trackside camera is part of the cycle).
+static const int kReplayKeySlower = 0x33, kReplayKeyFaster = 0x34, kReplayKeyPause = 0x39, kReplayKeyCamera = 0x0f;
 static const float kReplaySpeeds[] = {0.25f, 0.5f, 1.0f, 2.0f, 4.0f, 8.0f};
 static const int kReplaySpeedCount = 6, kReplayNormalIndex = 2;
 struct ReplayControls {

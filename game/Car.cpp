@@ -2,6 +2,8 @@
 #include "CameraOperator.h"
 #include "port/sys.h"
 #include "SpeedFov.h"
+#include "ReplayCameraCycle.h"
+#include "FreeCam.h"
 #include <math.h>
 #include "FloatToInt.h"
 #include <stddef.h>
@@ -5597,30 +5599,72 @@ int View_FindFreeModeSlot(unsigned char view)
     return mode;
 }
 
-// OpenCMR2 replay camera cycle (Tab): automatic trackside (7) -> chase 4 -> chase 5 (and its drone stop when enabled) -> car-mounted 1 -> bonnet 2 -> cockpit 3
-// when it is loaded -> automatic. Computes the target before switching, so the wrap makes one switch, not two. Returns the new mode.
+// OpenCMR2 replay camera cycle (Tab), order in ReplayCameraCycle.h. The drone is the second stop of chase 5 when video.camera_operator is on. A mode
+// that View_SwitchCamera would refuse (trackside 7 without camera spots, an unloaded cockpit) is skipped, so a press always lands on a camera. Returns
+// the new mode, or the unchanged one when nothing else is available.
+int View_IsModeAvailable(BYTE index, int mode);
+static FreeCam g_freeCam;
+static FreeCamInput g_freeCamInput;
+static double g_freeCamLastMs = 0;
+int View_FreeCamActive(void) { return g_freeCam.active ? 1 : 0; }
+void View_FreeCamStop(void) { g_freeCam.active = false; }
+// Starts (or restarts, for R) the free camera at the pose of the active camera record: the chase camera behind the car on entry.
+static void View_FreeCamStart(unsigned char view)
+{
+    BYTE active = (BYTE)(g_activeViewRecord[view & 0xff] + (char)view * 2);
+    const FixMatrix *m = &g_viewRecords[active].matrix;
+    double pos[3] = {m->position.x / 65536.0, m->position.y / 65536.0, m->position.z / 65536.0};
+    double f[3] = {m->forward.x / 65536.0, m->forward.y / 65536.0, m->forward.z / 65536.0};
+    double r[3] = {m->right.x / 65536.0, m->right.y / 65536.0, m->right.z / 65536.0};
+    g_freeCam.Start(pos, f, r);
+    g_freeCamLastMs = Sys_GetTicksPrecise();
+    Sys_Log("replay free camera: start pos %.1f %.1f %.1f yaw %.2f pitch %.2f hand %d", pos[0], pos[1], pos[2], g_freeCam.yaw, g_freeCam.pitch, g_freeCam.hand);
+}
+// Per frame, after the sim steps and the game's own camera update, so it also works with zero steps (paused). Replaces only the shown pose.
+void View_FreeCamFrame(unsigned char view, const FreeCamInput *in, int reset)
+{
+    if (!g_freeCam.active) return;
+    if (reset) View_FreeCamStart(view);
+    double now = Sys_GetTicksPrecise();
+    g_freeCam.Update(*in, (now - g_freeCamLastMs) / 1000.0);
+    g_freeCamLastMs = now;
+    FreeCamAxes a = g_freeCam.Axes();
+    FixMatrix *m = &g_viewStates[view].matrix;
+    #define FREECAM_FIX(v) ((int)std::lround((v) * 65536.0))
+    m->right.x = FREECAM_FIX(a.r[0]); m->right.y = FREECAM_FIX(a.r[1]); m->right.z = FREECAM_FIX(a.r[2]);
+    m->up.x = FREECAM_FIX(a.u[0]); m->up.y = FREECAM_FIX(a.u[1]); m->up.z = FREECAM_FIX(a.u[2]);
+    m->forward.x = FREECAM_FIX(a.f[0]); m->forward.y = FREECAM_FIX(a.f[1]); m->forward.z = FREECAM_FIX(a.f[2]);
+    m->position.x = FREECAM_FIX(g_freeCam.pos[0]); m->position.y = FREECAM_FIX(g_freeCam.pos[1]); m->position.z = FREECAM_FIX(g_freeCam.pos[2]);
+    #undef FREECAM_FIX
+    g_viewPreviousStates[view].matrix = *m;   // no blend back toward the old pose
+}
 int View_CycleReplayCamera(unsigned char view)
 {
     int mode = View_GetActiveCameraMode(view);
     BYTE flags = View_GetActiveCameraFlags(view);
-    if (mode == 7) {
-        View_SwitchCamera(view, 4, 0xffff, flags, 1);
-        return 4;
-    }
+    if (g_freeCam.active) { g_freeCam.active = false; mode = kReplayFreeCamMode; }
     if (mode == 5 && Sys_GetOption("video.camera_operator", 0) != 0) {
         BYTE activeRecord = (BYTE)(g_activeViewRecord[view & 0xff] + (char)view * 2);
-        if (activeRecord < 8 && g_dronePairDone[activeRecord] == 0)
-            return View_FindFreeModeSlot(view);   // the drone is the second stop of chase 5; it stays on mode 5
-    }
-    int next = mode;
-    do {
-        next++;
-        if (next > 5) {
-            View_SwitchCamera(view, 7, 0xffff, flags, 0);
-            return 7;
+        if (activeRecord < 8 && g_dronePairDone[activeRecord] == 0) {
+            int r = View_FindFreeModeSlot(view);   // the drone is the second stop of chase 5; it stays on mode 5
+            Sys_Log("replay camera: %d -> drone/chase variant (mode %d)", mode, r);
+            return r;
         }
-    } while (RallyData_IsDriverViewModeAllowed(view, next) == 0);   // skips cockpit 3 when it is not loaded
-    View_SwitchCamera(view, next, 0xffff, flags, 1);
+    }
+    unsigned available = 1u << kReplayFreeCamMode;
+    for (int m = 1; m <= 7; m++) {
+        int ok = m == 7 ? View_IsModeAvailable(view, 7) : RallyData_IsDriverViewModeAllowed(view, m);
+        if (ok) available |= 1u << m;
+    }
+    int next = ReplayCamera_Next(mode, available);
+    Sys_Log("replay camera: mode %d, available mask 0x%x, next %d", mode, available, next);
+    if (next < 0) return mode;
+    if (next == kReplayFreeCamMode) {   // pose override on top of the chase camera, so the car is drawn from outside even when coming from the cockpit
+        if (View_GetActiveCameraMode(view) != 4) View_SwitchCamera(view, 4, 0xffff, flags, 1);
+        View_FreeCamStart(view);
+        return next;
+    }
+    View_SwitchCamera(view, next, 0xffff, flags, next == 7 ? 0 : 1);
     return next;
 }
 

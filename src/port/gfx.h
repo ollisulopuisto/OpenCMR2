@@ -284,6 +284,8 @@ void Gfx_SetDepthOfField(BOOL enabled, int focalDistance, int focalRange, int ma
 void Gfx_SetSpeedFocus(float speed);
 /* OpenCMR2: drop the eased tunnel vision and speed streak at once (targets and eased values to 0), for views where they must not show, e.g. external replay cameras. */
 void Gfx_ClearSpeedEffects(void);
+/* OpenCMR2: drop the vapor trail (target, eased value and stored trail points) at once, e.g. during replay playback. */
+void Gfx_ClearVaporTrail(void);
 /* OpenCMR2 cockpit view: pixels nearer than this view distance (world units, the interior) stay out of the tunnel-vision blur. 0 = off. SDL_GPU only. */
 void Gfx_SetTunnelNearClear(float worldUnits);
 float Gfx_GetTunnelNearClear(void);

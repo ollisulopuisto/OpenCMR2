@@ -4676,10 +4676,11 @@ void Race_ApplySpeedEffectParams(void)
 {
     {
         int viewType = 0, viewDrone = 0; AttractCapture_ViewSignature(0, &viewType, &viewDrone);
+        if (SpeedLook_VaporOff(Race_GetPlayerRecordField4(0) != 0)) Gfx_ClearVaporTrail();   // replay: air vortices off in every view, saved setting untouched
         // Replay: only the interior view (type 3) keeps the effects. Drone camera: never. See SpeedLookPolicy.h. Settings are not rewritten.
         if (SpeedLook_ScreenEffectsOff(viewType, Race_GetPlayerRecordField4(0) != 0, View_IsDroneCamera(0))) {
             Gfx_ClearSpeedEffects();   // targets and eased values to 0: no residual blur or lines after a camera switch
-            Gfx_SetVaporTrail(SpeedStreak_Strength((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0), Sys_GetOption("video.vapor_trails", 0) != 0 ? 100 : 0)); // world-space trails stay as set
+            if (!SpeedLook_VaporOff(Race_GetPlayerRecordField4(0) != 0)) Gfx_SetVaporTrail(SpeedStreak_Strength((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0), Sys_GetOption("video.vapor_trails", 0) != 0 ? 100 : 0)); // world-space trails: off in replay, as set while driving
             return;
         }
     }
@@ -4699,7 +4700,7 @@ void Race_ApplySpeedEffectParams(void)
     // OpenCMR2: speed streak (visual only): directional radial streak, 0 = off (default). Same speed ratio and overdo hold as above.
     Gfx_SetSpeedStreak(SpeedStreak_Strength((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0), Sys_GetOption("video.speed_streak", 0)));
     // OpenCMR2: vapor trails (visual only, video.vapor_trails 0/1, default off): same speed ratio and overdo hold; the renderer eases and fades them in.
-    Gfx_SetVaporTrail(SpeedStreak_Strength((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0), Sys_GetOption("video.vapor_trails", 0) != 0 ? 100 : 0));
+    Gfx_SetVaporTrail(SpeedLook_VaporOff(Race_GetPlayerRecordField4(0) != 0) ? 0.0f : SpeedStreak_Strength((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0), Sys_GetOption("video.vapor_trails", 0) != 0 ? 100 : 0));
 }
 
 // Per-frame race update: advances the stage timing, the particle and dash

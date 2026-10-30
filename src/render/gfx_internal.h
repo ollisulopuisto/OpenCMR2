@@ -202,6 +202,7 @@ struct GfxExecutor {
     virtual void SetDepthOfField(BOOL, int, int, int) {}
     virtual void SetSpeedFocus(float) {}
     virtual void ClearSpeedEffects() {}
+    virtual void ClearVaporTrail() {}
     virtual void SetSpeedStreak(float) {}
     virtual void SetVaporTrail(float) {}
     // OpenCMR2: god rays / volumetric lighting. `enabled` turns it on/off,
