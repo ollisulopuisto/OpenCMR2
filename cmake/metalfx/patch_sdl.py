@@ -21,7 +21,7 @@ def replace(old, new):
 replace('#include <Metal/Metal.h>', '#include <Metal/Metal.h>\n#if defined(SDL_PLATFORM_MACOS) && __has_include(<MetalFX/MetalFX.h>)\n#import <MetalFX/MetalFX.h>\n#define OPENCMR2_METALFX 1\n#endif\n' + marker)
 replace('    id<MTLCommandQueue> queue;', '''    id<MTLCommandQueue> queue;
 #ifdef OPENCMR2_METALFX
-    id<MTLFXSpatialScaler> opencmr2Scaler;
+    id opencmr2Scaler; // MTLFXSpatialScaler (macOS 13); untyped so the struct needs no availability
     SDL_GPUTexture *opencmr2Output;
     Uint32 opencmr2InputW, opencmr2InputH, opencmr2OutputW, opencmr2OutputH;
 #endif''')

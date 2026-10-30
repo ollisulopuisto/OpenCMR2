@@ -17,7 +17,8 @@ int main(){
  CHECK(std::fabs(s.nearSmooth.z-12.f)<.01f);CHECK(std::fabs(s.bendSmooth)<.001f);
  r.bend=1.f;r.far=car+V3{20,0,20};s.Step(car,0,0,1.f,6.5,2,.04,&r);
  CHECK(s.bendSmooth>.05f&&s.bendSmooth<.2f); // one 0.04 s step moves about 12% of the way, not all of it
- for(int i=0;i<100;i++)s.Step(car,0,0,1.f,6.5,2,.04,&r);CHECK(s.bendSmooth>.95f);
+ for(int i=0;i<100;i++)s.Step(car,0,0,1.f,6.5,2,.04,&r);
+ CHECK(s.bendSmooth>.95f);
  // Losing the preview clears the filter so a later preview starts fresh.
  s.Step(car,0,0,1.f,6.5,2,.04,nullptr);CHECK(!s.previewReady);
  puts("camera operator anticipate ok");return 0;}
