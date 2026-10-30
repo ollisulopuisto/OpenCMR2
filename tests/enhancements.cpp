@@ -36,6 +36,9 @@ int main(){
   CHECK(t.overrides["video.speed_fov"]==12&&t.overrides["video.speed_motes_stretch"]==60&&t.overrides["video.speed_motes_amount"]==250);
   CHECK(run({"t","--speed-fov","501"})&&!e2.empty());CHECK(run({"t","--speed-fov","x"})&&!e2.empty());CHECK(run({"t","--speed-motes-stretch","101"})&&!e2.empty());
   CHECK(run({"t","--speed-motes-amount","301"})&&!e2.empty());CHECK(run({"t","--test-preset","bad"})&&!e2.empty());
+  CHECK(run({"t","--camera-roll","30"})&&e2.empty());
+  CHECK(t.overrides["video.camera_roll"]==30);
+  CHECK(run({"t","--camera-roll","101"})&&!e2.empty());
   CHECK(run({"t","--drone-distance","50","--speed-fov-cockpit=25","--cockpit-blur-clear","16"})&&e2.empty());
   CHECK(t.overrides["video.drone_distance"]==50&&t.overrides["video.speed_fov_cockpit"]==25&&t.overrides["video.cockpit_blur_clear"]==16);
   CHECK(run({"t","--drone-distance","49"})&&!e2.empty());CHECK(run({"t","--drone-distance","151"})&&!e2.empty());CHECK(run({"t","--speed-fov-cockpit","101"})&&!e2.empty());CHECK(run({"t","--cockpit-blur-clear","61"})&&!e2.empty());

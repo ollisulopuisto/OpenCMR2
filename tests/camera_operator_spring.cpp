@@ -85,6 +85,16 @@ int main(){
  ChaseCamera_Update(&record,&body,0);
  CHECK(g_chaseCameraViewOffsets[2].x!=0); // original lag is restored immediately
  CHECK(g_chaseCameraLag[0]==0xe0000);
+ // Optional corner roll: actual chase update, camera forward/position unchanged by roll.
+ Sys_SetOption("video.camera_operator",0);Sys_SetOption("video.camera_roll",100);car.speed=98304;record.type=5;
+ for(int i=0;i<30;i++){
+  float angle=i*.025f;body.right.x=int(std::sin(angle)*65536);body.right.z=int(std::cos(angle)*65536);
+  body.forward.x=-body.right.z;body.forward.z=body.right.x;
+  ChaseCamera_Update(&record,&body,0);
+ }
+ printf("rollbasis %g %g %g %g %g %g %g %g %g\n",record.matrix.right.x/65536.f,record.matrix.right.y/65536.f,record.matrix.right.z/65536.f,record.matrix.up.x/65536.f,record.matrix.up.y/65536.f,record.matrix.up.z/65536.f,record.matrix.forward.x/65536.f,record.matrix.forward.y/65536.f,record.matrix.forward.z/65536.f);
+ CHECK(std::abs(record.matrix.right.y)>100); // actual built basis leans, not just helper state
+ Sys_SetOption("video.camera_roll",0);
  // Other camera modes keep original behavior even if the option is enabled.
  Sys_SetOption("video.camera_operator",1);g_playerCameraMode[0]=0;
  g_chaseCameraOffsets[2]={0,65536,0};g_chaseCameraViewOffsets[2]={65536,0,0};

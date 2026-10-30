@@ -20,7 +20,7 @@ int main(){
  // Actual live panel controls, save/lock/unlock/reset through raw keys.
  auto press=[&](int k){keys[k]=0x80;TuningPanel_Update();keys[k]=0;TuningPanel_Update();};
  press(68);CHECK(TuningPanel_IsOpen());
- for(int i=0;i<19;i++)press(3); // distance row, after18 legacy rows and lock row
+ for(int i=0;i<21;i++)press(3); // distance row, after18 legacy rows and lock row
  press(5);CHECK(Sys_GetOption("video.drone_distance",60)==65);
  press(2);press(5); // lock row -> save and lock
  CHECK(Sys_GetOption("video.drone_locked",0)==1);

@@ -24,6 +24,8 @@ inline const TuningRow *Tuning_Rows(int &count)
         {"Tyre debris (0 off; chips per wheel per step x100, loose/wet ground)", "video.tire_debris", 0, 400, 25, 0},
         {"Cockpit speed FOV % of Speed FOV (cockpit only)", "video.speed_fov_cockpit", 0, 100, 5, 25},
         {"Active camera forward(+)/back(-) at full speed, 0.05 units", "video.camera_move_active", -200, 200, 5, 0},   // special row: edits video.camera_move_type<N> of the camera in use; RallyData.cpp resolves it
+        {"Sun glare %", "video.sun_glare", 0, 100, 5, 0},
+        {"Corner tilt % (up to four degrees)", "video.camera_roll", 0, 100, 5, 0},
         {"Drone preset locked (unlock to tune)", "video.drone_locked", 0, 1, 1, 0},
         {"Drone distance %", "video.drone_distance", 50, 150, 5, 60},
         {"Drone height %", "video.drone_height", 50, 150, 5, 100},
