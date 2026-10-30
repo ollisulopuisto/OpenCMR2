@@ -37,7 +37,8 @@ template<class Point> RoadPreview PreviewRoad(V3 car,int next,int count,bool loo
    along+=len;start=target;
   }
  }
- if(!gotNear)return out;if(!gotFar)out.far=start;
+ if(!gotNear)return out;
+ if(!gotFar)out.far=start;
  V3 ahead=out.far-out.near;ahead.y=0;if(ahead.Length()<1.f)return out;
  ahead=Unit(ahead);out.bend=Clamp(out.tangent.z*ahead.x-out.tangent.x*ahead.z,-1.f,1.f);
  out.valid=true;return out;
