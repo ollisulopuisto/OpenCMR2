@@ -568,3 +568,19 @@ uploaded output pixels inspected privately, not native gameplay. Scope still
 excludes unknown object/atlas textures, other stages, solid reconstruction,
 shadow masks and Greece source dependency. Prior184-187pins unchanged. New
 cohesive command should replace186for user, including held187terrain coverage.
+
+## Opaque placed-object2x follow-up (30 October2026)
+
+158new exact-source outputs,496total. Actual temp.objmaterial lookup:
+Finland55hi/46lo, France27hi/30lo opaque materials. No changes to geometry,
+collision, gameplay or original bytes. Alpha atlases and other tracks deferred.
+8Python helper tests pass. Runtime metadata translation unit recompiled and
+linked to existing test dependencies; all496actual-source replacements pass
+all-mip/stage/identity/reset checks. Earlier338payloads byte-identical. Visual
+inspection of six actual uploaded materials shows intact signs/windows/edges;
+not native game capture. Full local Linux application build succeeds;136/141
+tests pass, with the same5baseline Zig aborts (net_session,service_park_weather,
+gamepad_layout,frontend_language,net_frontend). Native Metal/FPS/driving
+acceptance not tested.
+Keep this separate from repair189. Publish against main only after repair is
+merged and main verified, not as another fragile stacked-base PR.

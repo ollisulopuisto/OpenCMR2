@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Optional exact-source Finland1/France1 opaque ground2x filter, no artwork shipped."""
+"""Optional exact-source Finland1/France1 ground, cutout and opaque object2x filter, no artwork shipped."""
 import hashlib,json,os,struct,tempfile
 from pathlib import Path
 try:
@@ -66,7 +66,7 @@ def prepare(data,cache):
    for n,raw in payloads.items():(out/n).write_bytes(raw)
    if pack.exists():raise ValueError('Concurrent texture preparation; retry')
    out.rename(pack)
- print('Finland1/France1 exact-source ground and full-canvas cutout2x filtering only; no restored detail, native appearance/performance unverified')
+ print('Finland1/France1 exact-source ground, full-canvas cutout and opaque object2x filtering only; no restored detail, native appearance/performance unverified')
  print('OPENCMR2_TEXTURES='+str(pack));return pack
 if __name__=='__main__':
  import argparse

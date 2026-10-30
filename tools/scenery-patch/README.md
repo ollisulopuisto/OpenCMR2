@@ -412,3 +412,21 @@ physics change. Original UVs and clamp policy retained. Original/derived artwork
 stays private. No AI detail or whole644pack claim. Alpha mip histogram counting
 replaces repeated per-pixel scans; all338outputs are byte-identical to the old
 algorithm. Native Metal appearance/FPS remain open.
+
+### Opaque placed-object texture coverage
+
+Adds158exact-source2xoutputs used by actual Finland1/France1`temp.obj`
+materials:55Finland hi,46Finland lo,27France hi,30France lo. Total496.
+Includes building fronts/roofs, huts, signs, gantries, lights and opaque object
+materials. Whole source canvas is filtered with clamp edges; existing UVs and
+mesh/collision records are unchanged. Internal atlas boundaries are not rebuilt.
+Alpha-bearing trees, shrubs, people and vehicles are deliberately excluded from
+this batch; earlier vegetation/crowd paths remain intact. This is source2x
+filtering, not recovered detail or generated artwork.
+
+Validation:8helper tests; all496actual owned-source runtime replacements and
+all mip pixels, stage/identity refusals and reset guards passed. Runtime upload
+was captured through the existing executor stub, not native Metal. The earlier
+338payloads are byte-identical. Full Linux application build succeeds with
+136/141tests passing and the same5baseline Zig aborts. Native appearance, FPS and gameplay remain
+unverified. Private sources/generated pixels are not in this repository.
