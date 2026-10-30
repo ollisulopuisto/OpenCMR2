@@ -8504,7 +8504,7 @@ int View_SpeedFovZoom(BYTE view, int zoom)
 {
     static double lastMs[2];
     int (&shown)[2] = g_speedFovShown;
-    int pct = Sys_GetOption("video.speed_fov", 0);
+    int pct = Sys_GetOption("video.speed_effects", 1) != 0 ? Sys_GetOption("video.speed_fov", 0) : 0;   // menu switch off: no speed FOV widening
     {   // Cockpit only: a share of the speed FOV (default 50%, 100 = the full amount as before). Stored scaled, so the readout and the
         // widening-dependent effects see the same effective amount. Other camera types are untouched.
         int type = 0, drone = 0;

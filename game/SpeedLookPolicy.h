@@ -11,7 +11,8 @@ inline bool SpeedLook_ExternalReplayView(int viewType, bool replayPlaying)
 }
 // Replay playback, every view: no vapor trails (air vortices). Driving keeps them. The saved video.vapor_trails value is never touched.
 inline bool SpeedLook_VaporOff(bool replayPlaying) { return replayPlaying; }
-inline bool SpeedLook_ScreenEffectsOff(int viewType, bool replayPlaying, bool droneView)
+// speedEffectsOn is the graphics-menu switch (video.speed_effects, default on). Off holds the effects at zero in every view; the setting is not rewritten.
+inline bool SpeedLook_ScreenEffectsOff(int viewType, bool replayPlaying, bool droneView, bool speedEffectsOn = true)
 {
-    return droneView || SpeedLook_ExternalReplayView(viewType, replayPlaying);
+    return !speedEffectsOn || droneView || SpeedLook_ExternalReplayView(viewType, replayPlaying);
 }
