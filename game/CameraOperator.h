@@ -19,7 +19,8 @@ struct RoadPreview {bool valid=false;V3 tangent,near,far;float bend=0;};
 // Pure bounded route preview. Node positions are stage data, not body heading.
 // `next` is the race-progress segment end, so no global nearest-road search
 // can jump to a different leg of a hairpin or a parallel road.
-template<class Point> RoadPreview PreviewRoad(V3 car,int next,int count,bool loop,Point point){
+template<class Point> RoadPreview PreviewRoad(V3 car,int next,int count,bool loop,Point point,float lookahead=1.f){
+ lookahead=Clamp(lookahead,1.f,2.f); // scales the near/far sample distances; 1 = the previous 12 and 30 world units
  RoadPreview out;if(count<2||next<0||next>=count)return out;
  V3 previous=point(next>0?next-1:loop?count-1:0),end=point(next);
  V3 segment=end-previous;segment.y=0;float length=segment.Length();
@@ -27,12 +28,12 @@ template<class Point> RoadPreview PreviewRoad(V3 car,int next,int count,bool loo
  out.tangent=Unit(segment);V3 from=car-previous;
  float t=Clamp((from.x*segment.x+from.z*segment.z)/(length*length),0.f,1.f);
  V3 start=previous+segment*t;float along=0;bool gotNear=false,gotFar=false;
- for(int i=0;i<16;i++){
+ for(int i=0;i<32;i++){
   int node=next+i;if(loop)node%=count;else if(node>=count)break;
   V3 target=point(node),delta=target-start;delta.y=0;float len=delta.Length();
   if(len>.01f){
-   if(!gotNear&&along+len>=12){out.near=start+delta*((12-along)/len);gotNear=true;}
-   if(!gotFar&&along+len>=30){out.far=start+delta*((30-along)/len);gotFar=true;break;}
+   if(!gotNear&&along+len>=12*lookahead){out.near=start+delta*((12*lookahead-along)/len);gotNear=true;}
+   if(!gotFar&&along+len>=30*lookahead){out.far=start+delta*((30*lookahead-along)/len);gotFar=true;break;}
    along+=len;start=target;
   }
  }
@@ -45,6 +46,7 @@ struct State{
  bool ready=false;V3 position,velocity,aim,aimVelocity,lastCar,roadAhead;bool hasRoad=false;
  float terrainLift=0,curveLift=0,pullback=1.f; // pullback: smoothed speed-dependent distance scale
  bool pullbackReady=false;
+ float bendSmooth=0;V3 nearSmooth;bool previewReady=false; // low-pass of the route preview so node crossings do not step the framing
  float heading=0,headingRate=0,lastHeading=0,turn=0,zoom=1.7f,zoomRate=0,pitch=0,lensSpeedGain=.3f,shakeAmount=1.f,shakePhase=0,shakeRight=0,shakeUp=0,distanceScale=1.f,usedDistance=0; // lensSpeedGain: zoom change at full speed (+ = tighter lens, - = wider lens)
  void Reset(){*this=State{};}
  // A camera far from the car, or not finite, is a failure. Start over behind the car on the next valid step. Runs on every update path,
@@ -67,6 +69,14 @@ struct State{
   distance=Clamp(distance*pullback,7.f,17.f)*distanceScale; // distanceScale: user knob, 1 = default
   distance=Clamp(distance,4.f,26.f);usedDistance=distance;height=Clamp(height*(1.f+.2f*(pullback-1.f)),6.f,11.f);height*=.5f+.5f*Clamp(distanceScale,0.f,1.f);
   bool roadValid=road&&road->valid;
+  RoadPreview filtered;
+  if(roadValid){
+   // The preview is piecewise-linear between route nodes, so its bend and near point step each time a node is crossed. Low-pass them (about 0.3 s)
+   // so the camera glides into a bend instead of correcting in steps. Visual only.
+   if(!previewReady){bendSmooth=road->bend;nearSmooth=road->near-car;previewReady=true;}
+   float k=1-std::exp(-dt/.3f);bendSmooth+=(road->bend-bendSmooth)*k;nearSmooth=nearSmooth+((road->near-car)-nearSmooth)*k; // filtered relative to the car, so a fast car does not drag the point behind it
+   filtered=*road;filtered.bend=bendSmooth;filtered.near=car+nearSmooth;road=&filtered;
+  }else previewReady=false;
   // Actual upcoming route geometry, not steering or car yaw, raises the
   // operator before a corner. Descend more slowly when preview straightens.
   float bend=roadValid?std::abs(road->bend):0.f;
