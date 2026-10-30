@@ -9,6 +9,7 @@
 #include "platform/key_remapping.h"
 #include <cstring>
 #include <cstdio>
+#include "build_identity.h"
 
 // On Android, SDLActivity calls SDL_main, which SDL_main.h renames main to.
 #ifndef __ANDROID__
@@ -18,6 +19,8 @@
 
 int main(int argc, char **argv)
 {
+    std::printf("OpenCMR2 build: %s\n", OPENCMR2_BUILD_ID);
+    for(int i=1;i<argc;i++)if(!std::strcmp(argv[i],"--version"))return 0;
     for(int i=1;i<argc;i++)if(!std::strcmp(argv[i],"--help")||!std::strcmp(argv[i],"--help-enhancements")){std::puts(EnhancementHelp());std::puts(KeyRemappingHelp());return 0;}
     for(int i=1;i<argc;i++)if(!std::strcmp(argv[i],"--help-controls")){std::puts(KeyRemappingHelp());return 0;}
     SDL_SetMainReady();

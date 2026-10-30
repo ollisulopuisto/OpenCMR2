@@ -436,3 +436,11 @@ Nine focused CTests pass. Native screenshot's FPS drop remains open: nested
 scenery/tree/wind timers cannot be added or subtracted into a GPU conclusion.
 Camera roll is separate future opt-in work, not in this candidate. All patches
 reviewable, merges owner-led, CI intentionally skipped on old stack workflow.
+
+Startup identity: compiled Git SHA/branch/exact-tag/tracked-dirty status now
+prints before startup and with --version. Always-run CMake generator refreshes
+on rebuild (write only on change), no runtime Git dependency. Source archives
+explicitly report metadata unavailable. Temp-repo regression covers commit,
+branch, exact tag, dirty edit, detached checkout and stable unchanged output.
+Current full build succeeds; 127/132 tests pass, same five previously reproduced
+local Zig runtime baseline aborts. Nine focused camera/replay checks pass.

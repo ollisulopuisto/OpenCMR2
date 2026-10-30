@@ -48,6 +48,15 @@ list(TRANSFORM GAME_QIFIST_UNITS APPEND .cpp)
 set_source_files_properties(${GAME_QIFIST_UNITS} TARGET_DIRECTORY cmr2_game
     PROPERTIES COMPILE_DEFINITIONS CMR2_QIFIST)
 
+# Refresh embedded identity even after checkout or tracked edits without reconfigure.
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated")
+add_custom_target(opencmr2_build_identity
+    COMMAND ${CMAKE_COMMAND} -DSOURCE=${PROJECT_SOURCE_DIR}
+      -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/generated/build_identity.h
+      -P ${PROJECT_SOURCE_DIR}/cmake/BuildIdentity.cmake
+    BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/generated/build_identity.h
+    VERBATIM)
+
 # Platform layer plus the game objects; tests link this too.
 add_library(opencmr2_platform STATIC
     platform/sys.cpp
@@ -58,6 +67,8 @@ add_library(opencmr2_platform STATIC
     $<TARGET_OBJECTS:cmr2_game>)
 target_sources(opencmr2_platform PRIVATE diagnostics/observer.cpp diagnostics/timing.cpp)
 target_compile_definitions(opencmr2_platform PRIVATE OPENCMR2_SOURCE_ROOT="${PROJECT_SOURCE_DIR}")
+add_dependencies(opencmr2_platform opencmr2_build_identity)
+target_include_directories(opencmr2_platform PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 target_include_directories(opencmr2_platform PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${GAME_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/port/compat)
 target_link_libraries(opencmr2_platform PUBLIC SDL3::SDL3)
 
@@ -302,3 +313,6 @@ endif()
 target_include_directories(opencmr2_platform PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated
     ${PROJECT_SOURCE_DIR}/third_party/stb)
 target_link_libraries(opencmr2_platform PRIVATE opencmr2_bink opencmr2_net)
+
+add_dependencies(opencmr2 opencmr2_build_identity)
+target_include_directories(opencmr2 PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
