@@ -36,6 +36,7 @@ uint64_t animationTime=0;
 const StageObject *diagnosticObject=nullptr;
 bool diagnosticArticulated=false;
 unsigned diagnosticFrame=0,diagnosticChanges=0;uint64_t diagnosticTime=0;
+unsigned long long crowdDrawsTotal=0,crowdTrianglesTotal=0,treeTrianglesTotal=0,treeRustledVerticesTotal=0;
 unsigned loggedSecond=0,treeReplacementDraws=0,treeWindDraws=0,crowdDraws=0;unsigned long long crowdTriangles=0;
 std::unordered_map<const Mesh*,CrowdMesh::Template<GfxVertex>> crowdMeshes;
 
@@ -261,7 +262,7 @@ static bool DrawReplacement(StageObject *object,const float *billboard,unsigned 
                 vertices[k]=g;
             }
         }
-        ++crowdDraws;crowdTriangles+=vertices.size()/3;
+        ++crowdDraws;crowdTriangles+=vertices.size()/3;++crowdDrawsTotal;crowdTrianglesTotal+=vertices.size()/3;
         if(!spectatorLogged){Sys_Log("options: spectator sidecar active (first successful override draw)");spectatorLogged=true;}
         State(*(const GfxMatrix*)billboard);Gfx_SetTexture(0,t->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,vertices.data(),vertices.size());Gfx_PopState();
         if(selected&&(!diagnosticObject||(asset->frames.size()==4&&!diagnosticArticulated))){diagnosticObject=object;diagnosticFrame=frame;diagnosticChanges=0;diagnosticArticulated=asset->frames.size()==4;}
@@ -310,10 +311,11 @@ static bool DrawReplacement(StageObject *object,const float *billboard,unsigned 
     State(m);
     unsigned phase=((unsigned)object->position.x*1664525u)^(unsigned)object->position.z;
     for(auto &p:fitted->second){
+        treeTrianglesTotal+=p.vertices.size()/3;
         // Bend fitted replacement, too. The accepted source-fit tree shape is
         // unchanged at rest and original/fitted buffers are never rewritten.
         if(Sys_GetOption("video.tree_wind",0)) {
-            auto moved=p.vertices;
+            auto moved=p.vertices;treeRustledVerticesTotal+=moved.size();
             // Leaf rustle: the geometry only sways as before; the crown texture is shifted a little, in gusts (video.tree_rustle percent, 0 = off).
             float rustle=Sys_GetOption("video.tree_rustle",100)/100.f;
             for(auto &q:moved){
@@ -365,6 +367,10 @@ bool SceneryPack_Draw(StageObject *object,const float *billboard){
     ++treeWindDraws;
     if(windLogged.insert(stem).second)Sys_Log("options: tree wind active %s (original2Dcard, fixed base; NOT3Dreplacement)",stem.c_str());
     return true;
+}
+
+void SceneryPack_GetFrameTotals(unsigned long long *crowdDraws,unsigned long long *crowdTris,unsigned long long *treeTris,unsigned long long *treeUvVertices){
+ if(crowdDraws)*crowdDraws=crowdDrawsTotal;if(crowdTris)*crowdTris=crowdTrianglesTotal;if(treeTris)*treeTris=treeTrianglesTotal;if(treeUvVertices)*treeUvVertices=treeRustledVerticesTotal;
 }
 
 void SceneryPack_GetTreeStatus(unsigned *replacements,unsigned *wind,unsigned *originalSources){
