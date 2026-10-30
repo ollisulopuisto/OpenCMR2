@@ -2,6 +2,7 @@
 // both, MSVC calls RallyDataState first.
 short Car_GetOrderCount(void);
 #include "SoundCurve.h"
+#include "TrailHistory.h"
 #include "FloatToInt.h"
 #include "port/disk.h"
 #include "port/disk_layouts.h"
@@ -1200,6 +1201,132 @@ int StageObject_ClampByteRange(int value);
 #define TRAIL_POINT(i) (&g_trailPoints[0][0][0] + (i))
 #define TRAIL_FADE(p, f) ((p)->f - (p)->f * (p)->age * 0x7c / 0x4d8)
 
+// Queues the quad (two triangles) joining pCur to pPrev. Returns false when nothing was queued.
+static bool DrawTrailSegment(const TrailPoint *pCur, const TrailPoint *pPrev)
+{
+    BYTE curColour[4] = { 0, 0, 0, 25 };
+    BYTE prevColour[4] = { 0, 0, 0, 25 };
+    Quad2DInputVertex a, b, c, d;
+    int alpha0, alpha1, alpha2, alpha3;
+    Texture *pTexture;
+
+    a.u = 0;
+    a.v = 0;
+    b.u = 0x10000;
+    b.v = 0;
+    d.u = 0x10000;
+    d.v = 0x10000;
+    c.u = 0;
+    c.v = 0x10000;
+    if (pPrev->colour[0] <= 200 && pPrev->age <= 0x4d8) {
+        alpha0 = pCur->alphaLeft;
+        alpha3 = pPrev->alphaRight;
+        alpha2 = pPrev->alphaLeft;
+        alpha1 = pCur->alphaRight;
+    } else {
+        alpha2 = TRAIL_FADE(pPrev, alphaLeft);
+        alpha3 = TRAIL_FADE(pPrev, alphaRight);
+        alpha0 = TRAIL_FADE(pCur, alphaLeft);
+        alpha1 = TRAIL_FADE(pCur, alphaRight);
+    }
+    alpha0 = StageObject_ClampByteRange(alpha0);
+    alpha1 = StageObject_ClampByteRange(alpha1);
+    alpha2 = StageObject_ClampByteRange(alpha2);
+    alpha3 = StageObject_ClampByteRange(alpha3);
+    if (alpha0 <= 1 && alpha1 <= 1 && alpha2 <= 1 && alpha3 <= 1)
+        return false;
+    curColour[0] = pCur->colour[0];
+    curColour[1] = pCur->colour[1];
+    curColour[2] = pCur->colour[2];
+    prevColour[0] = pPrev->colour[0];
+    prevColour[1] = pPrev->colour[1];
+    prevColour[2] = pPrev->colour[2];
+    a.x = pCur->left.x;
+    a.y = pCur->left.y;
+    a.z = pCur->left.z;
+    *(DWORD *)a.colour = *(DWORD *)curColour;
+    a.colour[3] = (BYTE)alpha0;
+    b.x = pCur->right.x;
+    b.y = pCur->right.y;
+    b.z = pCur->right.z;
+    *(DWORD *)b.colour = *(DWORD *)curColour;
+    b.colour[3] = (BYTE)alpha1;
+    c.x = pPrev->left.x;
+    c.y = pPrev->left.y;
+    c.z = pPrev->left.z;
+    *(DWORD *)c.colour = *(DWORD *)prevColour;
+    c.colour[3] = (BYTE)alpha2;
+    d.x = pPrev->right.x;
+    d.y = pPrev->right.y;
+    d.z = pPrev->right.z;
+    *(DWORD *)d.colour = *(DWORD *)prevColour;
+    d.colour[3] = (BYTE)alpha3;
+    if (pPrev->left.x == pPrev->right.x && pPrev->left.y == pPrev->right.y)
+        return false;
+    switch ((g_stageSurfaceInfo[pCur->material & 0xf].flags >> 2) & 3) {
+    case 1:
+        pTexture = g_unk0x00588744;
+        break;
+    case 2:
+        a.colour[0] = 0;
+        a.colour[1] = 0;
+        a.colour[2] = 0;
+        a.colour[3] = (BYTE)(alpha0 / 3);
+        *(DWORD *)c.colour = *(DWORD *)a.colour;
+        b.colour[0] = 0;
+        b.colour[1] = 0;
+        b.colour[2] = 0;
+        b.colour[3] = (BYTE)(alpha1 / 3);
+        *(DWORD *)d.colour = *(DWORD *)b.colour;
+        pTexture = g_unk0x00588748;
+        break;
+    default:
+        pTexture = g_unk0x00588740;
+        break;
+    }
+    Quad2D_QueueFixedTriangle(0, &b, &a, &c, pTexture, 0x26);
+    Quad2D_QueueFixedTriangle(0, &d, &b, &c, pTexture, 0x26);
+    return true;
+}
+
+static TrailHistory<TrailPoint> g_trailHist[8][4];
+// Reference radius for skipping far history, in fixed-point world coordinates (16.16). The game's world unit scale is not
+// verified natively.
+static const long long kTrailHistRadius = 150LL << 16;
+static const int kTrailHistSegmentsPerWheel = 1000;
+static int StageObject_TrailHistoryOption(void)
+{
+    int n = Sys_GetOption("video.tire_track_history", 0);
+    return n < 0 ? 0 : n > 64 ? 64 : n;
+}
+static void StageObject_TrailHistoryPush(int car, int wheel, const TrailPoint &p)
+{
+    TrailHistory<TrailPoint> &h = g_trailHist[car][wheel];
+    h.Init(StageObject_TrailHistoryOption() * 1024);
+    h.Push(p, (int)(((long long)p.left.x + p.right.x) / 2), (int)(((long long)p.left.z + p.right.z) / 2));
+}
+// Draws the stored history of one car instead of its 200-point ring. Returns false when the option is off.
+static bool StageObject_DrawTrailHistory(int index)
+{
+    if (StageObject_TrailHistoryOption() == 0)
+        return false;
+    const int hstep = g_stageSurfaceInfo[8].flags > 0 ? g_stageSurfaceInfo[8].flags : 1;
+    for (int wheel = 0; wheel < 4; wheel++) {
+        const TrailHistory<TrailPoint> &h = g_trailHist[index][wheel];
+        if (!h.Active() || h.count < 2)
+            continue;
+        const TrailPoint &last = h.At(h.count - 1);
+        const int rx = (int)(((long long)last.left.x + last.right.x) / 2);
+        const int rz = (int)(((long long)last.left.z + last.right.z) / 2);
+        h.Walk(rx, rz, kTrailHistRadius, kTrailHistSegmentsPerWheel, [&](const TrailPoint &cur, const TrailPoint &prev) {
+            if (cur.frame != prev.frame + hstep || (prev.left.x == prev.right.x && prev.left.y == prev.right.y))
+                return false;
+            return DrawTrailSegment(&cur, &prev);
+        });
+    }
+    return true;
+}
+
 // Draws the tyre marks of one car: for every wheel it walks its ring of 200
 // trail points backwards in steps of g_stageSurfaceInfo[8].flags, joins each
 // point to the previous consecutive one with a textured quad (two triangles)
@@ -1208,12 +1335,6 @@ int StageObject_ClampByteRange(int value);
 // FUNCTION: CMR2 0x004658e0
 void CarEffects_DrawTyreMarks(int index)
 {
-    BYTE curColour[4] = { 0, 0, 0, 25 };
-    BYTE prevColour[4] = { 0, 0, 0, 25 };
-    Quad2DInputVertex a;
-    Quad2DInputVertex b;
-    Quad2DInputVertex c;
-    Quad2DInputVertex d;
     int *pHead;
     int base;
     int wheel;
@@ -1224,25 +1345,14 @@ void CarEffects_DrawTyreMarks(int index)
     int found;
     TrailPoint *pCur;
     TrailPoint *pPrev;
-    int alpha0;
-    int alpha1;
-    int alpha2;
-    int alpha3;
-    Texture *pTexture;
 
     if (index >= 8 || CGameInfo::GetGraphicsOptionBits25To26() == 2)
+        return;
+    if (StageObject_DrawTrailHistory(index))
         return;
     base = index * 4 * TRAIL_MAX;
     const int ring = StageObject_TrailRing(index);
     pHead = g_unk0x00549ba0[index];
-    a.u = 0;
-    a.v = 0;
-    b.u = 0x10000;
-    b.v = 0;
-    d.u = 0x10000;
-    d.v = 0x10000;
-    c.u = 0;
-    c.v = 0x10000;
     for (wheel = 4; wheel != 0; wheel--, pHead++, base += TRAIL_MAX) {
         j = 0;
         do {
@@ -1264,74 +1374,7 @@ void CarEffects_DrawTyreMarks(int index)
                     found = pCur->frame == pPrev->frame + step;
                     if (found != 1)
                         continue;
-                    if (pPrev->colour[0] <= 200 && pPrev->age <= 0x4d8) {
-                        alpha0 = pCur->alphaLeft;
-                        alpha3 = pPrev->alphaRight;
-                        alpha2 = pPrev->alphaLeft;
-                        alpha1 = pCur->alphaRight;
-                    } else {
-                        alpha2 = TRAIL_FADE(pPrev, alphaLeft);
-                        alpha3 = TRAIL_FADE(pPrev, alphaRight);
-                        alpha0 = TRAIL_FADE(pCur, alphaLeft);
-                        alpha1 = TRAIL_FADE(pCur, alphaRight);
-                    }
-                    alpha0 = StageObject_ClampByteRange(alpha0);
-                    alpha1 = StageObject_ClampByteRange(alpha1);
-                    alpha2 = StageObject_ClampByteRange(alpha2);
-                    alpha3 = StageObject_ClampByteRange(alpha3);
-                    if (alpha0 <= 1 && alpha1 <= 1 && alpha2 <= 1 && alpha3 <= 1)
-                        continue;
-                    curColour[0] = pCur->colour[0];
-                    curColour[1] = pCur->colour[1];
-                    curColour[2] = pCur->colour[2];
-                    prevColour[0] = pPrev->colour[0];
-                    prevColour[1] = pPrev->colour[1];
-                    prevColour[2] = pPrev->colour[2];
-                    a.x = pCur->left.x;
-                    a.y = pCur->left.y;
-                    a.z = pCur->left.z;
-                    *(DWORD *)a.colour = *(DWORD *)curColour;
-                    a.colour[3] = (BYTE)alpha0;
-                    b.x = pCur->right.x;
-                    b.y = pCur->right.y;
-                    b.z = pCur->right.z;
-                    *(DWORD *)b.colour = *(DWORD *)curColour;
-                    b.colour[3] = (BYTE)alpha1;
-                    c.x = pPrev->left.x;
-                    c.y = pPrev->left.y;
-                    c.z = pPrev->left.z;
-                    *(DWORD *)c.colour = *(DWORD *)prevColour;
-                    c.colour[3] = (BYTE)alpha2;
-                    d.x = pPrev->right.x;
-                    d.y = pPrev->right.y;
-                    d.z = pPrev->right.z;
-                    *(DWORD *)d.colour = *(DWORD *)prevColour;
-                    d.colour[3] = (BYTE)alpha3;
-                    if (pPrev->left.x == pPrev->right.x && pPrev->left.y == pPrev->right.y)
-                        continue;
-                    switch ((g_stageSurfaceInfo[pCur->material & 0xf].flags >> 2) & 3) {
-                    case 1:
-                        pTexture = g_unk0x00588744;
-                        break;
-                    case 2:
-                        a.colour[0] = 0;
-                        a.colour[1] = 0;
-                        a.colour[2] = 0;
-                        a.colour[3] = (BYTE)(alpha0 / 3);
-                        *(DWORD *)c.colour = *(DWORD *)a.colour;
-                        b.colour[0] = 0;
-                        b.colour[1] = 0;
-                        b.colour[2] = 0;
-                        b.colour[3] = (BYTE)(alpha1 / 3);
-                        *(DWORD *)d.colour = *(DWORD *)b.colour;
-                        pTexture = g_unk0x00588748;
-                        break;
-                    default:
-                        pTexture = g_unk0x00588740;
-                        break;
-                    }
-                    Quad2D_QueueFixedTriangle(0, &b, &a, &c, pTexture, 0x26);
-                    Quad2D_QueueFixedTriangle(0, &d, &b, &c, pTexture, 0x26);
+                    DrawTrailSegment(pCur, pPrev);
                 } while (step > 1);
             }
             j += step;
@@ -5309,6 +5352,8 @@ void StageObject_UpdateSkidTrails(int carIndex)
             pPoint->material = material;
             g_trailPointUsed[carIndex][wheel][trailIndex] = 1;
             pPoint->frame = g_trailFrame;
+            if (StageObject_TrailHistoryOption() != 0 && (g_trailFrame % (g_stageSurfaceInfo[8].flags > 0 ? g_stageSurfaceInfo[8].flags : 1)) == 0)
+                StageObject_TrailHistoryPush(carIndex, wheel, *pPoint);
             if ((g_stageSurfaceInfo[material].flags & 2) == 0) {
                 g_trailColor[carIndex][0] += (g_stageSurfaceInfo[previousMaterial].red - g_trailColor[carIndex][0]) / 2;
                 g_trailColor[carIndex][1] += (g_stageSurfaceInfo[previousMaterial].green - g_trailColor[carIndex][1]) / 2;
@@ -7790,6 +7835,9 @@ void CarSkid_ClearWheelTrails(void)
             }
         }
     }
+    for (car = 0; car < 8; car++)
+        for (wheel = 0; wheel < 4; wheel++)
+            g_trailHist[car][wheel].Clear();
     p = (int *)g_trailDelta + 1;
     memset(g_unk0x00549ba0, 0, sizeof(g_unk0x00549ba0));
     memset(g_trailState, 0, sizeof(g_trailState));

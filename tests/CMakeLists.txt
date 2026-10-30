@@ -537,3 +537,7 @@ add_test(NAME projection_vote COMMAND projection_vote_test)
 add_executable(cockpit_eye_shift_test cockpit_eye_shift.cpp)
 target_include_directories(cockpit_eye_shift_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
 add_test(NAME cockpit_eye_shift COMMAND cockpit_eye_shift_test)
+
+add_executable(trail_history_test trail_history.cpp)
+target_include_directories(trail_history_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
+add_test(NAME trail_history COMMAND trail_history_test)
