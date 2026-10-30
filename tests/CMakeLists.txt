@@ -617,3 +617,7 @@ endif()
 add_executable(fixed_strip_test fixed_strip.cpp)
 target_include_directories(fixed_strip_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src)
 add_test(NAME fixed_strip COMMAND fixed_strip_test)
+
+add_executable(camera_readout_lifecycle_test camera_readout_lifecycle.cpp)
+target_link_libraries(camera_readout_lifecycle_test PRIVATE opencmr2_platform)
+add_test(NAME camera_readout_lifecycle COMMAND camera_readout_lifecycle_test)
