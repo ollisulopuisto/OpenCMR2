@@ -919,9 +919,9 @@ void Game_DrawMovieFrameAndCredits(CallbackStateMachine *p1, BYTE p2)
         Font_DrawText(0, CFrontend::m_stringDest, 0, 0, (int *)white, 9);
     }
     if (CGameInfo::GetGameRegion() == 3)
-        sprintf(CFrontend::m_stringDest, g_strBinkCreditPl0x00523d1c);
+        sprintf(CFrontend::m_stringDest, "%s", g_strBinkCreditPl0x00523d1c);
     else
-        sprintf(CFrontend::m_stringDest, g_strBinkCredit0x00523cd8);
+        sprintf(CFrontend::m_stringDest, "%s", g_strBinkCredit0x00523cd8);
     Font_DrawText(0, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 0x140) / 0x280,
                   (int)(g_pGraphics->resY * 0x15e) / 0x1e0, (int *)black, 10);
     Game_DrawSceneViewport(g_splashSceneRoot, g_splashCamera, &viewport, 0, 1);
@@ -1756,7 +1756,7 @@ bool CGame::InitializeNetworkSubsystem(void) {
     FreeNetworkReceiveBuffer();
     
     for (i = 0; i < 10; i++) {
-        sprintf(m_connections[i].name, CMain::m_logFileBlankLine);
+        sprintf(m_connections[i].name, "%s", CMain::m_logFileBlankLine);
         m_connections[i].pConnection = NULL;
     }
 
@@ -1873,7 +1873,7 @@ void CGame::ClearConnections(void)
     int i;
 
     for (i = 0; i < 10; i++) {
-        sprintf(m_connections[i].name, CMain::m_logFileBlankLine);
+        sprintf(m_connections[i].name, "%s", CMain::m_logFileBlankLine);
         if (m_connections[i].pConnection != NULL) {
             CFileBuffer::FreeGenericFileBuffer(m_connections[i].pConnection);
             m_connections[i].pConnection = NULL;

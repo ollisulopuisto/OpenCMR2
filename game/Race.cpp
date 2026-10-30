@@ -587,11 +587,11 @@ void Race_BuildSelectionPaths(void)
     char name[4];
     int table[8] = { 6, 3, 1, 4, 0, 2, 5, 7 };
 
-    sprintf(buf, CMain::m_logFileBlankLine);
+    sprintf(buf, "%s", CMain::m_logFileBlankLine);
     if (CGameInfo::GetGraphicsOptionBits27To28() == 0) {
-        sprintf(buf, g_str0x00519468);
+        sprintf(buf, "%s", g_str0x00519468);
     } else {
-        sprintf(buf, g_str0x00519464);
+        sprintf(buf, "%s", g_str0x00519464);
     }
     if (CGameInfo::GetConfiguredGameMode() == 5 || CGameInfo::GetConfiguredGameMode() == 6 ||
         CGameInfo::GetConfiguredGameMode() == 7 || CGameInfo::GetConfiguredGameMode() == 0xb ||
@@ -1099,7 +1099,7 @@ void Race_DrawPlayerCallSlots(unsigned int player, int *pViewRect)
 
     pCallFlag = g_raceWrongWayFlags;
     if (pCallFlag[player] != 0 || InRaceMenu_IsPlayerEditingCarSetup(player) != 0) {
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x57));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x57));
         Race_DrawPlayerMessage(CFrontend::m_stringDest, &g_raceCallTextColour, player, 1, -1, -1);
     }
 

@@ -230,7 +230,7 @@ void FrontendDraw_HelpText(char *text, int reset)
             g_helpColour0x00524b88[2] = pText[2];
             g_helpColour0x00524b88[3] = pText[3];
         }
-        sprintf(CFrontend::m_stringDest, text);
+        sprintf(CFrontend::m_stringDest, "%s", text);
         Font_Unused(CFrontend::m_stringDest, Frontend_GetOverlayMode());
         Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 102) / 640,
                       (int)(g_pGraphics->resY * 64) / 480 + (int)(g_pGraphics->resY * 384) / 480,
