@@ -16,7 +16,7 @@ int main(){
     CHECK(Tuning_Step(r[0], 12, 1) == 14);
     CHECK(Tuning_Step(r[1], 250, 1) == 250 && Tuning_Step(r[1], 0, -1) == 0 && Tuning_Step(r[1], 50, 1) == 60);  // fov dolly 0..250
     CHECK(Tuning_Step(r[1], 500, 1) == 250 && Tuning_Step(r[1], -50, -1) == 0);   // out of range snaps in
-    { int ci = -1; for (int i = 0; i < n; ++i) if (!std::strcmp(r[i].key, "video.speed_fov_cockpit")) ci = i; CHECK(ci >= 0 && r[ci].lo == 0 && r[ci].hi == 100 && r[ci].fallback == 50); }
+    { int ci = -1; for (int i = 0; i < n; ++i) if (!std::strcmp(r[i].key, "video.speed_fov_cockpit")) ci = i; CHECK(ci >= 0 && r[ci].lo == 0 && r[ci].hi == 100 && r[ci].fallback == 25); }
     CHECK(Tuning_Step(r[5], 1, -1) == 1);          // dof max px never below 1
     CHECK(Tuning_Select(0, -1, n) == n - 1 && Tuning_Select(n - 1, 1, n) == 0 && Tuning_Select(3, 1, n) == 4);
     // Key filtering: panel keys vanish only while open; the toggle key always; everything else untouched.

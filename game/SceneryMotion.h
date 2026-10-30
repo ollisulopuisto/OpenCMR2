@@ -68,5 +68,40 @@ inline void RustleUV(float u,float v,float weightY,uint64_t ticks,uint32_t phase
  *du=amp*(.6f*std::sin(time*5.3f+u*37.f+v*23.f+p)+.4f*std::sin(time*8.9f-u*53.f+v*41.f+p*1.3f));
  *dv=amp*(.6f*std::sin(time*4.7f+u*29.f-v*43.f+p*.7f)+.4f*std::sin(time*7.7f+u*47.f+v*31.f+p*1.9f));
 }
+
+// Cached form of Offset() + RustleUV() for one tree vertex. Everything that depends only on the vertex (its height weight and texture
+// coordinates) is computed once; per tree and frame only a few sin/cos remain, so the per-vertex loop has no trigonometry.
+// sin(T+X) = sin(T)cos(X) + cos(T)sin(X) with T the time/phase term and X the (u,v) term.
+struct WindVertex{float u,v,w2,ce,s1,c1,s2,c2,s3,c3,s4,c4;};
+inline WindVertex MakeWindVertex(float u,float v,float y,float bottom,float height){
+ WindVertex o={u,v,0,0,0,1,0,1,0,1,0,1};
+ if(std::isfinite(y)&&std::isfinite(bottom)&&std::isfinite(height)&&height>0){float w=(y-bottom)/height;if(w<0)w=0;if(w>1)w=1;o.w2=w*w;}
+ float weightY=height>0?(y-bottom)/height:0;
+ if(!std::isfinite(u)||!std::isfinite(v)||!std::isfinite(weightY))return o;
+ float crown=(weightY-.35f)/.3f;if(crown<=0)return o;if(crown>1.f)crown=1.f;
+ float edge=std::fmin(std::fmin(u,1.f-u),std::fmin(v,1.f-v))/.06f;if(edge<=0)return o;if(edge>1.f)edge=1.f;
+ o.ce=crown*edge;
+ float x1=u*37.f+v*23.f,x2=-u*53.f+v*41.f,x3=u*29.f-v*43.f,x4=u*47.f+v*31.f;
+ o.s1=std::sin(x1);o.c1=std::cos(x1);o.s2=std::sin(x2);o.c2=std::cos(x2);o.s3=std::sin(x3);o.c3=std::cos(x3);o.s4=std::sin(x4);o.c4=std::cos(x4);
+ return o;
+}
+// Per tree and frame.
+struct WindFrame{float offset,gustAmp,s1,c1,s2,c2,s3,c3,s4,c4;};
+inline WindFrame MakeWindFrame(float height,uint64_t ticks,uint32_t phase,float strength){
+ WindFrame f;float time=float((ticks%(65536ull*25*3600))/65536.0/25.0),p=(phase%6283)*.001f;
+ f.offset=std::sin(time*1.2f+p)*height*.045f;
+ float gust=.35f+.65f*(.5f+.5f*std::sin(time*.45f+p)*std::sin(time*.19f+p*.6f+1.f));
+ f.gustAmp=(std::isfinite(strength)&&strength>0)?.008f*strength*gust:0.f;
+ float t1=time*5.3f+p,t2=time*8.9f+p*1.3f,t3=time*4.7f+p*.7f,t4=time*7.7f+p*1.9f;
+ f.s1=std::sin(t1);f.c1=std::cos(t1);f.s2=std::sin(t2);f.c2=std::cos(t2);f.s3=std::sin(t3);f.c3=std::cos(t3);f.s4=std::sin(t4);f.c4=std::cos(t4);
+ return f;
+}
+inline void ApplyWind(const WindVertex&w,const WindFrame&f,float *dx,float *du,float *dv){
+ *dx=f.offset*w.w2;*du=0;*dv=0;
+ if(w.ce<=0||f.gustAmp<=0)return;
+ float amp=f.gustAmp*w.ce;
+ *du=amp*(.6f*(f.s1*w.c1+f.c1*w.s1)+.4f*(f.s2*w.c2+f.c2*w.s2));
+ *dv=amp*(.6f*(f.s3*w.c3+f.c3*w.s3)+.4f*(f.s4*w.c4+f.c4*w.s4));
+}
 }
 #endif

@@ -89,5 +89,10 @@ int main(){
   for(int i=0;i<400;i++){base.Step({0,0,0},0,0,0,6.5,2,.04);close.Step({0,0,0},0,0,0,6.5,2,.04);far.Step({0,0,0},0,0,0,6.5,2,.04);}
   CHECK(close.usedDistance<base.usedDistance*.6f&&far.usedDistance>base.usedDistance*1.4f&&close.usedDistance>=4.f&&far.usedDistance<=26.f);
  }
+ {  // moving car: the camera must not sit at the old 1.3 x tether when the knob is lowered, and knob 100 must stay as it was (13.4 from the car at 28 u/s, straight road)
+  auto settle=[](float scale){State s;s.distanceScale=scale;V3 car={0,0,0};for(int i=0;i<1200;i++){car.z+=28.f/60;s.Step(car,0,0,73.f,6.5f,1.5f,1.f/60);}V3 a=s.position-car;return a.Length();};
+  float d100=settle(1.f),d60=settle(.6f),d50=settle(.5f);
+  CHECK(std::abs(d100-13.38f)<.05f);CHECK(d60<8.f&&d50<d60&&d50<7.f);
+ }
  puts("world camera position/orbit inertia, steering lens, settling, determinism/reset pass");
 }

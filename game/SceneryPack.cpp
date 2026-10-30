@@ -36,11 +36,12 @@ uint64_t animationTime=0;
 const StageObject *diagnosticObject=nullptr;
 bool diagnosticArticulated=false;
 unsigned diagnosticFrame=0,diagnosticChanges=0;uint64_t diagnosticTime=0;
+static unsigned long long timeWindMathNs=0,timeSubmitNs=0;static std::vector<GfxVertex> windScratch;
 unsigned long long crowdDrawsTotal=0,crowdTrianglesTotal=0,treeTrianglesTotal=0,treeRustledVerticesTotal=0;
 unsigned loggedSecond=0,treeReplacementDraws=0,treeWindDraws=0,crowdDraws=0;unsigned long long crowdTriangles=0;
 std::unordered_map<const Mesh*,CrowdMesh::Template<GfxVertex>> crowdMeshes;
 
-struct Part { std::vector<GfxVertex> vertices; PackTexture *texture=nullptr; };
+struct Part { std::vector<GfxVertex> vertices; PackTexture *texture=nullptr; std::vector<SceneryMotion::WindVertex> wind; float windBottom=0,windHeight=0; };
 struct Asset { std::map<const Mesh*,std::vector<Part>> fitted; int sourceWidth=0,sourceHeight=0; SceneryFormat::Entry entry; std::string failure; std::set<std::string> loggedFailures; bool attempted=false,ready=false; std::vector<Part> parts; std::vector<PackTexture*> frames; };
 std::vector<Asset> assets;
 bool loaded=false,identityContract=false;
@@ -310,20 +311,31 @@ static bool DrawReplacement(StageObject *object,const float *billboard,unsigned 
     if(!treeLogged){Sys_Log("options: tree sidecar active (source-fitted successful override draw)");treeLogged=true;}
     State(m);
     unsigned phase=((unsigned)object->position.x*1664525u)^(unsigned)object->position.z;
+    const bool windOn=Sys_GetOption("video.tree_wind",0)!=0;
+    SceneryMotion::WindFrame windFrame={};
+    if(windOn){double t0=Sys_GetTicksPrecise();windFrame=SceneryMotion::MakeWindFrame(height,animationTime,phase,Sys_GetOption("video.tree_rustle",100)/100.f);timeWindMathNs+=(unsigned long long)((Sys_GetTicksPrecise()-t0)*1e6);}
     for(auto &p:fitted->second){
         treeTrianglesTotal+=p.vertices.size()/3;
         // Bend fitted replacement, too. The accepted source-fit tree shape is
         // unchanged at rest and original/fitted buffers are never rewritten.
-        if(Sys_GetOption("video.tree_wind",0)) {
-            auto moved=p.vertices;treeRustledVerticesTotal+=moved.size();
-            // Leaf rustle: the geometry only sways as before; the crown texture is shifted a little, in gusts (video.tree_rustle percent, 0 = off).
-            float rustle=Sys_GetOption("video.tree_rustle",100)/100.f;
-            for(auto &q:moved){
-                float wy=height>0?(q.y-bottom)/height:0,du,dv;
-                SceneryMotion::RustleUV(q.u0,q.v0,wy,animationTime,phase,rustle,&du,&dv);q.u0+=du;q.v0+=dv;
-                q.x+=SceneryMotion::Offset(q.y,bottom,height,animationTime,phase,true);
+        if(windOn) {
+            // Same motion as before (Offset + RustleUV), computed from per-vertex terms cached once per part and a few sin/cos per tree and frame.
+            double t0=Sys_GetTicksPrecise();
+            if(p.wind.size()!=p.vertices.size()||p.windBottom!=bottom||p.windHeight!=height){
+                p.wind.resize(p.vertices.size());
+                for(size_t k=0;k<p.vertices.size();k++)p.wind[k]=SceneryMotion::MakeWindVertex(p.vertices[k].u0,p.vertices[k].v0,p.vertices[k].y,bottom,height);
+                p.windBottom=bottom;p.windHeight=height;
             }
-            Gfx_SetTexture(0,p.texture->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,moved.data(),moved.size());
+            treeRustledVerticesTotal+=p.vertices.size();
+            windScratch.resize(p.vertices.size());
+            const GfxVertex *src=p.vertices.data();GfxVertex *dst=windScratch.data();
+            for(size_t k=0,n=p.vertices.size();k<n;k++){
+                float dx,du,dv;SceneryMotion::ApplyWind(p.wind[k],windFrame,&dx,&du,&dv);
+                dst[k]=src[k];dst[k].x+=dx;dst[k].u0+=du;dst[k].v0+=dv;
+            }
+            double t1=Sys_GetTicksPrecise();
+            Gfx_SetTexture(0,p.texture->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,windScratch.data(),windScratch.size());
+            timeWindMathNs+=(unsigned long long)((t1-t0)*1e6);timeSubmitNs+=(unsigned long long)((Sys_GetTicksPrecise()-t1)*1e6);
         } else {Gfx_SetTexture(0,p.texture->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,p.vertices.data(),p.vertices.size());}
     }
     Gfx_PopState();return true;
@@ -339,6 +351,7 @@ bool SceneryPack_GetAnimationStatus(unsigned long long *tick,unsigned *frame,uns
 
 extern "C" double Sys_GetTicksPrecise(void);
 static unsigned long long timeReplacementNs=0,timeOtherNs=0,timeCalls=0;
+void SceneryPack_GetTimeSplit(unsigned long long *windMathNs,unsigned long long *submitNs){if(windMathNs)*windMathNs=timeWindMathNs;if(submitNs)*submitNs=timeSubmitNs;}
 void SceneryPack_GetTimeTotals(unsigned long long *replacementNs,unsigned long long *totalNs,unsigned long long *calls){
  if(replacementNs)*replacementNs=timeReplacementNs;if(totalNs)*totalNs=timeOtherNs;if(calls)*calls=timeCalls;
 }
