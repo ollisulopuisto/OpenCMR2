@@ -1,0 +1,26 @@
+{
+  "hi": {
+    "sources": {
+      "fin01.srf": "799256fe97aac42b5b7a197fd3b03af4cf4065e4141ba05ad91eb1cbfb572adb",
+      "fin01.hpc": "caf5e507b037c67d1c62819256c63dcb355733979240c959b4487803fc02c2a0",
+      "temp.c3d": "ecfd29aac42deb799d798fa8ce2a5db840147f77a3d49c80276f93d0e8a3157b",
+      "fin01fin.dat": "0f1efdc2d7ad5e7fe9ddeefed0c6fdba5cf4b6086fcda452a675837edfc2761d"
+    },
+    "outputs": {
+      "curved.hpc": "5f2ed185dbb6ada451b27c3e702e3da6d109b8ec9a3e5794689e5a59437f0e7e",
+      "curved.c3d": "e922df379b293a31f5f96de4ee9d58b6c854b485e6a776d50d3181a4fb4be94d"
+    }
+  },
+  "lo": {
+    "sources": {
+      "fin01.srf": "799256fe97aac42b5b7a197fd3b03af4cf4065e4141ba05ad91eb1cbfb572adb",
+      "fin01.hpc": "caf5e507b037c67d1c62819256c63dcb355733979240c959b4487803fc02c2a0",
+      "temp.c3d": "b613c03d3c3cd7e0e6cf14c99be09e9ace96863af520e350f0cf215176a89c35",
+      "fin01fin.dat": "0f1efdc2d7ad5e7fe9ddeefed0c6fdba5cf4b6086fcda452a675837edfc2761d"
+    },
+    "outputs": {
+      "curved.hpc": "5f2ed185dbb6ada451b27c3e702e3da6d109b8ec9a3e5794689e5a59437f0e7e",
+      "curved.c3d": "2f932e4b3a6e94b4490c2afab111b809bd5ba402edca20915b17a211efacd001"
+    }
+  }
+}

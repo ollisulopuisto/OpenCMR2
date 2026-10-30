@@ -6,8 +6,8 @@ edge error do not establish tileability. Never feed a cutout/atlas through this.
 from PIL import Image
 
 def resize(image,size,repeat):
- if repeat not in ((True,False),(False,True),(True,True)):
-  raise ValueError('Explicit nonempty repeat-axis policy required')
+ if repeat not in ((False,False),(True,False),(False,True),(True,True)):
+  raise ValueError('Explicit repeat/clamp-axis policy required')
  rgba=image.convert('RGBA')
  if rgba.getchannel('A').getextrema()!=(255,255):
   raise ValueError('Only opaque single-material source supported')

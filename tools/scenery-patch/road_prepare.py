@@ -13,9 +13,9 @@ from road_contract import SOURCE_HASHES
 from road_pair import validate_pair
 OUTPUT_HASHES={"curved.hpc":"5b051ddd0cc7749e1ef70f7e8da902ade7fbe039ee82cf8edc877ad09f6d5a18","curved.c3d":"b694283293c0f9bbfbfcd1dbeaf3fba974dd23d632fc5d2d7dbf7e39a0c617a7"}
 
-def write_render(b,cv,cf,newv,newf,source,pairs,new_edges):
+def write_render(b,cv,cf,newv,newf,source,pairs,new_edges,layout=(174,800)):
     nodes,nm,no,ns=struct.unpack_from('<4H',b,24);nvflag,nv=struct.unpack_from('<II',b,16);nt=struct.unpack_from('<I',b,32)[0];nr=struct.unpack_from('<H',b,38)[0];np_=struct.unpack_from('<H',b,40)[0]
-    assert nodes==no==nvflag==nr==np_==0 and nm==174 and ns==800
+    assert nodes==no==nvflag==nr==np_==0 and (nm,ns)==layout
     ms=48;ss=ms+nm*288;ts=ss+ns*136;vs=ts+nt*76;ls=vs+nv*48;end=ls+nv*4
     assert end==struct.unpack_from('<I',b,8)[0]
     by_render={int(ri):int(ci)for ri,ci in pairs};children=collections.defaultdict(list)
@@ -67,8 +67,10 @@ def write_render(b,cv,cf,newv,newf,source,pairs,new_edges):
     assert out[struct.unpack_from('<I',out,8)[0]:]==b[end:]
     return bytes(out)
 
-def build(sources):
-    b=sources['temp.c3d'];h=sources['fra01.hpc'];counts=struct.unpack_from('<5h',h,8);p=20+sum(counts)*8
+def build(sources,stage="fra01"):
+    fin=stage=="fin01"
+    if stage not in ("fra01","fin01"):raise ValueError("Unsupported stage")
+    b=sources['temp.c3d'];h=sources[stage+'.hpc'];counts=struct.unpack_from('<5h',h,8);p=20+sum(counts)*8
     nv=struct.unpack_from('<H',h,p)[0];p+=4;cv=np.frombuffer(h,dtype='<i4',count=nv*3,offset=p).reshape(-1,3).astype('float64')/65536;p+=nv*12
     nt=struct.unpack_from('<H',h,p)[0];p+=4;words=np.frombuffer(h,dtype='<u2',count=nt*4,offset=p).reshape(-1,4);cf=words[:,:3];xyz={tuple(np.rint(v*65536).astype('int64')):i for i,v in enumerate(cv)}
     # Exact source triplets, no nearest-neighbour layer guessing.
@@ -82,7 +84,7 @@ def build(sources):
                 point=struct.unpack_from('<3f',b,vs+vo+ix*48);key=tuple(round(x,4)for x in point)
                 if key not in weld:weld[key]=len(verts);verts.append(point)
                 face.append(weld[key]);contact.append(xyz.get(tuple(round(x*65536)for x in point),-1))
-            faces.append(face);road.append(struct.unpack_from('<i',b,off+4)[0]<12)
+            faces.append(face);road.append(struct.unpack_from('<i',b,off+4)[0]<(18 if fin else 12))
             ci=collision.get(tuple(sorted(contact)))
             if ci is not None:pairs.append((render_i,ci))
             render_i+=1
@@ -104,6 +106,21 @@ def build(sources):
         # Canonical shared new coordinate representable in both formats.
         for _ in range(8):point=np.rint(point.astype('float32').astype('float64')*65536)/65536
         if not np.array_equal(point,point.astype('float32').astype('float64')):raise ValueError('Canonical point failed')
+        if fin:
+            # Visual-only Finland: keep every added point on the original
+            # contact surface. Do not extend the original footprint or retain
+            # an interpolated height floating above a sloped source triangle.
+            q=cv[cf][:,:,[0,2]]-point[[0,2]];aa=q[:,0];bb=q[:,1];dd=q[:,2]
+            cross=lambda a,b:a[:,0]*b[:,1]-a[:,1]*b[:,0]
+            den=cross(bb-aa,dd-aa);valid=np.abs(den)>1e-8
+            u=np.divide(cross(-aa,dd-aa),den,out=np.zeros_like(den),where=valid)
+            z=np.divide(cross(bb-aa,-aa),den,out=np.zeros_like(den),where=valid)
+            inside=valid&(u>=-1e-7)&(z>=-1e-7)&(u+z<=1+1e-7)
+            if not inside.any():continue
+            tri=cv[cf];height=tri[:,0,1]+u*(tri[:,1,1]-tri[:,0,1])+z*(tri[:,2,1]-tri[:,0,1])
+            candidates=np.where(inside)[0];nearest=candidates[np.argmin(abs(height[candidates]-point[1]))]
+            point[1]=height[nearest]
+            for _ in range(8):point=np.rint(point.astype('float32').astype('float64')*65536)/65536
         moved[tuple(sorted((ca,cz)))]=point
     new_edges={len(cv)+i:e for i,e in enumerate(sorted(moved))};cmid={e:i for i,e in new_edges.items()};newv=np.concatenate([cv,np.array([moved[e]for e in sorted(moved)])]);new=[];source=[]
     for i,face in enumerate(cf):
@@ -133,7 +150,7 @@ def build(sources):
     out+=struct.pack('<HH',len(newv),0)+np.rint(newv*65536).astype('<i4').tobytes()+struct.pack('<HH',len(new),0)
     for face,ci in zip(new,source):out+=struct.pack('<4H',*face,int(words[ci,3]))
     out+=struct.pack('<i',len(refs))+np.array(refs,dtype='<i2').tobytes()+struct.pack('<hh',cols,rows)
-    render=write_render(b,cv,cf,newv,new,source,pairs,new_edges);validate_pair(out,render)
+    render=write_render(b,cv,cf,newv,new,source,pairs,new_edges,(267,672) if fin else (174,800));validate_pair(out,render,2043 if fin else 82)
     return bytes(out),render
 
 def extract(path):

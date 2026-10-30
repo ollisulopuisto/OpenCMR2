@@ -104,6 +104,14 @@ int main(int argc, char **argv)
         for(size_t i=3;i<scene.size();i+=4) require(stacked[i]==scene[i],"stacked effects preserve alpha");
         e.spatialAA=false;e.SetBloom(false,0);e.SetMotionBlur(false,0);e.SetDepthOfField(false,20,10,80);e.SetGodRays(false,0);e.SetColorGrading(0,0,100,100);
 
+        // Drone render gate must clear already-eased tunnel/streak and reject
+        // late physics updates, then restore regular camera behavior.
+        e.SetSpeedFocus(1.3f);e.speedFocusSmooth=1.2f;e.SetSpeedStreak(1);e.speedStreakSmooth=.8f;
+        e.SetSpeedEffectsSuppressed(true);e.SetSpeedFocus(1.3f);e.SetSpeedStreak(1);
+        require(e.speedFocusTarget==0&&e.speedFocusSmooth==0&&e.speedStreakTarget==0&&e.speedStreakSmooth==0,"drone clears residual and late speed inputs");
+        upload();require(read(e.ApplyEffects())==scene,"drone actual pixels have no tunnel or streak");
+        e.SetSpeedEffectsSuppressed(false);e.SetSpeedFocus(1.3f);e.SetSpeedStreak(1);
+        require(e.speedFocusTarget>1&&e.speedStreakTarget==1,"classic speed effects restore");e.ClearSpeedEffects();
         // Restrained glare: actual translated GLSL, depth occlusion, alpha, cap and zero identity.
         e.SetSunScreenPosition(.5f,.3f,true);glareSetting=100;e.sunGlare.response=1;
         gl.BindFramebuffer(GL_FRAMEBUFFER,e.backFramebuffer);gl.DepthMask(GL_TRUE);gl.ClearDepth(1);gl.Clear(GL_DEPTH_BUFFER_BIT);e.ForgetEffectState();

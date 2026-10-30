@@ -52,7 +52,7 @@ class BinaryTests(unittest.TestCase):
     def helper(self, fail=False):
         (self.tools / 'prepare.py').write_text('''import argparse
 from pathlib import Path
-p=argparse.ArgumentParser();p.add_argument('--input-dir');p.add_argument('--cache-dir');p.add_argument('--mode');p.add_argument('--cars');p.add_argument('--mods-dir');a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('--input-dir');p.add_argument('--cache-dir');p.add_argument('--mode');p.add_argument('--cars');p.add_argument('--mods-dir');p.add_argument('--all-trees',action='store_true');a=p.parse_args()
 ''' + ("raise SystemExit(7)\n" if fail else '''root=Path(a.cache_dir);out=root/('cars-test' if a.cars else 'scenery-test');out.mkdir(parents=True,exist_ok=True)
 (out/'manifest.tsv').write_text('synthetic')
 (out/'sub.cin').write_text('replacement car')
@@ -117,7 +117,7 @@ print(('OPENCMR2_CARS=' if a.cars else 'OPENCMR2_PACK=')+str(out))
     @unittest.skipIf(OVERLAY, 'full game entry only')
     def test_user_combined_equals_textures_dispatch(self):
         self.helper()
-        for name, marker, manifest in [('france1_prepare.py','OPENCMR2_TEXTURES=','france1-textures.tsv'), ('road_prepare.py','OPENCMR2_ROADS=','road-pair.tsv')]:
+        for name, marker, manifest in [('france1_prepare.py','OPENCMR2_TEXTURES=','france1-textures.tsv'), ('road_prepare.py','OPENCMR2_ROADS=','road-pair.tsv'), ('finland1_roads.py','OPENCMR2_ROADS=','road-pair.tsv'), ('uprez_prepare.py','OPENCMR2_TEXTURES=','uprez-textures.tsv')]:
             (self.tools/name).write_text("""import argparse
 from pathlib import Path
 p=argparse.ArgumentParser();p.add_argument('--input-dir');p.add_argument('--cache-dir');a=p.parse_args()
@@ -131,6 +131,8 @@ print('"""+marker+"""'+str(out))
         self.assertEqual(r.returncode,0,r.stderr+r.stdout)
         for marker in ['OPENCMR2_TEXTURES=','OPENCMR2_ROADS=','OPENCMR2_PACK=','OPENCMR2_CARS=']:
             self.assertIn(marker,r.stdout)
+        r=self.run_binary('--asset-upgrades');self.assertEqual(r.returncode,0,r.stderr+r.stdout)
+        for marker in ['OPENCMR2_TEXTURES=','OPENCMR2_ROADS=','OPENCMR2_PACK=']:self.assertIn(marker,r.stdout)
         self.assertNotEqual(self.run_binary('--textures=').returncode,0)
         self.assertNotEqual(self.run_binary('--textures=invalid').returncode,0)
         r=self.run_binary('--textures=original','--effect=spatial_aa=on','--effect=metalfx_spatial=on')

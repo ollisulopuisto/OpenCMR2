@@ -25,12 +25,12 @@ extern "C" void __wrap__Z19Mesh_UploadVerticesP4Mesh(Mesh *m){
  for(int i=0;i<m->triangleCount;i++)for(int k=0;k<3;k++)if(m->pTriangles[i].vertexIndex[k]>=m->field_0x10)valid=false;
 }
 int main(int argc,char**argv){
- if(argc!=2)return 2;
+ if(argc!=2&&argc!=3)return 2;
  std::ifstream f(argv[1],std::ios::binary);std::vector<BYTE> raw((std::istreambuf_iterator<char>(f)),{});if(raw.empty())return 3;
  for(int pass=0;pass<3;pass++){
   BYTE *buffer=(BYTE*)CFileBuffer::AllocateLockedBuffer(raw.size());memcpy(buffer,raw.data(),raw.size());uploads=textures=vertices=triangles=0;
   CGraphics::m_textureCount=7;Sector_RelocateStageMeshFile(buffer,nullptr,nullptr);
-  if(g_sectorCount!=800||uploads!=174||textures!=56||!valid)return 4;
+  if(g_sectorCount!=(argc==3?672:800)||uploads!=(argc==3?267:174)||textures!=(argc==3?41:56)||!valid)return 4;
   unsigned partIndices=0;for(int i=0;i<g_sectorCount;i++)if(auto m=g_sectors[i]->pMesh){
    if(m->partCount>50)return 5;
    for(int t=0;t<m->triangleCount;t++)for(int k=0;k<10;k++)if(m->pTriangles[t].textures[k]!=-1&&m->pTriangles[t].textures[k]<7)return 10;

@@ -582,6 +582,8 @@ extern "C" void Gfx_ClearVaporTrail(void)
         s_executor->ClearVaporTrail();
 }
 
+extern "C" void Gfx_SetSpeedEffectsSuppressed(BOOL suppressed){if(s_executor)s_executor->SetSpeedEffectsSuppressed(suppressed!=0);}
+
 extern "C" void Gfx_ClearSpeedEffects(void)
 {
     if (s_executor != NULL)

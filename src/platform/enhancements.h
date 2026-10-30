@@ -17,6 +17,7 @@ struct EnhancementOptions {
         auto equal=key.find('=');
         std::string inlineValue;
         if(equal!=key.npos){inlineValue=key.substr(equal+1);key.resize(equal);}
+        if(equal==key.npos && key=="--asset-upgrades"){trees="shell";treeCoverage="all";spectators="animated";textures="uprez";roads="finland1";return true;}
         if(equal==key.npos && key=="--prepare-only"){prepareOnly=true;return true;}
         if(equal==key.npos && key=="--install-enhancement-deps"){installDependencies=true;return true;}
         if(key!="--camera-roll"&&key!="--sun-glare"&&key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect"&&key!="--attract-capture"&&key!="--capture-interval"&&key!="--capture-count"&&key!="--speed-fov"&&key!="--tunnel-vision"&&key!="--tunnel-lines"&&key!="--speed-motes-stretch"&&key!="--speed-motes-amount"&&key!="--speed-motes-size"&&key!="--dof-blur-max-px"&&key!="--speed-streak"&&key!="--speed-hold"&&key!="--tree-coverage"&&key!="--spectator-gain"&&key!="--cockpit-eye-shift"&&key!="--tree-coverage"&&key!="--spectator-gain"&&key!="--camera-move-chase"&&key!="--camera-move-cockpit"&&key!="--camera-move-car"&&key!="--fov-dolly-curve"&&key!="--tire-debris"&&key!="--tree-rustle"&&key!="--spectator-irregular"&&key!="--tire-track-length"&&key!="--tire-track-history"&&key!="--camera-move-type"&&key!="--fov-preview"&&key!="--dof-focus-car"&&key!="--drone-speed-drop"&&key!="--drone-distance"&&key!="--speed-fov-cockpit"&&key!="--cockpit-blur-clear"&&key!="--test-preset")return false;
@@ -24,8 +25,8 @@ struct EnhancementOptions {
         std::string value=equal==std::string::npos?argv[++i]:inlineValue;
         if(key=="--camera-roll"){char*end=nullptr;long n=strtol(value.c_str(),&end,10);if(value.empty()||*end||n<0||n>100)error="--camera-roll expects 0..100";else overrides["video.camera_roll"]=(int)n;}
         if(key=="--sun-glare") {char*end=nullptr;long n=strtol(value.c_str(),&end,10);if(value.empty()||*end||n<0||n>100)error="--sun-glare expects0..100";else overrides["video.sun_glare"]=(int)n;}
-        if(key=="--textures"){if(value!="original"&&value!="france1")error="--textures expects original or france1";else textures=value;}
-        if(key=="--roads"){if(value!="original"&&value!="curved")error="--roads expects original or curved";else roads=value;}
+        if(key=="--textures"){if(value!="original"&&value!="france1"&&value!="uprez")error="--textures expects original, france1 or uprez";else textures=value;}
+        if(key=="--roads"){if(value!="original"&&value!="curved"&&value!="finland1")error="--roads expects original, curved or finland1";else roads=value;}
         if(key=="--tree-wind"){if(value!="on"&&value!="off")error="--tree-wind expects on or off";else overrides["video.tree_wind"]=value=="on";}
         if(key=="--car-names"){if(value!="original"&&value!="skin")error="--car-names expects original or skin";else carNames=value;}
         if(key=="--trees") {if(value!="original"&&value!="shell"&&value!="crossed")error="--trees expects original, shell or crossed";else trees=value;}
@@ -122,6 +123,7 @@ struct EnhancementOptions {
         for(auto&e:kOverdo)if(!overrides.count(e.first))overrides[e.first]=e.second;
     }
     void Apply(){
+        if(!textures.empty())overrides["video.texture_uprez"]=textures=="uprez";
         ApplyTestPreset();
         if(!trees.empty()&&!overrides.count("video.tree_wind"))overrides["video.tree_wind"]=trees!="original";
         if(!carNames.empty())overrides["video.skin_car_names"]=carNames=="skin";
@@ -138,6 +140,7 @@ struct EnhancementOptions {
 inline const char *EnhancementHelp(){return
 "OpenCMR2 options (per launch, no saved selection changes):\n"
 "  Valued enhancement flags accept --name value or --name=value.\n"
+"  --asset-upgrades            Opt-in broader trees/bushes + 2Dcrowds + ground2x + Finland1 roads\n"
 "  --data PATH                 Owned installed PC game data\n"
 "  --user-dir PATH             Explicit DIFFERENT saves/settings profile\n"
 "  --scenery-dir PATH          Existing read-only sidecar pack\n"
@@ -148,12 +151,12 @@ inline const char *EnhancementHelp(){return
 "  --tree-coverage reviewed|all Experimental: all 64 individual trees + 10 bushes, adaptive crown/stem\n"
 "                              (default reviewed = the 3 mappings); needs --trees shell|crossed; native unverified\n"
 "  --spectator-gain 100..400   Experimental: percent of spectator sway/arm swing (default 100); needs --spectators animated\n"
-"  --textures original|france1 Exact-source France1 opaque road2x filter\n"
-"                              Only t_1a/b high+low; not restored detail\n"
+"  --textures original|france1|uprez  Exact-source opaque ground2x filter (uprez: Finland1 + France1)\n"
+"                              uprez: 41 Finland1 ground textures high+low + France1 roads; no new detail\n"
 "                              Other stages stay original; native unverified\n"
-"  --roads original|curved      Experimental Ballon paired render/contact curve\n"
+"  --roads original|curved|finland1      finland1: visual-only curves, original physics/route retained\n"
 "                              Exact original source only; others stay original\n"
-"                              FIN barriers unchanged; native handling unverified\n"
+"                              curved: legacy Ballon paired research; FIN unchanged; native unverified\n"
 "                              Requires Python3.10+ with numpy; no auto download\n"
 "  --tree-wind on|off          2D foliage sway, fixed bases; default on with trees\n"
 "                              Hash-verified individual tree cards only\n"

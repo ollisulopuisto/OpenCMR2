@@ -3,9 +3,12 @@ from PIL import Image,ImageChops
 import road_periodic as p
 class Tests(unittest.TestCase):
  def test_explicit_policy_and_opaque_required(self):
-  for policy in (None,(False,False),'repeat'):
+  for policy in (None,(),'repeat'):
    with self.assertRaises(ValueError):p.resize(Image.new('RGB',(8,8)),(16,16),policy)
   with self.assertRaises(ValueError):p.resize(Image.new('RGBA',(8,8)),(16,16),(True,True))
+ def test_clamp_matches_pillow(self):
+  im=Image.new("RGB",(8,8));im.putdata([(x*31,y*29,(x+y)*13)for y in range(8)for x in range(8)])
+  self.assertIsNone(ImageChops.difference(p.resize(im,(16,16),(False,False)),im.resize((16,16),Image.Resampling.LANCZOS).convert("RGBA")).getbbox())
  def test_constant_and_small_mips(self):
   im=Image.new('RGB',(9,5),(30,70,110));levels=p.mip_chain(im,(True,True))
   self.assertEqual([i.size for i in levels],[(9,5),(4,2),(2,1),(1,1)])

@@ -8,7 +8,7 @@
 
 **Safety.** Originals are only read and are re-hashed after processing. The output folder must not exist. Unsafe or duplicate output paths and wrong hashes are refused before anything is written.
 
-**Limits.** Interpolation only, not detail restoration, not runtime integration. Atlas-cell bleed, alpha-test coverage, mips, UVs, seams and native performance are unverified. Whole-atlas filtering can change alpha-test silhouettes, so this is not an installable pack. The game does not load its output. You supply the inventory and the extracted source images yourself; the tool needs Pillow. There is no rebuild.sh option for it because the extraction step that makes the inventory is not part of this repository. Do not publish generated art.
+**Limits.** Interpolation only, not detail restoration, this generic script is not runtime integration. Atlas-cell bleed, alpha-test coverage, mips, UVs, seams and native performance are unverified. Whole-atlas filtering can change alpha-test silhouettes, so this is not an installable pack. The game does not directly load these generic PNG outputs. The integrated `--textures uprez` path instead prepares and loads the exact-source Finland1/France1 opaque ground subset with full mips. Unknown/cutout/atlas sources stay original. You supply the inventory and the extracted source images yourself; the tool needs Pillow. There is no rebuild.sh option for it because the extraction step that makes the inventory is not part of this repository. Do not publish generated art.
 
 ```sh
 (cd tools/uprez && python3 -m unittest test_uprez)

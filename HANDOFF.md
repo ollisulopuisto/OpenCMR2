@@ -1,3 +1,37 @@
+# Integrated asset candidate (30 October 2026)
+
+Claim: feat/runtime-uprez-finland1, current main plus PR182 render-time drone fix.
+`--asset-upgrades` selects supported broader tree/bush replacements, animated 2D
+spectators, exact-source opaque ground2x textures and Finland1 visual-only curves.
+No originals, saves or settings are rewritten. GitHub contains code/metadata only.
+All changes remain PR-only; human-led merges. No CI dispatch, release or artifacts.
+
+Golden goal: add audiovisuals/feel, never change physics/gameplay. Finland1
+retains original HPC contact, FIN barriers, AI route and surface data. It never
+enables the exact-edge physics experiment. Legacy `--roads curved` Ballon is
+still a separate unaccepted paired-contact experiment, not part of this preset.
+
+Finland hi/lo kept separate by exact original C3D+quartet hashes. Generated
+render retains original vertices, lights, texture tail, sectors, mesh counts,
+and visual-only triangles. New points projected onto original terrain; outside
+footprint candidates discarded. Private tests: 1036 new points, no outside
+points, <=0.009mm height quantization error at those vertices. Changed-triangle centers measured max3.65cm visual/contact height difference;
+original collision remains untouched. Native appearance/performance unverified.
+
+Runtime2D is a safe first subset: 82 Finland hi/lo ground sources plus4 France
+road sources, exact source/output hashes, complete mips, original UV dimensions.
+No whole-atlas foliage/people/font filtering. Those remain original except the
+existing dedicated scenery recipes. This is interpolation, not recovered detail.
+Existing broader helper generated132 mappings:84 trees/bushes,48 spectators;
+76 multi-tree strips and6shadow masks remain original. Barrier/hedge conversion
+and source-specific atlas uprez remain open. Greece source recovery remains open.
+
+Local build succeeds; full140suite has135passes and5previous Zig safety aborts
+(net_session, service_park_weather, gamepad_layout, frontend_language,
+net_frontend). Real owned-source helper dispatch, upload/reset checks and native
+C3D relocation/parts/bounds/free probes pass. Native Mac Metal driving, culling,
+reflections, appearance and frame time remain unverified. No full-pack completion.
+
 # Handoff - OpenCMR2 rendering enhancements
 
 

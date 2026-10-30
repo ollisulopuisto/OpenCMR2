@@ -165,12 +165,12 @@ void Mesh_BuildParts(Mesh *pMesh)
     }
     count = 0;
     last = -99;
-    ppPart = pMesh->pParts - 1;
+    ppPart = nullptr;
     for (i = 0; i < pMesh->triangleCount; i++) {
         n = pMesh->pTriangles[i].textures[0];
         if (last != n) {
             count++;
-            ppPart++;
+            ppPart = &pMesh->pParts[count - 1];
             last = n;
             (*ppPart)->indexCount = 0;
             (*ppPart)->texture = pMesh->pTriangles[i].textures[0];
@@ -188,13 +188,13 @@ void Mesh_BuildParts(Mesh *pMesh)
     }
     count = 0;
     last = -99;
-    ppPart = pMesh->pParts - 1;
+    ppPart = nullptr;
     for (i = 0; i < pMesh->triangleCount; i++) {
         n = pMesh->pTriangles[i].textures[0];
         if (last != n) {
             last = n;
             count++;
-            ppPart++;
+            ppPart = &pMesh->pParts[count - 1];
             (*ppPart)->indexCount = 0;
         }
         for (k = 0; k < 3; k++) {

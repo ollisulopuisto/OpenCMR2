@@ -60,7 +60,7 @@ def render_keys(raw):
         raise ValueError('Bounded C3D required')
     nodes,nm,no,ns=_read(raw,24,'<4H');flags,nv=_read(raw,16,'<II');nt=_read(raw,32,'<I')[0];records=_read(raw,38,'<H')[0];portals=_read(raw,40,'<H')[0]
     # Explicitly refuse anything beyond the verified Ballon ground-only layout.
-    if nodes or no or flags or records or portals or not 0<nm<=174 or ns>800 or nv>100000 or nt>32767:
+    if nodes or no or flags or records or portals or not 0<nm<=267 or ns>800 or nv>100000 or nt>32767:
         raise ValueError('Unsupported paired render layout')
     ms=48;ss=ms+nm*288;ts=ss+ns*136;vs=ts+nt*76;end=vs+nv*52
     texture_start=_read(raw,8,'<I')[0];name_start=_read(raw,12,'<I')[0]
