@@ -225,9 +225,30 @@ static bool DrawReplacement(StageObject *object,const float *billboard,unsigned 
         if(Sys_GetOption("video.reactive_spectators",1)!=0)for(const auto &c:reactCars)if(c.valid&&animationTime-c.at<65536ull*50)
             excitement=std::max(excitement,SceneryMotion::Excitement(object->position.x/65536.f-c.x,object->position.z/65536.f-c.z,c.speed));
         PackTexture *t=asset->frames[frame];std::vector<GfxVertex> vertices;
-        for(int i=0;i<mesh->triangleCount;i++)for(int j=0;j<3;j++){
-            unsigned ix=mesh->pTriangles[i].vertexIndex[j];if(ix>=(unsigned)mesh->field_0x10)return false;
-            auto &p=v[ix];vertices.push_back({p.x+SceneryMotion::ReactiveOffset(p.y,bottom,height,animationTime,phase,excitement),p.y,p.z,p.nx,p.ny,p.nz,p.diffuseColour,p.specularColour,p.textureCoordinates[0][0],p.textureCoordinates[0][1],0,0});}
+        bool irregular=Sys_GetOption("video.spectator_irregular",1)!=0;
+        float left=v[0].x,right=v[0].x;for(int i=1;i<mesh->field_0x10;i++){left=std::min(left,v[i].x);right=std::max(right,v[i].x);}
+        float span=right-left;
+        for(int i=0;i<mesh->triangleCount;i++){
+            GfxVertex tri[3];
+            for(int j=0;j<3;j++){
+                unsigned ix=mesh->pTriangles[i].vertexIndex[j];if(ix>=(unsigned)mesh->field_0x10)return false;
+                auto &p=v[ix];tri[j]={p.x,p.y,p.z,p.nx,p.ny,p.nz,p.diffuseColour,p.specularColour,p.textureCoordinates[0][0],p.textureCoordinates[0][1],0,0};
+            }
+            if(!irregular){for(int j=0;j<3;j++){tri[j].x+=SceneryMotion::ReactiveOffset(tri[j].y,bottom,height,animationTime,phase,excitement);vertices.push_back(tri[j]);}continue;}
+            // Each triangle is cut into 16 (two midpoint splits, silhouette and texture mapping unchanged) so the
+            // sway can differ along the card: one card carries several people, one tempo for all looks like unison.
+            GfxVertex cut[3*16];int n=0;
+            auto mid=[](const GfxVertex &a,const GfxVertex &b){GfxVertex m=a;m.x=(a.x+b.x)*.5f;m.y=(a.y+b.y)*.5f;m.z=(a.z+b.z)*.5f;m.nx=(a.nx+b.nx)*.5f;m.ny=(a.ny+b.ny)*.5f;m.nz=(a.nz+b.nz)*.5f;m.u0=(a.u0+b.u0)*.5f;m.v0=(a.v0+b.v0)*.5f;return m;};
+            auto split=[&](const GfxVertex &a,const GfxVertex &b,const GfxVertex &c,GfxVertex *out){GfxVertex ab=mid(a,b),bc=mid(b,c),ca=mid(c,a);
+                const GfxVertex q[12]={a,ab,ca,ab,b,bc,ca,bc,c,ab,bc,ca};for(int k=0;k<12;k++)out[k]=q[k];};
+            GfxVertex first[12];split(tri[0],tri[1],tri[2],first);
+            for(int k=0;k<4;k++){GfxVertex second[12];split(first[k*3],first[k*3+1],first[k*3+2],second);for(int m=0;m<12;m++)cut[n++]=second[m];}
+            for(int k=0;k<n;k++){
+                float u=span>0?(cut[k].x-left)/span:0;
+                cut[k].x+=SceneryMotion::ReactivePersonOffset(cut[k].y,bottom,height,u,animationTime,phase,excitement);
+                vertices.push_back(cut[k]);
+            }
+        }
         if(!spectatorLogged){Sys_Log("options: spectator sidecar active (first successful override draw)");spectatorLogged=true;}
         State(*(const GfxMatrix*)billboard);Gfx_SetTexture(0,t->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,vertices.data(),vertices.size());Gfx_PopState();
         if(selected&&(!diagnosticObject||(asset->frames.size()==4&&!diagnosticArticulated))){diagnosticObject=object;diagnosticFrame=frame;diagnosticChanges=0;diagnosticArticulated=asset->frames.size()==4;}
@@ -280,7 +301,13 @@ static bool DrawReplacement(StageObject *object,const float *billboard,unsigned 
         // unchanged at rest and original/fitted buffers are never rewritten.
         if(Sys_GetOption("video.tree_wind",0)) {
             auto moved=p.vertices;
-            for(auto &q:moved)q.x+=SceneryMotion::Offset(q.y,bottom,height,animationTime,phase,true);
+            // Leaf rustle: the geometry only sways as before; the crown texture is shifted a little, in gusts (video.tree_rustle percent, 0 = off).
+            float rustle=Sys_GetOption("video.tree_rustle",100)/100.f;
+            for(auto &q:moved){
+                float wy=height>0?(q.y-bottom)/height:0,du,dv;
+                SceneryMotion::RustleUV(q.u0,q.v0,wy,animationTime,phase,rustle,&du,&dv);q.u0+=du;q.v0+=dv;
+                q.x+=SceneryMotion::Offset(q.y,bottom,height,animationTime,phase,true);
+            }
             Gfx_SetTexture(0,p.texture->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,moved.data(),moved.size());
         } else {Gfx_SetTexture(0,p.texture->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,p.vertices.data(),p.vertices.size());}
     }

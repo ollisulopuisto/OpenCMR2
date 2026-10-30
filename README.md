@@ -513,6 +513,8 @@ retain subtle cutout sway. `--tree-wind off` disables the new base-fixed2Dwind
 (default on with a selected tree mode). Wind does not turn cards into3Dtrees.
 See the preparation guide for exact coverage and the runtime draw counters.
 
+`--tree-rustle 0..300` (default 100, 0 off) shifts the crown texture of the 3D replacement trees a little, in gusts, while the geometry is unchanged; trunk and texture edges stay still. It needs `--tree-wind on` and does not touch the 2D original trees. `--spectator-irregular 0|1` (default 1) varies crowd sway tempo and phase along each card and per placement; 0 restores the single-tempo sway. Both are visual only and not yet seen natively.
+
 ### Experimental curved Ballon roads
 
 Pass `--roads curved` to the OpenCMR2 binary to prepare and select matching

@@ -58,6 +58,27 @@ int main(void)
         Check(ReactiveOffset(10,0,10,0,1000,0)==Offset(10,0,10,0,1000,false),"zero excitement unchanged");
         for(unsigned t=0;t<5000;t+=29)Check(std::abs(ReactiveOffset(10,0,10,t*65536ull,1234,1))<=1.0501f,"reactive bounded 10.5 percent");
     }
+    {
+        using namespace SceneryMotion;
+        int differ = 0;
+        for (float u = 0; u < 1; u += .1f) if (std::fabs(PersonOffset(10,0,10,u,3*65536ull,5) - PersonOffset(10,0,10,0,3*65536ull,5)) > .05f) differ++;
+        Check(differ >= 4, "crowd sway differs along the card");
+        Check(PersonTempo(5) != PersonTempo(9999), "tempo differs per placement");
+        Check(PersonOffset(0,0,10,.4f,123456,7) == 0 && ReactivePersonOffset(0,0,10,.4f,123456,7,1) == 0, "people feet fixed");
+        for (unsigned t = 0; t < 20000; t += 17) for (float u = 0; u <= 1; u += .05f) {
+            Check(std::fabs(PersonOffset(10,0,10,u,t*65536ull,1234)) <= .250001f, "person sway bounded 2.5 percent");
+            float du, dv;
+            RustleUV(u,.6f,.9f,t*65536ull,99,1,&du,&dv);
+            Check(std::fabs(du) <= .0081f && std::fabs(dv) <= .0081f, "rustle bounded 0.8 percent of the texture");
+            RustleUV(u,.6f,.2f,t*65536ull,99,1,&du,&dv);
+            Check(du == 0 && dv == 0, "trunk texture does not move");
+        }
+        float du, dv;
+        RustleUV(0.f,.5f,.9f,5*65536ull,1,1,&du,&dv);
+        Check(du == 0 && dv == 0, "texture edge does not move");
+        RustleUV(.5f,.5f,.9f,5*65536ull,1,0,&du,&dv);
+        Check(du == 0 && dv == 0, "strength 0 is off");
+    }
     if (failures == 0) {
         puts("animated scenery: frame advance and texture indexing hold");
         return 0;
