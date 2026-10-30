@@ -926,6 +926,36 @@ void FrontendMenu_DrawAdvancedGraphicsOptions(Menu *pMenu)
             }
             break;
         }
+        case 0x1b: {
+            // OpenCMR2: speed effects, Off/On.
+            strcpy(CFrontend::m_stringDest, pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
+            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
+                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+            for (j = 0; j < pItem->min; j++) {
+                x += (int)(g_pGraphics->resX * 10) / 640 +
+                     Font_GetTextWidth(1, (BYTE *)CFrontend::m_stringDest);
+                strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(j == 0 ? 0x133 : 0x134));
+                Font_DrawText(1, CFrontend::m_stringDest, x,
+                              (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1],
+                              (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
+            }
+            break;
+        }
+        case 0x1c: {
+            // OpenCMR2: air vortices, Off/On.
+            strcpy(CFrontend::m_stringDest, pItem->text ? pItem->text : CFrontend::GetTextString(pItem->id));
+            Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
+                          (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+            for (j = 0; j < pItem->min; j++) {
+                x += (int)(g_pGraphics->resX * 10) / 640 +
+                     Font_GetTextWidth(1, (BYTE *)CFrontend::m_stringDest);
+                strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(j == 0 ? 0x133 : 0x134));
+                Font_DrawText(1, CFrontend::m_stringDest, x,
+                              (int)(g_pGraphics->resY * 24) / 480 + g_frontendDrawRect[1],
+                              (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
+            }
+            break;
+        }
         case 4:
             strcpy(CFrontend::m_stringDest, CFrontend::GetTextString(0x1d2));
             Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 122) / 640,
@@ -4091,6 +4121,9 @@ void FrontendMenu_EnterAdvancedGraphicsOptions(Menu *pMenu, int param)
     Menu_GetItem(pMenu, 0x19)->max = Sys_GetOption("video.god_rays", 0) != 0 ? 1 : 0;
     // OpenCMR2: color grading off by default.
     Menu_GetItem(pMenu, 0x1a)->max = Sys_GetOption("video.color_grading", 0) != 0 ? 1 : 0;
+    // OpenCMR2: speed effects default on, air vortices (vapor trails) default off. Read without mutating saved choices.
+    Menu_GetItem(pMenu, 0x1b)->max = Sys_GetOption("video.speed_effects", 1) != 0 ? 1 : 0;
+    Menu_GetItem(pMenu, 0x1c)->max = Sys_GetOption("video.vapor_trails", 0) != 0 ? 1 : 0;
     if (CGameInfo::GetPreviewMode() != 0) {
         Menu_GetItem(pMenu, 10)->max = 1;
         return;
@@ -4176,6 +4209,9 @@ void FrontendMenu_ApplyAdvancedGraphicsOptions(Menu *pMenu, int param)
     // OpenCMR2: color grading on/off.
     int colorGrading = Menu_GetItem(pMenu, 0x1a)->max;
     Sys_SetOption("video.color_grading", colorGrading);
+    // OpenCMR2: speed effects and air vortices: saved here, read every frame by Race_ApplySpeedEffectParams and View_SpeedFovZoom.
+    Sys_SetOption("video.speed_effects", Menu_GetItem(pMenu, 0x1b)->max);
+    Sys_SetOption("video.vapor_trails", Menu_GetItem(pMenu, 0x1c)->max);
     EffectSettings::Apply();
 }
 

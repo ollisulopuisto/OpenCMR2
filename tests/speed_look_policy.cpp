@@ -11,6 +11,8 @@ int main()
         CHECK(SpeedLook_ScreenEffectsOff(type, true, false) == (type != 3)); // replay: only the interior view keeps them
     }
     CHECK(SpeedLook_VaporOff(true) && !SpeedLook_VaporOff(false));   // replay: vapor off in every view; driving: as set
+    CHECK(SpeedLook_ScreenEffectsOff(4, false, false, false) && SpeedLook_ScreenEffectsOff(3, true, false, false));   // menu switch off: every view, driving and replay
+    CHECK(!SpeedLook_ScreenEffectsOff(4, false, false, true) && !SpeedLook_ScreenEffectsOff(4, false, false));       // default on: unchanged
     // Drone lens: with the speed gain at 0 the lens must not depend on speed (the old gain 0.3 did).
     auto settled = [](float gain, float speed) {
         CameraOperator::State s; CameraOperator::V3 car{0, 0, 0}; CameraOperator::RoadPreview r;

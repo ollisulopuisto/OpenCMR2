@@ -2655,6 +2655,12 @@ void FrontendMenu_BuildAdvancedGraphicsOptions(void)
     // ([video] video.color_grading).
     Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x1a);
     Menu_GetItem(&g_menu0x0081cd78, 0x1a)->text = (char *)"Color Grading";
+    // OpenCMR2: two independent switches. Speed effects = tunnel vision, its lines, the radial streak and the speed FOV widening
+    // ([video] video.speed_effects, default on). Air vortices = the vapor trails ([video] video.vapor_trails, default off).
+    Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x1b);
+    Menu_GetItem(&g_menu0x0081cd78, 0x1b)->text = (char *)"Speed Effects";
+    Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x1c);
+    Menu_GetItem(&g_menu0x0081cd78, 0x1c)->text = (char *)"Air Vortices";
     Menu_AddItemType2(&g_menu0x0081cd78,(char*)"Effect amounts...",-1,FrontendMenu_GetEffectAmounts(&g_menu0x0081cd78),0,0x30);
     Menu_AddItemType1(&g_menu0x0081cd78, 0, 0x67, (MenuItemAction)FrontendMenu_ApplyAdvancedGraphicsOptions, 0xe);
     Menu_SetCallbacks(&g_menu0x0081cd78, FrontendMenu_EnterAdvancedGraphicsOptions, (MenuCallback)FrontendMenu_UpdateAdvancedGraphicsOptions, (MenuCallback)FrontendMenu_DrawAdvancedGraphicsOptions, NULL);

@@ -4678,7 +4678,7 @@ void Race_ApplySpeedEffectParams(void)
         int viewType = 0, viewDrone = 0; AttractCapture_ViewSignature(0, &viewType, &viewDrone);
         if (SpeedLook_VaporOff(Race_GetPlayerRecordField4(0) != 0)) Gfx_ClearVaporTrail();   // replay: air vortices off in every view, saved setting untouched
         // Replay: only the interior view (type 3) keeps the effects. Drone camera: never. See SpeedLookPolicy.h. Settings are not rewritten.
-        if (SpeedLook_ScreenEffectsOff(viewType, Race_GetPlayerRecordField4(0) != 0, View_IsDroneCamera(0))) {
+        if (SpeedLook_ScreenEffectsOff(viewType, Race_GetPlayerRecordField4(0) != 0, View_IsDroneCamera(0), Sys_GetOption("video.speed_effects", 1) != 0)) {
             Gfx_ClearSpeedEffects();   // targets and eased values to 0: no residual blur or lines after a camera switch
             if (!SpeedLook_VaporOff(Race_GetPlayerRecordField4(0) != 0)) Gfx_SetVaporTrail(SpeedStreak_Strength((float)Car_Get(0)->speed / 65536.0f / 1.5f, Sys_GetOption("video.speed_fov_hold", 0), Sys_GetOption("video.vapor_trails", 0) != 0 ? 100 : 0)); // world-space trails: off in replay, as set while driving
             return;
