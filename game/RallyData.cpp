@@ -6066,6 +6066,8 @@ static void TuneSet(const TuningRow &r, int v)
     char k[40]; TuneCamKey(TuneCamType(), k, sizeof k); Sys_SetOptionTemporary(k, v);
 }
 static unsigned g_tuneSavedStamp = 0, g_tuneFrame = 0;
+// Sprite/triangle layer 4 is the BACKGROUND layer: Game_DrawSceneViewport draws it before the 3D scene, so the scene covers it. Layers 3, 2, 1 are drawn after the scene. Layer 1 holds only 1023 sprites and the debug pane uses it, so the panel and the camera readout use layer 3.
+static const int kTuneOverlayLayer = 3;
 static bool g_tuneDrawn = false;  // set by every TuningPanel_Draw; the paused-scene draw skips when another path already drew this frame
 static TuningEdges g_tuneEdges;
 bool TuningPanel_IsOpen(void) { return g_tuneOpen; }
@@ -6146,23 +6148,23 @@ void TuningPanel_Draw(void)
     DebugOverlayLayout layout = DebugOverlayLayout::For(g_pGraphics->resX, g_pGraphics->resY, count + 3);
     short panel[4] = {(short)(g_pGraphics->resX - layout.width - layout.x), (short)(g_pGraphics->resY * 23 / 100), (short)layout.width, (short)layout.height};
     BYTE background[4] = {12, 16, 22, 220}, colour[4] = {240, 246, 255, 255}, lit[4] = {110, 255, 140, 255};
-    Sprite_FillRect(NULL, panel, background, 4);
+    Sprite_FillRect(NULL, panel, background, kTuneOverlayLayer);
     char text[96];
     int tx = panel[0] + layout.pad, ty = panel[1] + layout.pad, row = 0;
     snprintf(text, sizeof text, "TUNING  1/2 row  3/4 value");
-    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour, 4);
+    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour, kTuneOverlayLayer);
     for (int i = 0; i < count; ++i) {
         if (TuneIsCamMove(rows[i])) {
             char k[40]; int t = TuneCamType(); TuneCamKey(t, k, sizeof k);
             snprintf(text, sizeof text, "%s Camera type %d move (%s) 0.05 units: %d", i == g_tuneRow ? ">" : " ", t, Sys_GetOption(k, kCamMoveUnset) == kCamMoveUnset ? "family" : "own", TuneGet(rows[i]));
         } else
         snprintf(text, sizeof text, "%s %s: %d", i == g_tuneRow ? ">" : " ", rows[i].label, Sys_GetOption(rows[i].key, rows[i].fallback));
-        Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, i == g_tuneRow ? lit : colour, 4);
+        Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, i == g_tuneRow ? lit : colour, kTuneOverlayLayer);
     }
     snprintf(text, sizeof text, "5 row reset  6 all to opening  7 save");
-    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour, 4);
+    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour, kTuneOverlayLayer);
     snprintf(text, sizeof text, g_tuneSavedStamp && g_tuneFrame - g_tuneSavedStamp < 100 ? "saved to opencmr2.ini; F10: next view" : "F10: nothing next; per launch until saved");
-    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour, 4);
+    Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour, kTuneOverlayLayer);
 }
 // The paused scene (render callback of Race_UpdatePauseState) never reaches the per-view overlay that normally draws the panel.
 void TuningPanel_DrawPaused(void)
@@ -6646,8 +6648,8 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         int bw = (int)g_pGraphics->resX * 56 / 100, bx = (int)g_pGraphics->resX * 2 / 100, by = (int)g_pGraphics->resY * 52 / 100;
         short bp[4] = {(short)bx, (short)by, (short)bw, (short)(5 * bigLine + 2 * pad)};
         BYTE bbg[4] = {0, 0, 0, 215}, bfg[4] = {255, 236, 90, 255}, bwhite[4] = {255, 255, 255, 255};
-        Sprite_FillRect(NULL, bp, bbg, 4);
-        for (int k = 0; k < 5; ++k) Font_DrawTextScaled(1, big[k], bx + pad, by + pad + k * bigLine, bigFont, bw - 2 * pad, k == 0 ? bfg : bwhite, 4);
+        Sprite_FillRect(NULL, bp, bbg, kTuneOverlayLayer);
+        for (int k = 0; k < 5; ++k) Font_DrawTextScaled(1, big[k], bx + pad, by + pad + k * bigLine, bigFont, bw - 2 * pad, k == 0 ? bfg : bwhite, kTuneOverlayLayer);
     }
     CarDamage_UpdateOrderedCarsOffRoadState(pOrder, (short)orderCount, g_viewScreenRect, maskedView);
     if (CGameInfo::GetGameModeOptionBit19() != 0) {
