@@ -8429,6 +8429,12 @@ int View_SpeedFovZoom(BYTE view, int zoom)
     static double lastMs[2];
     int (&shown)[2] = g_speedFovShown;
     int pct = Sys_GetOption("video.speed_fov", 0);
+    {   // Cockpit only: a share of the speed FOV (default 50%, 100 = the full amount as before). Stored scaled, so the readout and the
+        // widening-dependent effects see the same effective amount. Other camera types are untouched.
+        int type = 0, drone = 0;
+        if (view < 2) AttractCapture_ViewSignature(view, &type, &drone);
+        if (type == 3) { int share = Sys_GetOption("video.speed_fov_cockpit", 25); if (share < 0) share = 0; if (share > 100) share = 100; pct = pct * share / 100; }
+    }
     g_speedFovPct[view & 1] = pct;
     if (pct <= 0 || view >= 2) { shown[view & 1] = 0; return zoom; }
     if (pct > kSpeedFovMaxPct) pct = kSpeedFovMaxPct;

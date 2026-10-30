@@ -5,15 +5,15 @@ struct TuningRow { const char *label, *key; int lo, hi, step, fallback; };
 inline const TuningRow *Tuning_Rows(int &count)
 {
     static const TuningRow rows[] = {
-        {"Speed FOV %", "video.speed_fov", 0, 150, 2, 0},
+        {"Speed FOV %", "video.speed_fov", 0, 500, 5, 0},
         {"FOV dolly % (camera closer when wider)", "video.fov_dolly", 0, 250, 10, 150},
         {"Cockpit eye shift % (sign tuned natively)", "video.cockpit_eye_shift", -100, 100, 10, 0},
         {"DoF (0/1)", "video.depth_of_field", 0, 1, 1, 0},
         {"DoF blur %", "video.dof_blur", 0, 100, 10, 30},
         {"DoF max px at 100%", "video.dof_blur_max_px", 1, 40, 2, 4},
         {"Blur mode (0 peripheral, 1 whole scene minus car)", "video.blur_mode", 0, 1, 1, 0},
-        {"Tunnel vision %", "video.tunnel_vision", 0, 200, 10, 100},
-        {"Radial lines inside the tunnel vision zone (0/1)", "video.tunnel_lines", 0, 1, 1, 0},
+        {"Tunnel vision %", "video.tunnel_vision", 0, 200, 10, 150},
+        {"Radial lines inside the tunnel vision zone (0/1)", "video.tunnel_lines", 0, 1, 1, 1},
         {"Motion blur (0/1)", "video.motion_blur", 0, 1, 1, 1},
         {"Motion blur %", "video.motion_blur_amount", 0, 100, 10, 16},
         {"Vapor trails behind car (0/1)", "video.vapor_trails", 0, 1, 1, 0},
@@ -21,6 +21,7 @@ inline const TuningRow *Tuning_Rows(int &count)
         {"Speed streak %", "video.speed_streak", 0, 100, 10, 0},
         {"FOV preview, video.fov number (0 off)", "video.fov_preview", 0, 150, 5, 0},   // absolute video.fov, debug only, a legacy scale number not an angle, below 20 acts as 20; Speed FOV % is separate
         {"Tyre debris (0 off; chips per wheel per step x100, loose/wet ground)", "video.tire_debris", 0, 400, 25, 0},
+        {"Cockpit speed FOV % of Speed FOV (cockpit only)", "video.speed_fov_cockpit", 0, 100, 5, 25},
         {"Active camera forward(+)/back(-) at full speed, 0.05 units", "video.camera_move_active", -200, 200, 5, 0},   // special row: edits video.camera_move_type<N> of the camera in use; RallyData.cpp resolves it
     };
     count = (int)(sizeof(rows) / sizeof(*rows));

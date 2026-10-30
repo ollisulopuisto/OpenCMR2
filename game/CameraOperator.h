@@ -47,7 +47,15 @@ struct State{
  bool pullbackReady=false;
  float heading=0,headingRate=0,lastHeading=0,turn=0,zoom=1.7f,zoomRate=0,pitch=0,lensSpeedGain=.3f,shakeAmount=1.f,shakePhase=0,shakeRight=0,shakeUp=0,distanceScale=1.f,usedDistance=0; // lensSpeedGain: zoom change at full speed (+ = tighter lens, - = wider lens)
  void Reset(){*this=State{};}
+ // A camera far from the car, or not finite, is a failure. Start over behind the car on the next valid step. Runs on every update path,
+ // including the early returns for a zero or oversized time step, so a stale state cannot survive them.
+ bool Guard(V3 car){
+  if(!ready)return false;
+  if(std::isfinite(car.x)&&std::isfinite(car.y)&&std::isfinite(car.z)&&std::isfinite(position.x)&&std::isfinite(position.y)&&std::isfinite(position.z)&&(position-car).Length()<=60.f)return false;
+  Reset();return true;
+ }
  void Step(V3 car,float carHeading,float steering,float speed,float distance,float height,float dt,const RoadPreview*road=nullptr){
+  Guard(car);
   if(!std::isfinite(steering)||!std::isfinite(speed)||!std::isfinite(distance)||!std::isfinite(height)||!std::isfinite(carHeading)||!std::isfinite(dt)||dt<=0||dt>.2f||!std::isfinite(car.x)||!std::isfinite(car.y)||!std::isfinite(car.z)){Reset();return;}
   distance=Clamp(distance*1.5f,9.f,14.f);height=Clamp(height*3.f,7.f,10.f);
   // Speed-dependent distance: pull back at low speed to show scenery, fly closer at
@@ -65,7 +73,7 @@ struct State{
   float wantedLift=Clamp((bend-.06f)/.64f,0.f,1.f)*4.f;
   float liftTime=wantedLift>curveLift?.55f:1.7f;
   curveLift+=(wantedLift-curveLift)*(1-std::exp(-dt/liftTime));
-  height+=curveLift;
+  height+=curveLift*Clamp(distanceScale,0.f,1.f); // the curve lift follows the distance knob, so a closer drone stays closer in bends
   float orbitHeading=roadValid?std::atan2(road->tangent.x,road->tangent.z):carHeading;
   float delta=ready?Wrap(carHeading-lastHeading):0;
   if(ready&&((car-lastCar).Length()>25.f||std::abs(delta)>.8f)){Reset();delta=0;}
@@ -90,7 +98,9 @@ struct State{
   // Keep framing safe on very long high-speed transients, but do not rigidly
   // rotate the position offset with the car. This is a tether, not attachment.
   V3 away=position-car;float separation=away.Length();
-  float tether=std::sqrt(distance*distance+height*height)*1.3f;
+  // The tether is what holds the camera near the car at speed (the spring chase lags a moving car). It stays 1.3 x the intended offset at the
+  // default knob (100) and tightens to 1.0 x at 50, so a lower drone_distance really brings the camera closer at speed.
+  float tether=std::sqrt(distance*distance+height*height)*(1.f+.3f*Clamp((distanceScale-.5f)/.5f,0.f,1.f));
   if(separation>tether){position=car+away*(tether/separation);}
   V3 target=car+V3{std::sin(carHeading)*Clamp(speed*3.f,2.f,5.f),1.2f,std::cos(carHeading)*Clamp(speed*3.f,2.f,5.f)};
   if(roadValid){target=road->near;target.y=car.y+1.2f;}
@@ -126,7 +136,12 @@ struct State{
  }
  // Ground-height constrained sight corridor, not generic object collision.
  // Query samples current/near-future camera footpoints and car->camera rays.
- template<class Query> void ConstrainTerrain(V3 car,float dt,Query ground){
+ template<class Query> void ConstrainTerrain(V3 car,float dt,Query rawQuery){
+  // Ground samples far from the car's own level (another surface level, a bad triangle) are ignored, and the lift is capped: it is
+  // divided by a ray fraction as small as 1/24, so one wild sample used to move the camera by up to 24x its error, without limit.
+  Guard(car);
+  const float carY=car.y;
+  auto ground=[&](V3 point,float&y){float v=0;if(!rawQuery(point,v)||!std::isfinite(v)||v>carY+15.f||v<carY-60.f)return false;y=v;return true;};
   if(!ready||dt<=0||dt>.2f)return;
   V3 original=position,base=position;float required=0;
   auto liftFor=[&](V3 camera){
@@ -158,12 +173,15 @@ struct State{
     if(score<cost){cost=score;base=candidate;required=lift;}
    }
   }
+  required=Clamp(required,0.f,8.f);
   position=base;
   // Rise before collision if possible; never ease through known terrain.
   // Fall slowly after a crest so camera doesn't track every car bump.
   terrainLift=required>terrainLift?required:Max(required,terrainLift-dt*2.f);
   position.y+=terrainLift;
   if(terrainLift>0&&velocity.y<0)velocity.y=0;
+  // Safety net: a camera this far from the car is a failure, not a framing. Start over behind the car next step.
+  Guard(car);
  }
 
 };
