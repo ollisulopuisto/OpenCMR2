@@ -5,7 +5,7 @@ struct TuningRow { const char *label, *key; int lo, hi, step, fallback; };
 inline const TuningRow *Tuning_Rows(int &count)
 {
     static const TuningRow rows[] = {
-        {"Speed FOV %", "video.speed_fov", 0, 150, 2, 0},
+        {"Speed FOV %", "video.speed_fov", 0, 500, 5, 0},
         {"FOV dolly % (camera closer when wider)", "video.fov_dolly", 0, 250, 10, 150},
         {"Cockpit eye shift % (sign tuned natively)", "video.cockpit_eye_shift", -100, 100, 10, 0},
         {"DoF (0/1)", "video.depth_of_field", 0, 1, 1, 0},
