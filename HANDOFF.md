@@ -419,3 +419,20 @@ assertion now derives from the actual 800-unit/s^2 integration cap plus 5%
 finite-difference/float tolerance, not an arbitrary margin above one trace.
 That cap is an unvalidated gameplay tuning choice, not physical proof of feel.
 Emergency braking is mathematically continuous but still rapid in the trace.
+
+## Current native-regression candidate (30 October 2026, 16:11 EET)
+
+Integrated merged batch9 ef25e57. User screenshots show drone with tunnel and
+streak active; View_IsDroneCamera incorrectly used player index for arrays
+indexed by alternating camera-record slot. It now maps active slot + player*2
+and requires actual type5. Linked regression covers both players/slots, stale
+record/classic rejection and speed-FOV bypass; old query fails, fix passes.
+Space replay helper was already fixed in batch9; added linked actual raw-key
+update pause/hold/release/resume/reset test, passing without runtime code edit.
+Terrain samples could raise by 8 units immediately but descend slowly. Added
+alternating sample red/green test; limit rise to3units/s, preserve2units/s
+descent. Ground corridor remains heuristic: abrupt true obstacles may clip.
+Nine focused CTests pass. Native screenshot's FPS drop remains open: nested
+scenery/tree/wind timers cannot be added or subtracted into a GPU conclusion.
+Camera roll is separate future opt-in work, not in this candidate. All patches
+reviewable, merges owner-led, CI intentionally skipped on old stack workflow.

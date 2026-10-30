@@ -201,9 +201,11 @@ struct State{
   }
   required=Clamp(required,0.f,8.f);
   position=base;
-  // Rise before collision if possible; never ease through known terrain.
-  // Fall slowly after a crest so camera doesn't track every car bump.
-  terrainLift=required>terrainLift?required:Max(required,terrainLift-dt*2.f);
+  // A discontinuous corridor/triangle sample must not teleport the camera
+  // upwards. Rise at most 3 units/s; preserve the accepted slow 2 units/s
+  // descent. This is a ground-height heuristic, not collision clearance:
+  // a sudden real obstruction can clip while the bounded rise catches up.
+  terrainLift=required>terrainLift?Clamp(required,terrainLift,terrainLift+dt*3.f):Max(required,terrainLift-dt*2.f);
   position.y+=terrainLift;
   if(terrainLift>0&&velocity.y<0)velocity.y=0;
   // Safety net: a camera this far from the car is a failure, not a framing. Start over behind the car next step.

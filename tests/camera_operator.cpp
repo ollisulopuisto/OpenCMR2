@@ -157,6 +157,16 @@ int main(){
    CHECK(std::abs(left.position.z-right.position.z)<.001f);
   }
  }
+ { // Discontinuous corridor samples must not teleport the drone upwards.
+  State s;V3 car;float previous=0,worstRise=0;
+  for(int i=0;i<200;i++){
+   if(s.ready)s.position.y-=s.terrainLift;
+   s.Step(car,0,0,1.5f,6.5f,1.5f,.04f);
+   s.ConstrainTerrain(car,.04f,[&](V3,float&y){y=(i%25<4)?5.f:-1.5f;return true;});
+   if(i>0)worstRise=Max(worstRise,s.position.y-previous);previous=s.position.y;
+  }
+  CHECK(worstRise<=.13f);
+ }
  {  // camera escape: wild ground samples, tunnel roofs, variable dt, teleports and pauses must never send the camera far from the car
   typedef std::function<bool(V3,float&)> G;
   auto worst=[](G g,float scale,float dtBase,bool jitter,bool jumps){
