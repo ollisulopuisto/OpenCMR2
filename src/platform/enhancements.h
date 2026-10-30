@@ -184,7 +184,8 @@ inline const char *EnhancementHelp(){return
 "  --tunnel-lines 0|1          Radial lines inside the tunnel-vision zone (default 1; overrides opencmr2.ini)\n"
 "  --cockpit-blur-clear 0..60  Cockpit: tenths of a world unit; interior nearer than this stays out of the tunnel-vision blur (default 16 = 1.6; 0 = off)\n"
 "  --speed-streak 0..100       Directional radial speed streak (SDL_GPU only); default 0 = off\n""  --speed-hold 0|1            Hold speed effects at full speed (overdo sets 1); 0 = real car speed\n"
-"  Replay keys (no flag): while a replay plays, , slower  . faster  / pause or resume  Tab next camera incl. automatic. A small bar shows replay time, speed and camera.\n"
+"  Replay keys (no flag): while a replay plays, , slower  . faster  Space pause or resume  Tab next camera (last stop: free camera). A small bar shows replay time, speed and camera.\n"
+"    Free camera (replay only, works paused): W/S forward/back, A/D left/right, Q/E down/up, Shift fast, arrow keys turn and tilt, R back to the chase pose, Tab leaves it.\n"
 "  --fov-preview 0|20..150     Debug: try an absolute video.fov number (legacy scale, 70 = original, higher = wider, not an angle); F10 row too; 0 = off\n"
 "  --dof-focus-car 0|1         Focus depth of field on the followed car (SDL_GPU; overdo sets 1); default 0 = fixed plane\n"
 

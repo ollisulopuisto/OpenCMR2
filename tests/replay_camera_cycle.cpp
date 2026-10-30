@@ -15,21 +15,23 @@ int main()
 {
     CHECK(OldNext(5, mask({1, 2, 3, 4, 5, 7})) == 7);       // red 1: batch-7 went 5 -> automatic, so car, bonnet and cockpit were never reachable
     CHECK(OldNext(5, mask({1, 2, 3, 4, 5})) == 7);          // red 2: and it chose 7 even when View_SwitchCamera refuses it (no camera spots): the press did nothing
-    unsigned all = mask({1, 2, 3, 4, 5, 7});
-    int order[7] = {7, 4, 5, 1, 2, 3, 7}, m = 7;
-    for (int i = 1; i < 7; i++) { m = ReplayCamera_Next(m, all); CHECK(m == order[i]); }   // full lap, one step per press, wraps to automatic
+    unsigned all = mask({1, 2, 3, 4, 5, 7, 11});
+    int order[8] = {7, 4, 5, 1, 2, 3, 11, 7}, m = 7;
+    for (int i = 1; i < 8; i++) { m = ReplayCamera_Next(m, all); CHECK(m == order[i]); }   // full lap, one step per press, wraps to automatic
     // No camera spots (7 refused by View_SwitchCamera): the wrap must skip it, not stall.
-    unsigned no7 = mask({1, 2, 3, 4, 5});
-    CHECK(ReplayCamera_Next(3, no7) == 4);
+    unsigned no7 = mask({1, 2, 3, 4, 5, 11});
+    CHECK(ReplayCamera_Next(11, no7) == 4);
+    CHECK(ReplayCamera_Next(3, no7) == 11);
     CHECK(ReplayCamera_Next(4, no7) == 5);
     // Cockpit not loaded: skipped, wraps to automatic.
-    unsigned no3 = mask({1, 2, 4, 5, 7});
-    CHECK(ReplayCamera_Next(2, no3) == 7);
+    unsigned no3 = mask({1, 2, 4, 5, 7, 11});
+    CHECK(ReplayCamera_Next(2, no3) == 11);
     // The old code stalled from modes outside the list; they start from the top now.
     for (int cur : {0, 6, 8, 9, 10}) CHECK(ReplayCamera_Next(cur, all) == 7);
     CHECK(ReplayCamera_Next(6, no7) == 4);
     // Only the current mode available, or none: no switch.
     CHECK(ReplayCamera_Next(4, mask({4})) == -1);
+    CHECK(ReplayCamera_Next(4, mask({4, 11})) == 11);   // the free camera is always there
     CHECK(ReplayCamera_Next(4, 0) == -1);
     puts("replay camera cycle ok");
     return 0;
