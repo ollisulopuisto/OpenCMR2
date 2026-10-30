@@ -6155,6 +6155,68 @@ void TuningPanel_Update(void)
     }
     if (changed) EffectSettings::Apply();
 }
+// OpenCMR2 replay controls (keyboard): , slower  . faster  / pause  Tab next camera. Active only while player 0's stream is playing back.
+// The recorded controls still run through the unchanged physics; only the time that feeds the step count is scaled (Car.cpp).
+#include "ReplayControls.h"
+int Race_GetPlayerRecordField4(BYTE index);
+int View_GetActiveCameraMode(BYTE index);
+BYTE View_GetActiveCameraFlags(BYTE index);
+void View_SwitchCamera(BYTE view, int type, int param, BYTE target, int blend);
+int View_FindFreeModeSlot(unsigned char view);
+static ReplayControls g_replayControls;
+static TuningEdges g_replayEdges;
+bool ReplayControls_Active(void) { return Race_GetPlayerRecordField4(0) != 0; }
+float ReplayControls_TimeScale(void) { return ReplayControls_Active() ? g_replayControls.Scale() : 1.0f; }
+// A replay key is usable when it is not a default driving/menu key and not bound to a driving action on an attached keyboard.
+static bool ReplayKeyUsable(int key)
+{
+    if (!Tuning_ToggleKeyAllowed(key)) return false;
+    for (int device = 0; device < CInput::CountAttachedInputDevices(); device++) {
+        DeviceInfo *info = CInput::GetAvailableDeviceRecord(device);
+        if (info && info->field_0x0 == 1)
+            for (int action = 0; action < 9; action++)
+                if ((&info->keyboard.field_0x468)[action] == key) return false;
+    }
+    return true;
+}
+bool ReplayControls_KeyIsReplayKey(int key) { return ReplayControls_Active() && ReplayKeyUsable(key) && (key == kReplayKeySlower || key == kReplayKeyFaster || key == kReplayKeyPause || key == kReplayKeyCamera); }
+static void ReplayControls_CycleCamera(void)
+{
+    // Order: automatic trackside (7), chase 4, drone/chase 5, car-mounted 1, bonnet 2, cockpit 3 where available, then back to automatic. The game's own
+    // mode step covers 4..5 and 1..3 (it skips modes that are not available); the wrap from 5 to 1 is replaced by the automatic camera.
+    int cur = View_GetActiveCameraMode(0);
+    BYTE car = View_GetActiveCameraFlags(0);
+    if (cur == 7) { View_SwitchCamera(0, 4, 0xffff, car, 1); return; }
+    int next = View_FindFreeModeSlot(0);
+    if (next < cur) View_SwitchCamera(0, 7, 0xffff, car, 0);
+}
+void ReplayControls_Update(void)
+{
+    if (!ReplayControls_Active()) { g_replayControls.Reset(); return; }
+    if (ReplayKeyUsable(kReplayKeySlower) && g_replayEdges.Edge(0, Input_IsKeyDown(kReplayKeySlower) != 0)) g_replayControls.Slower();
+    if (ReplayKeyUsable(kReplayKeyFaster) && g_replayEdges.Edge(1, Input_IsKeyDown(kReplayKeyFaster) != 0)) g_replayControls.Faster();
+    if (ReplayKeyUsable(kReplayKeyPause) && g_replayEdges.Edge(2, Input_IsKeyDown(kReplayKeyPause) != 0)) g_replayControls.TogglePause();
+    if (ReplayKeyUsable(kReplayKeyCamera) && g_replayEdges.Edge(3, Input_IsKeyDown(kReplayKeyCamera) != 0)) ReplayControls_CycleCamera();
+}
+// Small bottom-centre line: replay time (the stage clock, which the re-run reproduces), speed, camera. Drawn only while replaying.
+static const char *ReplayCameraName(int type)
+{
+    switch (type) { case 7: return "auto"; case 4: return "chase"; case 5: return "drone/chase"; case 1: return "car"; case 2: return "bonnet"; case 3: return "cockpit"; case 10: return "bumper"; default: return "view"; }
+}
+void ReplayControls_Draw(void)
+{
+    if (!ReplayControls_Active()) return;
+    char clock[16], speed[24], text[96];
+    ReplayClock_FormatCentiseconds(StageTiming_GetClockTime(), clock, sizeof clock);
+    g_replayControls.Label(speed, sizeof speed);
+    snprintf(text, sizeof text, "replay %s  %s  cam %s  , . / tab", clock, speed, ReplayCameraName(View_GetActiveCameraMode(0)));
+    DebugOverlayLayout layout = DebugOverlayLayout::For(g_pGraphics->resX, g_pGraphics->resY, 1);
+    int width = std::min((int)strlen(text) * layout.font * 6 / 10 + 2 * layout.pad, g_pGraphics->resX - 2 * layout.x);
+    short panel[4] = {(short)((g_pGraphics->resX - width) / 2), (short)(g_pGraphics->resY - layout.height - layout.y), (short)width, (short)layout.height};
+    BYTE background[4] = {12, 16, 22, 150}, colour[4] = {240, 246, 255, 255};
+    Sprite_FillRect(NULL, panel, background, kTuneOverlayLayer);
+    Font_DrawTextScaled(1, text, panel[0] + layout.pad, panel[1] + layout.pad, layout.font, width - 2 * layout.pad, colour, kTuneOverlayLayer);
+}
 void TuningPanel_Draw(void)
 {
     if (!g_tuneOpen) return;
@@ -6539,6 +6601,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
     Graphics_SetShadowGeometryState(!CGameInfo::IsRecordFlagSet(0xf));
     View_SetPlayerProjection(param2);
     TuningPanel_Draw();
+    ReplayControls_Draw();
     if (Graphics_DebugDrawWanted() && TuningPanel_InfoShown()) {
         if(Sys_GetOption("video.debug_draw",OPENCMR2_DEBUG_DRAW_DEFAULT)==1){
             char text[32];snprintf(text,sizeof text,"FPS %.1f",Graphics_GetFrameRate());BYTE color[4]={240,246,255,255};

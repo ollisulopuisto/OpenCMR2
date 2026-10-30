@@ -4669,6 +4669,7 @@ void StageObject_InterpolateHeadlightGlows(int t);
 // Also called while paused with the tuning panel open, so a changed setting reaches the frozen scene.
 void AttractCapture_ViewSignature(int view, int *type, int *drone);
 int Race_GetPlayerRecordField4(BYTE index);
+void ReplayControls_Update(void);
 // During replay playback only the interior view (camera type 3, the cockpit/dashboard) keeps tunnel vision and the speed streak: the user allowed
 // "dashboard / inside the car". Bonnet and bumper views (1, 2, 10) sit outside the cabin, so they count as external with chase 4-6, trackside 7, blends 8
 // and the replay camera 9. Only while player 0's stream is playing back, so driving is unchanged. The user's settings are not touched.
@@ -4744,6 +4745,7 @@ void Race_UpdateFrameEffects(int param_1)
     }
     WindscreenWiper_UpdateInput();
     TuningPanel_NoteSite("race-step");TuningPanel_Update();
+    ReplayControls_Update();
     if ((BYTE)RallyData_IsChampionshipFinalStage()) {
         StageObject_UpdateDebris(param_1);
     }
