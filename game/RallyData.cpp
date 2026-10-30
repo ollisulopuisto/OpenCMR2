@@ -6682,7 +6682,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         // Compact: three short lines at the debug text size, bottom-left, clear of the right-hand panel and the speedometer.
         char big[3][112];
         snprintf(big[0], 112, "Camera %s type %d | FOV %.1f v %.1f h", name, vt, vd, hd);
-        snprintf(big[1], 112, "Widening x%.2f (speed FOV %d, speed %d)", sp > 0 ? 1.0 + (sp > 150 ? 150 : sp) * (sh / 65536.0) / 100.0 : 1.0, sp, sh * 100 / 65536);
+        snprintf(big[1], 112, "Widening x%.2f (speed FOV %d, speed %d)", sp > 0 ? 1.0 + (sp > 500 ? 500 : sp) * (sh / 65536.0) / 100.0 : 1.0, sp, sh * 100 / 65536);
         snprintf(big[2], 112, "Fwd(+)/back(-) %+.2f side %+.2f up %+.2f dist %.2f | move %+.2f", cf, cs, cu, cd, eff / 65536.0);
         int bigFont = std::clamp((int)g_pGraphics->resY / 64, 14, 24), bigLine = bigFont + bigFont / 4, pad = bigFont / 2;
         int bw = (int)g_pGraphics->resX * 46 / 100, bx = (int)g_pGraphics->resX * 2 / 100;
