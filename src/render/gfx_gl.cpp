@@ -284,6 +284,7 @@ struct Executor : GfxExecutor {
     }
 
     bool motionOn = false, bloomOn = false, dofOn = false, raysOn = false;
+    bool speedEffectsSuppressed=false;
     float speedFocusTarget = 0.0f, speedFocusSmooth = 0.0f; std::chrono::steady_clock::time_point speedFocusTime{}; bool speedFocusTimed = false; // tunnel vision, same easing as SDL_GPU
     float speedStreakTarget = 0.0f, speedStreakSmooth = 0.0f, speedStreakClock = 0.0f; std::chrono::steady_clock::time_point speedStreakTime{}; bool speedStreakTimed = false;
     float glCarFocusRaw = -1.0f, glCarDepth = 0.0f;   // dof_focus_car: raw GL depth of the followed car this frame (-1 none)
@@ -571,9 +572,10 @@ struct Executor : GfxExecutor {
     void SetDepthOfField(BOOL on, int focus, int range, int blur) override {
         dofOn = on != 0; dofFocus = std::clamp(focus, 0, 100); dofRange = std::clamp(range, 0, 100); dofBlur = std::clamp(blur, 0, 100);
     }
-    void SetSpeedFocus(float speed) override { speedFocusTarget = !(speed > 0.0f) ? 0.0f : speed > kTunnelMaxStrength ? kTunnelMaxStrength : speed; }
+    void SetSpeedFocus(float speed) override { speedFocusTarget = speedEffectsSuppressed || !(speed > 0.0f) ? 0.0f : speed > kTunnelMaxStrength ? kTunnelMaxStrength : speed; }
+    void SetSpeedEffectsSuppressed(bool v) override {speedEffectsSuppressed=v;if(v)ClearSpeedEffects();}
     void ClearSpeedEffects() override { speedFocusTarget = speedFocusSmooth = 0.0f; speedStreakTarget = speedStreakSmooth = 0.0f; }
-    void SetSpeedStreak(float strength) override { speedStreakTarget = !(strength > 0.0f) ? 0.0f : strength > 1.0f ? 1.0f : strength; }
+    void SetSpeedStreak(float strength) override { speedStreakTarget = speedEffectsSuppressed || !(strength > 0.0f) ? 0.0f : strength > 1.0f ? 1.0f : strength; }
     void SetGodRays(BOOL on, int amount) override { raysOn = on != 0; raysAmount = std::clamp(amount, 0, 255); }
     void SetColorGrading(int temp, int tint, int saturation, int contrast) override {
         grade[0] = std::clamp(temp, -100, 100) / 100.0f; grade[1] = std::clamp(tint, -100, 100) / 100.0f;
