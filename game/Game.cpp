@@ -2968,6 +2968,10 @@ int Game_DrawSceneViewport(SceneNode *pRoot, SceneNode *pCamera, void *pRect, in
     ScreenLine2D_Draw(1);
     Tri2D_DrawLayer(1);
     Sprite_DrawLayer(1);
+    // Debug UI is queued only now, above the pause wash/menu. A second flush
+    // uses the emptied layer3 queue, avoiding overflow in the layer1 HUD.
+    DebugOverlays_DrawLate();
+    Tri2D_DrawLayer(3);Sprite_DrawLayer(3);
     CGraphics::SetCullMode(CGame::GetSectorDrawState());
     Graphics_UpdateFrameStatistics();
     Gfx_EndScene();

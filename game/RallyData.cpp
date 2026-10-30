@@ -4607,6 +4607,8 @@ BOOL RallyData_ClearStageDepthBuffer(void)
    Per-frame handlers of the rally-data menu screens (0x410c80..0x411020).
    -------------------------------------------------------------------------- */
 
+static int g_debugCameraView=-1;
+void DebugOverlays_RequestView(int view) { g_debugCameraView=view; }
 void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *, int, int);
 void RallyData_DrawViewEndFrameOverlay(CallbackStateMachine *, int);
 void RallyData_DrawLoadingProgress(int progress, char drawScene, BYTE alpha);
@@ -6013,12 +6015,12 @@ void RallyData_DrawProjectedChallengeScene(int param1, int param2)
     if (Race_GetFlag38108() == 0)
         Menu_CallCallback2(StageObject_GetInRaceActionMenu());
     Game_PrepareScene(g_unk0x00536be0, g_unk0x00536be4, rect, 0);
+    DebugOverlays_RequestView(0); // paused fixed-projection scene still needs late tuning UI
     Game_DrawSceneViewport(g_unk0x00536be0, g_unk0x00536be4, rect, 0, 1);
     // OpenCMR2: camera effects — dirt on the lens and a sun lens flare,
     // drawn over the finished frame ([video] video.camera_effects).
     CameraEffects_DrawOverlays(rect);
     TuningPanel_NotePausedDraw("challenge scene (fixed projection)");
-    TuningPanel_DrawPaused();
     Graphics_PresentFrameAndResetCounters();
 }
 
@@ -6079,9 +6081,8 @@ static void TuneSet(const TuningRow &r, int v)
     char k[40]; TuneCamKey(TuneCamType(), k, sizeof k); Sys_SetOptionTemporary(k, v);
 }
 static unsigned g_tuneSavedStamp = 0, g_tuneFrame = 0;
-// Sprite/triangle layer 4 is the BACKGROUND layer: Game_DrawSceneViewport draws it before the 3D scene, so the scene covers it. Layers 3, 2, 1 are drawn after the scene. Layer 1 holds only 1023 sprites and the debug pane uses it, so the panel and the camera readout use layer 3.
+// Sprite/triangle layer 4 is the BACKGROUND layer: Game_DrawSceneViewport draws it before the 3D scene, so the scene covers it. Layers 3, 2, 1 are drawn after the scene. Layer 1 holds only 1023 sprites and the debug pane uses it, so debug UI uses its emptied layer3 queue in a dedicated late pass above the pause wash.
 static const int kTuneOverlayLayer = 3;
-static bool g_tuneDrawn = false;  // set by every TuningPanel_Draw; the paused-scene draw skips when another path already drew this frame
 static TuningEdges g_tuneEdges;
 bool TuningPanel_IsOpen(void) { return g_tuneOpen; }
 bool TuningPanel_PreviewActive(void) { return g_tuneEngaged; }
@@ -6253,7 +6254,6 @@ void ReplayControls_Draw(void)
 void TuningPanel_Draw(void)
 {
     if (!g_tuneOpen) return;
-    g_tuneDrawn = true;
     int count = 0;
     const TuningRow *rows = Tuning_Rows(count);
     DebugOverlayLayout layout = DebugOverlayLayout::For(g_pGraphics->resX, g_pGraphics->resY, count + 3);
@@ -6274,16 +6274,9 @@ void TuningPanel_Draw(void)
     }
     snprintf(text, sizeof text, "5 row reset  6 all to opening  7 save");
     Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour, kTuneOverlayLayer);
-    snprintf(text, sizeof text, g_tuneSavedStamp && g_tuneFrame - g_tuneSavedStamp < 100 ? "saved to opencmr2.ini; F10: next view" : "F10: nothing next; per launch until saved");
+    snprintf(text, sizeof text, g_tuneSavedStamp && g_tuneFrame - g_tuneSavedStamp < 100 ? "saved to opencmr2.ini; F10: next view" : "F10: hidden -> FPS only -> full; unsaved");
     Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour, kTuneOverlayLayer);
 }
-// The paused scene (render callback of Race_UpdatePauseState) never reaches the per-view overlay that normally draws the panel.
-void TuningPanel_DrawPaused(void)
-{
-    if (!g_tuneDrawn) TuningPanel_Draw();
-    g_tuneDrawn = false;
-}
-
 // Returns 1 when the wiper key was just pressed this frame (edge trigger),
 // 0 otherwise. Resets the edge after reading.
 int WindscreenWiperKeyPressed(void)
@@ -6485,6 +6478,41 @@ char g_strOtherPolygons0x00516de4[22] = " Other Polygons: %d  ";
 // GLOBAL: CMR2 0x00516dfc
 char g_strScenePolygons0x00516dfc[22] = " Scene Polygons: %d  ";
 
+static void DebugCameraReadout_Draw(int param2)
+{
+    // OpenCMR2: the camera readout, big and high contrast, short lines so nothing clips. Names are only what the source states; the rest are numbers.
+    if (Graphics_DebugDrawWanted() && TuningPanel_InfoShown() && !TuningPanel_FpsOnly() && (CGameInfo::IsInRaceMenuOpen() == 0 || TuningPanel_PreviewActive())) {
+        int vt = 0, dr = 0, zr = 0, fy = 0, fs = 70;
+        AttractCapture_ViewSignature((int)param2, &vt, &dr);
+        View_GetEffectiveProjection(param2, &zr, &fy, &fs);
+        double vd = 0, hd = 0, cd = 0, cf = 0, cs = 0, cu = 0;
+        View_GetMeasuredFov(param2, &vd, &hd);
+        View_GetCameraCarOffset(param2, &cd, &cf, &cs, &cu);
+        int sp = 0, sh = 0; SpeedFov_GetStatus((int)param2, &sp, &sh);
+        int eff = View_CameraMoveStep(vt, (int)param2);
+        const char *name = vt == 3 ? "COCKPIT" : vt == 2 ? "BONNET" : (vt >= 4 && vt <= 6) ? (dr && vt == 5 ? "CHASE (DRONE VARIANT)" : "CHASE") : vt == 1 || vt == 10 ? "CAR-MOUNTED (UNNAMED IN SOURCE)" : "UNNAMED IN SOURCE";
+        // Compact: three short lines at the debug text size, bottom-left, clear of the right-hand panel and the speedometer.
+        char big[3][112];
+        snprintf(big[0], 112, "Camera %s type %d | FOV %.1f v %.1f h", name, vt, vd, hd);
+        snprintf(big[1], 112, "Widening x%.2f (speed FOV %d, speed %d)", sp > 0 ? 1.0 + (sp > 500 ? 500 : sp) * (sh / 65536.0) / 100.0 : 1.0, sp, sh * 100 / 65536);
+        snprintf(big[2], 112, "Fwd(+)/back(-) %+.2f side %+.2f up %+.2f dist %.2f | move %+.2f", cf, cs, cu, cd, eff / 65536.0);
+        int bigFont = std::clamp((int)g_pGraphics->resY / 64, 14, 24), bigLine = bigFont + bigFont / 4, pad = bigFont / 2;
+        int bw = (int)g_pGraphics->resX * 46 / 100, bx = (int)g_pGraphics->resX * 2 / 100;
+        int bh = 3 * bigLine + 2 * pad, by = (int)g_pGraphics->resY - bh - (int)g_pGraphics->resY * 3 / 100;
+        short bp[4] = {(short)bx, (short)by, (short)bw, (short)bh};
+        BYTE bbg[4] = {0, 0, 0, 170}, bfg[4] = {255, 236, 90, 255}, bwhite[4] = {255, 255, 255, 255};
+        Sprite_FillRect(NULL, bp, bbg, kTuneOverlayLayer);
+        for (int k = 0; k < 3; ++k) Font_DrawTextScaled(1, big[k], bx + pad, by + pad + k * bigLine, bigFont, bw - 2 * pad, k == 0 ? bfg : bwhite, kTuneOverlayLayer);
+    }
+}
+void DebugOverlays_DrawLate(void)
+{
+    if(g_debugCameraView<0) return;
+    TuningPanel_Draw();ReplayControls_Draw();
+    DebugCameraReadout_Draw(g_debugCameraView);
+    g_debugCameraView=-1;
+}
+
 // Per-view frame update of the rally data screens: prepares the cars of the
 // view, streams their shadow geometry, refreshes the on-screen elements and,
 // when the graphics debug flag (bit 2) is set, prints the FPS / polygon /
@@ -6633,8 +6661,6 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
     }
     Graphics_SetShadowGeometryState(!CGameInfo::IsRecordFlagSet(0xf));
     View_SetPlayerProjection(param2);
-    TuningPanel_Draw();
-    ReplayControls_Draw();
     if (Graphics_DebugDrawWanted() && TuningPanel_InfoShown()) {
         if(TuningPanel_FpsOnly()||Sys_GetOption("video.debug_draw",OPENCMR2_DEBUG_DRAW_DEFAULT)==1){
             char text[32];snprintf(text,sizeof text,"FPS %.1f",Graphics_GetFrameRate());BYTE color[4]={240,246,255,255};
@@ -6780,30 +6806,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         line("Previous frame; encoded is not pixel proof");
         }
     }
-    // OpenCMR2: the camera readout, big and high contrast, short lines so nothing clips. Names are only what the source states; the rest are numbers.
-    if (Graphics_DebugDrawWanted() && TuningPanel_InfoShown() && !TuningPanel_FpsOnly() && (CGameInfo::IsInRaceMenuOpen() == 0 || TuningPanel_PreviewActive())) {
-        int vt = 0, dr = 0, zr = 0, fy = 0, fs = 70;
-        AttractCapture_ViewSignature((int)param2, &vt, &dr);
-        View_GetEffectiveProjection(param2, &zr, &fy, &fs);
-        double vd = 0, hd = 0, cd = 0, cf = 0, cs = 0, cu = 0;
-        View_GetMeasuredFov(param2, &vd, &hd);
-        View_GetCameraCarOffset(param2, &cd, &cf, &cs, &cu);
-        int sp = 0, sh = 0; SpeedFov_GetStatus((int)param2, &sp, &sh);
-        int eff = View_CameraMoveStep(vt, (int)param2);
-        const char *name = vt == 3 ? "COCKPIT" : vt == 2 ? "BONNET" : (vt >= 4 && vt <= 6) ? (dr && vt == 5 ? "CHASE (DRONE VARIANT)" : "CHASE") : vt == 1 || vt == 10 ? "CAR-MOUNTED (UNNAMED IN SOURCE)" : "UNNAMED IN SOURCE";
-        // Compact: three short lines at the debug text size, bottom-left, clear of the right-hand panel and the speedometer.
-        char big[3][112];
-        snprintf(big[0], 112, "Camera %s type %d | FOV %.1f v %.1f h", name, vt, vd, hd);
-        snprintf(big[1], 112, "Widening x%.2f (speed FOV %d, speed %d)", sp > 0 ? 1.0 + (sp > 500 ? 500 : sp) * (sh / 65536.0) / 100.0 : 1.0, sp, sh * 100 / 65536);
-        snprintf(big[2], 112, "Fwd(+)/back(-) %+.2f side %+.2f up %+.2f dist %.2f | move %+.2f", cf, cs, cu, cd, eff / 65536.0);
-        int bigFont = std::clamp((int)g_pGraphics->resY / 64, 14, 24), bigLine = bigFont + bigFont / 4, pad = bigFont / 2;
-        int bw = (int)g_pGraphics->resX * 46 / 100, bx = (int)g_pGraphics->resX * 2 / 100;
-        int bh = 3 * bigLine + 2 * pad, by = (int)g_pGraphics->resY - bh - (int)g_pGraphics->resY * 3 / 100;
-        short bp[4] = {(short)bx, (short)by, (short)bw, (short)bh};
-        BYTE bbg[4] = {0, 0, 0, 170}, bfg[4] = {255, 236, 90, 255}, bwhite[4] = {255, 255, 255, 255};
-        Sprite_FillRect(NULL, bp, bbg, kTuneOverlayLayer);
-        for (int k = 0; k < 3; ++k) Font_DrawTextScaled(1, big[k], bx + pad, by + pad + k * bigLine, bigFont, bw - 2 * pad, k == 0 ? bfg : bwhite, kTuneOverlayLayer);
-    }
+    DebugOverlays_RequestView(param2);
     CarDamage_UpdateOrderedCarsOffRoadState(pOrder, (short)orderCount, g_viewScreenRect, maskedView);
     if (CGameInfo::GetGameModeOptionBit19() != 0) {
         if (CGameInfo::GetConfiguredGameMode() != 0xa) {
