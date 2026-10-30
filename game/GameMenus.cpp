@@ -627,14 +627,14 @@ void GameMenu_DrawKnockoutSplitComparison(void)
 
     if (RallyData_GetUsableRecordCategory(g_pKnockoutMatch->flags & 0x1f) == -1 &&
         RallyData_GetUsableRecordCategory((g_pKnockoutMatch->flags >> 5) & 0x1f) == -1) {
-        sprintf(names[0], (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + (g_pKnockoutMatch->flags & 0x1f)));
-        sprintf(names[1], (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + ((g_pKnockoutMatch->flags >> 5) & 0x1f)));
+        sprintf(names[0], "%s", (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + (g_pKnockoutMatch->flags & 0x1f)));
+        sprintf(names[1], "%s", (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + ((g_pKnockoutMatch->flags >> 5) & 0x1f)));
     } else if (RallyData_GetUsableRecordCategory(g_pKnockoutMatch->flags & 0x1f) == -1) {
-        sprintf(names[0], (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + (g_pKnockoutMatch->flags & 0x1f)));
-        sprintf(names[1], CAIHelper::GetNameForID(RallyData_GetUsableRecordCategory((g_pKnockoutMatch->flags >> 5) & 0x1f)));
+        sprintf(names[0], "%s", (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + (g_pKnockoutMatch->flags & 0x1f)));
+        sprintf(names[1], "%s", CAIHelper::GetNameForID(RallyData_GetUsableRecordCategory((g_pKnockoutMatch->flags >> 5) & 0x1f)));
     } else {
-        sprintf(names[0], (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + ((g_pKnockoutMatch->flags >> 5) & 0x1f)));
-        sprintf(names[1], CAIHelper::GetNameForID(RallyData_GetUsableRecordCategory(g_pKnockoutMatch->flags & 0x1f)));
+        sprintf(names[0], "%s", (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + ((g_pKnockoutMatch->flags >> 5) & 0x1f)));
+        sprintf(names[1], "%s", CAIHelper::GetNameForID(RallyData_GetUsableRecordCategory(g_pKnockoutMatch->flags & 0x1f)));
     }
     for (car = 0; car < 2; car++) {
         x = (int)(g_pGraphics->resX * 30) / 640 + ((int)(g_pGraphics->resX * 0x166) / 640) * car;
@@ -788,7 +788,7 @@ void GameMenu_DrawSplitTimes(Menu *pMenu)
                 }
                 for (split = NetRace_GetLastSentStageIndex() + 1; split < (int)(RallyData_GetSelectionBits16To19() & 0xff) + 1; split++) {
                     if (split > 0) {
-                        sprintf(CFrontend::m_stringDest, g_noTimeText);
+                        sprintf(CFrontend::m_stringDest, "%s", g_noTimeText);
                         Font_DrawText(1, CFrontend::m_stringDest, x,
                                       (int)(g_pGraphics->resY * 0x91) / 480 + yOffset +
                                           ((int)(g_pGraphics->resY * 0x1e) / 480) * split,
@@ -832,7 +832,7 @@ void GameMenu_DrawSplitTimes(Menu *pMenu)
                 header = (int)(g_pGraphics->resY * 0xe6) / 480 - (int)(g_pGraphics->resY * 0x91) / 480;
             }
             if (isGhost) {
-                sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x6d));
+                sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x6d));
                 CGenericFileLoader::StrLowerPolish(CFrontend::m_stringDest);
                 base = CGameInfo::GetConfiguredGameMode() == 4 ? g_pGraphics->resY * 0xe6 : g_pGraphics->resY * 0x91;
                 Font_DrawText(1, CFrontend::m_stringDest, x, base / 480 + header + yAdjust, (int *)pColour, 0x11);
@@ -882,7 +882,7 @@ void GameMenu_DrawSplitTimes(Menu *pMenu)
                 }
                 for (split = NetRace_GetLastSentSplit(); split < GetStageSplitCount(); split++) {
                     if (split >= 0) {
-                        sprintf(CFrontend::m_stringDest, g_noTimeText);
+                        sprintf(CFrontend::m_stringDest, "%s", g_noTimeText);
                         Font_DrawText(1, CFrontend::m_stringDest, x,
                                       (int)(g_pGraphics->resY * 0x91) / 480 + header +
                                           ((int)(g_pGraphics->resY * 0x1e) / 480) * split,
@@ -1053,7 +1053,7 @@ void GameMenu_DrawScrollingStageSplits(Menu *pMenu)
         if (StageTiming_GetTimeForPosition(pos) != StageTiming_GetTimeForPosition(pos - 1))
             sprintf(CFrontend::m_stringDest, g_stageNumberFormat, pos + 1);
         else
-            sprintf(CFrontend::m_stringDest, g_stageResultSameTime);
+            sprintf(CFrontend::m_stringDest, "%s", g_stageResultSameTime);
         Font_DrawText(1, CFrontend::m_stringDest,
                       ((int)(g_pGraphics->resX * 0x41) / 640 - (int)(g_pGraphics->resX * 0x20) / 640) / 2 +
                           (int)(g_pGraphics->resX * 0x20) / 640,
@@ -1145,7 +1145,7 @@ void GameMenu_DrawStageTimeStandings(Menu *pMenu)
             if (i == 0 || (i > 0 && NetPlayers_GetPlayerRank(i, 0) != NetPlayers_GetPlayerRank(i - 1, 0))) {
                 sprintf(CFrontend::m_stringDest, g_stageNumberFormat, NetPlayers_GetPlayerRank(i, 0));
             } else {
-                sprintf(CFrontend::m_stringDest, g_stageResultSameTime);
+                sprintf(CFrontend::m_stringDest, "%s", g_stageResultSameTime);
             }
             Font_DrawText(1, CFrontend::m_stringDest,
                           ((int)(g_pGraphics->resX * 0x41) / 0x280 -
@@ -1430,7 +1430,7 @@ void GameMenu_DrawChampionshipTimeStandings(Menu *pMenu)
             if (i == 0 || (i > 0 && NetPlayers_GetPlayerRank(i, 1) != NetPlayers_GetPlayerRank(i - 1, 1))) {
                 sprintf(CFrontend::m_stringDest, g_stageNumberFormat, NetPlayers_GetPlayerRank(i, 1));
             } else {
-                sprintf(CFrontend::m_stringDest, g_stageResultSameTime);
+                sprintf(CFrontend::m_stringDest, "%s", g_stageResultSameTime);
             }
             Font_DrawText(1, CFrontend::m_stringDest,
                           ((int)(g_pGraphics->resX * 0x41) / 0x280 -
@@ -1510,9 +1510,9 @@ void GameMenu_DrawChampionshipOutcome(Menu *pMenu)
     }
     if (best > 5) {
         if ((BYTE)RallyDataCountryIndex() == 7)
-            sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0xee));
+            sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0xee));
         else
-            sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0xbb));
+            sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0xbb));
         CGenericFileLoader::StrUpperPolish((BYTE *)CFrontend::m_stringDest);
         resY = g_pGraphics->resY;
         Font_DrawText(0, CFrontend::m_stringDest, x, (resY * 10) / 480 + ((resY * 20) / 480) * i + y + Font_GetLineHeight(0),
@@ -1627,7 +1627,7 @@ void GameMenu_DrawScrollingStagePoints(Menu *pMenu)
                                   (int *)g_menuFrameColour, 0xc);
                     if (pos > 0 && RallyTiming_GetStageTieBreak(RallyTiming_GetStageOrderDriverID(pos - 1)) == RallyTiming_GetStageTieBreak(id) &&
                         g_stagePositionSeconds[pos - 1] == g_stagePositionSeconds[pos]) {
-                        sprintf(CFrontend::m_stringDest, g_stageResultSameTime);
+                        sprintf(CFrontend::m_stringDest, "%s", g_stageResultSameTime);
                         goto draw;
                     }
                     break;
@@ -1829,9 +1829,9 @@ void GameMenu_DrawKnockoutMatchResult(Menu *pMenu)
     if (Knockout_HasHumanLostMatch(g_pKnockoutMatch)) {
         Font_DrawText(2, CFrontend::GetTextString(0x49), x, y, (int *)g_menuFrameColour, 0x11);
         if (g_pKnockoutMatch->time1 <= g_pKnockoutMatch->time2)
-            snprintf(name, sizeof(name), (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + (g_pKnockoutMatch->flags & 0x1f)));
+            snprintf(name, sizeof(name), "%s", (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + (g_pKnockoutMatch->flags & 0x1f)));
         else
-            snprintf(name, sizeof(name), (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + ((g_pKnockoutMatch->flags >> 5) & 0x1f)));
+            snprintf(name, sizeof(name), "%s", (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + ((g_pKnockoutMatch->flags >> 5) & 0x1f)));
         if ((*pState & 0x38) >= 0x20)
             sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x7d), name);
         else
@@ -1840,13 +1840,13 @@ void GameMenu_DrawKnockoutMatchResult(Menu *pMenu)
         Font_DrawText(0, CFrontend::m_stringDest, x, (int)(g_pGraphics->resY * 5) / 480 + (y + Font_GetLineHeight(0)),
                       (int *)g_menuFrameColour, 0x11);
     } else {
-        snprintf(name, sizeof(name), (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + (g_pKnockoutMatch->flags & 0x1f)));
+        snprintf(name, sizeof(name), "%s", (char *)RallyData_GetRecord(StageUI_GetRaceEndEventCount() + (g_pKnockoutMatch->flags & 0x1f)));
         sprintf(CFrontend::m_stringDest, g_keypadFormat, CFrontend::GetTextString(0x88), name);
         Font_DrawText(2, CFrontend::m_stringDest, x, y, (int *)g_menuFrameColour, 0x11);
         if ((*pState & 0x38) < 0x20 && (*pState & 7) != 1)
-            sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x91));
+            sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x91));
         else
-            sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x92));
+            sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x92));
         CGenericFileLoader::StrUpperPolish((BYTE *)CFrontend::m_stringDest);
         Font_DrawText(0, CFrontend::m_stringDest, x, (int)(g_pGraphics->resY * 5) / 480 + (y + Font_GetLineHeight(0)),
                       (int *)g_menuFrameColour, 0x11);
@@ -1904,7 +1904,7 @@ void GameMenu_DrawStagePenalties(Menu *pMenu)
             lines++;
         }
         if (Race_ReadPlayerState37F68(i) & 0x300) {
-            sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0xc1));
+            sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0xc1));
             CGenericFileLoader::StrUpperPolish((BYTE *)CFrontend::m_stringDest);
             Font_DrawText(0, CFrontend::m_stringDest, x,
                           (int)(g_pGraphics->resY * 5) / 480 + Font_GetLineHeight(0) + y +
@@ -1914,7 +1914,7 @@ void GameMenu_DrawStagePenalties(Menu *pMenu)
             lines++;
         }
         if (Race_ReadPlayerState37F68(i) & 0x400) {
-            sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0xc0));
+            sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0xc0));
             CGenericFileLoader::StrUpperPolish((BYTE *)CFrontend::m_stringDest);
             Font_DrawText(0, CFrontend::m_stringDest, x,
                           (int)(g_pGraphics->resY * 5) / 480 + Font_GetLineHeight(0) + y +
@@ -2001,7 +2001,7 @@ void GameMenu_DrawRallyPointsTable(Menu *pMenu)
                       (int)(g_pGraphics->resY * 0xa3) / 480 + ((int)(g_pGraphics->resY * 0x34) / 480) * i,
                       (int *)g_menuFrameColour, 0x21);
         if (tied)
-            sprintf(CFrontend::m_stringDest, g_stageResultSameTime);
+            sprintf(CFrontend::m_stringDest, "%s", g_stageResultSameTime);
         else
             sprintf(CFrontend::m_stringDest, g_stageNumberFormat, i + 1);
         Font_DrawText(1, CFrontend::m_stringDest,
@@ -2066,13 +2066,13 @@ void GameMenu_DrawRallyResultsBanner(Menu *pMenu)
         sprintf(CFrontend::m_stringDest, g_nameSpaceFormat, (char *)RallyData_GetRecord(i));
         switch (place) {
         case 0:
-            sprintf(CFrontend::m_stringDest + strlen(CFrontend::m_stringDest), CFrontend::GetTextString(0x51));
+            sprintf(CFrontend::m_stringDest + strlen(CFrontend::m_stringDest), "%s", CFrontend::GetTextString(0x51));
             break;
         case 1:
-            sprintf(CFrontend::m_stringDest + strlen(CFrontend::m_stringDest), CFrontend::GetTextString(0x52));
+            sprintf(CFrontend::m_stringDest + strlen(CFrontend::m_stringDest), "%s", CFrontend::GetTextString(0x52));
             break;
         case 2:
-            sprintf(CFrontend::m_stringDest + strlen(CFrontend::m_stringDest), CFrontend::GetTextString(0x53));
+            sprintf(CFrontend::m_stringDest + strlen(CFrontend::m_stringDest), "%s", CFrontend::GetTextString(0x53));
             break;
         default:
             sprintf(CFrontend::m_stringDest + strlen(CFrontend::m_stringDest), CFrontend::GetTextString(0x54), place + 1);
@@ -2291,7 +2291,7 @@ void GameMenu_DrawChampionshipClassResults(Menu *pMenu)
                             (int)(g_pGraphics->resY * 0x14) / 0x1e0) - (int)(g_pGraphics->resY * 8) / 0x1e0),
                           (int *)g_menuFrameColour, 9);
             if ((int)NetPlayers_GetClassificationTime(i) == -1) {
-                sprintf(CFrontend::m_stringDest, g_noTimeText);
+                sprintf(CFrontend::m_stringDest, "%s", g_noTimeText);
             } else {
                 FormatCentisecondsAsMinSecMSec(NetPlayers_GetClassificationTime(i), CFrontend::m_stringDest);
             }
@@ -2389,14 +2389,14 @@ void GameMenu_DrawStageResultsRows(Menu *pMenu)
     if (StageUI_GetRaceEndEventCount() + 1 > 0) {
         pTime = g_stageResultTimes;
         do {
-            sprintf(CFrontend::m_stringDest, (char *)RallyData_GetRecord(g_stageResultRecords[i]));
+            sprintf(CFrontend::m_stringDest, "%s", (char *)RallyData_GetRecord(g_stageResultRecords[i]));
             CGenericFileLoader::StrLowerPolish(CFrontend::m_stringDest);
             Font_DrawText(1, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 0x5c) / 0x280,
                           ((int)(g_pGraphics->resY * 0x82) / 0x1e0 +
                            ((int)(g_pGraphics->resY * 0x34) / 0x1e0) * i) -
                               (int)(g_pGraphics->resY * 8) / 0x1e0 + offset,
                           (int *)g_menuFrameColour, 9);
-            sprintf(CFrontend::m_stringDest,
+            sprintf(CFrontend::m_stringDest, "%s",
                     (char *)CFrontend::GetModeSpecificCountryText(RallyData_GetDriverRecordSelectionValue(g_stageResultRecords[i])));
             CGenericFileLoader::StrUpperPolish((BYTE *)CFrontend::m_stringDest);
             Font_DrawText(0, CFrontend::m_stringDest, (int)(g_pGraphics->resX * 0x5c) / 0x280,
@@ -2530,7 +2530,7 @@ void GameMenu_DrawStageStartList(Menu *pMenu)
             if (i == 0 || (i > 0 && NetPlayers_GetPlayerRank(i, 1) != NetPlayers_GetPlayerRank(i - 1, 1))) {
                 sprintf(CFrontend::m_stringDest, g_stageNumberFormat, NetPlayers_GetPlayerRank(i, 1));
             } else {
-                sprintf(CFrontend::m_stringDest, g_stageResultSameTime);
+                sprintf(CFrontend::m_stringDest, "%s", g_stageResultSameTime);
             }
             Font_DrawText(1, CFrontend::m_stringDest,
                           ((int)(g_pGraphics->resX * 0x41) / 0x280 -
@@ -2590,7 +2590,7 @@ void GameMenu_DrawInGameBreadcrumb(Menu *pMenu)
         } else {
             pText = CFrontend::GetTextString(7);
         }
-        sprintf(CFrontend::m_stringDest, pText);
+        sprintf(CFrontend::m_stringDest, "%s", pText);
         CGenericFileLoader::StrLowerPolish(CFrontend::m_stringDest);
     }
     Font_DrawText(2, CFrontend::m_stringDest, x, (int)(g_pGraphics->resY * 0x43) / 0x1e0,
@@ -2670,7 +2670,7 @@ void GameMenu_DrawChampionshipDriverStandings(Menu *pMenu)
             if (i == 0 || (i > 0 && NetPlayers_GetPlayerRank(i, 0) != NetPlayers_GetPlayerRank(i - 1, 0))) {
                 sprintf(CFrontend::m_stringDest, g_stageNumberFormat, NetPlayers_GetPlayerRank(i, 0));
             } else {
-                sprintf(CFrontend::m_stringDest, g_stageResultSameTime);
+                sprintf(CFrontend::m_stringDest, "%s", g_stageResultSameTime);
             }
             Font_DrawText(1, CFrontend::m_stringDest,
                           ((int)(g_pGraphics->resX * 0x41) / 0x280 -
@@ -2751,7 +2751,7 @@ void GameMenus_DrawTextRow(int x, int y, char *pText, ...)
     while (pCur != NULL) {
         CGenericFileLoader::StrLowerPolish(pCur);
         Font_DrawText(2, pCur, x, y, (int *)g_menuFrameColour, 0x11);
-        sprintf(CFrontend::m_stringDest, pCur);
+        sprintf(CFrontend::m_stringDest, "%s", pCur);
         pCur = va_arg(ppNext, char *);
         if (pCur == NULL) {
             break;
@@ -3103,7 +3103,7 @@ void GameMenu_SetupStageResults(int param_1)
     const int recordCount = sizeof(CGameInfo::GetGameInfoFieldA4Address()->rallyStageRecordTimes) /
                             sizeof(CGameInfo::GetGameInfoFieldA4Address()->rallyStageRecordTimes[0]);
     if (record < recordCount)
-        sprintf(g_ghostName, CGameInfo::GetGameInfoFieldA4Address()->rallyStageRecordTimes[record].ident);
+        sprintf(g_ghostName, "%s", CGameInfo::GetGameInfoFieldA4Address()->rallyStageRecordTimes[record].ident);
     else
         g_ghostName[0] = '\0';
     CGenericFileLoader::StrLowerPolish(g_ghostName);
@@ -3603,7 +3603,7 @@ void GameMenu_DrawStageEndBanner(void)
     if (g_unk0x00541cf0 <= 0)
         return;
     if (g_unk0x00541cf0 > 0x4000 || !Graphics_IsRegisteredTimerRunning(g_stageEndBannerBlink)) {
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(CGameInfo::GetConfiguredDifficulty() + 0x8e));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(CGameInfo::GetConfiguredDifficulty() + 0x8e));
         Font_DrawText(2, CFrontend::m_stringDest, x, y, (int *)g_menuFrameColour, 0x11);
     }
     if (g_unk0x00541cf0 > 0x8000 || !Graphics_IsRegisteredTimerRunning(g_stageEndBannerBlink)) {
@@ -3618,7 +3618,7 @@ void GameMenu_DrawStageEndBanner(void)
         g_menuRect[3] = (short)((int)(*pResY * 41) / 480);
         Sprite_FillRect(&g_pGraphics->field309_0x150, g_menuRect, g_menuFrameColour, 2);
         x += (int)(g_pGraphics->resX * 8) / 640;
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x93));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x93));
         Font_DrawText(2, CFrontend::m_stringDest, x, y, (int *)g_menuFrameColour, 0x11);
     }
     if (g_unk0x00541cf0 <= 0xc000 && Graphics_IsRegisteredTimerRunning(g_stageEndBannerBlink))
@@ -3626,21 +3626,21 @@ void GameMenu_DrawStageEndBanner(void)
     for (i = 0; i < CGameInfo::GetConfiguredPlayerCount(); i++) {
         position = RallyTiming_GetStagePositionOfDriver(StageTiming_GetDriverSlot(i));
         if (strlen((char *)RallyData_GetAssignedCategoryRecord(i)) != 0 && strlen((char *)RallyData_GetAssignedCategoryRecord(i)) < 0x1e) {
-            sprintf(CFrontend::m_stringDest, (char *)RallyData_GetAssignedCategoryRecord(i));
-            sprintf(CFrontend::m_stringDest + strlen((char *)RallyData_GetAssignedCategoryRecord(i)), g_nameSeparator0x00519f44);
+            sprintf(CFrontend::m_stringDest, "%s", (char *)RallyData_GetAssignedCategoryRecord(i));
+            sprintf(CFrontend::m_stringDest + strlen((char *)RallyData_GetAssignedCategoryRecord(i)), "%s", g_nameSeparator0x00519f44);
         } else {
-            sprintf(CFrontend::m_stringDest, (char *)RallyData_GetRecord(i));
-            sprintf(CFrontend::m_stringDest + strlen((char *)RallyData_GetRecord(i)), g_nameSeparator0x00519f44);
+            sprintf(CFrontend::m_stringDest, "%s", (char *)RallyData_GetRecord(i));
+            sprintf(CFrontend::m_stringDest + strlen((char *)RallyData_GetRecord(i)), "%s", g_nameSeparator0x00519f44);
         }
         switch (position) {
         case 0:
-            sprintf(CFrontend::m_stringDest + strlen(CFrontend::m_stringDest), CFrontend::GetTextString(0x51));
+            sprintf(CFrontend::m_stringDest + strlen(CFrontend::m_stringDest), "%s", CFrontend::GetTextString(0x51));
             break;
         case 1:
-            sprintf(CFrontend::m_stringDest + strlen(CFrontend::m_stringDest), CFrontend::GetTextString(0x52));
+            sprintf(CFrontend::m_stringDest + strlen(CFrontend::m_stringDest), "%s", CFrontend::GetTextString(0x52));
             break;
         case 2:
-            sprintf(CFrontend::m_stringDest + strlen(CFrontend::m_stringDest), CFrontend::GetTextString(0x53));
+            sprintf(CFrontend::m_stringDest + strlen(CFrontend::m_stringDest), "%s", CFrontend::GetTextString(0x53));
             break;
         default:
             sprintf(CFrontend::m_stringDest + strlen(CFrontend::m_stringDest), CFrontend::GetTextString(0x54), position + 1);
@@ -3717,31 +3717,31 @@ void GameMenus_FormatModeName(char *unused, int mode)
 {
     switch (mode) {
     case 0:
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(6));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(6));
         return;
     case 1:
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(3));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(3));
         return;
     case 2:
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(1));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(1));
         return;
     case 3:
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(4));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(4));
         return;
     case 4:
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0));
         return;
     case 5:
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(2));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(2));
         return;
     case 6:
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(5));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(5));
         return;
     case 7:
-        sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(7));
+        sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(7));
         return;
     default:
-        sprintf(CFrontend::m_stringDest, g_strInvalid);
+        sprintf(CFrontend::m_stringDest, "%s", g_strInvalid);
         return;
     }
 }

@@ -18,7 +18,7 @@ void Texture_GetPathStem(char *pOut, char *path)
 {
     // PORT: copy text directly; avoid calling sprintf through an incompatible type.
     strcpy(pOut, strrchr(path, '\\') + 1);
-    sprintf(strrchr(pOut, '.'), g_emptyString);
+    sprintf(strrchr(pOut, '.'), "%s", g_emptyString);
 }
 
 // Finds a texture in the archive pFile (as .dds, then .tga) and creates it,
@@ -35,10 +35,10 @@ Texture* CTexture::FindLoadTexture(GenericFile* pFile, char* textureName, bool *
         *didLoadTexture = false;
     if (pFile != NULL && pFile->didFileLoad && !param5) {
         Texture_GetPathStem(name, textureName);
-        sprintf(name + strlen(name), g_ddsSuffix);
+        sprintf(name + strlen(name), "%s", g_ddsSuffix);
         pData = CGenericFileLoader::FindFileInArchive(pFile, name, &sourceSize);
         if (pData == NULL) {
-            sprintf(name + strlen(name) - 4, g_tgaSuffix);
+            sprintf(name + strlen(name) - 4, "%s", g_tgaSuffix);
             pData = CGenericFileLoader::FindFileInArchive(pFile, name, &sourceSize);
         }
         if (pData != NULL) {

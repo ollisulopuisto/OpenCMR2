@@ -2369,7 +2369,7 @@ char *Knockout_GetDriverNameForSide(KnockoutMatch *pMatch, int side)
         if ((pMatch->flags & 0x1f) == 0x1f)
             return CMain::m_logFileBlankLine;
         if (RallyData_GetUsableRecordCategory(pMatch->flags & 0x1f) != -1) {
-            sprintf(CFrontend::m_stringDest, CAIHelper::GetNameForID(RallyData_GetUsableRecordCategory(pMatch->flags & 0x1f)));
+            sprintf(CFrontend::m_stringDest, "%s", CAIHelper::GetNameForID(RallyData_GetUsableRecordCategory(pMatch->flags & 0x1f)));
         } else {
             sprintf(CFrontend::m_stringDest, CRegKey::m_regKeyPathFormatValue, (char *)RallyData_GetRecord(pMatch->flags & 0x1f));
         }
@@ -2377,7 +2377,7 @@ char *Knockout_GetDriverNameForSide(KnockoutMatch *pMatch, int side)
         if ((pMatch->flags & 0x3e0) == 0x3e0)
             return CMain::m_logFileBlankLine;
         if (RallyData_GetUsableRecordCategory((pMatch->flags >> 5) & 0x1f) != -1) {
-            sprintf(CFrontend::m_stringDest, CAIHelper::GetNameForID(RallyData_GetUsableRecordCategory((pMatch->flags >> 5) & 0x1f)));
+            sprintf(CFrontend::m_stringDest, "%s", CAIHelper::GetNameForID(RallyData_GetUsableRecordCategory((pMatch->flags >> 5) & 0x1f)));
         } else {
             sprintf(CFrontend::m_stringDest, CRegKey::m_regKeyPathFormatValue, (char *)RallyData_GetRecord((pMatch->flags >> 5) & 0x1f));
         }
@@ -2422,7 +2422,7 @@ char *Knockout_GetCarNameForSide(KnockoutMatch *pMatch, int side)
         if ((pMatch->flags & 0x1f) == 0x1f)
             return CMain::m_logFileBlankLine;
         if (RallyData_GetUsableRecordCategory(pMatch->flags & 0x1f) != -1) {
-            sprintf(CFrontend::m_stringDest, (char *)RallyData_GetDriverNameIndexRecord(RallyData_GetUsableRecordCategory(pMatch->flags & 0x1f)));
+            sprintf(CFrontend::m_stringDest, "%s", (char *)RallyData_GetDriverNameIndexRecord(RallyData_GetUsableRecordCategory(pMatch->flags & 0x1f)));
         } else {
             sprintf(CFrontend::m_stringDest, CRegKey::m_regKeyPathFormatValue, (char *)RallyData_GetRecord(pMatch->flags & 0x1f));
         }
@@ -2430,7 +2430,7 @@ char *Knockout_GetCarNameForSide(KnockoutMatch *pMatch, int side)
         if ((pMatch->flags & 0x3e0) == 0x3e0)
             return CMain::m_logFileBlankLine;
         if (RallyData_GetUsableRecordCategory((pMatch->flags >> 5) & 0x1f) != -1) {
-            sprintf(CFrontend::m_stringDest, (char *)RallyData_GetDriverNameIndexRecord(RallyData_GetUsableRecordCategory((pMatch->flags >> 5) & 0x1f)));
+            sprintf(CFrontend::m_stringDest, "%s", (char *)RallyData_GetDriverNameIndexRecord(RallyData_GetUsableRecordCategory((pMatch->flags >> 5) & 0x1f)));
         } else {
             sprintf(CFrontend::m_stringDest, CRegKey::m_regKeyPathFormatValue, (char *)RallyData_GetRecord((pMatch->flags >> 5) & 0x1f));
         }
@@ -5697,7 +5697,7 @@ void Knockout_DrawCurrentRoundBracket(void)
     int y;
     int x;
 
-    sprintf(CFrontend::m_stringDest, CFrontend::GetModeSpecificCountryText(RallyData_GetDriverRecordSelectionValue(0)));
+    sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetModeSpecificCountryText(RallyData_GetDriverRecordSelectionValue(0)));
     CGenericFileLoader::StrLowerPolish(CFrontend::m_stringDest);
     Font_DrawText(0, CFrontend::m_stringDest, KO_X(0x1e), Font_GetLineHeight(0) + KO_Y(0x39) + KO_Y(5),
                   (int *)g_barTextColour, 0x11);
@@ -8556,7 +8556,7 @@ void StageObject_FindPlayerRevTextures(int player)
     for (i = 0; i < (int)CGraphics::m_textureCount; i++) {
         _splitpath(CGraphics::m_pTextureManager->textureBuffer[i]->name, CFrontend::m_stringDest, CFrontend::m_stringDest,
                    base, CFrontend::m_stringDest);
-        sprintf(CFrontend::m_stringDest, (char *)CGenericFileLoader::StrUpperPolish((BYTE *)base));
+        sprintf(CFrontend::m_stringDest, "%s", (char *)CGenericFileLoader::StrUpperPolish((BYTE *)base));
         if (strcmp(CFrontend::m_stringDest, CGraphics::m_strSuffixREVCT) == 0) {
             Frontend_SetObjectField118((g_carInteriorDashTextures[player].revCounter =
                                                              CGraphics::m_pTextureManager->textureBuffer[i]), 2);
@@ -15782,23 +15782,23 @@ void StageObject_DrawInRacePauseMenu(Menu *pMenu)
         switch (g_knockoutRaceState) {
         case 1:
             if (i == 0)
-                sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x77));
+                sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x77));
             else
-                sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x78));
+                sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x78));
             break;
         case 2:
             if (i == 0)
                 sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x79),
                         ((*pState >> 12) & 0xf) + 1);
             else
-                sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x78));
+                sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x78));
             break;
         case 5:
             if (i == 0)
                 sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x7a),
                         ((*pState >> 12) & 0xf) + 1);
             else
-                sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x78));
+                sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x78));
             if ((*pState & 0x400000) == 0 && (*pState & 0x38) != 0x20)
                 continue;
             break;

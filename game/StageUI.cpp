@@ -56,9 +56,9 @@ void FormatGapToLeader(int iLeaderGap, unsigned int fontIndex, unsigned char par
     int px;
 
     if (pcNegPosSymbol != NULL) {
-        sprintf((char *)&pcNegPosSymbol, pcNegPosSymbol);
+        sprintf((char *)&pcNegPosSymbol, "%s", pcNegPosSymbol);
     } else {
-        sprintf((char *)&pcNegPosSymbol, g_emptyString);
+        sprintf((char *)&pcNegPosSymbol, "%s", g_emptyString);
     }
     px = (int)g_pGraphics->resX * x >> 0x10;
     if (iLeaderGap != -1) {
@@ -628,7 +628,7 @@ void StageUI_DrawChampionshipBar(void)
     flags = *pState;
     x = (int)(g_pGraphics->resX * 0x1e) / 0x280;
     Sprite_FillRect(&g_pGraphics->field309_0x150, screen, g_barBackColour, 4);
-    sprintf(CFrontend::m_stringDest, CFrontend::GetTextString(0x7c));
+    sprintf(CFrontend::m_stringDest, "%s", CFrontend::GetTextString(0x7c));
     CGenericFileLoader::StrLowerPolish(CFrontend::m_stringDest);
     Font_DrawText(2, CFrontend::m_stringDest, x, (int)(g_pGraphics->resY * 0x39) / 0x1e0,
                   (int *)g_barTextColour, 0x11);

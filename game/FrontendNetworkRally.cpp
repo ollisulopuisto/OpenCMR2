@@ -63,7 +63,7 @@ void FrontendMenu_UpdateNetworkRallySetup(Menu *pMenu)
             i++;
         } while (i < count);
     }
-    sprintf(&g_unk0x00818d84[i * 3], g_strFlagSS);
+    sprintf(&g_unk0x00818d84[i * 3], "%s", g_strFlagSS);
     if (CGameInfo::IsRecordFlagSet(0xd) != 0) {
         count = ((max % 2) != 0) + 10;
     } else {
