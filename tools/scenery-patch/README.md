@@ -412,3 +412,20 @@ physics change. Original UVs and clamp policy retained. Original/derived artwork
 stays private. No AI detail or whole644pack claim. Alpha mip histogram counting
 replaces repeated per-pixel scans; all338outputs are byte-identical to the old
 algorithm. Native Metal appearance/FPS remain open.
+
+### Portable exact-output texture recipe repair
+
+The native main build can pass while texture preparation stops with "Recipe
+output differs from reviewed image". Source validation has already passed at
+that point. Native Lanczos output was not proven identical on the user's ARM
+runtime. All338old output digests reproduce on local Pillow10.4,11.3and12.3;
+this does not establish the exact cause of the native failure.
+
+The stage-uprez path now uses integer-only premultiplied bilinear2xand area mips,
+with rational alpha-coverage comparisons and explicit repeat/clamp addressing.
+It no longer uses native floating resize. This is a deliberately more portable
+filter, slightly softer than Lanczos. New reviewed output digests remain strict;
+source hashes/stage gates are unchanged. Recipe changes select a new private
+cache rather than deleting/reusing old outputs. Failure diagnostics now identify
+archive/member and expected/actual digest plus Pillow version. No integrity
+bypass, no source changes, no native acceptance claim.
