@@ -7,6 +7,12 @@ void SceneryPack_RegisterSource(Texture *texture, const void *bytes, unsigned si
 // Visual-only overrides. Original meshes/collision records remain untouched.
 void SceneryPack_RegisterArchive(GenericFile *archive, const char *path);
 bool SceneryPack_Draw(StageObject *object, const float *billboardMatrix);
+// OpenCMR2: between Begin and End, wind-animated tree draws are queued and their vertex math runs on worker
+// threads; recording still happens on the calling thread in draw order. Call FlushBatch before any other
+// draw that records, so order is kept. video.tree_threads=1 turns the workers off.
+void SceneryPack_BeginBatch(void);
+void SceneryPack_FlushBatch(void);
+void SceneryPack_EndBatch(void);
 void SceneryPack_Clear();
 void SceneryPack_Advance(int step16_16);
 // Car state (any rally car, slots 0..7) for reactive spectators (16.16 world position and speed).

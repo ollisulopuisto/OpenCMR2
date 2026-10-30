@@ -103,5 +103,11 @@ inline void ApplyWind(const WindVertex&w,const WindFrame&f,float *dx,float *du,f
  *du=amp*(.6f*(f.s1*w.c1+f.c1*w.s1)+.4f*(f.s2*w.c2+f.c2*w.s2));
  *dv=amp*(.6f*(f.s3*w.c3+f.c3*w.s3)+.4f*(f.s4*w.c4+f.c4*w.s4));
 }
+// One part of one tree: dst[k]=src[k] moved by the cached wind terms. Pure function of its inputs, so
+// it can run on any thread and gives the same bytes in any order.
+template<class V>
+inline void WindPart(const V *src,V *dst,const WindVertex *w,size_t n,const WindFrame &f){
+ for(size_t k=0;k<n;k++){float dx,du,dv;ApplyWind(w[k],f,&dx,&du,&dv);dst[k]=src[k];dst[k].x+=dx;dst[k].u0+=du;dst[k].v0+=dv;}
+}
 }
 #endif
