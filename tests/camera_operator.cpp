@@ -6,9 +6,9 @@
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line%d: %s\n",__LINE__,#x);return 1;}}while(0)
 int main(){
  using namespace CameraOperator;State a,b;
- V3 car={0,0,0};a.Step(car,0,0,1.5,6.5,2,.04);auto first=a.position;
+ V3 car={0,0,0};a.Step(car,0,0,1.5,6.5,2,.04);
  a.Step(car, .6f,1,1.5,6.5,2,.04);
- CHECK((a.position-first).Length()<.01f);CHECK(std::abs(a.heading)<.01f); // independent orbit, not attached
+ CHECK(std::abs(Wrap(a.heading-.6f))<=.035f); // fast steering follow replaces the old independent orbit
  float initialZoom=a.zoom;
  for(int i=0;i<60;i++)a.Step(car,.6f,1,1.5,6.5,2,.04);
  CHECK(a.zoom<initialZoom-.1f);
@@ -46,12 +46,13 @@ int main(){
  }
  auto saved=hill.position;hill.ConstrainTerrain(drive,.04,[](V3,float&){return false;});
  CHECK(std::isfinite(hill.position.y)); // unknown samples do not invent ground
- // Route-derived right bend chooses left, mirrored bend chooses right.
+ // Route preview may lift for visibility, but must not pull the camera sideways away from the car heading.
  V3 nodes[5]={{0,0,-10},{0,0,10},{10,0,20},{25,0,25},{40,0,25}};
  auto preview=PreviewRoad({0,0,0},1,5,false,[&](int i){return nodes[i];});CHECK(preview.valid&&preview.bend>.3f);
  State rightBend,leftBend;auto mirrored=preview;mirrored.bend=-preview.bend;mirrored.near.x=-preview.near.x;mirrored.far.x=-preview.far.x;
  for(int i=0;i<120;i++){rightBend.Step({0,0,0},-.5f,0,1.5,6.5,2,.04,&preview);leftBend.Step({0,0,0},.5f,0,1.5,6.5,2,.04,&mirrored);}
- CHECK(rightBend.position.x<-2.f);CHECK(leftBend.position.x>2.f);
+ CHECK(std::abs(Wrap(rightBend.heading+.5f))<.035f);CHECK(std::abs(Wrap(leftBend.heading-.5f))<.035f);
+ CHECK(rightBend.position.x>2.f);CHECK(leftBend.position.x<-2.f); // behind the body, opposite the old outside-bend orbit
  CHECK(!PreviewRoad({0,0,0},-1,5,false,[&](int i){return nodes[i];}).valid);
  CHECK(!PreviewRoad(nodes[4],4,5,false,[&](int i){return nodes[i];}).valid);
  // Degenerate, far-away and finish previews fail closed to original inertia.
@@ -90,10 +91,48 @@ int main(){
   for(int i=0;i<400;i++){base.Step({0,0,0},0,0,0,6.5,2,.04);close.Step({0,0,0},0,0,0,6.5,2,.04);far.Step({0,0,0},0,0,0,6.5,2,.04);}
   CHECK(close.usedDistance<base.usedDistance*.6f&&far.usedDistance>base.usedDistance*1.4f&&close.usedDistance>=4.f&&far.usedDistance<=26.f);
  }
- {  // moving car: the camera must not sit at the old 1.3 x tether when the knob is lowered, and knob 100 must stay as it was (13.4 from the car at 28 u/s, straight road)
+ {  // Moving straight at steady speed: stay at the selected offset, not the old lagging tether.
   auto settle=[](float scale){State s;s.distanceScale=scale;V3 car={0,0,0};for(int i=0;i<1200;i++){car.z+=28.f/60;s.Step(car,0,0,73.f,6.5f,1.5f,1.f/60);}V3 a=s.position-car;return a.Length();};
   float d100=settle(1.f),d60=settle(.6f),d50=settle(.5f);
-  CHECK(std::abs(d100-13.38f)<.05f);CHECK(d60<8.f&&d50<d60&&d50<7.f);
+  CHECK(d100>9.f&&d100<11.f);CHECK(d60<8.f&&d50<d60&&d50<7.f);
+ }
+ { // Gameplay steering envelope at 25/60/120 Hz, hard braking and rapid turns.
+  for(float dt:{.04f,1.f/60,1.f/120}){
+   State follow;follow.distanceScale=.6f;V3 car;float yaw=0,maxFall=0,maxCatch=0;
+   for(int i=0;i<int(7/dt);i++){
+    float t=i*dt;
+    float v=t<1?0:t<2?(t-1)*28:t<4?28:0;
+    // Continuous turns, including a reversal; not a teleport reset.
+    yaw+=((t>2&&t<3)?.8f:(t>3&&t<4)?-1.2f:0.f)*dt;
+    V3 forward={std::sin(yaw),0,std::cos(yaw)};
+    car=car+forward*(v*dt);
+    follow.Step(car,yaw,0,1.5f,6.5f,1.5f,dt);
+    V3 behind=car-follow.position;
+    float along=behind.x*forward.x+behind.z*forward.z;
+    CHECK(along>follow.usedDistance*.79f); // never goes past the car, including emergency stop
+    float orbit=std::atan2(behind.x,behind.z);
+    CHECK(std::abs(Wrap(orbit-yaw))<=.0351f);
+    auto view=follow.FramedForward();
+    CHECK(std::abs(Wrap(std::atan2(view.x,view.z)-yaw))<=.0351f);
+    CHECK(std::abs(follow.foreLag)<=.601f);
+    if(t>1&&t<2)maxFall=Max(maxFall,follow.foreLag);
+    if(t>4&&t<4.6f)maxCatch=Max(maxCatch,-follow.foreLag);
+   }
+   CHECK(maxFall>.02f);CHECK(maxCatch>.02f); // actual fall-back and late braking, not rigid attachment
+   CHECK(std::abs(follow.foreLag)<.001f); // settles rather than retaining speed-dependent lag
+  }
+ }
+ { // Heading wrap and mirrored left/right turns have the same bounded response.
+  State left,right;V3 car;
+  for(int i=0;i<300;i++){
+   float yaw=3.0f+i*.012f;
+   left.Step(car,Wrap(yaw),0,1.5f,6.5f,1.5f,.04f);
+   right.Step(car,Wrap(-yaw),0,1.5f,6.5f,1.5f,.04f);
+   CHECK(std::abs(Wrap(left.heading-yaw))<=.0351f);
+   CHECK(std::abs(Wrap(right.heading+yaw))<=.0351f);
+   CHECK(std::abs(left.position.x+right.position.x)<.001f);
+   CHECK(std::abs(left.position.z-right.position.z)<.001f);
+  }
  }
  {  // camera escape: wild ground samples, tunnel roofs, variable dt, teleports and pauses must never send the camera far from the car
   typedef std::function<bool(V3,float&)> G;
@@ -136,5 +175,5 @@ int main(){
    s.ConstrainTerrain(car,.04f,[](V3,float&y){y=12.f;return true;});if(s.ready)worstUp=std::max(worstUp,s.position.y);}
   CHECK(worstUp<=11+4+8+1);
  }
- puts("world camera position/orbit inertia, steering lens, settling, determinism/reset pass");
+ puts("gameplay drone heading bounds, fore/aft inertia, terrain, lens, settling and reset pass");
 }

@@ -371,3 +371,29 @@ blend/distance+shadowgroupingnotinthischeckpoint; see docs/EFFECT-AMOUNTS.md.
 Merged to main, all source-only and not native-verified on the Mac: #137 camera readout, per-type camera move, F10 panel, tyre debris, tyre-track length/history; #138 `--all-trees`, `--tree-coverage`, `--spectator-gain`; #139/#140 bush index entries; #141 test-only CI fix; #142 F10 panel drawn on sprite layer 3 (layer 4 draws before the 3D scene); #143 `--tree-rustle 0..300` (default 100) and `--spectator-irregular 0|1` (default 1), texture-coordinate shift only.
 #144 caches the crowd mesh template (counts logged, no timing claim). Bush converter path: no stem when the source canopy reaches the ground, crossed planes for the Finland leaf-strip bushes.
 Open: whole-stage tyre-track persistence, Hi/Lo and other-rally exporter coverage, bsh_st1/forest/hedge strips, drone FPS profile (needs native profile), curved-road generalisation, native confirmation of #137/#142/#143, macOS CI never started.
+
+## Gameplay-first drone follow (30 October 2026)
+
+Claim: feat/drone-gameplay-follow, based on the batch-9 CI-fix lineage.
+The clarified voice request supersedes the independent route-tangent orbit:
+steering readability wins, with light inertia rather than a detached TV camera.
+Position orbit and horizontal look direction are bounded to about two degrees
+from car heading. Route preview still supports height/visibility and lens
+behavior, but no longer swings the viewpoint to the outside of a bend.
+A separate bounded fore/aft travel-speed filter falls back on acceleration,
+approaches slightly after braking, settles at steady speed/rest and never
+passes the car. Existing terrain, reset, opt-in/classic and per-camera paths
+remain. No new setting or default enablement.
+
+Four focused local CTests pass, including actual ChaseCamera_Update and
+CameraOperator_Update/Apply wiring. New fixtures cover 25/60/120Hz, turns,
+reversals, heading wrap, left/right symmetry, emergency stopping and settling.
+Old tests requiring a detached orbit were replaced because they contradict
+the clarified request, not relaxed as a substitute for intended behavior.
+Native Mac gameplay/feel/graphics/performance remain unverified. No hosted
+run or publication until the approved CI limits are merged and verified.
+
+Broad local build was attempted, not green: unchanged SceneryMotion.h lacks
+a direct size_t declaration under this compiler (animated_scenery tests).
+A standalone compile of the base header reproduces it. No suppression or
+unrelated fix is included in this camera patch.
