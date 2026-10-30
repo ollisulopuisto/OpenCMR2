@@ -19,7 +19,7 @@ struct EnhancementOptions {
         if(equal!=key.npos){inlineValue=key.substr(equal+1);key.resize(equal);}
         if(equal==key.npos && key=="--prepare-only"){prepareOnly=true;return true;}
         if(equal==key.npos && key=="--install-enhancement-deps"){installDependencies=true;return true;}
-        if(key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect"&&key!="--attract-capture"&&key!="--capture-interval"&&key!="--capture-count"&&key!="--speed-fov"&&key!="--tunnel-vision"&&key!="--tunnel-lines"&&key!="--speed-motes-stretch"&&key!="--speed-motes-amount"&&key!="--speed-motes-size"&&key!="--dof-blur-max-px"&&key!="--speed-streak"&&key!="--speed-hold"&&key!="--tree-coverage"&&key!="--spectator-gain"&&key!="--cockpit-eye-shift"&&key!="--tree-coverage"&&key!="--spectator-gain"&&key!="--camera-move-chase"&&key!="--camera-move-cockpit"&&key!="--camera-move-car"&&key!="--fov-dolly-curve"&&key!="--tire-debris"&&key!="--tree-rustle"&&key!="--spectator-irregular"&&key!="--tire-track-length"&&key!="--tire-track-history"&&key!="--camera-move-type"&&key!="--fov-preview"&&key!="--dof-focus-car"&&key!="--drone-distance"&&key!="--speed-fov-cockpit"&&key!="--cockpit-blur-clear"&&key!="--test-preset")return false;
+        if(key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect"&&key!="--attract-capture"&&key!="--capture-interval"&&key!="--capture-count"&&key!="--speed-fov"&&key!="--tunnel-vision"&&key!="--tunnel-lines"&&key!="--speed-motes-stretch"&&key!="--speed-motes-amount"&&key!="--speed-motes-size"&&key!="--dof-blur-max-px"&&key!="--speed-streak"&&key!="--speed-hold"&&key!="--tree-coverage"&&key!="--spectator-gain"&&key!="--cockpit-eye-shift"&&key!="--tree-coverage"&&key!="--spectator-gain"&&key!="--camera-move-chase"&&key!="--camera-move-cockpit"&&key!="--camera-move-car"&&key!="--fov-dolly-curve"&&key!="--tire-debris"&&key!="--tree-rustle"&&key!="--spectator-irregular"&&key!="--tire-track-length"&&key!="--tire-track-history"&&key!="--camera-move-type"&&key!="--fov-preview"&&key!="--dof-focus-car"&&key!="--drone-speed-drop"&&key!="--drone-distance"&&key!="--speed-fov-cockpit"&&key!="--cockpit-blur-clear"&&key!="--test-preset")return false;
         if(equal==std::string::npos && i+1>=argc){error="Missing value for "+key;return true;}
         std::string value=equal==std::string::npos?argv[++i]:inlineValue;
         if(key=="--textures"){if(value!="original"&&value!="france1")error="--textures expects original or france1";else textures=value;}
@@ -72,11 +72,11 @@ struct EnhancementOptions {
             char *end=nullptr;long n=strtol(value.c_str(),&end,10);
             if(value.empty()||*end||n<0||n>400)error="--tire-debris expects 0..400";else overrides["video.tire_debris"]=(int)n;
         }
-        if(key=="--drone-distance"||key=="--speed-fov-cockpit"||key=="--cockpit-blur-clear"||key=="--tunnel-vision"||key=="--tunnel-lines"){   // wins over opencmr2.ini, so a value saved there earlier cannot hide the default
+        if(key=="--drone-speed-drop"||key=="--drone-distance"||key=="--speed-fov-cockpit"||key=="--cockpit-blur-clear"||key=="--tunnel-vision"||key=="--tunnel-lines"){   // wins over opencmr2.ini, so a value saved there earlier cannot hide the default
             char *end=nullptr;long n=strtol(value.c_str(),&end,10);
-            int lo=key=="--drone-distance"?50:0,hi=key=="--drone-distance"?150:key=="--speed-fov-cockpit"?100:key=="--tunnel-vision"?200:key=="--tunnel-lines"?1:60;
+            int lo=key=="--drone-distance"?50:0,hi=key=="--drone-speed-drop"?100:key=="--drone-distance"?150:key=="--speed-fov-cockpit"?100:key=="--tunnel-vision"?200:key=="--tunnel-lines"?1:60;
             if(value.empty()||*end||n<lo||n>hi)error=key+" expects "+std::to_string(lo)+".."+std::to_string(hi);
-            else overrides[key=="--drone-distance"?"video.drone_distance":key=="--speed-fov-cockpit"?"video.speed_fov_cockpit":key=="--tunnel-vision"?"video.tunnel_vision":key=="--tunnel-lines"?"video.tunnel_lines":"video.cockpit_blur_clear"]=(int)n;
+            else overrides[key=="--drone-speed-drop"?"video.drone_speed_drop":key=="--drone-distance"?"video.drone_distance":key=="--speed-fov-cockpit"?"video.speed_fov_cockpit":key=="--tunnel-vision"?"video.tunnel_vision":key=="--tunnel-lines"?"video.tunnel_lines":"video.cockpit_blur_clear"]=(int)n;
         }
         if(key=="--fov-dolly-curve"){
             if(value!="0"&&value!="1")error="--fov-dolly-curve expects 0 or 1";else overrides["video.fov_dolly_curve"]=value=="1"?1:0;
@@ -178,7 +178,8 @@ inline const char *EnhancementHelp(){return
 "                              see runtime log. temporal_aa = PARTIAL stage (SDL_GPU only,\n"
 "                              camera reprojection, no object velocity), default off.\n"
 "  --speed-fov 0..500          Widen the regular cameras' view with speed (percent); default 0 = off\n"
-"  --drone-distance 50..150     Drone camera distance, percent of the default (default 60; overrides opencmr2.ini)\n"
+"  --drone-speed-drop 0..100    Drone height reduction at speed (default 100, 0 disables)\n"
+"  --drone-distance 50..150     Drone camera distance (default 60; saved locked preset wins)\n"
 "  --speed-fov-cockpit 0..100  Cockpit camera: share of --speed-fov it uses, percent (default 25; overrides opencmr2.ini)\n"
 "  --tunnel-vision 0..200      Tunnel vision strength, percent (default 130; overrides opencmr2.ini; --test-preset overdo sets 130 too)\n"
 "  --tunnel-lines 0|1          Radial lines inside the tunnel-vision zone (default 1; overrides opencmr2.ini)\n"

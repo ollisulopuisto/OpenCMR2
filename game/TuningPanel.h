@@ -1,5 +1,6 @@
 #ifndef OPENCMR2_TUNING_PANEL_H
 #define OPENCMR2_TUNING_PANEL_H
+#include <cstring>
 // Live, in-race tuning of the visual effects (no physics). Pure row maths; the key handling and drawing live in RallyData.cpp.
 struct TuningRow { const char *label, *key; int lo, hi, step, fallback; };
 inline const TuningRow *Tuning_Rows(int &count)
@@ -23,10 +24,17 @@ inline const TuningRow *Tuning_Rows(int &count)
         {"Tyre debris (0 off; chips per wheel per step x100, loose/wet ground)", "video.tire_debris", 0, 400, 25, 0},
         {"Cockpit speed FOV % of Speed FOV (cockpit only)", "video.speed_fov_cockpit", 0, 100, 5, 25},
         {"Active camera forward(+)/back(-) at full speed, 0.05 units", "video.camera_move_active", -200, 200, 5, 0},   // special row: edits video.camera_move_type<N> of the camera in use; RallyData.cpp resolves it
+        {"Drone preset locked (unlock to tune)", "video.drone_locked", 0, 1, 1, 0},
+        {"Drone distance %", "video.drone_distance", 50, 150, 5, 60},
+        {"Drone height %", "video.drone_height", 50, 150, 5, 100},
+        {"Drone lateral follow % (lower floats more)", "video.drone_lateral", 25, 200, 5, 100},
+        {"Drone accel/brake spring %", "video.drone_spring", 25, 200, 5, 100},
+        {"Drone speed height drop %", "video.drone_speed_drop", 0, 100, 5, 100},
     };
     count = (int)(sizeof(rows) / sizeof(*rows));
     return rows;
 }
+inline bool Tuning_DroneParameter(const TuningRow &r){return std::strncmp(r.key,"video.drone_",12)==0&&std::strcmp(r.key,"video.drone_locked")!=0;}
 // One step in direction dir (+1/-1), clamped to the row range. A value already outside the range snaps in.
 inline int Tuning_Step(const TuningRow &row, int value, int dir)
 {

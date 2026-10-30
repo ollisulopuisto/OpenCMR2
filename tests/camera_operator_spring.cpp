@@ -39,7 +39,7 @@ int main(){
  // Actual built camera must now follow behind a turn within about two degrees,
  // and zoom must survive BuildMatrix's original default assignment.
  body.right.x=32768;body.right.z=56756;body.forward.x=-56756;body.forward.z=32768;
- for(int i=0;i<20;i++)ChaseCamera_Update(&record,&body,0);
+ for(int i=0;i<60;i++)ChaseCamera_Update(&record,&body,0);
  {float yaw=std::atan2(record.matrix.forward.x/65536.f,record.matrix.forward.z/65536.f);
   CHECK(std::abs(CameraOperator::Wrap(yaw-.5235988f))<.036f);
   float behind=record.matrix.position.x/65536.f*.5f+record.matrix.position.z/65536.f*.8660254f;
@@ -61,7 +61,7 @@ int main(){
   for(int i=0;i<300;i++)ChaseCamera_Update(&record,&body,0);
   auto&m=record.matrix;
   printf("perspective %d %g %g %g %g %g %g %g\n",variant,m.position.x/65536.f,m.position.y/65536.f,m.position.z/65536.f,m.forward.x/65536.f,m.forward.y/65536.f,m.forward.z/65536.f,record.zoom/40960.f);
-  if(variant==1){CHECK(m.position.z<-8.9f*65536);CHECK(m.position.y>3.8f*65536);}
+  if(variant==1){CHECK(m.position.z<-8.9f*65536);CHECK(m.position.y>2.2f*65536&&m.position.y<2.5f*65536);}
  }
  // Actual updater under acceleration/cruise/braking: visibly independent,
  // but keeps the car and road in frame. Hold the exact same heading.

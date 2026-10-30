@@ -17,6 +17,22 @@ int main(){
   TuningPanel_Update();CHECK(TuningPanel_IsOpen()==(m==1)&&TuningPanel_FpsOnly()==(m==3));
   keys[68]=0;TuningPanel_Update();CHECK(TuningPanel_IsOpen()==(m==1)&&TuningPanel_FpsOnly()==(m==3));
  }
+ // Actual live panel controls, save/lock/unlock/reset through raw keys.
+ auto press=[&](int k){keys[k]=0x80;TuningPanel_Update();keys[k]=0;TuningPanel_Update();};
+ press(68);CHECK(TuningPanel_IsOpen());
+ for(int i=0;i<19;i++)press(3); // distance row, after18 legacy rows and lock row
+ press(5);CHECK(Sys_GetOption("video.drone_distance",60)==65);
+ press(2);press(5); // lock row -> save and lock
+ CHECK(Sys_GetOption("video.drone_locked",0)==1);
+ std::ifstream stored("opencmr2.ini");std::string ini((std::istreambuf_iterator<char>(stored)),{});
+ CHECK(ini.find("drone_distance")!=std::string::npos);
+ Sys_SetOptionTemporary("video.drone_distance",50);CHECK(Sys_GetOption("video.drone_distance",60)==65); // stale launch override cannot bypass saved lock
+ Sys_SetOptionTemporary("video.drone_distance",65);
+ press(3);press(5);CHECK(Sys_GetOption("video.drone_distance",60)==65);
+ press(7);CHECK(Sys_GetOption("video.drone_distance",60)==65); // reset-all cannot alter locked preset
+ press(2);press(4);CHECK(Sys_GetOption("video.drone_locked",0)==0);
+ press(3);press(5);CHECK(Sys_GetOption("video.drone_distance",60)==70);
+ press(6);CHECK(Sys_GetOption("video.drone_distance",60)==60); // reset selected to opening
  Platform_SetTestKeyboard(nullptr);std::filesystem::current_path(old);std::filesystem::remove_all(tmp);
  puts("actual F10 raw input: four modes, hold/release, repeat laps, preview persistence pass");
 }

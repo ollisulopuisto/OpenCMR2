@@ -48,6 +48,7 @@ template<class Point> RoadPreview PreviewRoad(V3 car,int next,int count,bool loo
 }
 struct State{
  bool ready=false;V3 position,velocity,aim,aimVelocity,lastCar,roadAhead;bool hasRoad=false;
+ float speedDrop=0,speedDropAmount=1.f,heightScale=1.f,lateralGain=1.f,springGain=1.f;
  float terrainLift=0,curveLift=0,pullback=1.f; // pullback: smoothed speed-dependent distance scale
  bool pullbackReady=false;
  float foreLag=0; // diagnostic longitudinal lag, not a clamped displacement
@@ -93,6 +94,11 @@ struct State{
   // Previously a 4-unit trailing distance retained 5-7 units of height before
   // terrain lift, then lower-third framing forced a steep overhead aim.
   height=Clamp(distance*.45f+curveLift*.25f,3.8f,distance*.58f);
+  // Actual car speed, independent of SpeedLook (disabled for drone).
+  // Descend gradually at speed and rise back more slowly. No projection/FOV change.
+  float wantedDrop=Clamp(speedDropAmount,0.f,1.f)*speedUnit*1.8f;
+  speedDrop+=(wantedDrop-speedDrop)*(1-std::exp(-dt/(wantedDrop>speedDrop?1.1f:1.6f)));
+  height=Max(2.2f,height*Clamp(heightScale,.5f,1.5f)-speedDrop);
   float orbitHeading=carHeading; // gameplay: the driver needs a view from behind, even on a different route tangent
   float delta=ready?Wrap(carHeading-lastHeading):0;
   if(ready&&((car-lastCar).Length()>25.f||std::abs(delta)>.8f)){Reset();delta=0;}
@@ -125,9 +131,14 @@ struct State{
    float e=error.x*longitudinal.x+error.z*longitudinal.z;
    float v=relativeVelocity.x*longitudinal.x+relativeVelocity.z*longitudinal.z;
    // Independent longitudinal spring: about1-2units of transient lag under
-   // hard acceleration/braking, then settles. Turn/lateral spring stays fast.
-   V3 acceleration=(error-longitudinal*e)*625.f-(relativeVelocity-longitudinal*v)*50.f
-       +longitudinal*(e*16.f-v*8.f);
+   // hard acceleration/braking, then settles. Lateral position floats separately.
+   V3 lateral={std::cos(heading),0,-std::sin(heading)};
+   float sideError=error.x*lateral.x+error.z*lateral.z;
+   // Do not feed orbit velocity into sideways motion: that welded position to
+   // every turn. Partial car translation feedforward leaves a visible float.
+   float sideVelocity=(velocity.x-.2f*movement.x)*lateral.x+(velocity.z-.2f*movement.z)*lateral.z;
+   V3 acceleration=lateral*(sideError*(36.f*lateralGain)-sideVelocity*(12.f*std::sqrt(lateralGain)))
+       +longitudinal*(e*(16.f*springGain)-v*(8.f*std::sqrt(springGain)))+V3{0,error.y*100.f-relativeVelocity.y*20.f,0};
    float n=acceleration.Length();if(n>FollowAccelerationLimit)acceleration=acceleration*(FollowAccelerationLimit/n);
    velocity=velocity+acceleration*h;position=position+velocity*h;
   }

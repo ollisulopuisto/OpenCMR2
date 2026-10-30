@@ -6136,18 +6136,26 @@ void TuningPanel_Update(void)
     bool changed = false;
     if (prevRow) g_tuneRow = Tuning_Select(g_tuneRow, -1, count);
     if (nextRow) g_tuneRow = Tuning_Select(g_tuneRow, 1, count);
-    if (down || up) {
+    if ((down || up) && !(Sys_GetOption("video.drone_locked",0)&&Tuning_DroneParameter(rows[g_tuneRow]))) {
         const TuningRow &r = rows[g_tuneRow];
+        int dronePreset[32]={};
+        if(!strcmp(r.key,"video.drone_locked"))for(int i=0;i<count;i++)dronePreset[i]=Sys_GetOption(rows[i].key,rows[i].fallback);
         TuneSet(r, Tuning_Step(r, TuneGet(r), up ? 1 : -1));
+        // Lock freezes chosen parameters, not adaptive camera motion. Save
+        // the drone preset immediately through the existing INI save path.
+        if(!strcmp(r.key,"video.drone_locked")){
+            for(int i=0;i<count;i++)if(Tuning_DroneParameter(rows[i]))Sys_SetOption(rows[i].key,dronePreset[i]);
+            Sys_SetOption("video.drone_locked",Sys_GetOption("video.drone_locked",0));
+        }
         changed = true;
     }
-    if (resetRow) {
+    if (resetRow && !(Sys_GetOption("video.drone_locked",0)&&(Tuning_DroneParameter(rows[g_tuneRow])||!strcmp(rows[g_tuneRow].key,"video.drone_locked")))) {
         if (TuneIsCamMove(rows[g_tuneRow])) TuneSet(rows[g_tuneRow], g_camMoveSnapshot[TuneCamType()]);   // back to this camera's opening state (override or none)
         else Sys_SetOptionTemporary(rows[g_tuneRow].key, g_tuneSnapshot[g_tuneRow]);
         changed = true;
     }
     if (resetAll) {
-        for (int i = 0; i < count; ++i) if (!TuneIsCamMove(rows[i])) Sys_SetOptionTemporary(rows[i].key, g_tuneSnapshot[i]);
+        for (int i = 0; i < count; ++i) if (!TuneIsCamMove(rows[i])&&!(Sys_GetOption("video.drone_locked",0)&&(Tuning_DroneParameter(rows[i])||!strcmp(rows[i].key,"video.drone_locked")))) Sys_SetOptionTemporary(rows[i].key, g_tuneSnapshot[i]);
         for (int t = 0; t < 16; ++t) { char k[40]; TuneCamKey(t, k, sizeof k); Sys_SetOptionTemporary(k, g_camMoveSnapshot[t]); }
         changed = true;
     }
@@ -6256,15 +6264,16 @@ void TuningPanel_Draw(void)
     if (!g_tuneOpen) return;
     int count = 0;
     const TuningRow *rows = Tuning_Rows(count);
-    DebugOverlayLayout layout = DebugOverlayLayout::For(g_pGraphics->resX, g_pGraphics->resY, count + 3);
+    int visible=std::min(count,12),first=std::max(0,std::min(g_tuneRow-visible/2,count-visible));
+    DebugOverlayLayout layout = DebugOverlayLayout::For(g_pGraphics->resX, g_pGraphics->resY, visible + 3);
     short panel[4] = {(short)(g_pGraphics->resX - layout.width - layout.x), (short)(g_pGraphics->resY * 23 / 100), (short)layout.width, (short)layout.height};
     BYTE background[4] = {12, 16, 22, 220}, colour[4] = {240, 246, 255, 255}, lit[4] = {110, 255, 140, 255};
     Sprite_FillRect(NULL, panel, background, kTuneOverlayLayer);
     char text[96];
     int tx = panel[0] + layout.pad, ty = panel[1] + layout.pad, row = 0;
-    snprintf(text, sizeof text, "TUNING  1/2 row  3/4 value");
+    snprintf(text, sizeof text, "TUNING  1/2 row  3/4 value (%d/%d)",g_tuneRow+1,count);
     Font_DrawTextScaled(1, text, tx, ty + row++ * layout.line, layout.font, layout.width - 2 * layout.pad, colour, kTuneOverlayLayer);
-    for (int i = 0; i < count; ++i) {
+    for (int i = first; i < first+visible; ++i) {
         if (TuneIsCamMove(rows[i])) {
             char k[40]; int t = TuneCamType(); TuneCamKey(t, k, sizeof k);
             snprintf(text, sizeof text, "%s Camera type %d move (%s) 0.05 units: %d", i == g_tuneRow ? ">" : " ", t, Sys_GetOption(k, kCamMoveUnset) == kCamMoveUnset ? "family" : "own", TuneGet(rows[i]));
