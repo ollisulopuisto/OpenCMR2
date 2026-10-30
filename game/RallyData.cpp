@@ -6574,7 +6574,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             static unsigned long long prn=0,ptn=0,pcl=0;unsigned long long rn=0,tn=0,cl=0;
             SceneryPack_GetTimeTotals(&rn,&tn,&cl);
             static unsigned long long pwm=0,psb=0;unsigned long long wm=0,sb=0;SceneryPack_GetTimeSplit(&wm,&sb);
-            snprintf(text,sizeof(text),"Scenery CPU ms: all %.2f | whole trees %.2f (wind math %.2f, submit %.2f) %llu calls",(tn-ptn)/1e6,(rn-prn)/1e6,(wm-pwm)/1e6,(sb-psb)/1e6,cl-pcl);
+            snprintf(text,sizeof(text),"Scenery CPU ms: all %.2f | whole trees %.2f (wind math %.2f, record draws %.2f) %llu calls",(tn-ptn)/1e6,(rn-prn)/1e6,(wm-pwm)/1e6,(sb-psb)/1e6,cl-pcl);
             pwm=wm;psb=sb;
             prn=rn;ptn=tn;pcl=cl;
             Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?5:4)*layout.line,layout.font,layout.width-2*layout.pad,colour);
@@ -6584,7 +6584,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
             double now=Sys_GetTicksPrecise(),ex=0,wt=0;Gfx_GetPresentTimeTotals(&ex,&wt);
             unsigned long long rn=0,tn=0,cl=0;SceneryPack_GetTimeTotals(&rn,&tn,&cl);
             double interval=pt>0?now-pt:0,sc=(tn-ptn2)/1e6;
-            snprintf(text,sizeof(text),"Frame split ms: interval %.1f | gpu encode+submit %.1f (swapchain wait %.1f) | scenery %.1f | rest %.1f",interval,ex-pe,wt-pw,sc,interval-(ex-pe)-sc);
+            snprintf(text,sizeof(text),"Frame split ms: interval %.1f | executor encode+submit %.1f (swapchain wait %.1f) | scenery %.1f | rest %.1f",interval,ex-pe,wt-pw,sc,interval-(ex-pe)-sc);
             pt=now;pe=ex;pw=wt;ptn2=tn;
             Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+(spectator?6:5)*layout.line,layout.font,layout.width-2*layout.pad,colour);
         }
