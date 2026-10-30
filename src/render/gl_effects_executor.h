@@ -73,11 +73,11 @@ GLuint EffectProgram(int effect)
     if (effectPrograms[effect]) return effectPrograms[effect];
     static const unsigned char *sources[] = {g_brightpass_frag_glsl, g_blur_frag_glsl,
         g_composite_frag_glsl, g_motionblur_frag_glsl, g_lens_grime_frag_glsl,
-        g_dof_frag_glsl, g_godRays_frag_glsl, g_colorGrading_frag_glsl, g_spatial_aa_frag_glsl,g_clouds_frag_glsl,g_speedstreak_frag_glsl};
+        g_dof_frag_glsl, g_godRays_frag_glsl, g_colorGrading_frag_glsl, g_spatial_aa_frag_glsl,g_clouds_frag_glsl,g_speedstreak_frag_glsl,g_sun_glare_frag_glsl};
     static const char *blocks[] = {"BrightPassUniforms", "BlurUniforms", "CompositeUniforms",
-        "MotionBlurUniforms", "LensGrimeUniforms", "DoFUniforms", "GodRaysUniforms", "ColorGradingUniforms", "SpatialAAUniforms","CloudUniforms","SpeedStreakUniforms"};
-    static const char *samplers0[] = {"scene", "source", "scene", "current", "scene", "sceneTex", "scene", "scene", "scene", "scene", "scene"};
-    static const char *samplers1[] = {NULL, NULL, "bloom", "previous", NULL, "depthTex", "depthTex", NULL, NULL,"depthTex", NULL};
+        "MotionBlurUniforms", "LensGrimeUniforms", "DoFUniforms", "GodRaysUniforms", "ColorGradingUniforms", "SpatialAAUniforms","CloudUniforms","SpeedStreakUniforms","SunGlareUniforms"};
+    static const char *samplers0[] = {"scene", "source", "scene", "current", "scene", "sceneTex", "scene", "scene", "scene", "scene", "scene", "scene"};
+    static const char *samplers1[] = {NULL, NULL, "bloom", "previous", NULL, "depthTex", "depthTex", NULL, NULL,"depthTex", NULL,"depthTex"};
     GLuint p = Link(glEffectsVertex, sources[effect]);
     if (p) {
         GLuint block = gl.GetUniformBlockIndex(p, blocks[effect]);
@@ -86,7 +86,7 @@ GLuint EffectProgram(int effect)
         gl.Uniform1i(gl.GetUniformLocation(p, samplers0[effect]), 0);
         if (samplers1[effect]) gl.Uniform1i(gl.GetUniformLocation(p, samplers1[effect]), 1);
     }
-    if(p&&effect==6)gl.Uniform1i(gl.GetUniformLocation(p,"cloudTransmission"),2);
+    if(p&&(effect==6||effect==11))gl.Uniform1i(gl.GetUniformLocation(p,"cloudTransmission"),2);
     effectPrograms[effect] = p;
     return p;
 }
@@ -106,7 +106,7 @@ bool EffectPass(int effect, int target, GLuint source, GLuint second, const void
         gl.BindSampler(i, Sampler(i == 1 && second == backDepth ? nearest : linear));
     }
     // std140 blocks are padded, including shaders whose public argument is one float.
-    if(effect==6){gl.ActiveTexture(GL_TEXTURE0+2);gl.BindTexture(GL_TEXTURE_2D,cloudMask?cloudMask:white2D);gl.BindSampler(2,Sampler(linear));}
+    if(effect==6||effect==11){gl.ActiveTexture(GL_TEXTURE0+2);gl.BindTexture(GL_TEXTURE_2D,cloudMask?cloudMask:white2D);gl.BindSampler(2,Sampler(linear));}
     // SpeedStreakUniforms is 992 bytes (trail data the GL path never fills): keep the zeroed buffer at least that large so the block is never read out of range. Zero depth info = trails off.
     unsigned char block[sizeof(CloudUniforms) > 1024 ? sizeof(CloudUniforms) : 1024] = {};
     if (bytes > sizeof(block)) { ForgetEffectState(); return false; }
@@ -144,7 +144,13 @@ GLuint ApplyEffects()
     // Overlay status, same codes as SDL_GPU: 1 off, 3 nothing to do, 5 encoded (set below), 6 not a race frame.
     Gfx_SetDofStatus(GfxDofStatus{!effectsRaceFrame ? 6 : (depthBlurOn || tunnelOn) ? 4 : dofOn ? 3 : 1, speedFocusTarget, speedFocusSmooth, 0.0f, 0.0f});
     bool streakOn = speedStreakSmooth > 0.01f && effectsRaceFrame;
-    bool active = streakOn || cloudsValid || spatialAA || bloomOn && bloomAmount > 0 || motionOn && motionMix > 0 ||
+    auto glareNow=std::chrono::steady_clock::now();
+    float glareDt=sunGlareTimed?std::chrono::duration<float>(glareNow-sunGlareTime).count():0.f;
+    sunGlareTime=glareNow;sunGlareTimed=true;
+    int glareAmount=Sys_GetOption("video.sun_glare",0);
+    float glareStrength=sunGlare.Step(sunX,sunY,effectsRaceFrame&&sunVisible,glareAmount,glareDt);
+    bool glareActive=effectsRaceFrame&&glareAmount>0&&glareStrength>.0001f;
+    bool active = glareActive || streakOn || cloudsValid || spatialAA || bloomOn && bloomAmount > 0 || motionOn && motionMix > 0 ||
         depthBlurOn || tunnelOn || raysOn && raysAmount > 0 && sunVisible ||
         grade[0] || grade[1] || grade[2] != 1 || grade[3] != 1 || grime[0] || grime[1] || grime[2];
     if (!active) { historyValid = false; return backFramebuffer; }
@@ -155,7 +161,7 @@ GLuint ApplyEffects()
         int target = source == effectTex[0] ? 1 : 0;
         if (EffectPass(effect, target, source, second, data, bytes)) {
             source = effectTex[target]; sourceFbo = effectFbo[target];
-            static const unsigned bits[]={0,0,2,4,0,8,16,32,1,0,256};
+            static const unsigned bits[]={0,0,2,4,0,8,16,32,1,0,256,0};
             encodedEffects |= bits[effect];
             return true;
         }
@@ -223,6 +229,7 @@ GLuint ApplyEffects()
         run(10, 0, u, sizeof(u));
     }
     if (grade[0] || grade[1] || grade[2] != 1 || grade[3] != 1) run(7, 0, grade, sizeof(grade));
+    if(glareActive){float u[4]={sunX,sunY,glareStrength,backHeight?(float)backWidth/backHeight:1.f};run(11,backDepth,u,sizeof(u));}
     return sourceFbo;
 }
 void PrepareShadow()

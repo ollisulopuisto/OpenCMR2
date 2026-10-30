@@ -6683,7 +6683,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         BYTE colour[4] = {240, 246, 255, 255};
         unsigned long long tick=0;unsigned frame=0,changes=0;
         bool spectator=SceneryPack_GetAnimationStatus(&tick,&frame,&changes);
-        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?6:5)+11+5+2+5+1);   // +5: the Speed FOV, FOV dolly, FOV preview and footer rows were drawn below the panel in the 12:04 native screenshot (panel ended at "Measured")
+        auto layout=DebugOverlayLayout::For(g_pGraphics->resX,g_pGraphics->resY,(spectator?6:5)+11+5+2+5+2);   // +5: the Speed FOV, FOV dolly, FOV preview and footer rows were drawn below the panel in the 12:04 native screenshot (panel ended at "Measured")
         short panel[4] = {(short)layout.x,(short)layout.y,(short)layout.width,(short)layout.height};
         Sprite_FillRect(NULL, panel, background, 1);
         char text[160];
@@ -6812,6 +6812,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
              if(viewType==3){int cw=0,cs=0;View_GetCockpitShift(param2,&cw,&cs);snprintf(text,sizeof text,"Cockpit eye shift setting %d: view widened x%.2f, eye moved %+.3f model units along camera forward (0.2 = driver mount height)",Sys_GetOption("video.cockpit_eye_shift",0),cw/65536.0,cs/65536.0);line(text);}}
         }
         line("enc=encoded; skip=requested, not encoded");
+        snprintf(text,sizeof text,"Sun glare %d%%: restrained eye response; sun/depth/cloud gated (not pixel proof)",Sys_GetOption("video.sun_glare",0));line(text);
         line("Previous frame; encoded is not pixel proof");
         }
     }

@@ -1,3 +1,4 @@
+#include "sun_glare.h"
 #include "render/dof_gate.h"
 #include "render/tunnel_vision.h"
 #include "render/dof_focus.h"
@@ -354,6 +355,7 @@ struct Executor : GfxExecutor {
     float speedStreakTarget = 0.0f, speedStreakSmooth = 0.0f, speedStreakClock = 0.0f; Uint64 speedStreakTicks = 0; // 0..1, smoothed in real time
     float vaporTarget = 0.0f, vaporSmooth = 0.0f; Uint64 vaporTicks = 0; VaporHistory vaporHistory; float vaporPrevCentre[3] = {}, vaporDir[3] = {}; bool vaporHavePrev = false, vaporHaveDir = false;
     // OpenCMR2: god rays state.
+    SunGlareState sunGlare; Uint64 sunGlareTicks=0;
     bool godRaysEnabled = false;
     int godRaysIntensity = 100;
     float sunX=.5f,sunY=.5f;bool sunVisible=false;
@@ -446,6 +448,8 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUGraphicsPipeline(device,temporalPipeline);
         SDL_ReleaseGPUGraphicsPipeline(device,cloudPipeline);
         SDL_ReleaseGPUShader(device, fsGodRays);
+        SDL_ReleaseGPUShader(device, fsSunGlare);
+        SDL_ReleaseGPUGraphicsPipeline(device, sunGlarePipeline);
         SDL_ReleaseGPUShader(device, fsColorGrading);
         SDL_ReleaseGPUShader(device, fsDustComposite);
         SDL_ReleaseGPUGraphicsPipeline(device, dustCompositePipeline);
@@ -1544,6 +1548,8 @@ struct Executor : GfxExecutor {
         return godRaysPipeline;
     }
 
+    SDL_GPUShader *fsSunGlare=nullptr;
+    SDL_GPUGraphicsPipeline *sunGlarePipeline=nullptr;
     // Color grading pipeline: applies temperature, tint, saturation, contrast.
     SDL_GPUGraphicsPipeline *ColorGradingPipeline()
     {
@@ -2821,6 +2827,20 @@ struct Executor : GfxExecutor {
             if (PostProcessPass(cmd, ColorGradingPipeline(), gradeOut, &binding, 1,
                                 uniforms, sizeof(uniforms)))
                 {presentSource = gradeOut;encoded|=32;}
+        }
+
+        { // Restrained sun response, after world effects, before HUD. Off by default.
+            Uint64 now=SDL_GetTicksNS();float dt=sunGlareTicks?(now-sunGlareTicks)*1e-9f:0.f;sunGlareTicks=now;
+            int amount=Sys_GetOption("video.sun_glare",0);
+            float strength=sunGlare.Step(sunX,sunY,raceWorld&&sunVisible,amount,dt);
+            if(raceWorld && amount>0 && strength>.0001f && sampledDepth && backDepth){
+                if(!fsSunGlare)fsSunGlare=Shader(SHADER_CODE(sun_glare_frag),SDL_GPU_SHADERSTAGE_FRAGMENT,3,1);
+                if(!sunGlarePipeline&&fsSunGlare)sunGlarePipeline=PostProcessPipeline(vsMotionBlur,fsSunGlare);
+                float u[4]={sunX,sunY,strength,backHeight?(float)backWidth/backHeight:1.f};
+                SDL_GPUTexture *target=presentSource==gradingTarget?godRaysBuf1:gradingTarget;
+                SDL_GPUTextureSamplerBinding bindings[3]={{presentSource,linearSampler},{backDepth,depthSampler},{cloudMask,linearSampler}};
+                if(sunGlarePipeline&&target&&PostProcessPass(cmd,sunGlarePipeline,target,bindings,3,u,sizeof(u)))presentSource=target;
+            }
         }
 
         } else motionBlurHasPrevious=false;

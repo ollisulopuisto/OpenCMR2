@@ -1,3 +1,4 @@
+#include "sun_glare.h"
 #include "shadow_caster.h"
 #include "cloud_uniforms.h"
 // The OpenGL 3.3 executor: runs a recorded frame (gfx_core.cpp) as the
@@ -289,11 +290,12 @@ struct Executor : GfxExecutor {
     bool effectsRaceFrame = true; // set per frame before ApplyEffects: depth blur is a race effect, never run on menu/preview frames
     int motionMix = 0, bloomAmount = 0, dofFocus = 50, dofRange = 30, dofBlur = 0, raysAmount = 0;
     float grade[4] = {0, 0, 1, 1}, grime[4] = {};
+    SunGlareState sunGlare;std::chrono::steady_clock::time_point sunGlareTime;bool sunGlareTimed=false;
     float sunX = 0, sunY = 0; bool sunVisible = false;
     GLuint effectFbo[4] = {}, effectTex[4] = {}, effectUbo = 0, effectVao = 0;
     GLuint historyTex = 0; bool historyValid = false;
     unsigned encodedEffects = 0;
-    GLuint effectPrograms[11] = {};
+    GLuint effectPrograms[12] = {};
     CloudUniforms cloudUniforms={};
     bool cloudsValid=false,cloudLogged=false;
     GLuint cloudMask=0,cloudMaskTexture=0,cloudMaskFbo=0;
