@@ -225,6 +225,30 @@ class Tests(unittest.TestCase):
         self.assertFalse(self.output.exists())
         self.assertFalse(list(self.output.parent.glob('.cmr2-patch-*')))
 
+    def test_sparse_versus_dense_crown(self):
+        import numpy as np
+        dense = np.zeros((256, 128), np.uint8)
+        dense[10:180, 20:108] = 255            # solid crown block
+        dense[180:256, 60:68] = 255            # trunk
+        sparse = np.zeros((256, 128), np.uint8)
+        for row in range(10, 180, 6):
+            sparse[row:row + 2, 20:108] = 255  # thin branch rows, mostly gaps
+        sparse[:, 62:66] = 255
+        self.assertFalse(patcher.is_sparse(dense))
+        self.assertTrue(patcher.is_sparse(sparse))
+        cut, last = patcher.crown_profile(dense)
+        self.assertTrue(0.5 < cut < 0.9, cut)
+
+    def test_animation_gain_scales_limb_angle_and_defaults_to_one(self):
+        self.assertEqual(patcher.ANIM_GAIN, 1.0)
+        self.assertEqual(patcher.gained(20.0), 20.0)
+        patcher.ANIM_GAIN = 3.0
+        try:
+            self.assertEqual(patcher.gained(20.0), 60.0)
+            self.assertEqual(patcher.gained(-90.0), -110.0)   # clamped
+        finally:
+            patcher.ANIM_GAIN = 1.0
+
 
 if __name__ == '__main__':
     unittest.main()
