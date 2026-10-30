@@ -12,7 +12,7 @@ assert re.search(r"kTuneOverlayLayer\s*=\s*3;", r), "overlay layer constant miss
 a = r.index("void TuningPanel_Draw(void)"); b = r.index("void TuningPanel_DrawPaused")
 panel = r[a:b]
 assert "kTuneOverlayLayer" in panel and not re.search(r"(Font_DrawTextScaled|Sprite_FillRect)\([^;]*,\s*4\);", panel), "panel draws on layer 4"
-c = r.index("Manual move"); readout = r[c - 600:c + 1800]
+c = r.index("Sprite_FillRect(NULL, bp, bbg"); readout = r[c - 600:c + 1200]
 assert not re.search(r"(Font_DrawTextScaled|Sprite_FillRect)\([^;]*,\s*4\);", readout), "camera readout draws on layer 4"
 assert "kTuneOverlayLayer" in readout
 print("ok")
