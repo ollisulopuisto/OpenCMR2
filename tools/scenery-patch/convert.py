@@ -471,7 +471,7 @@ def main():
      # Bushes: the source decides. A canopy that reaches the bottom rows has no stem, so none is built. The Finland bsh_01/02 textures are
      # horizontal leaf strips on a palm-like trunk: a closed shell turned them into a perforated cage in the contact sheet, so they use the crossed planes that keep the strips whole.
      leaf_strips=bush and archive in ('finhit.bfl','finlot.bfl') and Path(leaf).stem in ('bsh_01','bsh_02')
-     sparse=args.tree_geometry=='crossed' or leaf_strips or is_sparse(alpha)
+     sparse=args.tree_geometry=='crossed' or bush or is_sparse(alpha)
      no_stem=bush and crown_profile(alpha)[0]>=.9
      asset=crossed_tree(a,Path('trees')/rel,with_stem=not no_stem) if sparse else tree(a,Path('trees')/rel,adaptive=True,stem=not no_stem);rows.append('\t'.join(['tree',archive,leaf,asset,'','1']));status='adaptive-crossed' if sparse else 'adaptive-shell'
     elif rec.get('category')=='spectator':
