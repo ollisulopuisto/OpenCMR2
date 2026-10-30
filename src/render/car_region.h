@@ -5,6 +5,7 @@
 // range of the car's geometry. Visual only. This is a bounding rectangle plus a depth interval, NOT a per-pixel silhouette mask:
 // scenery inside the rectangle and inside the car's depth range (the road around the car) counts as car, and anything in front of the car
 // that overlaps it is not detected. dof.frag uses it to keep the car sharp in the whole-scene blur mode.
+#include <cstddef>
 #include <math.h>
 struct CarRegion {
     float u0 = 1e30f, v0 = 1e30f, u1 = -1e30f, v1 = -1e30f;   // 0..1 screen rectangle, v downwards like gl_FragCoord on SDL_GPU

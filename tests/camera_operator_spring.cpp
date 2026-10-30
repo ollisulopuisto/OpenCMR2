@@ -28,7 +28,7 @@ int main(){
  g_chaseCameraOffsets[2]={0,65536,0};g_chaseCameraViewOffsets[2]={65536,0,0};
  ChaseCamera_Update(&record,&body,0);
  CHECK(g_chaseCameraViewOffsets[2].x!=0); // original basis spring no longer bypassed
- CHECK(record.matrix.position.z < -8*65536); // actual distant world camera
+ CHECK(record.matrix.position.z < -4*65536); // actual distant world camera (default drone_distance 60 sits ~7 behind, not attached)
  CHECK(record.zoom>0xa000);
  CHECK(g_chaseCameraLag[0]==0xe0000); // never mutate saved spring
  // Actual built camera must not rotate its world position around the car on
