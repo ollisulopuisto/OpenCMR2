@@ -8321,7 +8321,11 @@ void View_UpdateCamera(BYTE view)
 void View_RefreshForTuning(void)
 {
     BYTE index = 0;
-    if (g_unk0x00538d20[index] >= 0) return;
+    if (g_unk0x00538d20[index] >= 0) {
+        static double lastSkip = 0; double now = Sys_GetTicksPrecise();
+        if (now - lastSkip > 1000.0) { lastSkip = now; Sys_Log("tuning diag: camera refresh skipped, a camera transition is running (timer %d)", (int)g_unk0x00538d20[index]); }
+        return;
+    }
     CameraRecord *pActive = VIEW_RECORD(g_activeViewRecord[index] + index * 2);
     Camera_Update(pActive);
     CameraState_Copy(VIEW_STATE(index), pActive);

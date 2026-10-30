@@ -6016,6 +6016,7 @@ void RallyData_DrawProjectedChallengeScene(int param1, int param2)
     // OpenCMR2: camera effects — dirt on the lens and a sun lens flare,
     // drawn over the finished frame ([video] video.camera_effects).
     CameraEffects_DrawOverlays(rect);
+    TuningPanel_NotePausedDraw("challenge scene (fixed projection)");
     TuningPanel_DrawPaused();
     Graphics_PresentFrameAndResetCounters();
 }
@@ -6060,8 +6061,19 @@ static int TuneGet(const TuningRow &r)
     char k[40]; int t = TuneCamType(); TuneCamKey(t, k, sizeof k);
     return CameraMove_Effective(Sys_GetOption(k, kCamMoveUnset), Sys_GetOption(CameraMove_FamilyKey(t), 0));
 }
+static const char *g_tuneSite = "?";
+void TuningPanel_NoteSite(const char *site) { g_tuneSite = site; }
+void TuningPanel_NotePausedDraw(const char *what)
+{
+    static double last = 0;
+    double now = Sys_GetTicksPrecise();
+    if (now - last < 1000.0) return;
+    last = now;
+    Sys_Log("tuning diag: draw %s (tuning engaged=%d open=%d, race menu open=%d)", what, (int)TuningPanel_PreviewActive(), (int)TuningPanel_IsOpen(), (int)CGameInfo::IsInRaceMenuOpen());
+}
 static void TuneSet(const TuningRow &r, int v)
 {
+    Sys_Log("tuning diag: set %s=%d from %s (race menu open=%d)", r.key, v, g_tuneSite, (int)CGameInfo::IsInRaceMenuOpen());
     if (!TuneIsCamMove(r)) { Sys_SetOptionTemporary(r.key, v); return; }
     char k[40]; TuneCamKey(TuneCamType(), k, sizeof k); Sys_SetOptionTemporary(k, v);
 }
@@ -6095,6 +6107,10 @@ extern "C" double Sys_GetTicksPrecise(void);
 void TuningPanel_Update(void)
 {
     ++g_tuneFrame;
+    {   // Diagnostics: log once when the calling site changes while tuning is engaged, so a pause entry point that never reaches the panel shows in the log.
+        static const char *lastSite = nullptr;
+        if (g_tuneEngaged && lastSite != g_tuneSite) { lastSite = g_tuneSite; Sys_Log("tuning diag: panel update now called from %s (open=%d mode=%d)", g_tuneSite, (int)g_tuneOpen, g_tuneMode); }
+    }
     int count = 0;
     const TuningRow *rows = Tuning_Rows(count);
     if (g_tuneEdges.Edge(0, Input_IsKeyDown(TuningPanel_ToggleKey()) != 0)) { g_tuneMode = (g_tuneMode + 1) % 3; g_tuneOpen = g_tuneMode == 1; g_tuneEngaged = true; }
