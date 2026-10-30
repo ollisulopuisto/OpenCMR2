@@ -155,6 +155,7 @@ if(Python3_Interpreter_FOUND)
     add_test(NAME dof_focus_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/dof_focus_wiring.py WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
     add_test(NAME tunnel_look_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tunnel_look_wiring.py WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
     add_test(NAME gl_tunnel_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gl_tunnel_wiring.py)
+    add_test(NAME replay_external_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/replay_external_wiring.py)
     add_test(NAME tuning_pause_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tuning_pause_wiring.py)
     add_test(NAME overlay_layer_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/overlay_layer_wiring.py WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
     add_test(NAME raw_access_audit
