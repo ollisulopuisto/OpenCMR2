@@ -128,7 +128,11 @@ struct State{
  }
  // Ground-height constrained sight corridor, not generic object collision.
  // Query samples current/near-future camera footpoints and car->camera rays.
- template<class Query> void ConstrainTerrain(V3 car,float dt,Query ground){
+ template<class Query> void ConstrainTerrain(V3 car,float dt,Query rawQuery){
+  // Ground samples far from the car's own level (another surface level, a bad triangle) are ignored, and the lift is capped: it is
+  // divided by a ray fraction as small as 1/24, so one wild sample used to move the camera by up to 24x its error, without limit.
+  const float carY=car.y;
+  auto ground=[&](V3 point,float&y){float v=0;if(!rawQuery(point,v)||!std::isfinite(v)||v>carY+15.f||v<carY-60.f)return false;y=v;return true;};
   if(!ready||dt<=0||dt>.2f)return;
   V3 original=position,base=position;float required=0;
   auto liftFor=[&](V3 camera){
@@ -160,12 +164,15 @@ struct State{
     if(score<cost){cost=score;base=candidate;required=lift;}
    }
   }
+  required=Clamp(required,0.f,8.f);
   position=base;
   // Rise before collision if possible; never ease through known terrain.
   // Fall slowly after a crest so camera doesn't track every car bump.
   terrainLift=required>terrainLift?required:Max(required,terrainLift-dt*2.f);
   position.y+=terrainLift;
   if(terrainLift>0&&velocity.y<0)velocity.y=0;
+  // Safety net: a camera this far from the car is a failure, not a framing. Start over behind the car next step.
+  if(!std::isfinite(position.x)||!std::isfinite(position.y)||!std::isfinite(position.z)||(position-car).Length()>60.f)Reset();
  }
 
 };
