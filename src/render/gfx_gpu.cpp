@@ -2873,7 +2873,10 @@ struct Executor : GfxExecutor {
 
         SDL_GPUTexture *swapchain = NULL;
         Uint32 sw = 0, sh = 0;
-        if (SDL_WaitAndAcquireGPUSwapchainTexture(cmd, window, &swapchain, &sw, &sh) && swapchain != NULL) {
+        double acquireStart = Sys_GetTicksPrecise();
+        bool acquired = SDL_WaitAndAcquireGPUSwapchainTexture(cmd, window, &swapchain, &sw, &sh);
+        Gfx_NoteSwapchainWait(Sys_GetTicksPrecise() - acquireStart);
+        if (acquired && swapchain != NULL) {
             if (sw != presentWidth || sh != presentHeight) {
                 Sys_Log("gfx: %dx%d shown in %ux%u pixels", backWidth, backHeight, sw, sh);
                 presentWidth = sw;

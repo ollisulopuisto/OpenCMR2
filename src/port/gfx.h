@@ -338,6 +338,9 @@ void Gfx_GetBlendDepthState(int *out);
 void Gfx_SetRaysStatus(int reason);
 int Gfx_GetRaysStatus(void);
 DWORD Gfx_GetFrameDrawCalls(void);
+/* OpenCMR2 diagnostics: ms inside the frame executor and, of that, the swapchain wait, summed since launch. */
+void Gfx_NoteSwapchainWait(double ms);
+void Gfx_GetPresentTimeTotals(double *execMs, double *waitMs);
 DWORD Gfx_GetFrameVertices(void);
 DWORD Gfx_GetFrameIndices(void);
 DWORD Gfx_GetFrameTriangles(void);

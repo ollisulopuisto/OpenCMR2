@@ -17,6 +17,7 @@ bool SceneryPack_GetAnimationStatus(unsigned long long *tick,unsigned *frame,uns
 // Running totals since launch; callers subtract the previous reading to get a per-frame count. Counts, not timing.
 void SceneryPack_GetFrameTotals(unsigned long long *crowdDraws,unsigned long long *crowdTris,unsigned long long *treeTris,unsigned long long *treeUvVertices);
 // Diagnostics: running totals (ns, calls) of wall-clock time inside SceneryPack_Draw and inside its whole-tree replacement part.
+void SceneryPack_GetTimeSplit(unsigned long long *windMathNs,unsigned long long *submitNs);
 void SceneryPack_GetTimeTotals(unsigned long long *replacementNs,unsigned long long *totalNs,unsigned long long *calls);
 void SceneryPack_GetTreeStatus(unsigned *replacements,unsigned *wind,unsigned *originalSources);
 #endif

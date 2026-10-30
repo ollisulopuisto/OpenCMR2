@@ -642,6 +642,11 @@ extern "C" void Gfx_EndScene(void)
 {
 }
 
+// OpenCMR2 diagnostics: wall-clock ms inside the frame executor (where the recorded frame is encoded and submitted) and, of that, the wait for
+// the swapchain image, summed since launch. Measurement only; two clock reads per frame.
+static double s_execTotalMs=0,s_waitTotalMs=0;
+extern "C" void Gfx_NoteSwapchainWait(double ms){s_waitTotalMs+=ms;}
+extern "C" void Gfx_GetPresentTimeTotals(double *execMs,double *waitMs){if(execMs)*execMs=s_execTotalMs;if(waitMs)*waitMs=s_waitTotalMs;}
 static void Present(BOOL vsync, bool stretch)
 {
     s_raceWorld=false;
@@ -650,8 +655,11 @@ static void Present(BOOL vsync, bool stretch)
         fprintf(trace, "F %u\n", s_traceFrame++);
     if (Diagnostics::observer)
         Diagnostics::observer->BeginPresent();
-    if (s_executor != NULL)
+    if (s_executor != NULL) {
+        double t0 = Sys_GetTicksPrecise();
         s_executor->Execute(s_frame, s_textures, s_readback, true, vsync != 0, stretch);
+        s_execTotalMs += Sys_GetTicksPrecise() - t0;
+    }
     s_frame.Reset();
     // OpenCMR2: snapshot this frame's stats for the debug overlay, then reset.
     s_lastDrawCalls = s_frameDrawCalls;

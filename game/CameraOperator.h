@@ -65,7 +65,7 @@ struct State{
   float wantedLift=Clamp((bend-.06f)/.64f,0.f,1.f)*4.f;
   float liftTime=wantedLift>curveLift?.55f:1.7f;
   curveLift+=(wantedLift-curveLift)*(1-std::exp(-dt/liftTime));
-  height+=curveLift;
+  height+=curveLift*Clamp(distanceScale,0.f,1.f); // the curve lift follows the distance knob, so a closer drone stays closer in bends
   float orbitHeading=roadValid?std::atan2(road->tangent.x,road->tangent.z):carHeading;
   float delta=ready?Wrap(carHeading-lastHeading):0;
   if(ready&&((car-lastCar).Length()>25.f||std::abs(delta)>.8f)){Reset();delta=0;}
@@ -90,7 +90,9 @@ struct State{
   // Keep framing safe on very long high-speed transients, but do not rigidly
   // rotate the position offset with the car. This is a tether, not attachment.
   V3 away=position-car;float separation=away.Length();
-  float tether=std::sqrt(distance*distance+height*height)*1.3f;
+  // The tether is what holds the camera near the car at speed (the spring chase lags a moving car). It stays 1.3 x the intended offset at the
+  // default knob (100) and tightens to 1.0 x at 50, so a lower drone_distance really brings the camera closer at speed.
+  float tether=std::sqrt(distance*distance+height*height)*(1.f+.3f*Clamp((distanceScale-.5f)/.5f,0.f,1.f));
   if(separation>tether){position=car+away*(tether/separation);}
   V3 target=car+V3{std::sin(carHeading)*Clamp(speed*3.f,2.f,5.f),1.2f,std::cos(carHeading)*Clamp(speed*3.f,2.f,5.f)};
   if(roadValid){target=road->near;target.y=car.y+1.2f;}
