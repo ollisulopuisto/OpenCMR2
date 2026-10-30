@@ -51,6 +51,7 @@ int main(){
   CHECK(run({"t","--camera-move-type","5=30"})&&e2.empty()&&t.overrides["video.camera_move_type5"]==30);CHECK(run({"t","--camera-move-type","7=30"})&&!e2.empty());CHECK(run({"t","--camera-move-type","5=201"})&&!e2.empty());CHECK(run({"t","--camera-move-type","5"})&&!e2.empty());
 CHECK(run({"t","--camera-move-chase","-60"})&&e2.empty()&&t.overrides["video.camera_move_chase"]==-60);CHECK(run({"t","--camera-move-cockpit","5"})&&e2.empty()&&t.overrides["video.camera_move_cockpit"]==5);CHECK(run({"t","--camera-move-car","201"})&&!e2.empty());
   CHECK(run({"t","--cockpit-eye-shift","-40"})&&e2.empty()&&t.overrides["video.cockpit_eye_shift"]==-40);CHECK(run({"t","--cockpit-eye-shift","101"})&&!e2.empty());CHECK(run({"t","--cockpit-eye-shift","x"})&&!e2.empty());
+  CHECK(run({"t","--tree-coverage","all","--spectator-gain","250"})&&e2.empty()&&t.treeCoverage=="all"&&t.spectatorGain==250);CHECK(run({"t","--tree-coverage","some"})&&!e2.empty());CHECK(run({"t","--spectator-gain","99"})&&!e2.empty());CHECK(run({"t","--spectator-gain","401"})&&!e2.empty());
   EnhancementOptions q;t=q;CHECK(run({"t","--effect","bloom=on"})&&e2.empty());t.Apply();CHECK(!t.overrides.count("video.speed_fov")&&!t.overrides.count("video.dof_blur"));}
  auto root=fs::temp_directory_path()/(std::string("cmr-enhancements-")+std::to_string(SDL_GetPerformanceCounter()));
  auto game=root/"owned game",user=root/"profile";

@@ -670,6 +670,10 @@ bool PrepareEnhancementPack(bool cars=false,bool roads=false,bool textures=false
         if(roads||textures){args.resize(args.size()-2);}
         if(cars){args.push_back("--mods-dir");args.push_back(s_enhancements.modsDir);}
         if(s_enhancements.installDependencies&&!roads&&!textures)args.push_back("--install-deps");
+        if(!cars&&!roads&&!textures){
+            if(s_enhancements.treeCoverage=="all")args.push_back("--all-trees");
+            if(s_enhancements.spectatorGain!=100){args.push_back("--animation-gain");char gain[16];snprintf(gain,sizeof gain,"%.2f",s_enhancements.spectatorGain/100.0);args.push_back(gain);}
+        }
         std::vector<const char*> raw;for(auto &arg:args)raw.push_back(arg.c_str());raw.push_back(nullptr);
         SDL_Process *process=SDL_CreateProcess(raw.data(),true);if(!process)continue;
         size_t length=0;int code=-1;char *out=(char*)SDL_ReadProcess(process,&length,&code);

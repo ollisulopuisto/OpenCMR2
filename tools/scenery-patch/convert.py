@@ -374,7 +374,12 @@ def spectator(a,rel):
  # Subtle upper-body sway: original cutout remapped, lower 30% and feet fixed. No invented limbs.
  yy,xx=np.mgrid[:h,:w]
  for i in range(12):
-  weight=np.clip((.70-yy/h)/.70,0,1)**2;dx=np.rint(math.sin(i*math.tau/12)*max(1,w*.009)*ANIM_GAIN*weight).astype(int);sx=xx-dx;ok=(sx>=0)&(sx<w);out=np.zeros_like(ar);out[ok]=ar[yy[ok],sx[ok]];path=p/f'frame-{i:02}.tga';Image.fromarray(out).save(path,compression=None);frames.append(str(rel/path.name))
+  weight=np.clip((.70-yy/h)/.70,0,1)**2;dx=np.rint(math.sin(i*math.tau/12)*max(1,w*.009)*ANIM_GAIN*weight).astype(int);sx=xx-dx;ok=(sx>=0)&(sx<w)
+  sy=yy
+  if ANIM_GAIN>1.0:
+   # Above gain 1 the sway-only people also bob: the upper body rises and settles twice per loop (lower 30 percent and feet stay put), so a pure shear is not the only motion.
+   lift=np.rint(abs(math.sin(i*math.tau/12*2))*h*.012*(ANIM_GAIN-1.0)*np.clip((.70-yy/h)/.70,0,1)).astype(int);sy=yy+lift;ok&=(sy<h)
+  out=np.zeros_like(ar);out[ok]=ar[sy[ok],sx[ok]];path=p/f'frame-{i:02}.tga';Image.fromarray(out).save(path,compression=None);frames.append(str(rel/path.name))
  return frames
 
 def read_archive(path, name, index):
