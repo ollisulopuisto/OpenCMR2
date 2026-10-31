@@ -11,6 +11,14 @@ All notable changes to OpenCMR2 are documented here.
   default test build. The interposition isolation test is now behind the
   same GNU/Linux gate as the --wrap isolation tests (substitute-glyph
   evidence harness; no game change).
+### Camera
+
+- **Wider drone tuning rails** (defaults unchanged): distance 10-300% (was
+  50-150), height 25-400% (was 50-150), lateral follow 10-400% (was
+  25-200), accel/brake spring 1-400% (was 5-200), speed height drop 0-500%
+  (was 0-200). Native tuning screenshots showed distance, height, spring
+  and drop pinned at the old rails. Menu rows and runtime clamps move
+  together (tests/drone_range_wiring.py).
 
 ### Interface
 

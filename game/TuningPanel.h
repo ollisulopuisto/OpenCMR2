@@ -42,11 +42,11 @@ inline const TuningRow *Tuning_Rows(int &count)
         {"Snow glints %", "video.snow_glint", 0, 200, 10, 100},
         {"Corner tilt % (up to four degrees)", "video.camera_roll", 0, 100, 5, 0},
         {"Drone preset locked (unlock to tune)", "video.drone_locked", 0, 1, 1, 0},
-        {"Drone distance %", "video.drone_distance", 50, 150, 5, 60},
-        {"Drone height %", "video.drone_height", 50, 150, 5, 100},
-        {"Drone lateral follow % (lower floats more)", "video.drone_lateral", 25, 200, 5, 100},
-        {"Drone accel/brake spring %", "video.drone_spring", 5, 200, 5, 100},
-        {"Drone speed height drop %", "video.drone_speed_drop", 0, 200, 5, 100},
+        {"Drone distance %", "video.drone_distance", 10, 300, 5, 60},
+        {"Drone height %", "video.drone_height", 25, 400, 5, 100},
+        {"Drone lateral follow % (lower floats more)", "video.drone_lateral", 10, 400, 5, 100},
+        {"Drone accel/brake spring %", "video.drone_spring", 1, 400, 5, 100},
+        {"Drone speed height drop %", "video.drone_speed_drop", 0, 500, 5, 100},
     };
     count = (int)(sizeof(rows) / sizeof(*rows));
     return rows;
