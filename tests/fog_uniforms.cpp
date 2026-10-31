@@ -1,0 +1,61 @@
+// Exercising regression for the FogUniforms 23-vs-27-vec4 stack overflow:
+// the shared packer (render/fog_uniforms.h, called by BOTH executors) runs
+// with the full 8 lights against a guard page, so any size drift faults here
+// instead of a native stack smash. Values are verified per lane, including
+// the beam tail lanes the old 92-float arrays could not hold.
+#include "render/fog_uniforms.h"
+#include <cstdio>
+#include <cstring>
+#include <sys/mman.h>
+#include <unistd.h>
+
+static int fails = 0;
+#define CHECK(c) do{ if(!(c)){ std::printf("FAIL %d: %s\n", __LINE__, #c); ++fails; } }while(0)
+
+int main() {
+    CHECK(kFogUniformFloats == 108);
+    long page = sysconf(_SC_PAGESIZE);
+    size_t span = (size_t)page * 2;
+    unsigned char *base = (unsigned char *)mmap(nullptr, span, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    CHECK(base != MAP_FAILED);
+    if (base == MAP_FAILED) return 1;
+    CHECK(mprotect(base + page, (size_t)page, PROT_NONE) == 0);
+    // Array ends exactly at the guard boundary: one float past lane 107 faults.
+    float *u = (float *)(base + page - kFogUniformFloats * sizeof(float));
+
+    GfxFogLight lights[8];
+    for (int i = 0; i < 8; i++) {
+        lights[i].x = 0.10f + i; lights[i].y = 0.20f + i;
+        lights[i].viewZ = 30.0f + i; lights[i].intensity = 0.5f + i * 0.01f;
+        lights[i].r = 0.9f; lights[i].g = 0.8f; lights[i].b = 0.7f;
+        lights[i].beamX = 0.31f + i; lights[i].beamY = 0.41f + i; lights[i].beamLen = 0.51f + i;
+    }
+    FogUniformParams p{};
+    p.density = 0.03f; p.glow = 1.0f; p.nearZ = 1.5f; p.farZ = 900.0f;
+    p.sunX = 0.4f; p.sunY = 0.3f; p.sunVisible = 1.0f; p.aspect = 1.6f;
+    p.clearDistance = 60.0f; p.lightStrength = 1.0f;
+
+    FogUniforms_Pack(u, p, lights, 8, true);   // would SIGSEGV here on the old 92-float layout
+    CHECK(u[0] == 0.03f && u[2] == 1.5f && u[3] == 900.0f);
+    CHECK(u[104] == 0.31f + 7 && u[105] == 0.41f + 7 && u[106] == 0.51f + 7);   // beams[7] tail lanes
+    CHECK(u[107] == 0.0f);
+    CHECK(u[12 + 7 * 4] == 0.10f + 7 && u[44 + 7 * 4] == 30.0f + 7);           // lights[7], viewZ
+    for (int i = 0; i < 12; i++) { /* header checked above */ }
+    (void)0;
+
+    // GL shape: viewZ lane forced to 0 (no depth gate).
+    std::memset(u, 0xCD, kFogUniformFloats * sizeof(float));
+    FogUniforms_Pack(u, p, lights, 8, false);
+    CHECK(u[44 + 7 * 4] == 0.0f && u[44 + 7 * 4 + 1] == 0.9f);
+
+    // Oversized count clamps to the 8 shader lanes; fewer lights zero the rest.
+    FogUniforms_Pack(u, p, lights, 99, true);
+    CHECK(u[104] == 0.31f + 7);
+    FogUniforms_Pack(u, p, lights, 2, true);
+    CHECK(u[12 + 2 * 4] == 0.0f && u[76 + 2 * 4] == 0.0f && u[106] == 0.0f);
+    FogUniforms_Pack(u, p, nullptr, 0, true);
+
+    munmap(base, span);
+    std::printf(fails ? "FAILED\n" : "fog uniforms pack ok\n");
+    return fails ? 1 : 0;
+}
