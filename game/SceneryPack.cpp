@@ -11,6 +11,8 @@
 #include "FixedStrip.h"
 #include "France1Textures.h"
 #include "FixedStripSources.inc"
+#include "Gre01BrushSources.inc"
+#include "BrushRelief.h"
 #include "Graphics.h"
 #include "Texture.h"
 #include "Mesh.h"
@@ -59,7 +61,9 @@ static OrderedBatch<PendingTree,std::vector<std::vector<GfxVertex>>> pendingTree
 struct Asset { std::map<const Mesh*,std::vector<Part>> fitted; int sourceWidth=0,sourceHeight=0; SceneryFormat::Entry entry; std::string failure; std::set<std::string> loggedFailures; bool attempted=false,ready=false; std::vector<Part> parts; std::vector<PackTexture*> frames; };
 std::vector<Asset> assets;
 struct FixedPart {bool ready=false;std::vector<FixedStrip::Vertex> vertices;std::vector<GfxVertex> scratch;};
+struct BrushPart {bool ready=false;std::vector<BrushRelief::Vertex> vertices;std::vector<unsigned short> indices;std::vector<GfxVertex> scratch;MeshVertexF corners[4]={};};
 std::map<const MeshPart*,FixedPart> fixedParts;
+std::map<const MeshPart*,BrushPart> brushParts;
 bool loaded=false,identityContract=false;
 bool treeLogged=false,spectatorLogged=false;
 std::string root;
@@ -482,6 +486,74 @@ bool SceneryPack_DrawFixedPart(Mesh *mesh,MeshPart *part){
  // DDS identities are added by the private texture helper, independently of the
  // individual billboard pack. A same-named modified source never enters here.
  if(!France1Textures_IsVerifiedCutout(source))return false;
+ // Greece1 brush walls (gre01 temp.obj bsh_sh1* parts): the flat card gets
+ // draw-time depth - interior alpha relief plus a taller darkened back layer
+ // ("skybreak"). Exact-source only: part hash + verified cutout + live dial.
+ if(!name.compare(0,7,"bsh_sh1")){
+  int reliefDial=Sys_GetOption("video.brush_relief",100);
+  if(reliefDial>0){
+   auto bfound=brushParts.find(part);
+   if(bfound==brushParts.end()){
+    BrushPart data;
+    if(part->indexCount<6||part->indexCount>12000||part->minIndex<0)return false;
+    auto*v=(const MeshVertexF*)mesh->pVertexData;
+    std::vector<unsigned short>indices;std::string original;
+    for(int i=0;i<part->indexCount;i++){
+     unsigned j=unsigned(part->pData[i])+part->minIndex;if(j>=unsigned(mesh->field_0x10))return false;
+     indices.push_back(j);original.append((const char*)&v[j].x,12);original.append((const char*)v[j].textureCoordinates[0],8);
+    }
+    auto hash=SceneryIdentity::SHA256(original.data(),original.size());bool known=false;for(auto h:gre01BrushSources)if(hash==h){known=true;break;}
+    if(known){
+     // One flat quad (2 triangles, 4 corners in UV-corner order) per part.
+     unsigned uniq[4];int used=0;
+     for(auto j:indices){bool f=false;for(int k=0;k<used;k++)if(uniq[k]==j)f=true;if(!f){if(used==4){used=-1;break;}uniq[used++]=j;}}
+     if(used==4){
+      MeshVertexF c[4];bool ok=true;
+      for(int k=0;k<4;k++){
+       float tu=v[uniq[k]].textureCoordinates[0][0],tv=v[uniq[k]].textureCoordinates[0][1];
+       if((tu!=0&&tu!=1)||(tv!=0&&tv!=1)){ok=false;break;}
+       c[(int(tu)+2*int(tv))]=v[uniq[k]];   // slot by UV corner
+      }
+      if(ok){
+       float e1[3]={c[1].x-c[0].x,c[1].y-c[0].y,c[1].z-c[0].z},e2[3]={c[2].x-c[0].x,c[2].y-c[0].y,c[2].z-c[0].z};
+       float n[3]={e1[1]*e2[2]-e1[2]*e2[1],e1[2]*e2[0]-e1[0]*e2[2],e1[0]*e2[1]-e1[1]*e2[0]};
+       float nl=std::sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
+       const unsigned char*alpha=nullptr;int aw=0,ah=0;
+       if(nl>1e-5f&&France1Textures_CutoutAlpha(source,&alpha,&aw,&ah)){
+        n[0]/=nl;n[1]/=nl;n[2]/=nl;
+        data.ready=BrushRelief::Build(c,n,alpha,aw,ah,reliefDial,true,data.vertices);
+        BrushRelief::Indices(true,data.indices);
+        for(int k=0;k<4;k++)data.corners[k]=c[k];
+       }
+      }
+     }
+    }
+    bfound=brushParts.emplace(part,std::move(data)).first;
+   }
+   auto&bdata=bfound->second;
+   if(bdata.ready){
+    bdata.scratch.resize(bdata.indices.size());
+    auto*live=(const MeshVertexF*)mesh->pVertexData;(void)live;
+    for(size_t i=0;i<bdata.indices.size();i++){
+     auto&q=bdata.vertices[bdata.indices[i]];
+     // Live diffuse bilinear from the quad's four corner vertices (runtime
+     // lighting/fog rewrites original colours; read them live, FixedStrip pattern).
+     float r=0,g=0,b=0,a=0;
+     const MeshVertexF*corners=bdata.corners;
+     float wC[4]={q.bary[0],q.bary[1],(1-q.u)*q.bary[2],q.u*q.bary[2]};
+     for(int k=0;k<4;k++){
+      auto*cb=(const unsigned char*)&corners[k].diffuseColour;
+      b+=cb[0]*wC[k];g+=cb[1]*wC[k];r+=cb[2]*wC[k];a+=cb[3]*wC[k];
+     }
+     r*=q.shade;g*=q.shade;b*=q.shade;
+     DWORD col=((DWORD)(a+.5f)<<24)|((DWORD)(r+.5f)<<16)|((DWORD)(g+.5f)<<8)|(DWORD)(b+.5f);
+     bdata.scratch[i]={q.x,q.y,q.z,0,1,0,col,0,q.u,q.v,0,0};
+    }
+    Gfx_DrawPrimitive(GFX_TRIANGLELIST,bdata.scratch.data(),bdata.scratch.size());
+    return true;
+   }
+  }
+ }
  auto found=fixedParts.find(part);
  if(found==fixedParts.end()){
   FixedPart data;std::vector<unsigned short>indices;std::string original;

@@ -798,3 +798,36 @@ one second and down the next" plus bonnet/body glow overlap.
   run on a build containing both.
 - FixMatrix_RotateVector moved unchanged into FixedMatrixCore.cpp (same
   pattern as #234) so the harness links the production primitive.
+
+## Greece1 brush walls: why #232 could not fix them, and the depth path (1 November 2026, late)
+
+User report on clean main 00e2a5f (with #232 merged): "greece 1 flat bush near
+1st checkpoint is still flat bush". Investigation against the user's own
+verified gre01 archives (stage + texture), using the repo's generator
+(tools/scenery-patch/strip_sources.py) and the SceneryPack runtime gate:
+
+- #232's FixedStrip relief targets temp.sht strip parts. gre01's temp.sht has
+  ZERO strip-eligible parts; the roadside brush lives in temp.obj as OBJECT
+  parts (bsh_sh1a x12, bsh_sh1c x16, bsh_sh1z x10 = 38 wall parts; tre_s1_*
+  trees separate). 0/38 part hashes appear in game/FixedStripSources.inc, so
+  the relief could never activate for them. The .inc comment naming Greece1
+  overstated coverage; #232's Greece effect was texture cutouts only.
+- The brush walls are literally single flat vertical quads (~17x3 units)
+  with an alpha-cutout sheet: any perimeter-preserving relief keeps the
+  straight-card silhouette (probe-verified, decision-grade only).
+- fix branch feat/greece1-brush-depth: BrushRelief (game/BrushRelief.h) draws
+  each wall quad tessellated with interior alpha displacement (heuristic:
+  alpha = cutout coverage, not physical depth) plus a taller, darkened back
+  layer from the same verified sheet ("skybreak") that breaks the silhouette
+  and adds parallax. Gated: video.scenery_overrides/tree_overrides/
+  texture_uprez + verified cutout + gre01 part hash + video.brush_relief
+  (0-100, default 100; Atmosphere submenu row). GL+Metal via the shared port
+  draw path. Unit test tests/brush_relief.cpp; game-render frames pending.
+
+## Cross-effect light coverage matrix (todo for the shared principle)
+
+Responds to light today: fog (fog.frag), falling snowflakes, snow-surface
+glints, air motes. NO light response: rain streaks/splashes (flat grey),
+dust plumes, wheel spray, gravel/debris (fixed particle colour+shade). The
+praised reverse-lights-in-dust screenshot shows the fog/light overlay beams;
+the dust particles themselves are unlit.

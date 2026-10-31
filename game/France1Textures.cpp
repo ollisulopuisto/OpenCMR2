@@ -17,6 +17,7 @@ namespace {
 bool active=false,uprez=false;
 std::map<Texture*,GfxTexture*> originals;
 std::map<Texture*,GfxTexture*> verifiedCutouts;
+std::map<Texture*,std::vector<unsigned char>> cutoutAlpha;
 struct Source{const char *hash;const char *file;const char *output;};
 const Source sources[]={
 {"a57557d985545afa97514b5aa331484d77f30b666d2bf4e5e27f55755197c3ef","t_1a-frahit.rgba","051308909c3ca51c24e4928010967a7b65acf3cd3bafd88c31b3edd0ca38e1f8"},
@@ -39,7 +40,7 @@ void France1Textures_Clear(){
   Texture*t=CGraphics::m_pTextureManager->textureBuffer[i];auto found=originals.find(t);
   if(found!=originals.end() && t && t->pSurface==found->second)Gfx_SetTextureReplacement(t->pSurface,nullptr);
  }
- originals.clear();verifiedCutouts.clear();
+ originals.clear();verifiedCutouts.clear();cutoutAlpha.clear();
 }
 void France1Textures_Begin(GenericFile *archive,const char *stage){
  France1Textures_Clear();
@@ -55,7 +56,7 @@ void France1Textures_Begin(GenericFile *archive,const char *stage){
  Sys_Log("textures: exact-source stage texture test %s; source2x filter, no new detail; native unverified",active?"source verified":"refused");
 }
 bool France1Textures_Apply(Texture *texture,const void*bytes,unsigned size){
- verifiedCutouts.erase(texture);
+ verifiedCutouts.erase(texture);cutoutAlpha.erase(texture);
  if(!active||!texture||!texture->pSurface||!bytes||(size<128||size>1024*1024))return false;
  auto hash=SceneryIdentity::SHA256(bytes,size);const Source*source=nullptr;
  if(uprez){for(auto&s:uprezSources)if(hash==s.hash){source=&s;break;}}
@@ -90,9 +91,26 @@ bool France1Textures_Apply(Texture *texture,const void*bytes,unsigned size){
  originals[texture]=texture->pSurface;
  if(uprez){std::string file=source->file;
   if(file.find("tresh")==0||file.find("tre_w2")==0||file.find("tre_wl")==0||file.find("bsh_st1")==0||file.find("bsh_sh1")==0||file.find("tre_s1")==0)verifiedCutouts[texture]=texture->pSurface;
+  if(file.find("bsh_sh1")==0){
+   // Keep a small CPU alpha grid of the verified sheet for brush relief.
+   const int GW=64,GH=32;std::vector<unsigned char>agrid(GW*GH);
+   const unsigned char*top=(const unsigned char*)raw.data()+20;
+   for(int gy=0;gy<GH;gy++)for(int gx=0;gx<GW;gx++){
+    unsigned sx=(unsigned)((gx+0.5)*w/GW),sy=(unsigned)((gy+0.5)*h/GH);
+    agrid[gy*GW+gx]=top[(sy*w+sx)*4+3];
+   }
+   cutoutAlpha[texture]=std::move(agrid);
+  }
  }
  Gfx_SetTextureReplacement(texture->pSurface,replacement); // original dimensions/UVs survive rollback
  Sys_Log("textures: source2x applied %s (%ux%u, %u mips)",source->file,w,h,levels);return true;
 }
 
 bool France1Textures_IsVerifiedCutout(Texture*t){auto i=verifiedCutouts.find(t);return active&&uprez&&i!=verifiedCutouts.end()&&t&&t->pSurface==i->second;}
+
+// 64x32 alpha grid of a verified bsh_sh1 sheet, sampled from the same
+// hash-verified RGBA the GPU upload used. False when not a cached brush sheet.
+bool France1Textures_CutoutAlpha(Texture*t,const unsigned char**alpha,int*aw,int*ah){
+ auto i=cutoutAlpha.find(t);if(i==cutoutAlpha.end())return false;
+ *alpha=i->second.data();*aw=64;*ah=32;return true;
+}

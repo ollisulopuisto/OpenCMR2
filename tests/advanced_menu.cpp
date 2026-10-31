@@ -65,7 +65,7 @@ int main(int argc,char **argv){
  }
  amounts->cursor=0;Menu_Update(amounts,2);Menu_Update(amounts,0);if(amounts->items[0].max!=17)++fail;
  amounts->items[0].max=35;Menu_Update(amounts,2);Menu_Update(amounts,0);if(amounts->items[0].max!=35)++fail;
- {Menu*atmo=FrontendMenu_GetAtmosphereAmounts(amounts);if(atmo->itemCount!=13||atmo->pParent!=amounts)++fail;
+ {Menu*atmo=FrontendMenu_GetAtmosphereAmounts(amounts);if(atmo->itemCount!=14||atmo->pParent!=amounts)++fail;
   if(std::strcmp(atmo->items[0].text,"Fog (0/1)")||std::strcmp(atmo->items[4].text,"Fog light response % (head/rear lights)")||std::strcmp(atmo->items[9].text,"Air motes amount %")||std::strcmp(atmo->items[10].text,"Snow glints % (banks + falling flakes)")||std::strcmp(atmo->items[11].text,"Fog through windscreen glass (0/1)"))++fail;
   for(int i=0;i<12;i++)if(atmo->items[i].value!=0x40+i)++fail;   // 12 data rows; item 12 is the OK row
   atmo->pfnCallback0(atmo,0); // EnterAtmosphere reads saved options; must not crash with defaults
