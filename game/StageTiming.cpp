@@ -46,6 +46,7 @@
 #include "ParticleAmount.h"
 #include "port/sys.h"
 #include "PrecipitationQuad.h"
+#include "WeatherSidecar.h"
 
 // GLOBAL: CMR2 0x00543da0
 PrecipitationQuad g_precipitation;
@@ -8746,8 +8747,10 @@ void StageTiming_UpdateAllViewWeather(void)
         StageObject_ScaleViewValueByRoute(pWeather, view);
         StageObject_UpdateThirdRouteRamp(pRecord, view);
         StageTiming_IntegrateTerrainBodyPitch(pRecord, view);
-        if (pWeather->kind == 1 || pWeather->kind == 2)
+        if (pWeather->kind == 1 || pWeather->kind == 2) {
             StageObject_IntegrateViewDeformationGrid(1, pWeather, view);
+            WeatherSidecar_Integrate(pWeather, view);   // PORT: sidecar density (video.weather_particle_amount)
+        }
         StageObject_AdvanceAnimatedRecordState(pWeather, view);
     }
 }
@@ -9331,6 +9334,7 @@ void StageWeather_DistributeViewParticles(void)
             pNode->textureVariant = (BYTE)(rand() % 3);
         }
     }
+    WeatherSidecar_Reset();   // PORT: sidecar positions, own LCG
 }
 
 // Sets up the stage weather: particle looks, billboards, the weather

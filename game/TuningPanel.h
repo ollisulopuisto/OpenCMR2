@@ -31,6 +31,7 @@ inline const TuningRow *Tuning_Rows(int &count)
         {"Exhaust smoke amount %", "video.exhaust_smoke_amount", 0, 300, 25, 200},
         {"Wheel splash amount % (standing water)", "video.splash_amount", 0, 300, 25, 200},
         {"Backfire sparks amount %", "video.backfire_amount", 0, 300, 25, 200},
+        {"Rain/snow amount % (0 hides; port sidecar, original pool untouched)", "video.weather_particle_amount", 0, 300, 25, 200},
         {"Cockpit speed FOV % of Speed FOV (cockpit only)", "video.speed_fov_cockpit", 0, 100, 5, 25},
         {"Active camera forward(+)/back(-) at full speed, 0.05 units", "video.camera_move_active", -200, 200, 5, 0},   // special row: edits video.camera_move_type<N> of the camera in use; RallyData.cpp resolves it
         {"Sun glare %", "video.sun_glare", 0, 100, 5, 0},
