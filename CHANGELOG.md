@@ -4,6 +4,14 @@ All notable changes to OpenCMR2 are documented here.
 
 ## [Unreleased]
 
+### Fixes
+
+- **Native macOS build**: `frontend_whatsnew_runtime_test` used the GNU-only
+  `-Wl,--allow-multiple-definition`, which Apple ld rejects, breaking the
+  default test build. The interposition isolation test is now behind the
+  same GNU/Linux gate as the --wrap isolation tests (substitute-glyph
+  evidence harness; no game change).
+
 ### Interface
 
 - **Atmosphere menu directly under Graphics options**: the fog/air
