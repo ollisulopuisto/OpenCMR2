@@ -103,6 +103,7 @@ int main(int argc, char **argv)
             require(std::abs(int(f200[i])-int(scene[i]))>std::abs(int(f50[i])-int(scene[i])),"fog amount scales the effect");
         }
         e.SetPostFog(false,0,0);upload();require(read(e.ApplyEffects())==scene,"fog toggle off restores identity");
+        e.SetPostFog(true,100,60);e.effectsRaceFrame=false;upload();require(read(e.ApplyEffects())==scene,"fog never touches menu/preview frames");e.effectsRaceFrame=true;e.SetPostFog(false,0,0);
         e.SetDepthOfField(false,20,10,100);e.SetGodRays(true,255);e.SetSunScreenPosition(.8,.2,false);upload();require(read(e.ApplyEffects())==scene,"invisible sun bypass");
         e.SetSunScreenPosition(.8,.2,true);gl.BindFramebuffer(GL_FRAMEBUFFER,e.backFramebuffer);gl.DepthMask(GL_TRUE);gl.ClearDepth(1);gl.Clear(GL_DEPTH_BUFFER_BIT);e.ForgetEffectState();
         upload();auto rays=read(e.ApplyEffects());require(rays!=scene,"visible sun rays execute");

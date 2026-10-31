@@ -2,7 +2,10 @@
 #define OPENCMR2_SCENERY_MIP_H
 #include <vector>
 #include <cstdint>
+#pragma push_macro("rand")
+#undef rand
 #include <algorithm>
+#pragma pop_macro("rand")
 #include <cmath>
 namespace SceneryMip {
 // BGRA, straight alpha. Average premultiplied color to keep hidden RGB out.

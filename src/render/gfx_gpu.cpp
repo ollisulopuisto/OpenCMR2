@@ -2698,7 +2698,7 @@ struct Executor : GfxExecutor {
         // Atmosphere fog (video.fog): one scene+depth pass, before DoF/god rays so blur
         // and shafts stack on the fogged scene. Uses the same projection votes as DoF;
         // unknown projection falls back to a raw-depth ramp inside the shader.
-        if (fogEnabled && fogAmount > 0 && sampledDepth && backDepth != nullptr &&
+        if (raceWorld && fogEnabled && fogAmount > 0 && sampledDepth && backDepth != nullptr &&
             fogBuf1 != nullptr && FogPipeline() != nullptr) {
             ResolveProjection(&sceneNear, &sceneFar);
             float fogUniforms[8] = { Fog_Density(fogAmount), fogGlow / 100.0f, sceneNear, sceneFar,
