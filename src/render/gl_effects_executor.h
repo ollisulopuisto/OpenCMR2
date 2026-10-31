@@ -345,12 +345,33 @@ void RenderWeather()
     }
     struct Vertex { float x,y,r,g,b,a; };
     std::vector<Vertex> vertices;
+    // Screen-space snow glints (video.snow_glint): flakes twinkle toward the sun
+    // (forward scatter) and brighten inside projected car light beams, tinted
+    // per light. Same maths as the SDL_GPU particle path (weather_glint.h).
+    float glintAmt = weatherType == 2 ? std::max(0, std::min(200, Sys_GetOption("video.snow_glint", 100))) / 100.0f : 0.0f;
+    float glintAspect = backHeight > 0 ? (float)backWidth / (float)backHeight : 1.0f;
+    int flakeIndex = 0;
     for (auto &p : weather) {
         p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
         if (p.life <= 0 || p.y > 1.05f || p.x < -0.05f || p.x > 1.05f) continue;
+        float pr = weatherType == 1 ? 0.7f : 0.95f, pg = weatherType == 1 ? 0.8f : 0.98f, pb = 1.0f;
+        if (glintAmt > 0.0f) {
+            float prox = WeatherGlint_SunProximity(p.x, p.y, sunX, sunY, sunVisible ? 1 : 0, glintAspect);
+            float m = WeatherGlint_Twinkle(WeatherGlint_Phase(flakeIndex, p.life), prox);
+            m = 1.0f + (m - 1.0f) * glintAmt;
+            pr *= m; pg *= m; pb *= m;
+            for (int li = 0; li < fogLightCount; ++li) {
+                const GfxFogLight *L = &fogLights[li];
+                WeatherGlint_LightBoost(p.x, p.y, glintAspect, L->x, L->y, L->intensity, L->r, L->g, L->b, &pr, &pg, &pb);
+            }
+            if (pr > 1.f) pr = 1.f;
+            if (pg > 1.f) pg = 1.f;
+            if (pb > 1.f) pb = 1.f;
+        }
+        ++flakeIndex;
         static const int corner[6][2] = {{-1,-1},{1,-1},{-1,1},{-1,1},{1,-1},{1,1}};
-        for (auto &c : corner) vertices.push_back({p.x+c[0]*p.sx,p.y+c[1]*p.sy,
-            weatherType == 1 ? 0.7f : 0.95f, weatherType == 1 ? 0.8f : 0.98f,1,weatherType == 1 ? 0.35f : 0.5f});
+        for (auto &c : corner) vertices.push_back({p.x+c[0]*p.sx,p.y+c[1]*p.sy,pr,pg,pb,
+            weatherType == 1 ? 0.35f : 0.5f});
     }
     weather.erase(std::remove_if(weather.begin(), weather.end(), [](const WeatherParticle &p) {
         return p.life <= 0 || p.y > 1.05f || p.x < -0.05f || p.x > 1.05f;

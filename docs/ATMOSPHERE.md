@@ -39,6 +39,12 @@ change. Both effects work on the SDL_GPU (Metal) and GL paths.
   toward the sun, forward scatter) and inside beams. Amount scales glint
   rate and flake brightness 0..200 percent, default 100; 0 disables both.
   Render-only: own deterministic seeds, gameplay rand stream untouched.
+- **Weather overlay glints** (`video.snow_glint`): the port-layer snowfall
+  overlay (OpenGL RenderWeather and SDL_GPU RenderParticles, one shared maths
+  header src/render/weather_glint.h) twinkles per flake toward the sun's
+  screen position - forward scatter, where real snow glints - and brightens
+  inside projected car light beams, tinted per light. 0 disables the overlay
+  response; the game-side flake and bank glints share the option.
 - **Air motes** (`video.air_motes`): small bug-like specks flying on their
   own around the viewed car, a new particle type in the existing plume pool.
   Base cap 48 billboards at 100 percent, 240 at 500. Each mote gets a
@@ -130,6 +136,13 @@ covered by tests/fog_math.cpp.
   percent of the sky, sun-ward glow localized, amount scaling, alpha preserved,
   plus stacked off/100/200 review frames (out-fog-road.ppm). llvmpipe pixels
   prove appearance and math, not native Metal FPS.
+- tests/weather_glint.cpp: phase determinism, sun-proximity falloff and
+  aspect correction, twinkle bands, tinted beam boost. Pixel-pinned through
+  the real GL executor on llvmpipe in tests/gl_effects_runtime.cpp: same
+  flake with a projected beam on vs off, sun on vs off, and snow_glint 0
+  disabling the response. (The harness's older god-rays occluder assertion
+  fails in this llvmpipe sandbox on this branch and its parent alike -
+  environment sensitivity, not a regression from this work.)
 - tests/snow_glint.cpp: facet-seed determinism and cell quantization,
   half-vector lobe (peak on alignment, dead off-axis, opposed sun/view
   zero), cone boost (in-beam, behind, past reach, zero direction, zero

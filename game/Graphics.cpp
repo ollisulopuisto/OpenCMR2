@@ -5432,6 +5432,7 @@ void Particle_SetPoolCapacity(int count)
 // GLOBAL: CMR2 0x006a2ce8
 FixVector g_particleWind;
 FixVector g_airMoteDrift = {0,0,0};
+float g_airMoteSunScatter = 0.f;
 unsigned g_airMoteNextSeed = 0;
 int g_snowGlintNextPeak = 0;
 FogLightSource g_fogLightSources[LIGHT_FIELD_MAX];

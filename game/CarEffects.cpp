@@ -1977,6 +1977,25 @@ void AirMotes_Step(int step16_16)
     Car *car = Car_Get(0);
     if (!car) return;
     int amount = Sys_GetOption("video.air_motes_amount", 100);
+    // Sun forward scatter for the mote light response: strongest looking toward
+    // the sun in clear air, gone under overcast (stage weather light intensity).
+    {   FixVector sunV;
+        StageObject_GetRotatedStageLightVector(&sunV);
+        float sl = std::sqrt((float)sunV.x * sunV.x + (float)sunV.y * sunV.y + (float)sunV.z * sunV.z);
+        float scatter = 0.f;
+        int wl = StageObject_GetWeatherLightIntensity();
+        if (wl > 0 && sl > 1e-3f && g_viewNodes[0]) {
+            FixVector vf;
+            FixMatrix_GetForward(&vf, &g_viewNodes[0]->world);
+            float d = (vf.x * sunV.x + vf.y * sunV.y + vf.z * sunV.z) / (65536.f * sl);
+            if (d > 0.f) {
+                float s8 = d;
+                for (int fsq = 0; fsq < 3; ++fsq) s8 *= s8;   // d^8 forward lobe
+                scatter = s8 * (wl >= 0x10000 ? 1.f : wl / 65536.f);
+            }
+        }
+        g_airMoteSunScatter = scatter;
+    }
     g_airMoteDrift.x = g_particleWind.x / 16 + (int)(car->velocity.x * 0.65f);
     g_airMoteDrift.y = g_particleWind.y / 16 + (int)(car->velocity.y * 0.65f);
     g_airMoteDrift.z = g_particleWind.z / 16 + (int)(car->velocity.z * 0.65f);

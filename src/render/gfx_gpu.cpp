@@ -6,6 +6,7 @@
 #include "render/car_region.h"
 #include "render/vapor_trail.h"
 #include "render/speed_streak.h"
+#include "render/weather_glint.h"
 #include "render/projection_vote.h"
 #include "shadow_caster.h"
 #include "cloud_uniforms.h"
@@ -1735,11 +1736,29 @@ struct Executor : GfxExecutor {
         if (!tb) return false;
         uint8_t *map = (uint8_t *)SDL_MapGPUTransferBuffer(device, tb, true);
         if (!map) { SDL_ReleaseGPUTransferBuffer(device,tb); return false; }
+        // Screen-space snow glints (video.snow_glint): flakes twinkle toward the
+        // sun and brighten inside projected car light beams (weather_glint.h).
+        float glintAmt = particleType == 2 ? std::max(0, std::min(200, Sys_GetOption("video.snow_glint", 100))) / 100.0f : 0.0f;
+        float glintAspect = backHeight > 0 ? (float)backWidth / (float)backHeight : 1.0f;
         uint8_t *write = map;
         for (int i = 0; i < particleCount; i++) {
             const Particle &p = particles[i];
-            uint8_t r = (uint8_t)(p.r * 255), g = (uint8_t)(p.g * 255);
-            uint8_t b = (uint8_t)(p.b * 255), a = (uint8_t)(p.a * 255);
+            float pr = p.r, pg = p.g, pb = p.b;
+            if (glintAmt > 0.0f) {
+                float prox = WeatherGlint_SunProximity(p.x, p.y, sunX, sunY, sunVisible ? 1 : 0, glintAspect);
+                float m = WeatherGlint_Twinkle(WeatherGlint_Phase(i, p.life), prox);
+                m = 1.0f + (m - 1.0f) * glintAmt;
+                pr *= m; pg *= m; pb *= m;
+                for (int li = 0; li < fogLightCount; ++li) {
+                    const GfxFogLight *L = &fogLights[li];
+                    WeatherGlint_LightBoost(p.x, p.y, glintAspect, L->x, L->y, L->intensity, L->r, L->g, L->b, &pr, &pg, &pb);
+                }
+                if (pr > 1.0f) pr = 1.0f;
+                if (pg > 1.0f) pg = 1.0f;
+                if (pb > 1.0f) pb = 1.0f;
+            }
+            uint8_t r = (uint8_t)(pr * 255), g = (uint8_t)(pg * 255);
+            uint8_t b = (uint8_t)(pb * 255), a = (uint8_t)(p.a * 255);
             for (int v = 0; v < 6; v++) {
                 memcpy(write, &p.x, 8); write += 8;
                 memcpy(write, &r, 1); write += 1;

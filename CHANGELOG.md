@@ -24,6 +24,17 @@ All notable changes to OpenCMR2 are documented here.
   physics or the rand stream. Atmosphere menu row, launch flag
   `--snow-glint`, and the `atmosphere` test preset enable it.
 
+- **Weather and motes respond to light** (`video.snow_glint` / `video.air_motes`):
+  the screen-space snowfall overlay (both renderers) twinkles toward the sun
+  (forward scatter) and brightens inside projected car light beams, tinted per
+  light; the floating air motes do the same in world space - sun forward
+  scatter computed per step from the view and the stage sun, beam boosts from
+  the shared light field. The `atmosphere` test preset is now the durable
+  "accepted atmosphere + effects under test" bundle: fog 100 with full sun
+  glow, near clear 60, spatial pockets, clearing toward the finish, fog light
+  response, snow glints, 500% air motes and god rays 80. Explicit flags still
+  override; the experimental `video.fog_cull` stays opt-in.
+
 ### Rendering enhancements ("juice")
 
 All changes below are optional and gated behind `[video]` settings in

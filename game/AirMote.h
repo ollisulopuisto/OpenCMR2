@@ -4,6 +4,8 @@
 #include <cstring>
 struct Texture;
 #include "Particle.h"
+#include "LightField.h"
+#include "SnowGlint.h"
 // Optional floating dust motes (video.air_motes, default off): pale specks drifting
 // slowly in the air around the viewed car, visible at any speed including a standstill.
 // This is an atmosphere effect, deliberately unlike the removed speed motes (a speed cue
@@ -42,6 +44,9 @@ inline bool AirMote_HasBudget(int active, int motes, int capacity, int amountPer
 // init callback stamps into the particle.
 extern FixVector g_airMoteDrift;
 extern unsigned g_airMoteNextSeed;
+// Sun forward-scatter strength 0..1 for the light response below, published per
+// step by AirMotes_Step (view direction vs the stage sun, weather-gated).
+extern float g_airMoteSunScatter;
 // Bugs, not sinking dust: p.position is the per-step velocity (16.16 fixed), eased
 // snappily toward the shared drift plus a per-particle wander - a smooth loop whose
 // direction, turn rate, speed and bob phase come from the spawn-time seed, so every
@@ -74,6 +79,27 @@ inline void AirMote_Step(Particle &p, const FixVector &drift) {
     if (fadeOut > 50) fadeOut = 50;
     p.type0x52 = p.type0x56;
     p.type0x56 = (BYTE)(AIR_MOTE_ALPHA_MAX * fadeIn * fadeOut / (30 * 50));
+    // Light response: motes brighten toward the sun (forward scatter, with a
+    // per-mote flicker from its wander seed) and inside car light beams, from
+    // the same light field the fog response and snow glints use. Colour only -
+    // alpha stays inside AIR_MOTE_ALPHA_MAX so the specks keep their softness.
+    float m = 1.f;
+    if (g_airMoteSunScatter > 0.f)
+        m += g_airMoteSunScatter * (0.5f + 0.5f * std::sin(ang * 1.7f + (float)(seed & 0xff))) * 1.5f;
+    for (int li = 0; li < g_fogLightSourceCount && li < LIGHT_FIELD_MAX; ++li) {
+        const FogLightSource *L = &g_fogLightSources[li];
+        m += SnowGlint_ConeBoost(p.vector0x28.x / 65536.f, p.vector0x28.y / 65536.f, p.vector0x28.z / 65536.f,
+                                 L->pos.x / 65536.f, L->pos.y / 65536.f, L->pos.z / 65536.f,
+                                 L->dir.x / 65536.f, L->dir.y / 65536.f, L->dir.z / 65536.f,
+                                 L->intensity / 65536.f) * 1.5f;
+    }
+    if (m > 1.f) {
+        if (m > 2.2f) m = 2.2f;
+        int cr = (int)(0xf2 * m), cg = (int)(0xea * m), cb = (int)(0xd8 * m);
+        p.colour[0] = (BYTE)(cr > 255 ? 255 : cr);
+        p.colour[1] = (BYTE)(cg > 255 ? 255 : cg);
+        p.colour[2] = (BYTE)(cb > 255 ? 255 : cb);
+    }
 }
 // Spawn placement in a ring around a centre point (the viewed car): distance 3..24 world
 // units, area-uniform angle and radius, 0.3..4.0 units above the ground. u1..u3 in 0..1.

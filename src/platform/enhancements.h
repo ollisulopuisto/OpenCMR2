@@ -155,7 +155,7 @@ struct EnhancementOptions {
                 // The requested exaggerated atmosphere starting look, separate from overdo so
                 // --all-mods keeps its established appearance. Per launch, nothing saved.
                 static const std::pair<const char*,int> kAtmosphere[]={
-                    {"video.fog",1},{"video.fog_amount",100},{"video.fog_glow",100},{"video.fog_lights",100},{"video.air_motes",1},{"video.air_motes_amount",500},{"video.snow_glint",100},
+                    {"video.fog",1},{"video.fog_amount",100},{"video.fog_glow",100},{"video.fog_clear",60},{"video.fog_lights",100},{"video.fog_spatial",1},{"video.fog_evolve",60},{"video.air_motes",1},{"video.air_motes_amount",500},{"video.snow_glint",100},
                     {"video.god_rays",1},{"video.god_rays_amount",80}};
                 for(auto&e:kAtmosphere)if(!overrides.count(e.first))overrides[e.first]=e.second;
             }
@@ -255,8 +255,10 @@ inline const char *EnhancementHelp(){return
 "  --fog-lights 0..200         Fog brightening inside head/rear light beams, percent (default 100)\n"
 "  --snow-glint 0..200         Ice-crystal glints on snowbanks and falling snow, percent (default 100)\n"
 "  --test-preset overdo        Exaggerated diagnostic look for speed lines/streak, FOV, DoF, tunnel vision 130 with lines (legacy motes off; add --effect speed_motes=on)\n"
-"  --test-preset atmosphere    Exaggerated atmosphere starting look: fog 100 with full sun glow, air motes 300 (combine: overdo,atmosphere)\n"
-"                              and motion blur, plus heavy fog with full sun glow, 300% air motes and full god rays. Explicit flags override it; nothing is saved\n"
+"  --test-preset atmosphere    The accepted atmosphere set plus the effects under test: fog 100 with full sun\n"
+"                              glow, near clear 60, spatial pockets, clearing toward the finish, fog light\n"
+"                              response, snow glints, air motes 500%%, god rays 80 (combine: overdo,atmosphere)\n"
+"                              Explicit flags override it; nothing is saved. fog_cull stays opt-in (experimental, unmeasured)\n"
 "  --attract-capture DIR       Start the attract demo at once, save PNGs of the frame at\n"
 "                              stage-clock 0, N, 2N... s into DIR (+ capture.csv), then quit\n"
 "  --capture-interval SEC      Seconds of stage clock between shots (1..60, default 5)\n"
