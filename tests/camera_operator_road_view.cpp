@@ -34,8 +34,9 @@ int main(){
  }
  // Actual runtime speed-height binding and disable control, not SpeedLook.
  bank=false;scale=50;g_physicsTimeStep=65536;g_routeNodes=nullptr;g_routeNodeCount=0;
- float heights[2];
- for(int amount:{0,100}){drop=amount;CameraOperator_Reset(0);for(int i=0;i<300;i++)CameraOperator_Update(&record,&body,&offset,0x2d);CameraOperator_Apply(&record);heights[amount==100]=record.matrix.position.y/65536.f;}
+ float heights[3];
+ for(int amount:{0,100,200}){drop=amount;CameraOperator_Reset(0);for(int i=0;i<300;i++)CameraOperator_Update(&record,&body,&offset,0x2d);CameraOperator_Apply(&record);heights[amount/100]=record.matrix.position.y/65536.f;}
  CHECK(heights[0]-heights[1]>1.7f);CHECK(heights[1]>2.19f);
+ CHECK(heights[2]>2.19f&&heights[2]<=heights[1]+1e-4f);   // 200% drops at least as far, never through the 2.2 floor
  puts("actual camera update/apply road-facing pitch and perspective at25/60/120Hz pass");
 }
