@@ -19,7 +19,9 @@ All notable changes to OpenCMR2 are documented here.
   behind-camera drop. Interior (cockpit) model meshes draw their
   semi-transparent parts without depth writes (`MESH_FLAG_GLASS_NO_ZWRITE`,
   per-part alpha scan; opaque interior parts unchanged), so the world depth
-  behind windscreen glass survives for the fog pass. The wedge is a
+  behind windscreen glass survives for the fog pass (Atmosphere
+  menu row included here so the control never ships without its
+  implementation). The wedge is a
   screen-space approximation of lit air, not volumetric road illumination.
   Pure maths in render/fog_math.h, one fog.frag for both renderers;
   pixel-verified on the GL executor harness (beam direction/decay/floor,
