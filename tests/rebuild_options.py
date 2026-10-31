@@ -27,5 +27,8 @@ with tempfile.TemporaryDirectory() as d:
     rc, out = run("--bogus"); need(rc == 2 and "unknown option" in out, "unknown option rejected")
     rc, out = run("--install-enhancement-deps"); need(rc == 2, "deps flag alone rejected")
     rc, out = run("--assets-only"); need(rc == 2, "assets-only alone rejected")
+    rc, out = run("--data", d, "--run", "--dry-run", "--test-preset", "atmosphere")
+    need(rc == 0 and "--test-preset atmosphere" in out and "--prepare-only" not in out, "test-preset is a launch-only passthrough, no preparation")
+    rc, out = run("--test-preset"); need(rc == 2, "test-preset needs a value")
 print("FAILED" if fails else "rebuild options ok")
 sys.exit(1 if fails else 0)

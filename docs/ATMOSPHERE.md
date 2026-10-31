@@ -40,7 +40,10 @@ CLI: `--effect fog --fog-amount 100 --fog-glow 60 --effect air_motes
 `--test-preset atmosphere` (fog 100/100 + motes 300, per launch, nothing
 saved; explicit flags win, e.g. `--fog-amount 40`). It is deliberately
 separate from `--test-preset overdo`, so the default `--all-mods` launch
-keeps its established look.
+keeps its established look. To try it on top of the usual run:
+`./rebuild.sh --update --all-mods --run --test-preset atmosphere` (passed
+to the game as `--test-preset overdo,atmosphere`: the usual overdo look
+plus the exaggerated atmosphere; presets combine comma-separated).
 
 Menus: Advanced graphics > Effect amounts > Atmosphere... has all five rows
 (its own submenu because Menu::items is layout-locked at 22 entries). The F10

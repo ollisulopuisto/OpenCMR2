@@ -57,6 +57,9 @@ int main(){
   t=p;CHECK(run({"t","--test-preset","atmosphere","--fog-amount","40","--effect","air_motes=off"})&&e2.empty());t.Apply();
   CHECK(t.overrides["video.fog_amount"]==40&&t.overrides["video.air_motes"]==0);   // explicit flags beat the atmosphere preset
   t=p;CHECK(run({"t","--test-preset","foggy"})&&!e2.empty());   // unknown preset reports an error
+  t=p;CHECK(run({"t","--test-preset","overdo,atmosphere"})&&e2.empty());t.Apply();
+  CHECK(t.overrides["video.speed_fov"]==40&&t.overrides["video.fog"]==1&&t.overrides["video.air_motes_amount"]==300);   // combined preset: usual overdo look plus exaggerated atmosphere
+  t=p;CHECK(run({"t","--test-preset","off,atmosphere"})&&!e2.empty());   // off does not combine
   t=p;CHECK(run({"t","--speed-hold","1"})&&e2.empty());t.Apply();CHECK(t.overrides["video.speed_fov_hold"]==1&&!t.overrides.count("video.dof_focus_car"));   // without the preset only what was asked
   t=p;CHECK(run({"t","--fov-preview","40"})&&e2.empty());t.Apply();CHECK(t.overrides["video.fov_preview"]==40);
   CHECK(run({"t","--fov-preview","0"})&&e2.empty());CHECK(run({"t","--fov-preview","19"})&&!e2.empty());CHECK(run({"t","--fov-preview","151"})&&!e2.empty());CHECK(run({"t","--fov-preview","x"})&&!e2.empty());
