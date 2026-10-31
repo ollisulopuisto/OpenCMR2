@@ -91,13 +91,13 @@ int main(int argc, char **argv)
     WhatsNew_MaybeAutoShow();
     Menu *next = Menu_Update(&g_testMainMenu, 0);
     CHECK(next == FrontendMenu_GetWhatsNew());
-    CHECK(Sys_GetOption("ui.whatsnew_seen", 0) == 0);   // queued != acknowledged
+    CHECK(Sys_GetOption("ui.whatsnew_seen", -1) == -1);   // queued != acknowledged
 
     // The screen's first update fires its enter callback; parent is the main menu.
     Menu *screen = next;
     CHECK(Menu_Update(screen, 0) == NULL);
     CHECK(screen->pParent == &g_testMainMenu);
-    CHECK(Sys_GetOption("ui.whatsnew_seen", 0) == 0);   // still not acknowledged on show
+    CHECK(Sys_GetOption("ui.whatsnew_seen", -1) == -1);   // still not acknowledged on show
 
     // Pixel dump of the real draw: auto-show lists unseen lines only (all at rev 1).
     std::memset(fb, 16, sizeof fb);
@@ -106,6 +106,10 @@ int main(int argc, char **argv)
     if (argc > 1) {
         FILE *f = std::fopen(argv[1], "wb");
         if (f) { std::fprintf(f, "P6\n%d %d\n255\n", W, H); std::fwrite(fb, 1, sizeof fb, f); std::fclose(f); }
+    }
+    if (argc > 2) {   // drawn-line dump for the readable substitute-font preview
+        FILE *f = std::fopen(argv[2], "w");
+        if (f) { for (auto &l : g_drawn) std::fprintf(f, "%d %d %d %d %s\n", l.font, l.x, l.y, l.white, l.text); std::fclose(f); }
     }
     int lines = 0, okRow = 0, maxY = 0, prevY = -1; bool ordered = true;
     for (auto &l : g_drawn) {

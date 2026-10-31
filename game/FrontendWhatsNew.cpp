@@ -24,7 +24,11 @@ void FrontendMenu_EnterWhatsNew(Menu *m, int)
 {
     if (g_whatsNewReturn != NULL)
         m->pParent = g_whatsNewReturn;
-    g_whatsNewSeenAtOpen = Sys_GetOption("ui.whatsnew_seen", 0);
+    // Fresh install (no key at all): show the current revision's notes, not
+    // the whole history - "what's new since your upgrade" is version-aware.
+    g_whatsNewSeenAtOpen = Sys_GetOption("ui.whatsnew_seen", -1);
+    if (g_whatsNewSeenAtOpen < 0)
+        g_whatsNewSeenAtOpen = kWhatsNewRevision - 1;
 }
 
 // Seen is recorded on dismissal, not when the screen is queued: notes the
@@ -81,7 +85,7 @@ void FrontendMenu_BuildWhatsNew(void)
 // Screen page row reopens it any time.
 void WhatsNew_MaybeAutoShow(void)
 {
-    int seen = Sys_GetOption("ui.whatsnew_seen", 0);
+    int seen = Sys_GetOption("ui.whatsnew_seen", -1);
     if (seen >= kWhatsNewRevision)
         return;
     g_whatsNewReturn = NULL;   // keep the built parent: the main menu
