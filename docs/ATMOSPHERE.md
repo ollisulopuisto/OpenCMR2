@@ -33,12 +33,16 @@ All settings are [video] options, off unless enabled:
 | video.fog_amount | 0..200 | 100 | density; 100 is the deliberately heavy starting look (23 units ~50 percent fog, 60 ~84, 150 ~99) |
 | video.fog_glow | 0..100 | 60 | sun-ward glow strength |
 | video.fog_clear | 0..200 | 0 | near-field clear distance in world units: fog ramps from none at the camera to the full curve at this distance, so the road ahead stays readable while distant haze keeps its density. Global in every direction, not a road-only mask |
-| video.fog_cull | 0/1 | 0 | experimental: shorten the far plane to the fully fogged shell (99.5 percent at the weakest gradient, never closer than 150 units or 1.25x the clear distance). Render-only, physics untouched. Caveats: the far-plane sky cap keeps culled-edge silhouettes 15 percent visible as a haze band, distant trees stop occluding god-ray shafts near the horizon, and any performance saving is unmeasured - this trades draw work for a look change, it is not a proven speedup |
+| video.fog_cull | 0/1 | 0 | experimental: shorten the far plane to the fully fogged shell (99.5 percent at the weakest gradient, never closer than 150 units or 1.25x the clear distance). Render-only, physics untouched. Caveats: the far-plane sky cap keeps culled-edge silhouettes 15 percent visible as a haze band, distant trees stop occluding god-ray shafts near the horizon, and any performance saving is unmeasured - this trades draw work for a look change, it is not a proven speedup. With dynamic fog on, culling keys off the CLEAREST stretch the curves can reach, never the current value, so clearing fog cannot pop culled geometry back in |
+| video.fog_spatial | 0/1 | 0 | fog pockets along the stage route: dense patches open into clearer stretches (+/-50% of the amount), two fixed sine waves over route progress with a per-stage phase - each stage keeps its own layout, every run and replay of a stage matches |
+| video.fog_evolve | 0..200 | 100 | stage-wide trend from start to finish by ROUTE PROGRESS (distance, not elapsed race time - slow driving changes nothing): 100 = neutral, below clears toward the end, above thickens, +/-50% at the extremes |
 | video.air_motes | 0/1 | 0 | drifting motes |
 | video.air_motes_amount | 0..500 | 100 | count/rate scale (500 = cap 240, "small bugs" look) |
 
 CLI: `--effect fog --fog-amount 100 --fog-glow 60 --fog-clear 60 --fog-cull 1
---effect air_motes --air-motes-amount 100`. The exaggerated starting look is one
+--fog-spatial 1 --fog-evolve -40 --effect air_motes --air-motes-amount 100`
+(--fog-evolve is signed on the command line: negative clears toward the finish,
+positive thickens; stored as 0..200 with 100 neutral). The exaggerated starting look is one
 command: `--test-preset atmosphere` (fog 100/100 + motes 500 + god rays at
 80, per launch, nothing saved; explicit flags win, e.g. `--fog-amount 40`).
 God rays are the occlusion-masked light shafts: geometry between the camera

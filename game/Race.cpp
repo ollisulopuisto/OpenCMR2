@@ -5,6 +5,7 @@
 #include "France1Textures.h"
 #include "DustPlume.h"
 #include "AirMote.h"
+#include "FogDynamics.h"
 #include "CurvedRoad.h"
 #include "SceneryPack.h"
 #include "SceneryPackFormat.h"
@@ -5487,6 +5488,7 @@ void Race_UpdatePlayerViewAndDrivenCars(BYTE param1, int param2)
             // Speed motes are no longer spawned (the user rejected the look); the speed cue is the radial speed lines.
             // Air motes are different: slow drifting atmosphere dust at any speed (video.air_motes, default off).
             AirMotes_Step(SceneryFormat::Step(Car_Get(0)->simulationRateHz));
+            FogDynamics_Step(SceneryFormat::Step(Car_Get(0)->simulationRateHz));
             SceneryPack_Advance(SceneryFormat::Step(Car_Get(0)->simulationRateHz)); // 25Hz authored units, not render frames
             for(int reactSlot=0;reactSlot<Car_GetOrderCount()&&reactSlot<8;reactSlot++){Car *reactCar=Car_Get(reactSlot);if(reactCar)SceneryPack_SetReactionSource(reactSlot,reactCar->position.x,reactCar->position.z,reactCar->speed,true);}
             StageObjects_Update();

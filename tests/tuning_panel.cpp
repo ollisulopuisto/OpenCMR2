@@ -6,7 +6,7 @@ static int fails;
 #define CHECK(c) do{ if(!(c)){ std::printf("FAIL %d: %s\n", __LINE__, #c); ++fails; } }while(0)
 int main(){
     int n; const TuningRow *r = Tuning_Rows(n);
-    CHECK(n == 33);   // includes the fog clear distance and fog draw cull rows
+    CHECK(n == 35);   // includes the fog clear distance, fog draw cull, fog spatial and fog evolve rows
     { int bi = -1; for (int i = 0; i < n; ++i) if (!std::strcmp(r[i].key, "video.blur_mode")) bi = i; CHECK(bi >= 0 && r[bi].lo == 0 && r[bi].hi == 1 && r[bi].fallback == 0); }
     for (int i = 0; i < n; ++i) { CHECK(r[i].lo < r[i].hi); CHECK(r[i].step > 0); CHECK(r[i].fallback >= r[i].lo && r[i].fallback <= r[i].hi); CHECK(!std::strncmp(r[i].key, "video.", 6)); }
     CHECK(CameraMove_Effective(kCamMoveUnset, 30) == 30 && CameraMove_Effective(0, 30) == 0 && CameraMove_Effective(-5, 30) == -5);   // an explicit 0 is an override, absent is not

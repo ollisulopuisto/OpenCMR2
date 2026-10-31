@@ -1,5 +1,6 @@
 #include "DustPlume.h"
 #include "AirMote.h"
+#include "FogDynamics.h"
 #include "CarBodyDirt.h"
 #include "AIReferenceRoute.h"
 #include "FloatToInt.h"
