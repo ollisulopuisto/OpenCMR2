@@ -11875,7 +11875,12 @@ void StageObject_UpdateCarLightFlagsAndGlows(Car *pCar)
         CarLight_SetChannelMasks(LIGHT_CAR, 0, 0, 8);
     if (pCar->field_0xb58 != 0) {
         CarLight_SetChannelMasks(LIGHT_CAR, vA == 0, vB == 0, 1);
-        CarLight_SetChannelMasks(LIGHT_CAR, 1, 1, 0x10);
+        // OpenCMR2: the shared type-8 channel was never damage-gated, so its
+        // lamps kept shining with every lamp glass broken. Darken it only
+        // when BOTH sides' lamp glass is broken: the channel carries a
+        // single shared level, so single-side gating could extinguish an
+        // intact lamp. Per-side behaviour stays exactly as the original.
+        CarLight_SetChannelMasks(LIGHT_CAR, vA == 0 || vB == 0, vA == 0 || vB == 0, 0x10);
     } else {
         CarLight_SetChannelMasks(LIGHT_CAR, 0, 0, 1);
         CarLight_SetChannelMasks(LIGHT_CAR, 0, 0, 0x10);
