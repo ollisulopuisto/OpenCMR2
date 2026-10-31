@@ -73,7 +73,7 @@ struct EnhancementOptions {
         }
         if(key=="--tire-debris"){
             char *end=nullptr;long n=strtol(value.c_str(),&end,10);
-            if(value.empty()||*end||n<0||n>400)error="--tire-debris expects 0..400";else overrides["video.tire_debris"]=(int)n;
+            if(value.empty()||*end||n<0||n>2000)error="--tire-debris expects 0..2000";else overrides["video.tire_debris"]=(int)n;
         }
         if(key=="--drone-speed-drop"||key=="--drone-distance"||key=="--speed-fov-cockpit"||key=="--cockpit-blur-clear"||key=="--tunnel-vision"||key=="--tunnel-lines"){   // wins over opencmr2.ini, so a value saved there earlier cannot hide the default
             char *end=nullptr;long n=strtol(value.c_str(),&end,10);

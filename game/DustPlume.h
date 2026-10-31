@@ -36,8 +36,15 @@ inline bool DustPlume_Surface(bool dirt, bool gravel, bool water, bool snow, boo
 inline void DustPlume_SoilTint(float &r,float &g,float &b) {
     if(g>r){float green=g;r=green*1.12f;if(r>1.f)r=1.f;g=green*.84f;}
 }
-inline bool DustPlume_HasBudget(int active, int clouds, int capacity) {
-    return capacity > 64 && clouds < DUST_PLUME_MAX && active < capacity-64;
+// video.dust_plume_amount (0..300, default 200) scales the live cloud cap:
+// 100 = the original 96, 200 = 192, 300 = 288 (the hard ceiling).
+inline int DustPlume_LiveCap(int amountPercent) {
+    int a = amountPercent < 0 ? 0 : amountPercent > 300 ? 300 : amountPercent;
+    int cap = DUST_PLUME_MAX * a / 100;
+    return cap > DUST_PLUME_MAX * 3 ? DUST_PLUME_MAX * 3 : cap;
+}
+inline bool DustPlume_HasBudget(int active, int clouds, int capacity, int cloudCap) {
+    return capacity > 64 && clouds < cloudCap && active < capacity-64;
 }
 // Optional speed cue (video.speed_motes, default off): sparse, world-fixed specks beside the road
 // that the car passes at speed. Visual only: uses the particle pool, never touches physics, the

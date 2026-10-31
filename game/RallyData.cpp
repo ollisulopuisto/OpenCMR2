@@ -8305,7 +8305,11 @@ void RallyData_InitializeRaceRendering(void)
         CGame::SetSectorDrawState(3);
     RallyData_IsChampionshipFinalStage();
     Particle_BuildTriangleStripIndices();
-    Particle_Init(0x24, 400);   // 0x22 air motes (video.air_motes), 0x23 snow glints (video.snow_glint); original types unchanged
+    // Pool 400 -> 1200 for the deliberately heavy particle amounts (user
+    // request): chips guard at 60% live, plume reserves 64, motes still
+    // evict first. Record is 0x6c bytes on Win32 (LayoutChecks), a few
+    // hundred bytes here: the bump costs well under 1 MB.
+    Particle_Init(0x24, 1200);   // 0x22 air motes (video.air_motes), 0x23 snow glints (video.snow_glint); original types unchanged
     if (CGameInfo::IsActiveCheatEnabled(0) != 0)
         Glow_AllocateEntryTable(4);
     else

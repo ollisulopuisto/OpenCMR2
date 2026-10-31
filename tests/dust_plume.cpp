@@ -14,9 +14,16 @@ int main(){
     }
     if(out)fclose(out);
     if(early<=start || late<=early || p.position.x>=0x2000 || p.type0x56>2 || maxAlpha<50 || p.sourceVector.y<=0)++fail;
-    if(!DustPlume_HasBudget(335,95,400) || DustPlume_HasBudget(336,0,400) ||
-       DustPlume_HasBudget(0,96,400) || DustPlume_HasBudget(0,0,0) ||
-       DustPlume_HasBudget(0,0,64)) ++fail;
+    // Live cap 96 at the original 100%; budget guard respects it.
+    if(DustPlume_LiveCap(100)!=96 || DustPlume_LiveCap(0)!=0 ||
+       DustPlume_LiveCap(200)!=192 || DustPlume_LiveCap(300)!=288 ||
+       DustPlume_LiveCap(999)!=288 || DustPlume_LiveCap(-5)!=0) ++fail;
+    if(!DustPlume_HasBudget(335,95,400,96) || DustPlume_HasBudget(336,0,400,96) ||
+       DustPlume_HasBudget(0,96,400,96) || DustPlume_HasBudget(0,0,0,96) ||
+       DustPlume_HasBudget(0,0,64,96)) ++fail;
+    // The 200% default raises the cap to 192; the aggregate reserve (64) stays.
+    if(DustPlume_HasBudget(0,192,1200,192) || !DustPlume_HasBudget(0,191,1200,192) ||
+       DustPlume_HasBudget(1136,0,1200,192) || !DustPlume_HasBudget(1135,0,1200,192)) ++fail;
     if(!DustPlume_Surface(true,false,false,false,false) ||
        !DustPlume_Surface(false,true,false,false,false) ||
        DustPlume_Surface(true,false,true,false,false) ||

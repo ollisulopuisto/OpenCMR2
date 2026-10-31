@@ -7304,7 +7304,8 @@ void DustPlume_Emit(FixVector *world, FixVector *velocity, BYTE *colour, BYTE sh
         ++active;
         if (g_particles[i].pType == &g_particleTypes[DUST_PLUME_TYPE]) ++clouds;
     }
-    if (!DustPlume_HasBudget(active, clouds, g_particleCount)) return;
+    {   int plumeAmount=Sys_GetOption("video.dust_plume_amount",200);
+        if (!DustPlume_HasBudget(active, clouds, g_particleCount, DustPlume_LiveCap(plumeAmount))) return; }
     // No attachment matrix or owner callback: this cloud stays on the old road.
     Particle_Spawn(DUST_PLUME_TYPE, world, velocity, world->y, NULL, colour, shade, NULL, viewMask);
 }
