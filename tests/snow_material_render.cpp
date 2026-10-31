@@ -184,6 +184,35 @@ int main(int argc, char **argv)
     colourBytes(frame[(H / 2) * W + W / 2], got);
     require(got[0] == base[0], "restored colours render the baseline");
 
+    // 8. Two-triangle neighbour: one screen split into tri A (snow, lower-left
+    // half) and tri B (non-snow, upper-right half) sharing the diagonal
+    // vertices 1 and 2. The aggregation guard leaves shared vertices
+    // unlifted: only vertex 0 (snow-only) is lifted. The whole non-snow
+    // triangle - shared edge included - must render the original colour.
+    {
+        static const WORD idx[6] = { 0, 1, 2, 1, 3, 2 };
+        DWORD neigh[4] = { lifted, BASE, BASE, BASE };   // v0 snow-only; v1,v2 shared; v3 non-snow
+        putQuad(neigh);
+        Gfx_Clear(GFX_CLEAR_TARGET | GFX_CLEAR_ZBUFFER, 0xff000000, 1.0f);
+        Gfx_SetTexture(0, whiteTex);
+        Gfx_DrawIndexedPrimitiveVB(GFX_TRIANGLELIST, vb, 0, 4, idx, 6);
+        DWORD dummy[4];
+        (void)Gfx_ReadBackBuffer(0, 0, W, H, dummy);
+        Gfx_Present(0);
+        require(Gfx_ReadBackBuffer(0, 0, W, H, frame), "neighbour readback");
+        dumpPpm(prefix, "neighbor", frame);
+        int inside[3], edge[3], corner[3];
+        colourBytes(frame[(H / 4) * W + (3 * W / 4)], inside);        // inside tri B
+        colourBytes(frame[(H / 2) * W + (W / 2)], edge);              // on the shared diagonal
+        colourBytes(frame[(3 * H / 4) * W + 2], corner);              // near vertex 0 (NDC y up)
+        require(inside[0] >= base[0] - 2 && inside[0] <= base[0] + 2,
+                "non-snow triangle keeps the original colour inside");
+        require(edge[0] >= base[0] - 2 && edge[0] <= base[0] + 2,
+                "shared edge keeps the original colour");
+        require(corner[0] >= base[0] + (expected - base[0]) / 2,
+                "snow triangle still glows at its own vertex");
+    }
+
     printf("snow_material_render: ok\n");
     return 0;
 }
