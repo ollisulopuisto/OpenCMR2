@@ -78,6 +78,10 @@ look stays available.
 - **Advanced graphics menu** — new rows for Draw Distance, Debug HUD, Texture
   Filtering, Breakable Trees, Camera Effects, Animated Scenery, Motion Blur,
   Bloom, Particles and Shadows, all saved to `opencmr2.ini`.
+- **What's new screen** — a short changelog of shipped changes shows once on
+  the main menu after an update (tracked in `ui.whatsnew_seen`) and stays
+  reachable from Options > Graphics > Screen. Content is curated in
+  `game/WhatsNew.h`; `kWhatsNewRevision` is bumped with new entries.
 
 ### Related visual work in this batch
 
