@@ -26,6 +26,19 @@ change. Both effects work on the SDL_GPU (Metal) and GL paths.
   gate keeps the glow off the car's own body (SDL_GPU path; the GL renderer
   has no near/far recovery and keeps the glow unoccluded - documented
   approximation). 0..200 percent, default 100.
+- **Snow glints** (`video.snow_glint`): snow responds to light. Ground
+  samples on snow/ice surface cells spawn short glint billboards (a new
+  particle type, 24 live at most, 0.4 s life) when the half-vector between
+  the rotated stage sun and the view aligns with the cell's micro-facet -
+  the true ground normal from the untouched collision mesh, jittered by a
+  deterministic per-position seed (game/SnowGlint.h). Sun strength follows
+  the stage's weather light intensity, so overcast snowfall glints less
+  than clear-air sun. The same light field as the fog response adds a cone
+  boost: samples and flakes inside a head/rear light beam brighten with the
+  beam. Falling flakes twinkle per flake from their sway phase (brightest
+  toward the sun, forward scatter) and inside beams. Amount scales glint
+  rate and flake brightness 0..200 percent, default 100; 0 disables both.
+  Render-only: own deterministic seeds, gameplay rand stream untouched.
 - **Air motes** (`video.air_motes`): small bug-like specks flying on their
   own around the viewed car, a new particle type in the existing plume pool.
   Base cap 48 billboards at 100 percent, 240 at 500. Each mote gets a
@@ -117,6 +130,10 @@ covered by tests/fog_math.cpp.
   percent of the sky, sun-ward glow localized, amount scaling, alpha preserved,
   plus stacked off/100/200 review frames (out-fog-road.ppm). llvmpipe pixels
   prove appearance and math, not native Metal FPS.
+- tests/snow_glint.cpp: facet-seed determinism and cell quantization,
+  half-vector lobe (peak on alignment, dead off-axis, opposed sun/view
+  zero), cone boost (in-beam, behind, past reach, zero direction, zero
+  intensity), flake twinkle bounds and determinism, fade envelope.
 - Menu wiring covered by tests/advanced_menu.cpp; F10 rows by
   tests/tuning_panel.cpp and tests/tuning_runtime.cpp.
 

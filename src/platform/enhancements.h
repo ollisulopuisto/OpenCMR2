@@ -20,7 +20,7 @@ struct EnhancementOptions {
         if(equal==key.npos && key=="--asset-upgrades"){trees="shell";treeCoverage="all";spectators="animated";textures="uprez";roads="finland1";return true;}
         if(equal==key.npos && key=="--prepare-only"){prepareOnly=true;return true;}
         if(equal==key.npos && key=="--install-enhancement-deps"){installDependencies=true;return true;}
-        if(key!="--camera-roll"&&key!="--sun-glare"&&key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect"&&key!="--attract-capture"&&key!="--capture-interval"&&key!="--capture-count"&&key!="--speed-fov"&&key!="--tunnel-vision"&&key!="--tunnel-lines"&&key!="--speed-motes-stretch"&&key!="--speed-motes-amount"&&key!="--speed-motes-size"&&key!="--dof-blur-max-px"&&key!="--speed-streak"&&key!="--speed-hold"&&key!="--tree-coverage"&&key!="--spectator-gain"&&key!="--cockpit-eye-shift"&&key!="--tree-coverage"&&key!="--spectator-gain"&&key!="--camera-move-chase"&&key!="--camera-move-cockpit"&&key!="--camera-move-car"&&key!="--fov-dolly-curve"&&key!="--tire-debris"&&key!="--tree-rustle"&&key!="--spectator-irregular"&&key!="--tire-track-length"&&key!="--tire-track-history"&&key!="--camera-move-type"&&key!="--fov-preview"&&key!="--dof-focus-car"&&key!="--drone-speed-drop"&&key!="--drone-distance"&&key!="--speed-fov-cockpit"&&key!="--cockpit-blur-clear"&&key!="--test-preset"&&key!="--fog-amount"&&key!="--fog-glow"&&key!="--fog-clear"&&key!="--fog-lights"&&key!="--fog-cull"&&key!="--fog-spatial"&&key!="--fog-evolve"&&key!="--air-motes-amount")return false;
+        if(key!="--camera-roll"&&key!="--sun-glare"&&key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect"&&key!="--attract-capture"&&key!="--capture-interval"&&key!="--capture-count"&&key!="--speed-fov"&&key!="--tunnel-vision"&&key!="--tunnel-lines"&&key!="--speed-motes-stretch"&&key!="--speed-motes-amount"&&key!="--speed-motes-size"&&key!="--dof-blur-max-px"&&key!="--speed-streak"&&key!="--speed-hold"&&key!="--tree-coverage"&&key!="--spectator-gain"&&key!="--cockpit-eye-shift"&&key!="--tree-coverage"&&key!="--spectator-gain"&&key!="--camera-move-chase"&&key!="--camera-move-cockpit"&&key!="--camera-move-car"&&key!="--fov-dolly-curve"&&key!="--tire-debris"&&key!="--tree-rustle"&&key!="--spectator-irregular"&&key!="--tire-track-length"&&key!="--tire-track-history"&&key!="--camera-move-type"&&key!="--fov-preview"&&key!="--dof-focus-car"&&key!="--drone-speed-drop"&&key!="--drone-distance"&&key!="--speed-fov-cockpit"&&key!="--cockpit-blur-clear"&&key!="--test-preset"&&key!="--fog-amount"&&key!="--fog-glow"&&key!="--fog-clear"&&key!="--fog-lights"&&key!="--fog-cull"&&key!="--fog-spatial"&&key!="--fog-evolve"&&key!="--air-motes-amount"&&key!="--snow-glint")return false;
         if(equal==std::string::npos && i+1>=argc){error="Missing value for "+key;return true;}
         std::string value=equal==std::string::npos?argv[++i]:inlineValue;
         if(key=="--camera-roll"){char*end=nullptr;long n=strtol(value.c_str(),&end,10);if(value.empty()||*end||n<0||n>100)error="--camera-roll expects 0..100";else overrides["video.camera_roll"]=(int)n;}
@@ -116,11 +116,11 @@ struct EnhancementOptions {
             // signed on the command line (negative clears toward the finish), stored 0..200 neutral 100
             if(value.empty()||*end||n<-100||n>100)error="--fog-evolve expects -100..100 (negative clears, positive thickens)";else overrides["video.fog_evolve"]=(int)n+100;
         }
-        if(key=="--fog-amount"||key=="--fog-glow"||key=="--fog-clear"||key=="--fog-lights"||key=="--air-motes-amount"){
+        if(key=="--fog-amount"||key=="--fog-glow"||key=="--fog-clear"||key=="--fog-lights"||key=="--air-motes-amount"||key=="--snow-glint"){
             char *end=nullptr;long n=strtol(value.c_str(),&end,10);
-            int hi=key=="--fog-amount"?200:key=="--fog-clear"?200:key=="--fog-lights"?200:key=="--fog-glow"?100:500;
+            int hi=key=="--fog-glow"?100:key=="--air-motes-amount"?500:200;
             if(value.empty()||*end||n<0||n>hi)error=key+" expects 0.."+std::to_string(hi);
-            else overrides[key=="--fog-amount"?"video.fog_amount":key=="--fog-clear"?"video.fog_clear":key=="--fog-lights"?"video.fog_lights":key=="--fog-glow"?"video.fog_glow":"video.air_motes_amount"]=(int)n;
+            else overrides[key=="--fog-amount"?"video.fog_amount":key=="--fog-clear"?"video.fog_clear":key=="--fog-lights"?"video.fog_lights":key=="--fog-glow"?"video.fog_glow":key=="--snow-glint"?"video.snow_glint":"video.air_motes_amount"]=(int)n;
         }
         if(key=="--test-preset"){
             bool ok=!value.empty();size_t begin=0;int parts=0;
@@ -155,7 +155,7 @@ struct EnhancementOptions {
                 // The requested exaggerated atmosphere starting look, separate from overdo so
                 // --all-mods keeps its established appearance. Per launch, nothing saved.
                 static const std::pair<const char*,int> kAtmosphere[]={
-                    {"video.fog",1},{"video.fog_amount",100},{"video.fog_glow",100},{"video.fog_lights",100},{"video.air_motes",1},{"video.air_motes_amount",500},
+                    {"video.fog",1},{"video.fog_amount",100},{"video.fog_glow",100},{"video.fog_lights",100},{"video.air_motes",1},{"video.air_motes_amount",500},{"video.snow_glint",100},
                     {"video.god_rays",1},{"video.god_rays_amount",80}};
                 for(auto&e:kAtmosphere)if(!overrides.count(e.first))overrides[e.first]=e.second;
             }
@@ -252,6 +252,8 @@ inline const char *EnhancementHelp(){return
 "  --fog-amount 0..200         Atmosphere fog density percent (needs --effect fog=on or video.fog; default 100 = deliberately heavy)\n"
 "  --fog-glow 0..100           Sun-ward brightening of the fog, percent (default 60)\n"
 "  --air-motes-amount 0..300   Floating dust motes percent (needs --effect air_motes=on; default 100; live cap 48 at 100)\n"
+"  --fog-lights 0..200         Fog brightening inside head/rear light beams, percent (default 100)\n"
+"  --snow-glint 0..200         Ice-crystal glints on snowbanks and falling snow, percent (default 100)\n"
 "  --test-preset overdo        Exaggerated diagnostic look for speed lines/streak, FOV, DoF, tunnel vision 130 with lines (legacy motes off; add --effect speed_motes=on)\n"
 "  --test-preset atmosphere    Exaggerated atmosphere starting look: fog 100 with full sun glow, air motes 300 (combine: overdo,atmosphere)\n"
 "                              and motion blur, plus heavy fog with full sun glow, 300% air motes and full god rays. Explicit flags override it; nothing is saved\n"

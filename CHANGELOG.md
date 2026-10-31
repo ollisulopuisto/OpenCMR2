@@ -13,6 +13,17 @@ All notable changes to OpenCMR2 are documented here.
   OpenGL renderer keeps the glow unoccluded). Atmosphere menu row, launch
   flag `--fog-lights`, and the `atmosphere` test preset enable it.
 
+- **Snow glints** (`video.snow_glint`, 0-200%, default 100): snow sparkles in
+  the light. Snowbanks throw short-lived glint particles where the half-vector
+  between sun and view aligns with a jittered micro-facet of the true ground
+  normal (deterministic per ground position, so glints stick to the ground
+  and flicker as the view moves), and falling flakes twinkle with their own
+  sway phase, strongest looking toward the sun (forward scatter). Car head
+  and rear lights boost both from the same light field the fog response uses,
+  so flakes and banks brighten inside the beams. Render-only; nothing feeds
+  physics or the rand stream. Atmosphere menu row, launch flag
+  `--snow-glint`, and the `atmosphere` test preset enable it.
+
 ### Rendering enhancements ("juice")
 
 All changes below are optional and gated behind `[video]` settings in

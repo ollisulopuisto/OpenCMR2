@@ -14,6 +14,7 @@
 
 struct FogLightSource {
     FixVector pos;   // world position (16.16)
+    FixVector dir;   // world beam direction (16.16, zero when unknown)
     int intensity;   // 16.16, clamped to 0..0x10000
     int r, g, b;     // tint (16.16, unclamped - indicator amber exceeds 1.0 in R)
 };
@@ -24,11 +25,12 @@ extern int g_fogLightSourceCount;
 inline void LightField_Clear(void) { g_fogLightSourceCount = 0; }
 
 // Records one enabled light; drops it when the field is full. Returns the count.
-inline int LightField_Add(const FixVector *pos, int intensity, int r, int g, int b) {
+inline int LightField_Add(const FixVector *pos, const FixVector *dir, int intensity, int r, int g, int b) {
     if (!pos || intensity <= 0 || g_fogLightSourceCount >= LIGHT_FIELD_MAX)
         return g_fogLightSourceCount;
     FogLightSource *p = &g_fogLightSources[g_fogLightSourceCount++];
     p->pos = *pos;
+    p->dir = dir ? *dir : FixVector{0, 0, 0};
     p->intensity = intensity > 0x10000 ? 0x10000 : intensity;
     p->r = r; p->g = g; p->b = b;
     return g_fogLightSourceCount;

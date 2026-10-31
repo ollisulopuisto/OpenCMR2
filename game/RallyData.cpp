@@ -8297,7 +8297,7 @@ void RallyData_InitializeRaceRendering(void)
         CGame::SetSectorDrawState(3);
     RallyData_IsChampionshipFinalStage();
     Particle_BuildTriangleStripIndices();
-    Particle_Init(0x23, 400);   // 0x22 added: optional air motes (video.air_motes), original types unchanged
+    Particle_Init(0x24, 400);   // 0x22 air motes (video.air_motes), 0x23 snow glints (video.snow_glint); original types unchanged
     if (CGameInfo::IsActiveCheatEnabled(0) != 0)
         Glow_AllocateEntryTable(4);
     else

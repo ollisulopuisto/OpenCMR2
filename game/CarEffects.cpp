@@ -1,7 +1,14 @@
 #include "port/sys.h"
 #include "DustPlume.h"
+#include "SnowGlint.h"
+#include "LightField.h"
+#include <cmath>
 #include "AirMote.h"
 extern FixVector g_particleWind;
+void StageObject_GetRotatedStageLightVector(FixVector *pOut);
+int StageObject_GetWeatherLightIntensity(void);
+int Track_GetGroundHeightSurface(FixVector *pPoint, FixVector *pNormal, short *pTri, short *pSurfaceClass,
+                                 unsigned short *pSurface, int defaultY);
 #include "FogDynamics.h"
 #include "RallyRoute.h"
 #include "port/gfx.h"
@@ -1884,6 +1891,79 @@ void FogDynamics_Step(int step16_16)
     if (eff < 0) eff = 0; if (eff > 200) eff = 200;
     Gfx_SetPostFog(1, eff, glow);
     g_fogDynamicsEffective = eff;
+}
+
+// Optional snow glints (video.snow_glint): the snow surface responds to light.
+// Per step, sample ground points ahead of the viewed car; where the collision
+// mesh reports a snow/ice surface (the same raw ids the wheel particles use),
+// compute the physical glitter response (sun/view half-vector against the true
+// ground normal with a deterministic per-position facet jitter, SnowGlint.h)
+// plus a cone boost from any car light beams (the fog light field). Spawns a
+// short-lived static glint where the response is visible. Own LCG, never rand(),
+// render-only.
+void SnowGlint_Step(int step16_16)
+{
+    if (step16_16 <= 0 || Sys_GetOption("video.snow_glint", 100) == 0) return;
+    Car *car = Car_Get(0);
+    if (!car) return;
+    int amount = Sys_GetOption("video.snow_glint", 100);
+    FixVector sunV;
+    StageObject_GetRotatedStageLightVector(&sunV);
+    float sunLen = std::sqrt((float)sunV.x * sunV.x + (float)sunV.y * sunV.y + (float)sunV.z * sunV.z);
+    if (sunLen < 1e-3f) return;
+    float sunX = sunV.x / sunLen, sunY = sunV.y / sunLen, sunZ = sunV.z / sunLen;
+    int weatherLight = StageObject_GetWeatherLightIntensity();
+    float sunLevel = weatherLight <= 0 ? 0.f : weatherLight >= 0x10000 ? 1.f : weatherLight / 65536.f;
+    // The view position: the active view node when available, else the car.
+    FixVector eye = car->position;
+    if (g_viewNodes[0]) FixMatrix_GetPosition(&eye, &g_viewNodes[0]->world);
+    // Car forward (body axes), flattened: samples bias ahead of the car.
+    FixVector fwd = car->forward;
+    fwd.y = 0;
+    float fwdLen = std::sqrt((float)fwd.x * fwd.x + (float)fwd.z * fwd.z);
+    if (fwdLen < 1e-3f) { fwd.x = 0; fwd.z = 0x10000; fwdLen = 65536.f; }
+    float fx = fwd.x / fwdLen, fz = fwd.z / fwdLen;
+    static unsigned seed = 0x51a7c3d9u;
+    for (int i = 0; i < 6; ++i) {
+        seed = seed * 1664525u + 1013904223u; float u1 = (seed >> 8) / 16777216.f;
+        seed = seed * 1664525u + 1013904223u; float u2 = (seed >> 8) / 16777216.f;
+        // Annulus 4..40 world units, angle biased +-75 degrees around the car's forward.
+        float ang = (u1 * 2.f - 1.f) * 1.309f;
+        float dist = 4.f + u2 * u2 * 36.f;
+        float ca = std::cos(ang), sa = std::sin(ang);
+        float dx = (fx * ca - fz * sa) * dist, dz = (fz * ca + fx * sa) * dist;
+        FixVector p;
+        p.x = car->position.x + (int)(dx * 65536.f);
+        p.y = car->position.y;
+        p.z = car->position.z + (int)(dz * 65536.f);
+        FixVector normal = {0, 0x10000, 0};
+        short tri = -1, surfaceClass = 0;
+        unsigned short surface = 0;
+        p.y = Track_GetGroundHeightSurface(&p, &normal, &tri, &surfaceClass, &surface, p.y);
+        if (tri < 0) continue;
+        if (surface != 0x17 && surface != 0x29 && surface != 0x18) continue;   // snow/snow-packed/ice
+        float wpx = p.x / 65536.f, wpy = p.y / 65536.f, wpz = p.z / 65536.f;
+        float toEyeX = eye.x / 65536.f - wpx, toEyeY = eye.y / 65536.f - wpy, toEyeZ = eye.z / 65536.f - wpz;
+        float el = std::sqrt(toEyeX*toEyeX + toEyeY*toEyeY + toEyeZ*toEyeZ);
+        if (el < 1e-3f) continue;
+        float glint = SnowGlint_Specular(normal.x / 65536.f, normal.y / 65536.f, normal.z / 65536.f,
+                                         sunX, sunY, sunZ, toEyeX / el, toEyeY / el, toEyeZ / el,
+                                         SnowGlint_FacetSeed(p.x, p.z)) * sunLevel;
+        // Car light beams boost the surface inside them (night and dark weather).
+        float boost = 0.f;
+        for (int li = 0; li < g_fogLightSourceCount && li < LIGHT_FIELD_MAX; ++li) {
+            FogLightSource *L = &g_fogLightSources[li];
+            boost += SnowGlint_ConeBoost(wpx, wpy, wpz,
+                                         L->pos.x / 65536.f, L->pos.y / 65536.f, L->pos.z / 65536.f,
+                                         L->dir.x / 65536.f, L->dir.y / 65536.f, L->dir.z / 65536.f,
+                                         L->intensity / 65536.f);
+        }
+        float response = glint + boost * 0.8f;
+        if (response > 1.f) response = 1.f;
+        int peak = (int)(response * SNOW_GLINT_ALPHA_MAX * (amount / 100.f));
+        if (peak < 28) continue;   // below visible sparkle
+        SnowGlint_Spawn(&p, peak);
+    }
 }
 
 // Optional floating dust motes (video.air_motes): small bug-like specks flying on their

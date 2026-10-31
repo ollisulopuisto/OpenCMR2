@@ -12656,6 +12656,7 @@ const EffectAmountRow kAtmosphereRows[]={
  {"Fog evolve (100 neutral; <100 clears, >100 thickens)","video.fog_evolve",100,201},
  {"Air motes (0/1)","video.air_motes",0,2},
  {"Air motes amount %","video.air_motes_amount",100,501},
+ {"Snow glints % (banks + falling flakes)","video.snow_glint",100,201},
 };
 void EnterAtmosphere(Menu*m,int){
  for(unsigned i=0;i<sizeof(kAtmosphereRows)/sizeof(*kAtmosphereRows);i++)

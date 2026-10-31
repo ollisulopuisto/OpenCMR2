@@ -46,6 +46,7 @@ short Car_GetOrderCount(void);
 #include "CarParts.h"
 #include "CarLightState.h"
 #include "LightField.h"
+#include "SnowGlint.h"
 #include "Graphics.h"
 #include "Font.h"
 #include "Sprite.h"
@@ -3411,6 +3412,13 @@ void StageObject_GetRotatedStageLightVector(FixVector *pOut)
 
     StageObject_GetSkyNode(&obj);
     FixMatrix_RotateVector(pOut, &g_lightMeshReferencePoint, &obj->current);
+}
+
+// The current weather light intensity (16.16; around 0x10000 in full sun,
+// near 0 in dark/overcast weather): the sun gate for snow glints.
+int StageObject_GetWeatherLightIntensity(void)
+{
+    return g_stageLighting.intensity;
 }
 
 // FUNCTION: CMR2 0x004928c0
@@ -11901,10 +11909,11 @@ void StageObject_UpdateCarLightFlagsAndGlows(Car *pCar)
             }
             // Record the light for the fog pass (video.fog_lights) with the same
             // world position and tint the glow sprite uses (colour pre-intensity).
-            {   FixVector worldPos;
+            {   FixVector worldPos, worldDir = glow->dir;
                 if (glow->pNode != NULL) {
                     FixVector nodePos;
                     FixMatrix_RotateVector(&worldPos, &glow->pos, &glow->pNode->world);
+                    FixMatrix_RotateVector(&worldDir, &glow->dir, &glow->pNode->world);
                     FixMatrix_GetPosition(&nodePos, &glow->pNode->world);
                     worldPos.x += nodePos.x;
                     worldPos.y += nodePos.y;
@@ -11912,7 +11921,7 @@ void StageObject_UpdateCarLightFlagsAndGlows(Car *pCar)
                 } else {
                     worldPos = glow->pos;
                 }
-                LightField_Add(&worldPos, intensity * 2 > 0x10000 ? 0x10000 : intensity * 2,
+                LightField_Add(&worldPos, &worldDir, intensity * 2 > 0x10000 ? 0x10000 : intensity * 2,
                                colour.x, colour.y, colour.z);
             }
             FixVecScale(&colour, &colour, intensity);
@@ -14547,6 +14556,29 @@ void StageWeather_DrawViewPrecipitation(int index, int view)
         }
     } else {
         Scene_GetLightColour((DWORD *)&g_snowBillboard.r, 0xcccc);
+        // Snow glints (video.snow_glint): flakes twinkle in the sun (strongest
+        // looking toward it - forward scatter) and brighten inside car light
+        // beams. Per-flake phase from its own sway cycle, deterministic.
+        int glintAmount = Sys_GetOption("video.snow_glint", 100);
+        float fwdScatter = 0.f, sunLevelF = 0.f, sunDirX = 0.f, sunDirY = 0.f, sunDirZ = 0.f;
+        if (glintAmount > 0) {
+            FixVector sunV;
+            StageObject_GetRotatedStageLightVector(&sunV);
+            float sl = sqrtf((float)sunV.x * sunV.x + (float)sunV.y * sunV.y + (float)sunV.z * sunV.z);
+            if (sl > 1e-3f) {
+                sunDirX = sunV.x / sl; sunDirY = sunV.y / sl; sunDirZ = sunV.z / sl;
+                int wl = StageObject_GetWeatherLightIntensity();
+                sunLevelF = wl <= 0 ? 0.f : wl >= 0x10000 ? 1.f : wl / 65536.f;
+                if (g_viewNodes[view]) {
+                    FixVector vf;
+                    FixMatrix_GetForward(&vf, &g_viewNodes[view]->world);
+                    float dot = (vf.x * sunV.x + vf.y * sunV.y + vf.z * sunV.z) / (65536.f * sl) ;
+                    float d = dot > 0.f ? dot : 0.f, fs = d;
+                    for (int fsq = 0; fsq < 3; ++fsq) fs *= fs;   // d^8 forward lobe
+                    fwdScatter = fs * sunLevelF;
+                }
+            }
+        }
         for (i = 0; i < count; i++) {
             pNode = &g_weatherParticles[pView->firstParticle + i];
             g_snowBillboard.pos = *(FixVector *)pNode;
@@ -14556,7 +14588,32 @@ void StageWeather_DrawViewPrecipitation(int index, int view)
             g_snowBillboard.pos.x += offset.x;
             g_snowBillboard.pos.y += offset.y;
             g_snowBillboard.pos.z += offset.z;
-            Billboard_Add(&g_snowBillboard, g_unk0x00543ea8[pNode->textureVariant]);
+            if (glintAmount > 0) {
+                float phaseTurns = pNode->snowPhaseDegrees / 360.f;
+                float m = SnowGlint_FlakeTwinkle((unsigned)(pView->firstParticle + i) * 0x45d9f3bu + 7u,
+                                                 phaseTurns, fwdScatter);
+                // Car light beams: flakes inside a beam brighten toward the light's tint.
+                float boost = 0.f;
+                for (int li = 0; li < g_fogLightSourceCount && li < LIGHT_FIELD_MAX; ++li) {
+                    FogLightSource *L = &g_fogLightSources[li];
+                    boost += SnowGlint_ConeBoost(g_snowBillboard.pos.x / 65536.f, g_snowBillboard.pos.y / 65536.f,
+                                                 g_snowBillboard.pos.z / 65536.f,
+                                                 L->pos.x / 65536.f, L->pos.y / 65536.f, L->pos.z / 65536.f,
+                                                 L->dir.x / 65536.f, L->dir.y / 65536.f, L->dir.z / 65536.f,
+                                                 L->intensity / 65536.f);
+                }
+                m *= (glintAmount / 100.f);
+                m += boost * 1.2f;
+                int sr = (int)(g_snowBillboard.r * m); if (sr > 255) sr = 255;
+                int sg = (int)(g_snowBillboard.g * m); if (sg > 255) sg = 255;
+                int sb = (int)(g_snowBillboard.b * m); if (sb > 255) sb = 255;
+                BYTE savedR = g_snowBillboard.r, savedG = g_snowBillboard.g, savedB = g_snowBillboard.b;
+                g_snowBillboard.r = (BYTE)sr; g_snowBillboard.g = (BYTE)sg; g_snowBillboard.b = (BYTE)sb;
+                Billboard_Add(&g_snowBillboard, g_unk0x00543ea8[pNode->textureVariant]);
+                g_snowBillboard.r = savedR; g_snowBillboard.g = savedG; g_snowBillboard.b = savedB;
+            } else {
+                Billboard_Add(&g_snowBillboard, g_unk0x00543ea8[pNode->textureVariant]);
+            }
         }
     }
     *pPos = saved;

@@ -95,6 +95,7 @@ void AirMote_Update(Particle *, ParticleType *, SceneNode *);
 void AirMote_Init(Particle *, ParticleType *, void *);
 void AirMote_Spawn(FixVector *world);
 void AirMotes_Step(int step16_16);
+void SnowGlint_Step(int step16_16);
 void AirMote_LogStats(int stepsElapsed);
 void AirMote_GetStats(int *live, unsigned *drawn);
 #endif
