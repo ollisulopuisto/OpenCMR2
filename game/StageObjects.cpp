@@ -52,6 +52,7 @@ short Car_GetOrderCount(void);
 #include "Font.h"
 #include "Sprite.h"
 #include "PrecipitationQuad.h"
+#include "WeatherSidecar.h"
 #include "Collision2D.h"
 #include "PauseMenus.h"
 #include "Menu.h"
@@ -14542,6 +14543,14 @@ void StageWeather_DrawViewPrecipitation(int index, int view)
 
     alpha = 0x1e;
     pView = &g_viewWeather[index];
+    // PORT: video.weather_particle_amount 0 hides precipitation (the original
+    // sim still runs untouched - only this draw is skipped); >100 adds the
+    // port sidecar slice after each original slice below.
+    if (!WeatherSidecar_PrecipitationDrawn(WeatherSidecar_Amount()))
+        return;
+    int sidecarActive = WeatherSidecar_ActiveCount(WeatherSidecar_Amount());
+    int sideFirst = 0, sideCapacity = 0;
+    WeatherSidecar_ViewSlice(pView->firstParticle, pView->particleCapacity, sidecarActive, sideFirst, sideCapacity);
     pPos = &pView->centre;
     count = pView->particleCount >> 16;
     saved = *pPos;
@@ -14577,6 +14586,34 @@ void StageWeather_DrawViewPrecipitation(int index, int view)
         trailF[2] = (float)(X87S_MUL(trail.z, CGraphics::m_oneOver65536));
         for (i = 0; i < count; i++) {
             pNode = &g_weatherParticles[pView->firstParticle + i];
+            g_precipitation.quad.v[2].x = (float)(X87S_MUL(pNode->x, CGraphics::m_oneOver65536));
+            g_precipitation.quad.v[2].y = (float)(X87S_MUL(pNode->y, CGraphics::m_oneOver65536));
+            g_precipitation.quad.v[2].z = (float)(X87S_MUL(pNode->z, CGraphics::m_oneOver65536));
+            g_precipitation.quad.v[0].x = g_precipitation.quad.v[2].x - trailF[0];
+            g_precipitation.quad.v[0].y = g_precipitation.quad.v[2].y - trailF[1];
+            g_precipitation.quad.v[0].z = g_precipitation.quad.v[2].z - trailF[2];
+            g_precipitation.quad.v[1].x = g_precipitation.quad.v[2].x + sideF[0];
+            g_precipitation.quad.v[1].y = g_precipitation.quad.v[2].y + sideF[1];
+            g_precipitation.quad.v[1].z = g_precipitation.quad.v[2].z + sideF[2];
+            g_precipitation.quad.v[2].x -= sideF[0];
+            g_precipitation.quad.v[2].y -= sideF[1];
+            g_precipitation.quad.v[2].z -= sideF[2];
+            Quad2D_Queue(&g_precipitation.quad, g_unk0x00543e90, 0x16);
+            if (pNode->wrapped != 0) {
+                forward = *(FixVector *)pNode;
+                forward.y -= 0xc0000;
+                FixVecScale(&offset, &pView->splashDisplacement,
+                            FixMul(pNode->splashGroundHeight - forward.y, pView->inverseFallDisplacement));
+                g_rainSplashBillboard.pos.x = offset.x + forward.x;
+                g_rainSplashBillboard.pos.y = offset.y + forward.y;
+                g_rainSplashBillboard.pos.z = offset.z + forward.z;
+                Billboard_Add(&g_rainSplashBillboard, g_unk0x00543ea4);
+            }
+        }
+        // PORT: sidecar drops through the same streak/splash path.
+        int sideDraw = WeatherSidecar_DrawCount(count, pView->particleCapacity, sidecarActive);
+        for (i = 0; i < sideDraw; i++) {
+            pNode = &g_weatherSidecar[sideFirst + i];
             g_precipitation.quad.v[2].x = (float)(X87S_MUL(pNode->x, CGraphics::m_oneOver65536));
             g_precipitation.quad.v[2].y = (float)(X87S_MUL(pNode->y, CGraphics::m_oneOver65536));
             g_precipitation.quad.v[2].z = (float)(X87S_MUL(pNode->z, CGraphics::m_oneOver65536));
@@ -14646,6 +14683,44 @@ void StageWeather_DrawViewPrecipitation(int index, int view)
                 float m = SnowGlint_FlakeTwinkle((unsigned)(pView->firstParticle + i) * 0x45d9f3bu + 7u,
                                                  phaseTurns, fwdScatter);
                 // Car light beams: flakes inside a beam brighten toward the light's tint.
+                float boost = 0.f;
+                for (int li = 0; li < g_fogLightSourceCount && li < LIGHT_FIELD_MAX; ++li) {
+                    FogLightSource *L = &g_fogLightSources[li];
+                    boost += SnowGlint_ConeBoost(g_snowBillboard.pos.x / 65536.f, g_snowBillboard.pos.y / 65536.f,
+                                                 g_snowBillboard.pos.z / 65536.f,
+                                                 L->pos.x / 65536.f, L->pos.y / 65536.f, L->pos.z / 65536.f,
+                                                 L->dir.x / 65536.f, L->dir.y / 65536.f, L->dir.z / 65536.f,
+                                                 L->intensity / 65536.f);
+                }
+                m *= (glintAmount / 100.f);
+                m += boost * 1.2f;
+                int sr = (int)(g_snowBillboard.r * m); if (sr > 255) sr = 255;
+                int sg = (int)(g_snowBillboard.g * m); if (sg > 255) sg = 255;
+                int sb = (int)(g_snowBillboard.b * m); if (sb > 255) sb = 255;
+                BYTE savedR = g_snowBillboard.r, savedG = g_snowBillboard.g, savedB = g_snowBillboard.b;
+                g_snowBillboard.r = (BYTE)sr; g_snowBillboard.g = (BYTE)sg; g_snowBillboard.b = (BYTE)sb;
+                Billboard_Add(&g_snowBillboard, g_unk0x00543ea8[pNode->textureVariant]);
+                g_snowBillboard.r = savedR; g_snowBillboard.g = savedG; g_snowBillboard.b = savedB;
+            } else {
+                Billboard_Add(&g_snowBillboard, g_unk0x00543ea8[pNode->textureVariant]);
+            }
+        }
+        // PORT: sidecar flakes through the same sway/glint path; the glint
+        // hash seed is offset by 400 so sidecar phases decorrelate.
+        int sideDraw = WeatherSidecar_DrawCount(count, pView->particleCapacity, sidecarActive);
+        for (i = 0; i < sideDraw; i++) {
+            pNode = &g_weatherSidecar[sideFirst + i];
+            g_snowBillboard.pos = *(FixVector *)pNode;
+            FixVecScale(&offset, &pView->snowSwayAxis,
+                        FixMul(g_sinTable[(unsigned short)FTOI(__int64, X87S_MUL(pNode->snowPhaseDegrees, g_fixedDegreesToAngle12)) & 0xfff],
+                               pNode->swayAmplitude));
+            g_snowBillboard.pos.x += offset.x;
+            g_snowBillboard.pos.y += offset.y;
+            g_snowBillboard.pos.z += offset.z;
+            if (glintAmount > 0) {
+                float phaseTurns = pNode->snowPhaseDegrees / 360.f;
+                float m = SnowGlint_FlakeTwinkle((unsigned)(400 + sideFirst + i) * 0x45d9f3bu + 7u,
+                                                 phaseTurns, fwdScatter);
                 float boost = 0.f;
                 for (int li = 0; li < g_fogLightSourceCount && li < LIGHT_FIELD_MAX; ++li) {
                     FogLightSource *L = &g_fogLightSources[li];

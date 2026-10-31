@@ -5,20 +5,19 @@
 // FrontendScreens.cpp (PORT). Bump kWhatsNewRevision and add lines when
 // user-visible changes ship: the screen then shows once on the main menu
 // (tracked in ui.whatsnew_seen) and stays reachable from the Screen page.
-inline constexpr int kWhatsNewRevision = 7;
+inline constexpr int kWhatsNewRevision = 8;
 
 struct WhatsNewLine { int revision; const char *text; };
 inline const WhatsNewLine *WhatsNew_Lines(int &count)
 {
     static const WhatsNewLine lines[] = {
-        {1, "Distance fog with sun glow and drifting air motes"},
+        {1, "Distance fog with sun glow; smaller, livelier drifting air motes"},
         {1, "God rays: sun shafts through the fog (atmosphere preset)"},
         {1, "Dynamic fog: clear pockets along the route, clearing trend"},
         {1, "Near-field fog clear distance around the car"},
         {1, "Effect amounts and Atmosphere menus under Graphics options"},
         {1, "F10 live tuning panel: save, presets, drone controls"},
         {1, "rebuild.sh --test-preset atmosphere for the full look"},
-        {1, "Smaller, livelier air motes from native feedback"},
         {1, "Fix: tuning panel row overflow crash"},
         {2, "Fog responds to headlights and rear lights"},
         {2, "Snow glints: banks sparkle, flakes twinkle in sun and beams"},
@@ -29,6 +28,7 @@ inline const WhatsNewLine *WhatsNew_Lines(int &count)
         {4, "Drone rails widen: distance 300%, height/spring 400%, drop 500%"},
         {5, "Tyre debris to 2000%, dust/snow plume to 300% - overdone, dial down"},
         {7, "Spray, exhaust, splash, backfire, motes, glints overdone"},
+        {8, "Rain and snow amount to 300% (default 200%)"},
     };
     count = (int)(sizeof(lines) / sizeof(*lines));
     return lines;

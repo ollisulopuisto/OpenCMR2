@@ -4,6 +4,16 @@ All notable changes to OpenCMR2 are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **Precipitation density dial** (`video.weather_particle_amount`, 0..300,
+  default 200): rain and snow draw up to 3x the original particle count via a
+  port-owned sidecar pool simulated and drawn through the same wrap/streak/
+  splash/sway/glint paths. The original 400-slot array, weather records and
+  replay rand stream are untouched; 0 hides precipitation (draw skip only),
+  100 is exactly the original behaviour. Density scales uniformly across the
+  wrap volume (no clustering toward the car).
+
 ### Fixes
 
 - **Launch crash on the main menu** (native SIGSEGV, `EXC_BAD_ACCESS` at
