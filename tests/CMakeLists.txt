@@ -1,6 +1,8 @@
-# These isolation tests use GNU ELF --wrap and Itanium C++ symbol names.
+# These isolation tests interpose platform symbols - GNU ELF --wrap or
+# multiple-definition override - and use Itanium C++ symbol names.
 # Compiler brand is not the capability: Windows Clang uses COFF/lld-link and
-# silently ignores --wrap, while Apple uses a different linker/object format.
+# silently ignores --wrap, while Apple uses a different linker/object format
+# and rejects --allow-multiple-definition.
 set(OPENCMR2_TEST_ELF_WRAP OFF)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
  set(OPENCMR2_TEST_ELF_WRAP ON)
@@ -347,12 +349,21 @@ add_executable(whats_new_test whats_new.cpp)
 target_include_directories(whats_new_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
 add_test(NAME whats_new COMMAND whats_new_test)
 
+# This isolation test overrides platform symbols with block-glyph stubs via
+# multiple-definition interposition - Apple ld rejects
+# -Wl,--allow-multiple-definition outright (owner-reported native build
+# break), so beyond the GNU/Linux --wrap gate, probe the actual linker for
+# the flag instead of assuming it from the platform.
+include(CheckLinkerFlag)
+check_linker_flag(CXX "-Wl,--allow-multiple-definition" OPENCMR2_LD_ALLOW_MULTIPLE_DEFINITION)
+if(OPENCMR2_TEST_ELF_WRAP AND OPENCMR2_LD_ALLOW_MULTIPLE_DEFINITION)
 add_executable(frontend_whatsnew_runtime_test frontend_whatsnew_runtime.cpp ${PROJECT_SOURCE_DIR}/game/FrontendWhatsNew.cpp ${PROJECT_SOURCE_DIR}/game/Menu.cpp)
 target_include_directories(frontend_whatsnew_runtime_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/src/port/compat)
 target_compile_options(frontend_whatsnew_runtime_test PRIVATE "SHELL:-include ${PROJECT_SOURCE_DIR}/src/port/types.h" "SHELL:-include ${PROJECT_SOURCE_DIR}/src/port/msvcrt.h")
 target_link_libraries(frontend_whatsnew_runtime_test PRIVATE opencmr2_platform)
 target_link_options(frontend_whatsnew_runtime_test PRIVATE "-Wl,--allow-multiple-definition")   # block-glyph stubs in the test override the platform symbols they replace
 add_test(NAME frontend_whatsnew_runtime COMMAND frontend_whatsnew_runtime_test)
+endif()
 add_executable(fov_dolly_test fov_dolly.cpp)
 target_include_directories(fov_dolly_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
 add_test(NAME fov_dolly COMMAND fov_dolly_test)
