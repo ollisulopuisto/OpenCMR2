@@ -24,6 +24,36 @@ inline float Fog_Factor(float viewZ, float density) {
     if (!(viewZ > 0.f) || !(density > 0.f)) return 0.f;
     return 1.f - std::exp(-density * viewZ);
 }
+// Optional near-field clear distance (video.fog_clear, world units, default 0 = off):
+// scales the fog factor from 0 at the camera to the full curve at clearDist, so the
+// road ahead stays readable while the haze beyond keeps its density. Deliberately a
+// global near clearance in every direction, not a road mask.
+inline float Fog_ClearScale(float viewZ, float clearDist) {
+    if (!(clearDist > 0.f)) return 1.f;
+    float t = viewZ / clearDist;
+    if (t < 0.f) t = 0.f;
+    if (t > 1.f) t = 1.f;
+    return t * t * (3.f - 2.f * t);
+}
+// Opt-in fog-aware draw culling (video.fog_cull, default off): the farthest view
+// distance that can still matter - where fog reaches 99.5% at the weakest (top of
+// frame) height gradient, so the culled shell is fully fogged even before the
+// stronger ground gradient. Conservative floors: never closer than 150 world units
+// (the championship-final far plane precedent) and never closer than 1.25x the
+// near-field clear distance, so road made readable by video.fog_clear cannot pop
+// unfogged at the cull edge. Returns 0 when culling does not apply. Known caveats:
+// the far-plane sky cap keeps culled-edge silhouettes 15 percent visible (a haze
+// band, more prominent the closer the edge), distant trees stop occluding god-ray
+// shafts near the horizon, and any saving is unmeasured - this trades draw work
+// for a look change, it is not a proven performance feature.
+inline float Fog_CullDistance(int amountPercent, float clearDist) {
+    float d = Fog_Density(amountPercent);
+    if (!(d > 0.f)) return 0.f;
+    float z = 5.298317f / d;   // -ln(0.005) / density, height gradient 1.0
+    float floor = clearDist * 1.25f;
+    if (floor < 150.f) floor = 150.f;
+    return z < floor ? floor : z;
+}
 // Fallback when the projection is unknown: raw hardware depth is hyperbolic, so with a
 // near 0.1 / far 150 projection depth 0.990 is about 9 units, 0.9993 about 60, 1.0 the far
 // plane. Ramp over that top slice; the curve is a stand-in, not a measured distance.

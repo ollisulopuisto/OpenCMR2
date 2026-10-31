@@ -6442,12 +6442,14 @@ void StageTiming_InitEffectParticleTypes(void)
   ParticleEdit_SetCallbacks(0,SpeedMote_Update,0,0,0);
   ParticleEdit_CommitCurrentType();
   // Optional floating air motes (video.air_motes): smaller, warmer, slow-drifting specks.
+  // Size 0x3000 -> 0x3800 after the first native look ("saw a few"): more readable specks
+  // without touching the spawn count or pool cap.
   ParticleEdit_Select(AIR_MOTE_TYPE);
   ParticleEdit_SetTextureParams(g_unk0x00543664, -0x10000, 0x10000, 0x10000, -0x10000);
   ParticleEdit_SetMotion(AIR_MOTE_LIFE << 16, 0, 0, 0, 0, 0, 0);
   ParticleEdit_SetAlphaRamp(0, 0, 0, 0);
   ParticleEdit_SetColour(0xf2,0xea,0xd8,1);
-  ParticleEdit_SetSizeRamp(0x3000,0x3000,0);
+  ParticleEdit_SetSizeRamp(0x3800,0x3800,0);
   ParticleEdit_SetSpread(0,0,0,0);
   ParticleEdit_SetCallbacks(0,AirMote_Update,0,0,0);
   ParticleEdit_CommitCurrentType();

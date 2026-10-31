@@ -301,6 +301,7 @@ void Gfx_SetGodRays(BOOL enabled, int intensity);
 // OpenCMR2: optional atmosphere fog. amount 0..200 (percent, 100 = heavy default),
 // glow 0..100 (sun-ward brightening of the fog).
 void Gfx_SetPostFog(BOOL enabled, int amount, int glow);
+void Gfx_SetPostFogClearDistance(int worldUnits);
 void Gfx_SetSunScreenPosition(float x, float y, BOOL visible);
 void Gfx_SetShadowQuality(int resolution, int softness);
 /* OpenCMR2: color grading. `temperature` (-100..100) cool->warm,

@@ -58,6 +58,22 @@ int main(){
         float r, g, b; Fog_Color(t, &r, &g, &b);
         CHECK(r >= 0.f && r <= 1.f && g >= 0.f && g <= 1.f && b >= 0.f && b <= 1.f);
     }
+    // Clear distance: off means full curve; on means 0 at the camera, smoothstep to the
+    // full curve at clearDist, monotonic between (mirrors the shader's smoothstep).
+    CHECK(Fog_ClearScale(10.f, 0.f) == 1.f);
+    CHECK(Fog_ClearScale(10.f, -5.f) == 1.f);
+    CHECK(Fog_ClearScale(0.f, 100.f) == 0.f);
+    CHECK(std::fabs(Fog_ClearScale(50.f, 100.f) - 0.5f) < 1e-6f);
+    CHECK(Fog_ClearScale(100.f, 100.f) == 1.f);
+    CHECK(Fog_ClearScale(150.f, 100.f) == 1.f);
+    CHECK(Fog_ClearScale(25.f, 100.f) < Fog_ClearScale(75.f, 100.f));
+    // Fog-aware cull distance: 99.5% at the weakest gradient, conservative floors,
+    // off when there is no density.
+    CHECK(Fog_CullDistance(0, 0.f) == 0.f);
+    CHECK(std::fabs(Fog_CullDistance(100, 0.f) - 176.6f) < 0.2f);   // 5.298/0.03
+    CHECK(std::fabs(Fog_CullDistance(200, 0.f) - 150.f) < 1e-6f);   // 88 clamps to the 150 floor
+    CHECK(std::fabs(Fog_CullDistance(100, 200.f) - 250.f) < 1e-6f); // clear distance floor wins
+    CHECK(Fog_CullDistance(30, 0.f) > 500.f);                       // light fog barely culls
     if (!fails) std::puts("fog_math ok");
     return fails;
 }

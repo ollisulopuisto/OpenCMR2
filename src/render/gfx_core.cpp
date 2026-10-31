@@ -602,6 +602,12 @@ extern "C" void Gfx_SetPostFog(BOOL enabled, int amount, int glow)
         s_executor->SetPostFog(enabled != 0, amount, glow);
 }
 
+extern "C" void Gfx_SetPostFogClearDistance(int worldUnits)
+{
+    if (s_executor != NULL)
+        s_executor->SetPostFogClearDistance(worldUnits);
+}
+
 extern "C" void Gfx_SetColorGrading(int temperature, int tint, int saturation, int contrast)
 {
     if (s_executor != NULL)

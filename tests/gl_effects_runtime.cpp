@@ -102,11 +102,33 @@ int main(int argc, char **argv)
             size_t i=((h/4)*w+w/2)*4; // top row: height scale keeps the factor below the clamp
             require(std::abs(int(f200[i])-int(scene[i]))>std::abs(int(f50[i])-int(scene[i])),"fog amount scales the effect");
         }
+        {   // near-field clear distance (video.fog_clear): depth 0.991 is about 1.5 world
+            // units down the raw-depth ramp, inside a 100-unit clear distance, so the
+            // pixels survive; the same depth fogs with the clear distance off.
+            e.SetPostFog(true,100,0);e.SetPostFogClearDistance(100);
+            gl.BindFramebuffer(GL_FRAMEBUFFER,e.backFramebuffer);gl.DepthMask(GL_TRUE);gl.ClearDepth(.991);gl.Clear(GL_DEPTH_BUFFER_BIT);e.ForgetEffectState();
+            upload();require(read(e.ApplyEffects())==scene,"clear distance keeps near-field pixels unfogged");
+            e.SetPostFogClearDistance(0);upload();require(read(e.ApplyEffects())!=scene,"same depth fogs with clear distance off");
+        }
         e.SetPostFog(false,0,0);upload();require(read(e.ApplyEffects())==scene,"fog toggle off restores identity");
         e.SetPostFog(true,100,60);e.effectsRaceFrame=false;upload();require(read(e.ApplyEffects())==scene,"fog never touches menu/preview frames");e.effectsRaceFrame=true;e.SetPostFog(false,0,0);
         e.SetDepthOfField(false,20,10,100);e.SetGodRays(true,255);e.SetSunScreenPosition(.8,.2,false);upload();require(read(e.ApplyEffects())==scene,"invisible sun bypass");
         e.SetSunScreenPosition(.8,.2,true);gl.BindFramebuffer(GL_FRAMEBUFFER,e.backFramebuffer);gl.DepthMask(GL_TRUE);gl.ClearDepth(1);gl.Clear(GL_DEPTH_BUFFER_BIT);e.ForgetEffectState();
         upload();auto rays=read(e.ApplyEffects());require(rays!=scene,"visible sun rays execute");
+        {   // Rays occlusion: a full-height occluder band around the sun's column blocks the
+            // shaft for pixels below it, while a pixel whose march stays in open sky keeps it.
+            e.SetSunScreenPosition(.5f,.1f,true);
+            gl.BindFramebuffer(GL_FRAMEBUFFER,e.backFramebuffer);gl.DepthMask(GL_TRUE);
+            gl.ClearDepth(1);gl.Clear(GL_DEPTH_BUFFER_BIT);
+            gl.Enable(GL_SCISSOR_TEST);gl.Scissor(w*9/20,0,w/10,h);
+            gl.ClearDepth(.5);gl.Clear(GL_DEPTH_BUFFER_BIT);
+            gl.Disable(GL_SCISSOR_TEST);e.ForgetEffectState();
+            upload();auto occ=read(e.ApplyEffects());
+            size_t shadowed=((h*3/4)*w+w/2)*4, openPx=((h*3/4)*w+w*3/4)*4;
+            int dShadow=std::abs(int(occ[shadowed])-int(scene[shadowed]));
+            int dOpen=std::abs(int(occ[openPx])-int(scene[openPx]));
+            require(dOpen>dShadow,"occluder band blocks the light shaft");
+        }
         e.SetGodRays(false,0);e.SetShadows(1,5); e.PrepareShadow();require(e.shadowReady,"shadow targets ready");
         GfxFrame empty; e.RenderShadow(empty);require(e.shadowReady,"shadow clear succeeds");
         e.SetShadowQuality(512,0);e.PrepareShadow();require(e.shadowReady&&e.shadowSize==512,"quality reallocates shadow targets");

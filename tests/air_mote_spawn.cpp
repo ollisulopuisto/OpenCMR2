@@ -42,7 +42,7 @@ int main(){
     CHECK(AirMote_SpawnRate(0) == 0.f);
     CHECK(std::fabs(AirMote_SpawnRate(300) - 0.96f) < 1e-6f);
     CHECK(std::fabs(AirMote_SpawnRate(900) - 0.96f) < 1e-6f);
-    // Step: drift eases toward wind/16 with a slow sink; alpha fades in and out, never negative, never above 130.
+    // Step: drift eases toward wind/16 with a slow sink; alpha fades in and out, never negative, never above AIR_MOTE_ALPHA_MAX.
     for (int ageSteps : {0, 15, 30, 75, 100, 149, 150, 200}) {
         Particle p = {};
         p.age = ageSteps << 16;
@@ -51,7 +51,7 @@ int main(){
         FixVector wind = {0x10000, 0, -0x8000};
         int before = p.sourceVector.y;
         AirMote_Step(p, wind);
-        CHECK(p.type0x56 <= 130);
+        CHECK(p.type0x56 <= AIR_MOTE_ALPHA_MAX);
         CHECK(p.vector0x28.x == p.sourceVector.x && p.vector0x28.z == p.sourceVector.z);
         if (ageSteps > 0) CHECK(p.sourceVector.y <= before);   // sinks (or is still easing toward the sink)
         int alpha = p.type0x56;

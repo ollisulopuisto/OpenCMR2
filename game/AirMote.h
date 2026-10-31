@@ -13,6 +13,9 @@ constexpr int AIR_MOTE_TYPE = 0x22;
 constexpr int AIR_MOTE_BASE = 48;    // live cap at amount 100
 constexpr int AIR_MOTE_LIFE = 150;   // 25 Hz steps = 6 s
 constexpr int AIR_MOTE_MAX_AMOUNT = 300;
+// Peak alpha: raised 130 -> 190 after the first native look found the specks too faint
+// against bright fog; count and cap are unchanged (pool discipline stays as pinned).
+constexpr int AIR_MOTE_ALPHA_MAX = 190;
 // video.air_motes_amount (0..300): spawn rate and, above 100, the live cap grow with it.
 inline int AirMote_Cap(int amountPercent) {
     int a = amountPercent < 0 ? 0 : amountPercent > AIR_MOTE_MAX_AMOUNT ? AIR_MOTE_MAX_AMOUNT : amountPercent;
@@ -43,7 +46,7 @@ inline void AirMote_Step(Particle &p, const FixVector &wind) {
     int fadeOut = AIR_MOTE_LIFE - elapsed;
     if (fadeOut > 50) fadeOut = 50;
     p.type0x52 = p.type0x56;
-    p.type0x56 = (BYTE)(130 * fadeIn * fadeOut / (30 * 50));
+    p.type0x56 = (BYTE)(AIR_MOTE_ALPHA_MAX * fadeIn * fadeOut / (30 * 50));
 }
 // Spawn placement in a ring around a centre point (the viewed car): distance 3..24 world
 // units, area-uniform angle and radius, 0.3..4.0 units above the ground. u1..u3 in 0..1.
