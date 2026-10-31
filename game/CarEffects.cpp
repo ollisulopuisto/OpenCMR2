@@ -1,6 +1,9 @@
 #include "port/sys.h"
 #include "DustPlume.h"
 #include "AirMote.h"
+#include "FogDynamics.h"
+#include "RallyRoute.h"
+#include "port/gfx.h"
 #include <cmath>
 #include "CarBodyDirt.h"
 #include "WheelParticleEmission.h"
@@ -1842,6 +1845,44 @@ void SpeedMotes_Step(int step16_16)
     }
     if (carry > 4.f) carry = 4.f;
     SpeedMote_LogStats(ratio, step16_16);
+}
+
+// Optional dynamic fog (video.fog_spatial / video.fog_evolve): scales video.fog_amount by
+// the viewed car's route progress; see FogDynamics.h. Render-only, same per-step cadence
+// as the motes. Reversible prototype: turn both options back off and the static amount
+// is restored on the next step.
+int g_fogDynamicsEffective = 0;
+int RallyData_GetActiveCarRaceRecordField0(Car *p);   // Car.cpp
+void FogDynamics_Step(int step16_16)
+{
+    if (step16_16 <= 0 || Sys_GetOption("video.fog", 0) == 0) return;
+    int spatial = Sys_GetOption("video.fog_spatial", 0);
+    int evolve = Sys_GetOption("video.fog_evolve", 100);
+    int base = Sys_GetOption("video.fog_amount", 100);
+    if (base < 0) base = 0; if (base > 200) base = 200;
+    int glow = Sys_GetOption("video.fog_glow", 60);
+    if (glow < 0) glow = 0; if (glow > 100) glow = 100;
+    if (!spatial && evolve == 100) {
+        if (g_fogDynamicsEffective) {   // dynamics turned off mid-race: restore the static amount once
+            g_fogDynamicsEffective = 0;
+            Gfx_SetPostFog(1, base, glow);
+        }
+        return;
+    }
+    Car *car = Car_Get(0);
+    if (!car || g_routeNodeCount < 2) return;
+    int node = RallyData_GetActiveCarRaceRecordField0(car);
+    float f = node / (float)(g_routeNodeCount - 1);
+    if (f < 0.f) f = 0.f; if (f > 1.f) f = 1.f;
+    float phase = (RallyDataStageIndex() & 7) / 8.f;
+    float target = FogDynamics_Mult(f, phase, spatial, evolve);
+    static float eased = 1.f;
+    if (node == 0) eased = target;          // stage start/restart: no cross-stage carry-over
+    eased += (target - eased) / 32.f;       // ~1.3 s at 25 Hz: hides route-node stepping
+    int eff = (int)std::lround(base * eased);
+    if (eff < 0) eff = 0; if (eff > 200) eff = 200;
+    Gfx_SetPostFog(1, eff, glow);
+    g_fogDynamicsEffective = eff;
 }
 
 // Optional floating dust motes (video.air_motes): slow pale specks drifting in the air around the

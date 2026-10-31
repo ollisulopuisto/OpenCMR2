@@ -8,6 +8,7 @@
 #include "FixedPoint.h"
 #include "GraphicsOptions.h"
 #include "render/fog_math.h"
+#include "FogDynamics.h"
 #include "MovingObject.h"
 #include "Graphics.h"
 #include "GameInfo.h"
@@ -840,8 +841,12 @@ void View_SetPlayerProjection(unsigned int player)
     // the fully fogged shell. Render-only; route easing above still applies; physics,
     // the route window and collision are untouched. See Fog_CullDistance.
     if (Sys_GetOption("video.fog_cull", 0) && Sys_GetOption("video.fog", 0)) {
-        float fogCull = Fog_CullDistance(Sys_GetOption("video.fog_amount", 100),
-                                         Sys_GetOption("video.fog_clear", 0));
+        // Dynamic fog (video.fog_spatial / video.fog_evolve): cull for the clearest
+        // stretch the curves can reach, never the current value, so opening fog
+        // cannot pop culled geometry back into view.
+        float fogCull = Fog_CullDistance((int)(Sys_GetOption("video.fog_amount", 100) *
+            FogDynamics_MinMult(Sys_GetOption("video.fog_spatial", 0), Sys_GetOption("video.fog_evolve", 100))),
+            Sys_GetOption("video.fog_clear", 0));
         int fogCullFixed = (int)(fogCull * 65536.0f);
         if (fogCull > 0.f && farPlane > fogCullFixed) farPlane = fogCullFixed;
     }

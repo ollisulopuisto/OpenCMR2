@@ -59,6 +59,9 @@ int main(){
   t=p;CHECK(run({"t","--test-preset","atmosphere","--fog-clear","60","--fog-cull","1"})&&e2.empty());t.Apply();
   CHECK(t.overrides["video.fog_clear"]==60&&t.overrides["video.fog_cull"]==1);   // fog clear/cull flags parse and override the preset defaults
   CHECK(run({"t","--fog-clear","201"})&&!e2.empty());CHECK(run({"t","--fog-clear","x"})&&!e2.empty());CHECK(run({"t","--fog-cull","2"})&&!e2.empty());
+  t=p;CHECK(run({"t","--fog-spatial","1","--fog-evolve","-40"})&&e2.empty());t.Apply();
+  CHECK(t.overrides["video.fog_spatial"]==1&&t.overrides["video.fog_evolve"]==60);   // signed CLI stored 0..200 neutral 100
+  CHECK(run({"t","--fog-spatial","2"})&&!e2.empty());CHECK(run({"t","--fog-evolve","101"})&&!e2.empty());CHECK(run({"t","--fog-evolve","-101"})&&!e2.empty());
   t=p;CHECK(run({"t","--test-preset","foggy"})&&!e2.empty());   // unknown preset reports an error
   t=p;CHECK(run({"t","--test-preset","overdo,atmosphere"})&&e2.empty());t.Apply();
   CHECK(t.overrides["video.speed_fov"]==40&&t.overrides["video.fog"]==1&&t.overrides["video.air_motes_amount"]==500);   // combined preset: usual overdo look plus exaggerated atmosphere
