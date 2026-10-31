@@ -11534,6 +11534,13 @@ void FrontendMenu_DrawGraphicsOptions(Menu *pMenu)
                 Font_DrawText(1, FrontendMenu_GetScreenOptionsLabel(), (int)(g_pGraphics->resX * 0x7a) / 640,
                               (int)(g_pGraphics->resY * 0x18) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
                 break;
+            // OpenCMR2: the Atmosphere submenu entry carries a literal label
+            // (same idiom as the Effect amounts "Atmosphere..." row, case 0x30
+            // in the advanced page draw).
+            case 0x10:
+                Font_DrawText(1, pItem->text, (int)(g_pGraphics->resX * 0x7a) / 640,
+                              (int)(g_pGraphics->resY * 0x18) / 480 + g_frontendDrawRect[1], (int *)pColour, 0x11);
+                break;
             default:
                 break;
             }
