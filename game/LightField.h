@@ -36,4 +36,19 @@ inline int LightField_Add(const FixVector *pos, const FixVector *dir, int intens
     return g_fogLightSourceCount;
 }
 
+
+// Near-plane clip of a view-space beam segment (video.fog_lights projection):
+// the lamp is in front (lampView->z >= 0x10000), the beam end is behind the
+// camera (endView->z < 0x10000). Returns the segment's intersection with the
+// projection threshold plane so the screen wedge keeps its true direction
+// instead of the behind-camera sentinel (-100,-100 px), which mirrored rear
+// beams toward the upper-left corner. 16.16 fixed point, 64-bit intermediates.
+inline void LightField_ClipBeamToNearPlane(FixVector *out, const FixVector *lampView, const FixVector *endView) {
+    int dz = lampView->z - endView->z;      // > 0: lamp in front, end behind
+    int num = lampView->z - 0x10000;
+    out->x = lampView->x + (int)(((__int64)(endView->x - lampView->x) * num) / dz);
+    out->y = lampView->y + (int)(((__int64)(endView->y - lampView->y) * num) / dz);
+    out->z = 0x10000;
+}
+
 #endif
