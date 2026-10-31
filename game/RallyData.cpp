@@ -6697,7 +6697,7 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
         short panel[4] = {(short)layout.x,(short)layout.y,(short)layout.width,(short)layout.height};
         Sprite_FillRect(NULL, panel, background, 1);
         char text[160];
-        snprintf(text, sizeof(text), "FPS %.1f | draws %u", Graphics_GetFrameRate(), Gfx_GetFrameDrawCalls());
+        snprintf(text, sizeof(text), "FPS %.1f | draws %u | mem %lluM", Graphics_GetFrameRate(), Gfx_GetFrameDrawCalls(), Sys_GetProcessMemoryBytes() >> 20);
         Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad,layout.font,layout.width-2*layout.pad,colour);
         snprintf(text, sizeof(text), "Triangles %u | vertices %u", Gfx_GetFrameTriangles(), Gfx_GetFrameVertices());
         Font_DrawTextScaled(1,text,layout.x+layout.pad,layout.y+layout.pad+layout.line,layout.font,layout.width-2*layout.pad,colour);
