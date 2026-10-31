@@ -32,22 +32,25 @@ All settings are [video] options, off unless enabled:
 | video.fog | 0/1 | 0 | fog pass |
 | video.fog_amount | 0..200 | 100 | density; 100 is the deliberately heavy starting look (23 units ~50 percent fog, 60 ~84, 150 ~99) |
 | video.fog_glow | 0..100 | 60 | sun-ward glow strength |
+| video.fog_clear | 0..200 | 0 | near-field clear distance in world units: fog ramps from none at the camera to the full curve at this distance, so the road ahead stays readable while distant haze keeps its density. Global in every direction, not a road-only mask |
 | video.air_motes | 0/1 | 0 | drifting motes |
 | video.air_motes_amount | 0..300 | 100 | count/rate scale |
 
-CLI: `--effect fog --fog-amount 100 --fog-glow 60 --effect air_motes
---air-motes-amount 100`. The exaggerated starting look is one command:
-`--test-preset atmosphere` (fog 100/100 + motes 300, per launch, nothing
-saved; explicit flags win, e.g. `--fog-amount 40`). It is deliberately
+CLI: `--effect fog --fog-amount 100 --fog-glow 60 --fog-clear 60 --effect
+air_motes --air-motes-amount 100`. The exaggerated starting look is one
+command: `--test-preset atmosphere` (fog 100/100 + motes 300 + god rays at
+80, per launch, nothing saved; explicit flags win, e.g. `--fog-amount 40`).
+God rays are the occlusion-masked light shafts: geometry between the camera
+and the sun blocks the shaft, so beams read as cutting through the fog. It is deliberately
 separate from `--test-preset overdo`, so the default `--all-mods` launch
 keeps its established look. To try it on top of the usual run:
 `./rebuild.sh --update --all-mods --run --test-preset atmosphere` (passed
 to the game as `--test-preset overdo,atmosphere`: the usual overdo look
 plus the exaggerated atmosphere; presets combine comma-separated).
 
-Menus: Advanced graphics > Effect amounts > Atmosphere... has all five rows
+Menus: Advanced graphics > Effect amounts > Atmosphere... has the fog/mote rows
 (its own submenu because Menu::items is layout-locked at 22 entries). The F10
-tuning panel has the same five rows and applies live. The OSD effect line and
+tuning panel adds the fog clear distance row and applies live. The OSD effect line and
 startup log show the active fog/mote state.
 
 ## Performance shape (unmeasured)

@@ -58,6 +58,15 @@ int main(){
         float r, g, b; Fog_Color(t, &r, &g, &b);
         CHECK(r >= 0.f && r <= 1.f && g >= 0.f && g <= 1.f && b >= 0.f && b <= 1.f);
     }
+    // Clear distance: off means full curve; on means 0 at the camera, smoothstep to the
+    // full curve at clearDist, monotonic between (mirrors the shader's smoothstep).
+    CHECK(Fog_ClearScale(10.f, 0.f) == 1.f);
+    CHECK(Fog_ClearScale(10.f, -5.f) == 1.f);
+    CHECK(Fog_ClearScale(0.f, 100.f) == 0.f);
+    CHECK(std::fabs(Fog_ClearScale(50.f, 100.f) - 0.5f) < 1e-6f);
+    CHECK(Fog_ClearScale(100.f, 100.f) == 1.f);
+    CHECK(Fog_ClearScale(150.f, 100.f) == 1.f);
+    CHECK(Fog_ClearScale(25.f, 100.f) < Fog_ClearScale(75.f, 100.f));
     if (!fails) std::puts("fog_math ok");
     return fails;
 }

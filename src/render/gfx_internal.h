@@ -212,6 +212,7 @@ struct GfxExecutor {
     // OpenCMR2: atmosphere fog (video.fog). `amount` (0..200) scales density,
     // `glow` (0..100) the sun-ward brightening. See render/fog_math.h.
     virtual void SetPostFog(BOOL, int, int) {}
+    virtual void SetPostFogClearDistance(int) {}
     // Normalized top-left screen position of actual stage sun; false hides rays.
     virtual void SetSunScreenPosition(float, float, BOOL) {}
     // Map resolution 512/1024/2048; PCF softness 0..100 maps to radius 0..4 texels.

@@ -290,7 +290,7 @@ struct Executor : GfxExecutor {
     float speedStreakTarget = 0.0f, speedStreakSmooth = 0.0f, speedStreakClock = 0.0f; std::chrono::steady_clock::time_point speedStreakTime{}; bool speedStreakTimed = false;
     float glCarFocusRaw = -1.0f, glCarDepth = 0.0f;   // dof_focus_car: raw GL depth of the followed car this frame (-1 none)
     bool effectsRaceFrame = true; // set per frame before ApplyEffects: depth blur is a race effect, never run on menu/preview frames
-    int motionMix = 0, bloomAmount = 0, dofFocus = 50, dofRange = 30, dofBlur = 0, raysAmount = 0, fogAmount = 100, fogGlow = 60;
+    int motionMix = 0, bloomAmount = 0, dofFocus = 50, dofRange = 30, dofBlur = 0, raysAmount = 0, fogAmount = 100, fogGlow = 60, fogClearDistance = 0;
     float grade[4] = {0, 0, 1, 1}, grime[4] = {};
     SunGlareState sunGlare;std::chrono::steady_clock::time_point sunGlareTime;bool sunGlareTimed=false;
     float sunX = 0, sunY = 0; bool sunVisible = false;
@@ -579,6 +579,7 @@ struct Executor : GfxExecutor {
     void SetSpeedStreak(float strength) override { speedStreakTarget = speedEffectsSuppressed || !(strength > 0.0f) ? 0.0f : strength > 1.0f ? 1.0f : strength; }
     void SetGodRays(BOOL on, int amount) override { raysOn = on != 0; raysAmount = std::clamp(amount, 0, 255); }
     void SetPostFog(BOOL on, int amount, int glow) override { fogOn = on != 0; fogAmount = std::clamp(amount, 0, 200); fogGlow = std::clamp(glow, 0, 100); }
+    void SetPostFogClearDistance(int worldUnits) override { fogClearDistance = std::clamp(worldUnits, 0, 200); }
     void SetColorGrading(int temp, int tint, int saturation, int contrast) override {
         grade[0] = std::clamp(temp, -100, 100) / 100.0f; grade[1] = std::clamp(tint, -100, 100) / 100.0f;
         grade[2] = std::clamp(saturation, 0, 200) / 100.0f; grade[3] = std::clamp(contrast, 0, 200) / 100.0f;

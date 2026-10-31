@@ -364,7 +364,7 @@ struct Executor : GfxExecutor {
     int godRaysIntensity = 100;
     // OpenCMR2: atmosphere fog state (video.fog). Amount is a menu percent (0..200 via CLI).
     bool fogEnabled = false;
-    int fogAmount = 100, fogGlow = 60;
+    int fogAmount = 100, fogGlow = 60, fogClearDistance = 0;
     float sunX=.5f,sunY=.5f;bool sunVisible=false;
     int shadowSize=1024;float shadowSoftness=1.f;
     // OpenCMR2: color grading state.
@@ -883,6 +883,10 @@ struct Executor : GfxExecutor {
         fogEnabled = enabled != 0;
         fogAmount = amount < 0 ? 0 : amount > 200 ? 200 : amount;
         fogGlow = glow < 0 ? 0 : glow > 100 ? 100 : glow;
+    }
+    void SetPostFogClearDistance(int worldUnits) override
+    {
+        fogClearDistance = worldUnits < 0 ? 0 : worldUnits > 200 ? 200 : worldUnits;
     }
 
     // OpenCMR2: color grading. `temperature` (-100..100) cool->warm,
@@ -2701,9 +2705,10 @@ struct Executor : GfxExecutor {
         if (raceWorld && fogEnabled && fogAmount > 0 && sampledDepth && backDepth != nullptr &&
             fogBuf1 != nullptr && FogPipeline() != nullptr) {
             ResolveProjection(&sceneNear, &sceneFar);
-            float fogUniforms[8] = { Fog_Density(fogAmount), fogGlow / 100.0f, sceneNear, sceneFar,
-                                     sunX, sunY, sunVisible ? 1.0f : 0.0f,
-                                     backHeight ? (float)backWidth / (float)backHeight : 1.0f };
+            float fogUniforms[12] = { Fog_Density(fogAmount), fogGlow / 100.0f, sceneNear, sceneFar,
+                                      sunX, sunY, sunVisible ? 1.0f : 0.0f,
+                                      backHeight ? (float)backWidth / (float)backHeight : 1.0f,
+                                      (float)fogClearDistance, 0.0f, 0.0f, 0.0f };
             SDL_GPUTextureSamplerBinding fogBindings[2] = {
                 { presentSource, linearSampler }, { backDepth, depthSampler }
             };

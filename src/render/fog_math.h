@@ -24,6 +24,17 @@ inline float Fog_Factor(float viewZ, float density) {
     if (!(viewZ > 0.f) || !(density > 0.f)) return 0.f;
     return 1.f - std::exp(-density * viewZ);
 }
+// Optional near-field clear distance (video.fog_clear, world units, default 0 = off):
+// scales the fog factor from 0 at the camera to the full curve at clearDist, so the
+// road ahead stays readable while the haze beyond keeps its density. Deliberately a
+// global near clearance in every direction, not a road mask.
+inline float Fog_ClearScale(float viewZ, float clearDist) {
+    if (!(clearDist > 0.f)) return 1.f;
+    float t = viewZ / clearDist;
+    if (t < 0.f) t = 0.f;
+    if (t > 1.f) t = 1.f;
+    return t * t * (3.f - 2.f * t);
+}
 // Fallback when the projection is unknown: raw hardware depth is hyperbolic, so with a
 // near 0.1 / far 150 projection depth 0.990 is about 9 units, 0.9993 about 60, 1.0 the far
 // plane. Ramp over that top slice; the curve is a stand-in, not a measured distance.

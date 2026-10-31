@@ -214,9 +214,10 @@ GLuint ApplyEffects()
     // scene. The GL path has no near/far recovery, so near/far are zero and the shader
     // uses its raw-depth ramp (a stand-in curve, see render/fog_math.h).
     if (effectsRaceFrame && fogOn && fogAmount > 0) {
-        float u[8] = {Fog_Density(fogAmount), fogGlow / 100.0f, 0.0f, 0.0f,
-                      sunX, sunY, sunVisible ? 1.0f : 0.0f,
-                      backHeight ? (float)backWidth / (float)backHeight : 1.0f};
+        float u[12] = {Fog_Density(fogAmount), fogGlow / 100.0f, 0.0f, 0.0f,
+                       sunX, sunY, sunVisible ? 1.0f : 0.0f,
+                       backHeight ? (float)backWidth / (float)backHeight : 1.0f,
+                       (float)fogClearDistance, 0.0f, 0.0f, 0.0f};
         run(12, backDepth, u, sizeof(u));
     }
     if (depthBlurOn || tunnelOn) {
