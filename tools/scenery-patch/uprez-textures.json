@@ -5370,6 +5370,2692 @@
       "stage": "fra01",
       "usage": "original france1 temp.sht full-canvas fixed trackside material; original draw clamp policy",
       "output_sha256": "24490f0354d2a6a32e1f896f4143ab3520c3d991a6e207b672585798e1025053"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_bn1a.dds",
+      "bytes": 65664,
+      "sha256": "b5dd20bdba0fab7b3bfa31b5607034f2f1dd216c336be23b76232968d93935d6",
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_bn1a-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "870ae8a78bc81a1949d0cadbbdb7cb6fef2628af10e5be9801b0d4d088f54c13"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_bn2a.dds",
+      "bytes": 16512,
+      "sha256": "c3d92205fb6dafa32d0c76e993015dfe50d07b4a507a70d258e370acaf6a8ef3",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_bn2a-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "8ab36d2950ab21d2cffc12e6694edb484b51246bbb846ab6488a6e9eb01fe38e"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_bn2b.dds",
+      "bytes": 16512,
+      "sha256": "e458405cc7d7da80d63a115c519382f48d12a7f3a52108b1cec35035226a5028",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_bn2b-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "4b595ee5eb410e65525c9b4dee38f168b06f77656117ef20e9e6c962b7f5ec2f"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_bn2c.dds",
+      "bytes": 16512,
+      "sha256": "ebc385d956979721c5ae36bb04ece35267e54c16c09cd75ca2fa6f9c9e8ca008",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_bn2c-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "a77ee283dc3b84357b8f22d0a968ece04750d641daf3a4c43168e84f6352fdcd"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_bn2d.dds",
+      "bytes": 4224,
+      "sha256": "9256ec6d59135c8d25316a35fdbc7c332c27000d8a6ec35210470484367c18e4",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_bn2d-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "3fda1db367e530ccc92beafe2a08c1c44084e451973eb9625fe173cb8e66fb65"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_bn2e.dds",
+      "bytes": 4224,
+      "sha256": "bd9a3dfbefe05abe82e629348df4c27ce00f2accd9b95e7f4d2cd9661448d57e",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_bn2e-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "b42272ee532055a767d355770882750a88fb3900e00cecd5d37dfd487fea945c"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_bn3a.dds",
+      "bytes": 16512,
+      "sha256": "4e1c46e6c66c2779d1f87707a1b6dc1e70ee5fb3b0aa21505df094d5f1d3b79a",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_bn3a-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "3e99fc3e30a955ff8d251b576f51fb44b5e764ea0160093a11345f286467eaef"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_brna.dds",
+      "bytes": 16512,
+      "sha256": "cc60bb26374a4d8c403a860053727694f0cfdea391e5b8f072e95f05ca5b6cbe",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_brna-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "43a1152a92ce20949cf377b4feb0a53e5f721a5ae23322f5938b5041edaf5db8"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_brnb.dds",
+      "bytes": 16512,
+      "sha256": "615b1f28f07eacea371d9fe03ae40847932bc4b7b0a9019cadc8a0d0cff068f1",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_brnb-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "20bb85f4ae32cfb4d365d05d73087294a5b2137845126fe711c783ff02e29d6f"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_brnd.dds",
+      "bytes": 8320,
+      "sha256": "021c5a74eb22219782ddf2d060fca335382b9608943768c4a91539a450c93426",
+      "width": 128,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_brnd-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "adbdaa61b7edd2ffc88ac76207cf5fc43b9f495b1b67c86ea9b1afe003a94c88"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_bs1a.dds",
+      "bytes": 4224,
+      "sha256": "e8d18dc3906e88647638e4517d63f280378ced7d2cd93f015a71e33e555d10bb",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_bs1a-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "aad063deb1c6596df8fc428734080e3c173c22f4995a03b9e721f9b86f019bf7"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_caba.dds",
+      "bytes": 16512,
+      "sha256": "3b90694311853181648863bd93523980bdaa5768d3c1377284fadcb34737d6ba",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_caba-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "be56b6b0583c8141f8fcb8bbebd7d6be2bd736e5abc1c7c8a9f1f93f438fe15c"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_cabb.dds",
+      "bytes": 16512,
+      "sha256": "99f739f8fc3365233108a66abbee21bd39d2e48895f5a2152968ca5b0470a2dc",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_cabb-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "693a9cfca1488d2ce080f036846fa5c5a68a8ca1aeb4b92b428277c9512daf34"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_cabc.dds",
+      "bytes": 16512,
+      "sha256": "d852f2a824ce3c78c02ba8d3d0877238ab16c0923963a96c611689ced16db597",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_cabc-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "6bc7dc29130cd7d23030e23526666948f25e7709e9e081fa1236d7be05f1f032"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_chimb.dds",
+      "bytes": 16512,
+      "sha256": "c2a9c5f4c27fe022cdcf62e0df010685df4d753fc7535b1dfb5aed4f745a3c50",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_chimb-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "28aaa981689f44c238892d6c2a6450592ef1b083685a4d87c5db7f2c8b3721cc"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_chimc.dds",
+      "bytes": 16512,
+      "sha256": "2fad6f9b984a613ce6f6ec1c2b5f25b48271287fe127460cb59ef266f6fe21f7",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_chimc-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "05bc8d2a5e9c58d5826a52b20517864b40add36fcf09ce5774776551da389ea4"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_chimd.dds",
+      "bytes": 16512,
+      "sha256": "22388c9bf53ddbbfbf1bebbd78aa256ae86a2e7016f9d593d3601fa145ce45dd",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_chimd-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "5842b86f04f5f480d016fcbfe040b227dc2340afcb67a2760993f419b38f9fbf"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_con1.dds",
+      "bytes": 16512,
+      "sha256": "ffed858da6524bc84deff678b28484e18e8dbd6a8e53ed95142f0bbeeff42ac1",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_con1-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "b2d2a034b319389888b38dd0bdf1b58c11f9381e55427ca12cd2ce58fd3f4d5c"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_con2.dds",
+      "bytes": 8320,
+      "sha256": "f3b0d912819106d17dd8a61e662e8d79d3817ab6751615c0ad317303597f797c",
+      "width": 128,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_con2-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "c17f7f82c03c7cead97cc20e7c5ea36d4696d701ef972122b8a392b0227a052e"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_fl2a.dds",
+      "bytes": 16512,
+      "sha256": "0bd5b7d75db00edbd9e93434b57dac6580354f753ced0e716886a28a0b88fea6",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_fl2a-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "090f8425e92f30ae63aca52143b6e8b6258b5e1a74e9f9a08a46b902bffd6507"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_fl2b.dds",
+      "bytes": 16512,
+      "sha256": "14991f6a253d6ecc26ebe49153c091a3559f236d9a7f3595aae5ca88f16da0fe",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_fl2b-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "efa834093577517a7817098e0e0fd606fcf33937d03d1a28875bb1c5a63041c7"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_rb1b.dds",
+      "bytes": 16512,
+      "sha256": "359133a7be69623f1a414b1204802fdf7ef4550e0b183c2ca71b9d567b182a23",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_rb1b-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "c69926882cdf849a02960dbf23d76d083cf71ee9d7b2d4cb9973d33f4022bfe5"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_rb6b.dds",
+      "bytes": 16512,
+      "sha256": "b77e1130f4dfaef6da8d4723b760d65c615193f211914059a54e8632219760a7",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_rb6b-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "ee2f57543762be75d814fbd3e1233c7266980f5bd5a75da2ebdbd473e79ddfb7"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_red1.dds",
+      "bytes": 16512,
+      "sha256": "3d41ad9f59afc9ec411adb4708a20dd614ac31210e6e7ad2023bc505b997d5c8",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_red1-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "697ccb25079653c5a4c729142982423e9c0cd8057d77de9437b79556c35257e0"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_red3.dds",
+      "bytes": 16512,
+      "sha256": "96cfb1ad04f7c732a26a863ff1d832da596fe980094dfa4563ef8da1d7cf2de9",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_red3-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "d4cd195ae6be84327ff03aa24377f4e1f47a47d7d194fd44ce1d785e441c4582"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_wb4a.dds",
+      "bytes": 16512,
+      "sha256": "8dde695d4de7af133af092648caa81f8e2408e41fe39384cbd4ba1a663c579d2",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_wb4a-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "f7dff8d728115c63b28ab32e22051d54cbde0752524fd22b13151e7a6eef4c45"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_wb4b.dds",
+      "bytes": 16512,
+      "sha256": "f2aaa3cf70fdc7a6d6577013ab8536a23636b19eec8709b49089efca68b5e7ec",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_wb4b-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "a54a7416dc31c7bd69cdb53e74494205a22c262975044c45abad0f9c1b9460eb"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_wb4c.dds",
+      "bytes": 16512,
+      "sha256": "348297006f18669475501944cc1edb252085a6bda3714a04f1e50fbc7e7c09a5",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_wb4c-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "2ae8a57f570243c063949d1b38259feee0c442abf88dac29dadbe75e1638c004"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "bld_wb4d.dds",
+      "bytes": 8320,
+      "sha256": "04fc2eda55ad25e700c0f82186d980a785740881e7f10cc7b2ae5dbac079aea5",
+      "width": 128,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_wb4d-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "344c9056daa9785cd78569275ef8ab61cef54ef9ac6fd7c5a94ae739cf579d23"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "gan_au1a.dds",
+      "bytes": 4224,
+      "sha256": "824b5e2b9b1a0489a46dc5f823d6c20e90f4b75a73f4e7f105977bb388f15ca5",
+      "width": 32,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "gan_au1a-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "a549b975b3be5214a20b1eb9384a42a104cd4384e4ac559dae023b79fb6fca57"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "hse_yl2c.dds",
+      "bytes": 16512,
+      "sha256": "07cc2f42b4d67a95984a3d6ce1b2759ba7a9ef8be227edc77779bc12cf84dd43",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_yl2c-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "a705da19373a0a6d87ebcedf2dd2ea3ceef600066151e84b6ef0e852f397739b"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "hse_yl2d.dds",
+      "bytes": 16512,
+      "sha256": "8b0104ca001b31e395bc6ae5aa93215f097eca1b1b327908a891503a5cee0dcf",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_yl2d-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "1302778bba5d0d90b5eeaf0fafb7abaf91492ab52c2553e72ad78472728a9cbc"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "hse_yl2e.dds",
+      "bytes": 16512,
+      "sha256": "f4b0730b828ee6d6e42288bb546279f94093bbe85ad501f0ff3d463d79777d25",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_yl2e-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "031406d87ebd9c8d63f0c0b9f48dc7326fd1f8f5a6433c7f2acb77a247aec6cc"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "hse_yl5a.dds",
+      "bytes": 16512,
+      "sha256": "15437937aee1496aad642809fd03c7550af492ef1f357e15174102dfbb8c203c",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_yl5a-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "41e12d577d9cdc4aefbcf0ff70cbb5b16275e10239c003e311df7ef034defc0e"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "hse_yl5b.dds",
+      "bytes": 16512,
+      "sha256": "8cc23e7345446919c4404c3d9c8b791d97df55f446387c8d1129bed82f111e9e",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_yl5b-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "723d861c19ac3c347282a0a6c3d64f55ba91c85e5301c817cd0dc219bb964f35"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "hse_yl5d.dds",
+      "bytes": 16512,
+      "sha256": "d765d89f20a21ffe224fbe81984cc06ed440122a454e38bc0233fbf6d5f2eb87",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_yl5d-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "2ceb13310e128b32c0b25aeba417cf6fd88e0638732f1d5f19e5a9c6c2e2c0c2"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "hse_yl5e.dds",
+      "bytes": 16512,
+      "sha256": "3d9ead73fbd1a9741aaae966f11f0646eda1c3ab430a0327c7c3923ca463d5f7",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_yl5e-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "b31bae165401c37a2b1c3445511cc833b8bd2a73670b5d68e6ee800921430825"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "hut_reda.dds",
+      "bytes": 16512,
+      "sha256": "d87c2af400a7a8e6fe280c68f1286c8b6cb2d0ffb51714a1f09ce863e2f1debe",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hut_reda-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "5967b9844e603dc52c1130d5a8c70ad6b21efd8b60479cff014a2bb119534e6f"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "hut_redc.dds",
+      "bytes": 8320,
+      "sha256": "615dd2396e7712123bae6345bf8f952bc3425355a3ec013f0376e218b7902249",
+      "width": 128,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hut_redc-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "277fd11873824e55001098f9d16a0b7d8d39a72c454e649afa8211621f56d33c"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "hut_redd.dds",
+      "bytes": 16512,
+      "sha256": "8d07ab2593b1d186c411bfa01304da9e9791e5e1c7698e4d3a2889762f8b2f3c",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hut_redd-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "a98839418d051b62e078046b68607505ab7c4d81cb1dbe8de3cc9f632c32daef"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "hut_rede.dds",
+      "bytes": 16512,
+      "sha256": "6a363ba1313583a07a9ed471560421393abd12444b768f43c9181a4315222756",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hut_rede-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "18ff1e3596041a5f985cd1640d122748903b94f7199db9b83b3264d1221d6425"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "hut_redf.dds",
+      "bytes": 8320,
+      "sha256": "47c49837d48ba8810f8d15aac0528b7179c3bdfed1aa3f7167585a124be7261a",
+      "width": 128,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hut_redf-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "419468f3388a250b96852ccb11b0313d9cc14e24f230ba6d63dbfa42399f00d8"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "hut_redg.dds",
+      "bytes": 4224,
+      "sha256": "d4ab22809df63913bca0a5faf6da4a4ec597e0c5e33c729ef8752253cf5519dc",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hut_redg-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "3ce342fbca64e06bc124f71029115d14c2603b8dccecd1af8fb4dda07d48a8a9"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "hut_redh.dds",
+      "bytes": 2176,
+      "sha256": "dd9a6d74eb8518a635113d404aad89686f4ad2182f456da829694c67e284209e",
+      "width": 32,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hut_redh-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "e235249f8b4a7e61b8bb4d75f0931855bdb74e91672887f3606a5c06d0d9c327"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "hut_redl.dds",
+      "bytes": 2176,
+      "sha256": "011641df035452769f0ff5963291b4f01f9ea5500e1db849560a270fb93fad78",
+      "width": 64,
+      "height": 32,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hut_redl-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "d53718e862ea18ec10e3699d0538916c5776cf6bc3b1be1a00b4c3cc9138b882"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "hut_redm.dds",
+      "bytes": 4224,
+      "sha256": "e0142966e1292f13bec8f0117ce25bf464caa2954da5578a8046d625a8ed90b9",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hut_redm-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "c086cb4c96ac45ad48d77aba90b441fd432ba3fd8bd5f6bb3023b9c78bc98dd7"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "lgt_au1b.dds",
+      "bytes": 8320,
+      "sha256": "1a655c8cf1bf5e902e89195c7c6447cf970ab3f7f697ff73c9759ee39646c193",
+      "width": 128,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "lgt_au1b-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "0b2ceee5121ace5a3d6108949245473f887334f73d84fd55e4ebf0f78cb55e3c"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "rsn_st1c.dds",
+      "bytes": 16512,
+      "sha256": "3c15c1fcc800146540a8f12e1ace1852cfba8f1e8b213867081eb7dbd99c5840",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rsn_st1c-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "830e1c807dc3eab426edc201df358af2e7445b16fada3b249eaef2953a7171f8"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "rsn_st2b.dds",
+      "bytes": 16512,
+      "sha256": "a9fd3d4b11909b0c2613d4546c319a1af888598ade1fe6608410aa906d0661f2",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rsn_st2b-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "2edf3082d0311c5c964c6d43fd9bc04ad044840fd4182fc0d07a6847f49a9dc5"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "rsn_st3b.dds",
+      "bytes": 16512,
+      "sha256": "b034c1abc98ad93029058e7fad48c389de0075bf5920c3d54dc36d2a5a06871d",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rsn_st3b-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "7f8fc41db827920b4770e65b0239acf063a271554a789a8d1de8e7912e89a1c4"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "sgn_chv.dds",
+      "bytes": 8320,
+      "sha256": "441e8a4c3b9ea7575e09433b23c3f2c4f8894adc3394d840b7dfcbdec70b8675",
+      "width": 128,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "sgn_chv-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "cb8bd31a3dd293e688c2a6e8198888d6fb14c075ec68f947d6c7f15f2f72bbf4"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "sgn_chva.dds",
+      "bytes": 8320,
+      "sha256": "713e2c75cb7584f968c40d25f9a4a1def5cba84fd1b2bf2f70a2bf5539658cbe",
+      "width": 128,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "sgn_chva-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "da558ec81f2636e6466305f525904dedce73c5809c885653de1bbd3046458fd2"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "shd_bga.dds",
+      "bytes": 65664,
+      "sha256": "83c0b68cac53d39b05c36976eec96098a72d35df717fb149509f586700898115",
+      "width": 256,
+      "height": 256,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "shd_bga-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "0628ebccc49f1e8f909e8515acb42e0f4c68f8f1047e2e83671586e99009197d"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "shd_bgb.dds",
+      "bytes": 16512,
+      "sha256": "f47528af57229243a984edc74f782e30d03cf9026597292d8845fc0c6ac5dfa8",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "shd_bgb-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "9061666ebb24f992773ee33f94f8cccc5ad19b4d7bb90ae264d1f70f4d4cf4e2"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finhit.bfl",
+      "member": "shd_bgc.dds",
+      "bytes": 16512,
+      "sha256": "8098a9775ec1da68a62fbe4f41faa05cd5460db487e046ce2bb8da998fe3a97f",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "shd_bgc-finhit.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "3c43b2eee16adde50875a93bccc3854b74084f8ff329ed6939c0c400b0c50252"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_bn1a.dds",
+      "bytes": 4224,
+      "sha256": "2bdacf938dd716035ddbcfb397242204afdd2b0e2497166f1fab6d5f59bfcbc1",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_bn1a-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "2243a5ddef4f650bdd74a629d9efe7d94ccc1a5e8ee04f0ce07272559f21da81"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_bn1b.dds",
+      "bytes": 1152,
+      "sha256": "8e3210da5fa5b078d98c38bba13af7550a66ca7371543426ba45dec37eeeb94b",
+      "width": 32,
+      "height": 32,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_bn1b-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "71221a4b1681c2cb71117dcf98bf297a61b41dc16b8b022d7874a66a2023d41e"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_bn2a.dds",
+      "bytes": 16512,
+      "sha256": "906133772ec1e94179f88b724f5326e537601dec82ce183a9ec51b1a454c0287",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_bn2a-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "f09049556a211eeec6779db459c6db2afa6405fd301153626f781c55ead04d76"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_bn3a.dds",
+      "bytes": 16512,
+      "sha256": "18022095b02d2346e8c773c1b062d1bea7e587fd2149843d3250faf117a421b6",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_bn3a-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "3833c4c40ebdf69f7d694063fa10a3e843b4b6d7d9a09c9e7a461b27b10f61e1"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_bn3b.dds",
+      "bytes": 4224,
+      "sha256": "ac6211490ae5762b15ab2ffc81a2f0b99c414250c36b3cf5ea0cea1d0d377549",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_bn3b-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "cca4b3ef5e671d84e974c780bb88a223a293205ad47c9b9da8f2a196762a9766"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_brna.dds",
+      "bytes": 4224,
+      "sha256": "6a3f03dc29ab7681d56150db77d643e4f72802c20d72d03d66d152a8220c3d47",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_brna-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "6c2d28a6b203f1d0e449bb6c231510af59f3c67e40aeccca659e7c99f5d6c050"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_brnb.dds",
+      "bytes": 4224,
+      "sha256": "71e42b53f426c727fcf893db42d14dfdbe53cb90d53fb3c459b22164836d71fb",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_brnb-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "3fb98b4cad99cc244bfba4b7307d9254f62020d3ac46aec28956ff44acc83b89"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_brnd.dds",
+      "bytes": 4224,
+      "sha256": "7e69b702bb8c478ab29fb1d92c14885fed9421a1757938a34fd4db393296a236",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_brnd-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "197ebaa466c2b156413cb428ad994f2b16e1e8e14efee7f6468cad54f8235f3e"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_caba.dds",
+      "bytes": 4224,
+      "sha256": "eca8745b09dbd96d40786f6ed6b7a821e5b999515642721ac1cede591c38fbd9",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_caba-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "b1d7e90c66556d3428888e04238ab99eaa732cfc62133866da1673509322ace7"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_cabb.dds",
+      "bytes": 4224,
+      "sha256": "fdb637ab9a3e1becb751694635c381a1ba137387264561e1111dd2604edf4c3a",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_cabb-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "ce06013da0816a97b1ae7484ac6df8671e59e44a07a310eda71ddc8fddb77149"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_cabc.dds",
+      "bytes": 4224,
+      "sha256": "e017526603a9e2d9341af8aa83b627ae4a76b03520547829c456829282f2db3c",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_cabc-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "9c008775bff803facf29da85b96252d67bd26a2ec7055a0350327aba658ff91a"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_chimb.dds",
+      "bytes": 4224,
+      "sha256": "b1e89405364800c44d2eb036fd4bc9a1ba2b00739264045acce497478ad2271d",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_chimb-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "2ccd91ea50c763f5c0427e27e41eb0d1eb7b77ac530000bcd3f92130b5e81744"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_chimc.dds",
+      "bytes": 4224,
+      "sha256": "009a036dbd50d5f89edf4835882afb78037a70d88260f88fd2128be4c1645b11",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_chimc-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "7b7a88a6c062871ead434659c88d5c359b25973628557db0c529f4d01c8b7fe6"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_chimd.dds",
+      "bytes": 4224,
+      "sha256": "17f915f8275451ba3465d1ffe4b74f1b27f85cdc92593fe4f1bf69a528b8b5f2",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_chimd-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "6b0cb84b69719180c4d5d15baebbde9b17af895a327192375d6248dbb1e4d2a9"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_con1.dds",
+      "bytes": 4224,
+      "sha256": "b346062040ae90c2eda76a0315053e5d061513b22bdfd341de266c15a83359fe",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_con1-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "62d0fd0fa9f30e3f333d79164f6ddce32e73c5e6ba5fe60c5c019dc21ec17a79"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_con2.dds",
+      "bytes": 4224,
+      "sha256": "2c389f68d9fdc90f6c059cbfbb12ef34cdded182dee5ea5c8818fd08e6307af4",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_con2-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "fa69a15b08deb74efb965b4ed2c21bd20124747e3310460622e8e41709aff16a"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_fl2a.dds",
+      "bytes": 4224,
+      "sha256": "b9c014e47c8e57c6b4d8fdf894e8e559649b32738c9042a852712da262adb359",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_fl2a-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "990b3438d5725a8519d7062191882ed9c01547164794ff091cbd89e217e01df2"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_rb1b.dds",
+      "bytes": 4224,
+      "sha256": "4ab5216e34d976a2e7a9749bccf775d54e11002bdfba65361d338a7054d4d747",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_rb1b-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "d9cb1f19f25b8fae073133b08d9b9807a98f16bc7ff8dfb6056b167613a99ba9"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_rb6a.dds",
+      "bytes": 4224,
+      "sha256": "6d2681b4207607f84551f605ea5cd26936ffc9c817458b4b50fec006e4cb1158",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_rb6a-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "b1f9b5bc786c8a446091335a1270aea8e79a4cfdcb24c9033551f8a9a59c08b9"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_red2.dds",
+      "bytes": 16512,
+      "sha256": "157a0ab8af80b6b5f830e3287e35baabb387bf980cb55d71e54faae16abb921a",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_red2-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "79024fc540f186ae82f8807a5c975b4ed285c057b7c178035a72a64d94ddc78e"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_red3.dds",
+      "bytes": 4224,
+      "sha256": "0b4b40f8306ba95aafa148dc20707844d30e456c5e8f8384d2e08624e09c3d48",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_red3-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "eb76978d861f799c4b828c203934cda74dd19ff6254289a3014d912c19b62465"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_wb4a.dds",
+      "bytes": 4224,
+      "sha256": "2f0ea3402955d2ce500f0cc03a6cb9333970e24565e589495896dc24d53f722a",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_wb4a-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "706b1660185e1a87b812765b0f03d8aa408921522167ddef546f7563fff60e63"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_wb4b.dds",
+      "bytes": 4224,
+      "sha256": "856dbd7fa4b373e773276904da60f503c7008b999d24f391bd76407237b93f7f",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_wb4b-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "c2faba58298a6673fba4d766001f6360868e07dcd39dbaba82f80c042f611212"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_wb4c.dds",
+      "bytes": 4224,
+      "sha256": "fdf3c2a76c67462773c5da45f6fe12db32810b8707558de3da60ad3c22af0a9d",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_wb4c-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "307ee995de9768216c3ac38ca5639f503a6a110d5e1fa0f2b2e5945d92fd4eed"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "bld_wb4d.dds",
+      "bytes": 4224,
+      "sha256": "d28fe6e0e3109a33a5f03e15430efb5e3faf56d1cdcebe37890101c1aa37d058",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_wb4d-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "6872f7c86bb276ded899b1db45a89bd3f7811b13c34e3101e6eb1e40de41278a"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "gan_au1a.dds",
+      "bytes": 16512,
+      "sha256": "bc68ae4f70ffb0f2b02a0c10d94907f396080ffddb3bf082ce06b2e297fd1a6b",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "gan_au1a-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "1dcebebfec7f282ca9b4790f1b9bd2917bfd6099e0be6697ea79df03f9494ac7"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "hse_yl2c.dds",
+      "bytes": 4224,
+      "sha256": "0567f17b0c7fb70bdf6022b25bc7e1f33b22a2d79e472a085688cc66607caa4e",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_yl2c-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "1e55e9ee9107b346089216fe188d0abe4b89eba30edbda0b0b720b3f941bc1a3"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "hse_yl2d.dds",
+      "bytes": 4224,
+      "sha256": "d2b97adee46a782d2064550ae634b7e12f754e435e808ba010d01f9b42dea911",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_yl2d-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "ed20e8e92643494d94dfc5fb6b15ceada9727f54a8560e1b8feb690abf4a8cc6"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "hse_yl2e.dds",
+      "bytes": 4224,
+      "sha256": "c4bb5dbc2f7d8c5c781ef9a63e4bbc4f386c4ee8ebab54485152836d1a1df4f3",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_yl2e-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "736ea203f99232997f3cc7adef9720bafd1678490214d3c5b83db411aaa57bd5"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "hse_yl5a.dds",
+      "bytes": 4224,
+      "sha256": "e4f5780b4fb5a011b9e8395cde242abfa92153a4390ceeba7304d15a68fa3552",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_yl5a-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "6ecc0f66cb673628bf4fbaa803637b9b660ca95f249117b02288b4755be4e743"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "hse_yl5b.dds",
+      "bytes": 4224,
+      "sha256": "dc5035ce463c6a0731e82aa88466bbd71661084ffc4eed144b640acd0b3a285c",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_yl5b-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "79fa7ee78d685d61ccb4236bffde5f9554bb5658cb55bb456fb37f9e573fed83"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "hse_yl5e.dds",
+      "bytes": 4224,
+      "sha256": "c1b9c098e3f5cd9254a6c1b49451286b0956da61ae8abd9b419aa9a314af4e48",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_yl5e-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "08381f75f196cd5fdb8a5247c8f55e46aa03aab30c88bc76f36fd55d6ac6a0dd"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "hut_reda.dds",
+      "bytes": 4224,
+      "sha256": "cc7a3d6b084615a05d0fd2f33a0bcb7a45724bd0feb29168ec23d7b5262c623a",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hut_reda-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "9b2a19dc01ae54969d2d5089c03bab38016e34b820ebd2994747d1040fb4a8a6"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "hut_redc.dds",
+      "bytes": 4224,
+      "sha256": "9a2067603d06f55c13290927822e94cea2143fbb607cbb42861e910d6f761bfa",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hut_redc-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "c60c296eca9282029a17db00918865e18482620bdd689061f51a51546fd1a3ba"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "hut_redd.dds",
+      "bytes": 4224,
+      "sha256": "58daec374843488f588a4e3776dcfe8e778441d771277e90bcf726c22d739553",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hut_redd-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "5f730671b79ccdf31a5e78d9984fc93650352170e3544d5cd9b31016fdf37a09"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "hut_rede.dds",
+      "bytes": 4224,
+      "sha256": "3a5324046b8b5ebdd315f133ace905c4a84c6fbfc0f41ad6ad59d57533718c14",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hut_rede-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "138d232b86a218dcab1782d43af1c0839f477bdd5bc498597ecf2963cd1c74e3"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "hut_redf.dds",
+      "bytes": 4224,
+      "sha256": "328b857dd554d227185045ef8b3a2ffc7494915d635f0a4f0efd787821da00dc",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hut_redf-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "9aee8b1e29509d1889ede02cd7733ba3ee51fc2a6e090b706eae039ef94f9fd9"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "lgt_au1b.dds",
+      "bytes": 16512,
+      "sha256": "8bc94f5146249668c90ac388dae8f57b16f13ef40dcd8701f6437d78dbdfbf22",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "lgt_au1b-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "46adac1c21acaa0dbe46eb822121ffb9c0d6dfdba39499ec7ae19507ba51eb4a"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "rsn_st1c.dds",
+      "bytes": 4224,
+      "sha256": "ebdfc46efad102b7da1e6c40b41b248b5a4ed4b134022f47cb203e073a215000",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rsn_st1c-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "45645f9682c40088d12e6bf1bb994aff24301f5e6cc9ac416e03887755477519"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "rsn_st2b.dds",
+      "bytes": 4224,
+      "sha256": "d276b01b1d9ee3b0081fbcfbf22b730b923e3c7f5917ed26b8068f9964c8a35a",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rsn_st2b-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "2cd5a37516f125fd6796d9995d4d0ff8699a5d411211f3b113cfb2452f92088b"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "rsn_st3b.dds",
+      "bytes": 4224,
+      "sha256": "35d240436b49368256562dc6bd03b5335ca5ac23aa3975b72e7eeea8ea60c208",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rsn_st3b-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "03ea3ee6f3c095fbd08e714144461ec9dffc06ae60a2e21462d53e591d350146"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "sgn_chv.dds",
+      "bytes": 4224,
+      "sha256": "30da8578e32a9a867cefb2d76d917c717b247ac43b47aa1ec77caf9be92e2a10",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "sgn_chv-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "8a0a6a7896b82b1aac1647be1db941f26e0d6d998749ca58131fe74eb4062833"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "sgn_chva.dds",
+      "bytes": 4224,
+      "sha256": "3595371bd8718f0c50a663a25218f5c34191baf7fd9efcc9c6052ca929dbaa0f",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "sgn_chva-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "a270e80bc020daf5c5fd37b71feb08572bb48a2d3e3f1d8aab6a8ba421b8b41f"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "shd_bga.dds",
+      "bytes": 16512,
+      "sha256": "8ec8b4ca71a19e1f010490d61c3fc188e9249bc5befd3067dd19a22dc1e69f8c",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "shd_bga-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "2d12db4bb76588c1eb877d504425ba34a73616885dfc67d003467d7ea2952125"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "shd_bgb.dds",
+      "bytes": 4224,
+      "sha256": "1a2a61c2c57c40edae14593da5688864ed89d73a60aff0e1d966aae3fcbd8db3",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "shd_bgb-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "a84a28e596730dca89bbacccfe083ccfb4aed05528cf7790debe7aca277c4e75"
+    },
+    {
+      "stage": "fin01",
+      "archive": "finlot.bfl",
+      "member": "shd_bgc.dds",
+      "bytes": 4224,
+      "sha256": "aa2de627574ec5ecb4dd99ff245d50ddebe8a32df842ab8a410ca34302a17f62",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "shd_bgc-finlot.rgba",
+      "category": "opaque-object",
+      "usage": "finland1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "c80594ba4b6d6ece4fe1f1f2426c3e9d32aa994a472f2c644a6800a2d800d0b8"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "bld_hsea.dds",
+      "bytes": 16512,
+      "sha256": "1f42ab206eb3791b1f9d62f337c635271da4f1d0fc5e8b2e6fbad27896715b86",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_hsea-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "676c5bf6650a6c7d465a4476933b5471ca4f87185e6c86a36d509a3c9cf62922"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "bld_hseb.dds",
+      "bytes": 4224,
+      "sha256": "a18fa335aa7c335ea1e1e18d889110a8bc9d4cc795a4c3b31539f6135012ee06",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_hseb-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "debd17c832eb21c4cf6f77be4c05500a91035551172f55343a1935ba69bfebc6"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "bld_hsed.dds",
+      "bytes": 4224,
+      "sha256": "aca99357dcd87dfc8075a33a9e18372c6c626391f7f0e5e877f204f63ea4ec1e",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_hsed-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "1d091981c10c23c518f12e242a1c6a2603b5e5a1ac25d1883e1e59ddada2d2b2"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "bld_hsef.dds",
+      "bytes": 16512,
+      "sha256": "a832b5fc6a5f739b49a1e347fac3fdee972f211ef53d67e788bc55b116ef045d",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_hsef-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "898e6913ee3a9ccabd80033a9a4df9d657fa8997936fa3277127e177fbeecae9"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "bld_hseg.dds",
+      "bytes": 16512,
+      "sha256": "f24076d2c0326ac5e781aeb5a4ccd847e2e26abb029a5077bc4ddc874c9a1e79",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_hseg-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "c3b564bd010ed6cfcd8277595574323b7f28e5474b8fb10170cf5975c65bd8b6"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "bld_hsei.dds",
+      "bytes": 16512,
+      "sha256": "a9b0a05806b1869c56c0ab581e7818b90ad7510c4a224eae25ab407e0cb2fdd8",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_hsei-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "a77f49807ade59311c5db3f73cec0d0558689cbd705d29175a61d9bcf844e537"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "bld_hsek.dds",
+      "bytes": 4224,
+      "sha256": "99042b28d27ed1ee5c10452db7ee3d3cbc481ade0f350cd5823d6d0c6ce857ff",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_hsek-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "21f645cfd08d59bc979d60089e520980b608c13238f79e5bf4db2c6dd71044f2"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "bld_hsen.dds",
+      "bytes": 16512,
+      "sha256": "1268119064092889c0d88aa4b9ab6e98edefdf4c5e60ec8e915e12e1d5f5cef0",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_hsen-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "4783fa2c42d6252da320037ec94b458d582305bc58c6d6a5f3c7f24c125c18c8"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "bld_hsep.dds",
+      "bytes": 4224,
+      "sha256": "3322a8d0efcb81ca7f98b1dae6d76d8627cabd5b31426508135a344bee68043a",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_hsep-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "9896c5d527d3c952e8a1799eeeece0d38fa12194cbb2912eca324b266875ec91"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "bld_ht1a.dds",
+      "bytes": 16512,
+      "sha256": "8f1bc0852fd8054ea639db2ed4f4a0e2c2c80232549ea0252b55cd294c652506",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_ht1a-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "e517f99aecb168a584b22a4a9c75427fe7bb335aea2b0e33f9b5457a6af9d4ca"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "bld_ht2a.dds",
+      "bytes": 16512,
+      "sha256": "302f570ed981dcfd04667001bc73206fc5098d6add5d1e4457c1ac3337fcf9d4",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_ht2a-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "1eeb39aa8c291fa944f0616d34432938ed1601d54031cf337e1006fc5ed5826d"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "bld_ht2b.dds",
+      "bytes": 16512,
+      "sha256": "319c9868f0b76e48b469c15e790bf3389dbf69a3ed3a4640da917c87e58010f0",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_ht2b-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "f451f8a4be275cce8d735e2d2d0abcf47b9801c49836276681e3c5b0f5231d07"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "bld_p1b.dds",
+      "bytes": 4224,
+      "sha256": "d9d41f99339253e0f48d13398b20f0b584d27cf9606281a4936ee6ed99717c57",
+      "width": 32,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_p1b-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "ccd60266bbc1231b0e5c26f7d3af1b2b45fdc7ae9f6214c6cd3f8d2b6a6c680d"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "bld_rd1b.dds",
+      "bytes": 16512,
+      "sha256": "a990bebe16af801278cf42d0b3b3f62b68524b10e7d60ebef8707daf7950b85c",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_rd1b-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "b775b259aea6e6ded49ae9c42c9b157a6ab15aa8e5351697f849e2cc34b02e8c"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "con_rd1.dds",
+      "bytes": 16512,
+      "sha256": "5cf1334b640b593d2158ac6453cce30b13e340c4b4b3371d643cdee076028420",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "con_rd1-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "358d99ea5ed4efa980d5c4dbce8503bb101c59a964aabce15ee6b9199bfbb5c3"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "hse_st1a.dds",
+      "bytes": 16512,
+      "sha256": "87c0775a779ed735c7f834b0c2fa2d70d005a48b56b1a2252906e89f9eb5a363",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_st1a-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "5b842231392a56b993f32a680071f31c097ea60c84157ea6ee85c2b7a984c605"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "hse_st1b.dds",
+      "bytes": 16512,
+      "sha256": "316b60f12fcc50decf839c51ba5dca6f6da0820675201332cafc3b57bb2a8bd5",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_st1b-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "5bbf33cea88525e1ab7fe78732de9d5227299e854c289bda7f4e8ada02bc68a1"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "hse_st1c.dds",
+      "bytes": 16512,
+      "sha256": "076f92c4883e1d3d382a7f7ea42e990c41f737b2bed256955ab955202fe7772c",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_st1c-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "3a94cfc4c20f045f8ddaa2c92bf68880a2ed8e0700beb2feac6f87b5dd15ba76"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "hse_st1d.dds",
+      "bytes": 16512,
+      "sha256": "9b3523dc9fbeda0dfa1f71fb1f7ee81b34fae1bb1ab17300d99eb29028ebbf9f",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_st1d-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "738b8cf483d2cef120b388b161e978447113281f7763ac11eb9b16eba6e7808d"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "hse_st3a.dds",
+      "bytes": 16512,
+      "sha256": "2047cda067b2966329c6f5132090b2084dbecc3870986b179ebd226506df9dca",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_st3a-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "f2eab9bde37718ff9ebfcc9ae0356cb7c9551cacf6c8f0016747168fb9d2b969"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "hse_st3c.dds",
+      "bytes": 16512,
+      "sha256": "92c18d68f8a20c400108c5e9194acce89afbad7b3c883df31655f9a96a9fe340",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_st3c-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "bf2bb4294a66682a5bd3fcda5638c2fe5d8281791931ec605ff28a4e2290f1bf"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "lgt_sm1a.dds",
+      "bytes": 16512,
+      "sha256": "b19d14d72c54c5e52b92ae41c8b84fc96746647180b3735f2d962a80da883055",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "lgt_sm1a-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "0119e75983bfc89220cb0171d384b44991459ef77961f5659c950491e9a9d27a"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "rsn_st1c.dds",
+      "bytes": 16512,
+      "sha256": "3c15c1fcc800146540a8f12e1ace1852cfba8f1e8b213867081eb7dbd99c5840",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rsn_st1c-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "830e1c807dc3eab426edc201df358af2e7445b16fada3b249eaef2953a7171f8"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "rsn_st2b.dds",
+      "bytes": 16512,
+      "sha256": "a9fd3d4b11909b0c2613d4546c319a1af888598ade1fe6608410aa906d0661f2",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rsn_st2b-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "2edf3082d0311c5c964c6d43fd9bc04ad044840fd4182fc0d07a6847f49a9dc5"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "rsn_st3b.dds",
+      "bytes": 16512,
+      "sha256": "b034c1abc98ad93029058e7fad48c389de0075bf5920c3d54dc36d2a5a06871d",
+      "width": 128,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rsn_st3b-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "7f8fc41db827920b4770e65b0239acf063a271554a789a8d1de8e7912e89a1c4"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "van_wh1c.dds",
+      "bytes": 4224,
+      "sha256": "c79a338f1308b7f9fec25a7cedad6950f13b5ec8978ee7dce575beea534b81de",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "van_wh1c-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "6035cdc3a544af961b98da7cd687042ba76b5264e423e6f9843732e188a2bb42"
+    },
+    {
+      "stage": "fra01",
+      "archive": "frahit.bfl",
+      "member": "van_wh1d.dds",
+      "bytes": 4224,
+      "sha256": "74a594ff4b5654278796c87cf3c1f1b78b31bbe935b845437e9c614b50a14d59",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "van_wh1d-frahit.rgba",
+      "category": "opaque-object",
+      "usage": "france1-hi/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "132fbbcce70b3800dc822cd002b09734d0ad3a39b33afd3077cce65fd9282b1c"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "bld_gr1a.dds",
+      "bytes": 4224,
+      "sha256": "0eeccd6d19d2fec801ae852ca4359aabb78dcd7edbf67448bf2dfc22cda258cd",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_gr1a-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "e1681518ffadec8f6976cd28355f10fdf54ca3404edd5b13278dea4ad281d23e"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "bld_hsea.dds",
+      "bytes": 4224,
+      "sha256": "5f17a38453427a917e40d1450ef2c8eab25759f37e6bd3da67c158ca55995e63",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_hsea-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "75e4c5743d32922d611f8c64ddcf975f0f9c317770b2b3c157e39d37a1aa1caf"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "bld_hseb.dds",
+      "bytes": 1152,
+      "sha256": "c6509dd4241828d041f4ad29e0dcfdae7bbfa07213a440e8be3108d68935ee22",
+      "width": 32,
+      "height": 32,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_hseb-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "77090d9a2205fcd603b9a2788e524b7d6adc470d9a99c94d4e0ef36e36ec97e1"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "bld_hsef.dds",
+      "bytes": 4224,
+      "sha256": "7e3b4680a7b952af92d506e1c12479c7d4bcae5377e8df23250adb2333a60faa",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_hsef-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "efbb30bf9eb5b25fe069081fb07df24565213a5e347491c1f080bd296459d774"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "bld_hseg.dds",
+      "bytes": 4224,
+      "sha256": "8834917e42977ec6244af3ca2619e4fee9ea3e6fe21f9b8e8b7e4cd27cdad177",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_hseg-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "be53c0c455bfde2614824e847581eef27442effedc7558e21ae71c9ea09a5b93"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "bld_hsei.dds",
+      "bytes": 4224,
+      "sha256": "43eb213e7106a1ad1058523f71ef9d9a47deb0ae7174b4b3f09eb6357495f77a",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_hsei-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "ae6548403bc2de4546021c8cd66a54e331ca50da5da08b03440f7f95672ee42a"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "bld_hsek.dds",
+      "bytes": 1152,
+      "sha256": "b3fea0c19bd903bafe9b437bbc503b817298f77d4e127745cb11facb39f45bb9",
+      "width": 32,
+      "height": 32,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_hsek-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "81f8ff91ce2553dcff4b1f884afcfd2766806081ebbc3df63324b41182ebeae9"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "bld_hsen.dds",
+      "bytes": 4224,
+      "sha256": "a0cfbff0f11196af9cc1dc354af94a327ee85c63179a318765ba41b56a0ef653",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_hsen-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "2252ba3b52b996c39a0798a910138faa82c37afdae34b482afb52905de0e7684"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "bld_hsep.dds",
+      "bytes": 1152,
+      "sha256": "4da62615495ca50ee85b72037d554afbc16e2ee374a7edf166495c3e05268a5a",
+      "width": 32,
+      "height": 32,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_hsep-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "8586f7221d49b630628b7c47f7ecf14a68adc3fdae84b66767e61c820104a08f"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "bld_ht2a.dds",
+      "bytes": 4224,
+      "sha256": "89b1c9dc35617e11e3e8da16b9ed0b565fb4b50593c5de107cdb7487ccc0c55e",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_ht2a-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "19ff5f26cc73c069201a2f51606520c0ab50675f146bb6c51a138b12a9439fd9"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "bld_ht2b.dds",
+      "bytes": 4224,
+      "sha256": "517db3e148a27a328b28797bfa26d253a0636d054859b634ca8f528e063287b6",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_ht2b-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "1218029baed8650837579c69c15ef8a6f41492875d52ccc5d295a72b2985bd1b"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "bld_rd1a.dds",
+      "bytes": 4224,
+      "sha256": "a46e3758b8d1e114c7f8253200953887343a27c4efaefd34cde0ce204704f18d",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_rd1a-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "646a6f895a29e019ba34a9730f3c51f31dc5ce5ffbc06b007fd5c30584b20f71"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "bld_rd1b.dds",
+      "bytes": 4224,
+      "sha256": "aeb3d0da83614d29f221a4658612d97ef5bf03406a6e50b82399c75bd99211a0",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "bld_rd1b-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "1a0b02af8e2a1f45f464b7d9b6722ac0ccd0b3512e7ec912dff6d1bc43aed772"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "car_rn1c.dds",
+      "bytes": 4224,
+      "sha256": "1c9e132c9ba3fb363edbee625d1a5fe6ad7042c470ac6a6ae0f0e3370028782f",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "car_rn1c-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "039606e1252021f2e58642732699c0660a08da9deb44fb5a63b2361d87186a69"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "car_rn1d.dds",
+      "bytes": 4224,
+      "sha256": "d2a362c2922e5ae4d0f970b15238c781f047a4994ea2f6c8e6e9312b53203dd0",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "car_rn1d-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "a224829f01704fa24ee0e4284bcb55a523b06f2874eeec2cc1c61d912fe7c134"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "con_rd1.dds",
+      "bytes": 1152,
+      "sha256": "978382e96a0217d52527478cba5f5daaa1f4ed65ae371573e02b8fc2c322e70d",
+      "width": 32,
+      "height": 32,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "con_rd1-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "92151dff1c8ed65a316f24b63fa0e1f878eec79f9392770637958de6a1d647ab"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "hse_st1a.dds",
+      "bytes": 4224,
+      "sha256": "45e39929f162397c8643407747bef18b481a9f0bc24164e18238fd51f3a320e0",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_st1a-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "27d197050b8cf9e77fadfadcc9f020708239725d1a78233f389bd695025f1eaf"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "hse_st1b.dds",
+      "bytes": 4224,
+      "sha256": "4c1b3b389c0b095c2b6f25fcbba7fff68e8e114b8ac36f73238fdd727ed34223",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_st1b-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "769d9a8f1282d69bbcda7a4e47f1fe1cad8ef524655997ccd1025b7c81ef0fdd"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "hse_st1c.dds",
+      "bytes": 4224,
+      "sha256": "cbe5c23762f6a3715990660f4734a3dbe3357fc26f0f549431bf023411aa4aeb",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_st1c-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "e7e123e413147252395080047d393c0e349df12684af4ffd4a6d7349426a1adc"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "hse_st1d.dds",
+      "bytes": 4224,
+      "sha256": "cb16facc860b43805e4b318d14242a47b6a7c2648238854da5477e3f20e9e6b2",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_st1d-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "5d2c6f8ee9a22caf26fc227cc5dc1f29eacee27f06db32aa52c010c2e14c02d5"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "hse_st3a.dds",
+      "bytes": 4224,
+      "sha256": "4517d78a49dd224c58167da06dbcf37d6ec6ff256d428ff3c813a63ec3890dfb",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_st3a-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "3cda74a213492854f199315f62b8ba7806f214ee797a52d23825c83b791a8cf8"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "hse_st3b.dds",
+      "bytes": 4224,
+      "sha256": "5fc7a7edb43355af09e759579e0f49328d12d7eae1672550a278209f5f0c07a7",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_st3b-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "268a69ceb57281f12862d87005c3d316872d2d428bfa5873d0bb174f9f672ab9"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "hse_st3c.dds",
+      "bytes": 4224,
+      "sha256": "8837dffeafaf7a69233ad51284e9e3f5492012fcc1d4ff0c7f9ed1d6c37b701c",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_st3c-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "61af92d025a4fbdfed4a494df2a657a8efd0944fda466482f1e60b37d79e9862"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "hse_st3d.dds",
+      "bytes": 4224,
+      "sha256": "20482d63a225b1799500a6988f02981a509ab8ba1a55020a1ad9edd546fdad10",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "hse_st3d-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "bf10561ed26261990ac965c724d357916d967ad252c266088a3b2cd265e316be"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "lgt_sm1a.dds",
+      "bytes": 4224,
+      "sha256": "d5a38240f5d4a208edfdcfe9069b140fa94ab30fe82232714a0a659648df6e96",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "lgt_sm1a-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "5961b4396af09576415faa518f91981d2b70b35a9f330d051e108ae20bb9dc1e"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "rsn_st1c.dds",
+      "bytes": 4224,
+      "sha256": "ebdfc46efad102b7da1e6c40b41b248b5a4ed4b134022f47cb203e073a215000",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rsn_st1c-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "45645f9682c40088d12e6bf1bb994aff24301f5e6cc9ac416e03887755477519"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "rsn_st2b.dds",
+      "bytes": 4224,
+      "sha256": "d276b01b1d9ee3b0081fbcfbf22b730b923e3c7f5917ed26b8068f9964c8a35a",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rsn_st2b-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "2cd5a37516f125fd6796d9995d4d0ff8699a5d411211f3b113cfb2452f92088b"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "rsn_st3b.dds",
+      "bytes": 4224,
+      "sha256": "35d240436b49368256562dc6bd03b5335ca5ac23aa3975b72e7eeea8ea60c208",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "rsn_st3b-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "03ea3ee6f3c095fbd08e714144461ec9dffc06ae60a2e21462d53e591d350146"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "van_wh1c.dds",
+      "bytes": 4224,
+      "sha256": "c79a338f1308b7f9fec25a7cedad6950f13b5ec8978ee7dce575beea534b81de",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "van_wh1c-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "6035cdc3a544af961b98da7cd687042ba76b5264e423e6f9843732e188a2bb42"
+    },
+    {
+      "stage": "fra01",
+      "archive": "fralot.bfl",
+      "member": "van_wh1d.dds",
+      "bytes": 4224,
+      "sha256": "74a594ff4b5654278796c87cf3c1f1b78b31bbe935b845437e9c614b50a14d59",
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "output": "van_wh1d-fralot.rgba",
+      "category": "opaque-object",
+      "usage": "france1-lo/temp.obj exact material lookup; full-canvas source2x, UVs unchanged",
+      "output_sha256": "132fbbcce70b3800dc822cd002b09734d0ad3a39b33afd3077cce65fd9282b1c"
     }
   ]
 }
