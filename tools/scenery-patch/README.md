@@ -430,6 +430,32 @@ cache rather than deleting/reusing old outputs. Failure diagnostics now identify
 archive/member and expected/actual digest plus Pillow version. No integrity
 bypass, no source changes, no native acceptance claim.
 
+### Reviewed fixed-cutout extension
+
+`--trees crossed` now adds six exact-source mappings: Finland hi/lo
+`tre_fir2` and `tre_fr3`, and France hi/lo `tre_md2`. Crossed mode therefore
+prepares9tree mappings plus48spectator atlases (57entries), rather than
+3plus48. Shell mode retains its3tree mappings unchanged. No `--all-trees`
+flag is required for these six additions; other sources keep the existing
+opt-in/fallback behavior. No artwork is bundled or downloaded.
+
+All416matching original Finland1/France1 hi/lo object meshes passed the
+actual runtime full-canvas source-fit routine, and the actual loader submitted
+a replacement draw for each in a private owned-source test. GPU execution was
+stubbed in that routing test. Separately, all six generated fixed-cutout models
+were inspected with offscreen GPU rendering at0/30/60/90degrees. These are
+still intersecting textured planes, not fully modelled trees or recovered
+detail. France broadleaf lower-stem/grass masking follows the existing crossed
+recipe; low-source cutouts remain coarse and can show repeated branches.
+
+An audit of all8520individual tree/bush object meshes found8516full-canvas
+fits and4rejections (France `tre_co5a`, two per quality). Those rejected cards
+are not added. Passing this fit audit alone is not enough to add an unreviewed
+source. Runtime cropped/nonplanar/source-identity rejection is unchanged. Native
+Metal driving, distance transitions, wind, culling and performance remain
+unverified. Recipe hashing creates a new private cache and leaves old caches,
+original files, geometry, collisions and physics unchanged.
+
 ### Experimental original-card foliage fallback (611 variants)
 
 Adds66exact-source foliage variants actually referenced by Finland1/France1

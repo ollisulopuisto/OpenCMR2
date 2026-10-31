@@ -136,6 +136,23 @@ class Tests(unittest.TestCase):
         self.assertFalse(list(self.output.rglob('*.bfl')))
         self.run_patch(ok=False)
 
+    def test_reviewed_crossed_scope_and_shell_fallback(self):
+        self.assertEqual(patcher.CROSSED_CANDIDATES,{
+            ('finhit.bfl','tre_fir2'),('finlot.bfl','tre_fir2'),
+            ('finhit.bfl','tre_fr3'),('finlot.bfl','tre_fr3'),
+            ('frahit.bfl','tre_md2'),('fralot.bfl','tre_md2')})
+        # Same verified synthetic full-canvas source, new mapping name.
+        old='frahit.bfl/tre_md1.dds';rec=self.index.pop(old)
+        self.index['frahit.bfl/tre_md2.dds']=rec
+        (self.input/'frahit.bfl').write_bytes(bfl([('tre_md2.dds',self.raw)]))
+        self.write_index();self.run_patch('--tree-geometry','shell')
+        self.assertFalse(list(self.output.glob('trees/*/*/tree.obj')))
+        shutil.rmtree(self.output);self.run_patch('--tree-geometry','crossed')
+        objs=list(self.output.glob('trees/*/*/tree.obj'));self.assertEqual(len(objs),1)
+        self.assertTrue(objs[0].read_text().startswith('# opencmr2-source-canvas-1 32 32'))
+        coverage=json.loads((self.output/'coverage.json').read_text())
+        self.assertEqual(next(x for x in coverage if x['texture']=='tre_md2.dds')['status'],'source-fitted-interpolated')
+
     def test_crossed_candidate(self):
         self.run_patch('--tree-geometry','crossed')
         metadata=json.loads(next(self.output.glob('trees/*/*/recipe.json')).read_text())
