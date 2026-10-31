@@ -55,8 +55,11 @@ startup log show the active fog/mote state.
 Fog is one full-screen pass over scene + depth - the same cost class as the
 existing grade/god-ray passes, no volumetric marching, no extra scene render.
 Motes are at most 48 billboards at 100 percent through the existing particle
-path. Actual frame-time impact on the M2 is **not measured**: verify with the
-F10 FPS readout and bring fog_amount down from 100 if it costs too much.
+path. Actual frame-time impact on the M2 is **not measured**; check the F10
+FPS readout. Note the fog pass costs the same at any amount (one full-screen
+pass, intensity is just a blend factor) - if it costs too much, the mitigation
+is `--effect fog=off` (or the menu/F10 toggle), not a lower amount. Lower
+amounts are for the look, not for speed.
 
 ## Renderer notes
 
