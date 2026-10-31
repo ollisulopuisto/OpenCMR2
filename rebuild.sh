@@ -7,6 +7,10 @@
 # Asset options (all opt-in; none is on by default). They run the game binary's own helper with --prepare-only after the build, so the
 # private pack is made the same way as at launch: originals are verified by hash and never written, the cache lives under enhancements/ in your
 # profile, an old cache is never overwritten, nothing is downloaded (unless you add --install-enhancement-deps), no selection is saved to the INI.
+#   --update                    Fast-forward origin/main first (clean checkout only); never resets/stashes
+#   --all-mods                  Current audiovisual preset (not every effect on); needs data and owned car ZIPs
+#   --run                       Launch after a successful build/preparation
+#   --mods-dir DIR              Owned car ZIP folder for --all-mods (or CMR2_MODS_DIR; default mods)
 #   --data DIR                  Your owned game data folder (or set CMR2_DATA). Required with any asset option.
 #   --trees crossed|shell       3D tree replacements (experimental, three verified tree cards)
 #   --spectators animated       Articulated spectator poses
@@ -26,7 +30,13 @@ cd "$(dirname "$0")"
 usage() { sed -n '2,/^set -euo/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'; }
 die() { echo "rebuild.sh: $*" >&2; exit 2; }
 
-DATA="${CMR2_DATA:-}"
+DATA="${CMR2_DATA:-${OPENCMR2_DATA:-}}"
+MODS="${CMR2_MODS_DIR:-mods}"
+UPDATE=0
+ALL_MODS=0
+RUN=0
+REEXEC_ARGS=()
+for arg in "$@"; do [ "$arg" = --update ] || REEXEC_ARGS+=("$arg"); done
 DRY=0
 ASSETS_ONLY=0
 FLAGS=()
@@ -34,6 +44,10 @@ need_value() { [ "$#" -ge 2 ] && [ -n "$2" ] || die "$1 needs a value (see --hel
 while [ "$#" -gt 0 ]; do
     case "$1" in
         -h|--help) usage; exit 0 ;;
+        --update) UPDATE=1; shift ;;
+        --all-mods) ALL_MODS=1; shift ;;
+        --run) RUN=1; shift ;;
+        --mods-dir) need_value "$@"; MODS="$2"; shift 2 ;;
         --data) need_value "$@"; DATA="$2"; shift 2 ;;
         --trees) need_value "$@"; case "$2" in crossed|shell) ;; *) die "--trees takes crossed or shell, got '$2'" ;; esac; FLAGS+=(--trees "$2"); shift 2 ;;
         --spectators) need_value "$@"; [ "$2" = animated ] || die "--spectators takes animated, got '$2'"; FLAGS+=(--spectators "$2"); shift 2 ;;
@@ -47,14 +61,110 @@ while [ "$#" -gt 0 ]; do
     esac
 done
 
+# Update before using preset definitions: re-enter the newly fetched script, without
+# --update, so options/launch settings are taken from the same source being built.
+if [ "$UPDATE" = 1 ]; then
+    [ -z "$(git status --porcelain)" ] || die "--update needs a clean checkout (including untracked files); save your work first"
+    if [ "$DRY" = 1 ]; then
+        echo "==> Dry run: would fetch origin main, switch to main and fast-forward only; no git changes"
+    else
+        git fetch origin main
+        git show-ref --verify --quiet refs/heads/main || die "local main missing; create it from origin/main first"
+        git merge-base --is-ancestor main origin/main || die "local main is ahead/diverged; stopped without switching or resetting"
+        git switch main
+        git merge --ff-only origin/main
+        exec bash ./rebuild.sh "${REEXEC_ARGS[@]+"${REEXEC_ARGS[@]}"}"
+    fi
+fi
+if [ "$ALL_MODS" = 1 ]; then
+    [ "${#FLAGS[@]}" -eq 0 ] || die "--all-mods cannot be combined with individual asset/dependency options"
+    [ -d "$MODS" ] || die "owned car ZIP folder not found: $MODS (use --mods-dir or CMR2_MODS_DIR)"
+    FLAGS=(
+        --asset-upgrades
+        --trees
+        shell
+        --tree-wind
+        on
+        --spectators
+        animated
+        --driver-names
+        real
+        --cars
+        205-finland-1986,subaru-spain-1996,fabia-redbull,lancer-finland-2001
+        --mods-dir
+        "$MODS"
+        --roads
+        finland1
+        --textures=uprez
+        --effect
+        temporal_aa=off
+        --effect
+        spatial_aa=on
+        --effect
+        metalfx_spatial=on
+        --effect
+        volumetric_clouds=off
+        --effect
+        dust_plume=on
+        --effect
+        dust_volume=on
+        --effect
+        body_dirt=on
+        --effect
+        bloom=off
+        --effect
+        particles=off
+        --effect
+        shadows=on
+        --effect
+        god_rays=on
+        --effect
+        color_grading=off
+        --effect
+        motion_blur=off
+        --effect
+        depth_of_field=off
+        --test-preset
+        overdo
+        --speed-hold
+        0
+        --effect
+        vapor_trails=on
+        --effect
+        speed_lines=off
+        --speed-fov
+        100
+        --tire-debris
+        200
+        --tire-track-length
+        1000
+        --tire-track-history
+        8
+        --drone-distance
+        50
+        --sun-glare
+        60
+        --camera-roll
+        30
+        --speed-fov-cockpit
+        25
+        --tunnel-vision
+        130
+        --tunnel-lines
+        1
+    )
+fi
+
 PREPARE=0
 for f in "${FLAGS[@]+"${FLAGS[@]}"}"; do case "$f" in --trees|--spectators|--textures|--roads|--driver-names) PREPARE=1 ;; esac; done
+[ "$ALL_MODS" = 0 ] || PREPARE=1
 [ "$PREPARE" = 1 ] || { [ "${#FLAGS[@]}" -eq 0 ] || die "--install-enhancement-deps needs an asset option"; [ "$ASSETS_ONLY" = 0 ] || die "--assets-only needs an asset option"; }
 
 BIN=build/macos/src/opencmr2
 if [ "$PREPARE" = 1 ]; then
     [ -n "$DATA" ] || die "asset options need --data DIR (or CMR2_DATA)"
     [ -d "$DATA" ] || die "game data folder not found: $DATA"
+    if [ "$ALL_MODS" = 0 ]; then
     case " ${FLAGS[*]} " in
         *" --textures "*) n=$(find "$DATA" -iname frahit.bfl 2>/dev/null | wc -l | tr -d ' ')
             [ "$n" = 1 ] || die "--textures france1 needs exactly one frahit.bfl under $DATA, found $n" ;;
@@ -70,12 +180,17 @@ if [ "$PREPARE" = 1 ]; then
                 [ "$n" = 1 ] || die "need exactly one $b under $DATA, found $n (trees and spectators are fitted to the original release)"
             done ;;
     esac
+    fi
+fi
+if [ "$RUN" = 1 ] && [ -n "$DATA" ]; then
+    [ -d "$DATA" ] || die "game data folder not found: $DATA"
 fi
 
 if [ "$DRY" = 1 ]; then
     echo "==> Dry run: nothing is built or written"
     if [ "$ASSETS_ONLY" = 1 ]; then echo "    skip rebuild (--assets-only), use $BIN"; else echo "    rebuild: rm -rf build/macos; cmake --preset macos; cmake --build --preset macos"; fi
-    if [ "$PREPARE" = 1 ]; then echo "    prepare: $BIN --data \"$DATA\" ${FLAGS[*]} --prepare-only"; echo "    inputs checked: data folder present, original archives found where needed"; else echo "    no asset options: no preparation"; fi
+    if [ "$PREPARE" = 1 ]; then echo "    prepare: $BIN --data \"$DATA\" ${FLAGS[*]} --prepare-only"; echo "    data folder checked; --all-mods source hashes and car ZIPs are validated by the game helper during preparation"; else echo "    no asset options: no preparation"; fi
+    if [ "$RUN" = 1 ]; then printf "    run:"; printf " %q" "$BIN"; if [ -n "$DATA" ]; then printf " %q" --data "$DATA"; fi; printf " %q" "${FLAGS[@]+"${FLAGS[@]}"}"; printf "\n"; fi
     exit 0
 fi
 
@@ -96,5 +211,10 @@ if [ "$PREPARE" = 1 ]; then
     echo "==> Preparing private asset pack (originals are not modified)"
     "$BIN" --data "$DATA" "${FLAGS[@]}" --prepare-only
     echo "==> Pack prepared. Launch with the same --data and flags to use it."
+fi
+if [ "$RUN" = 1 ]; then
+    [ -x "$BIN" ] || die "$BIN not found"
+    echo "==> Launching"
+    if [ -n "$DATA" ]; then exec "$BIN" --data "$DATA" "${FLAGS[@]+"${FLAGS[@]}"}"; else exec "$BIN" "${FLAGS[@]+"${FLAGS[@]}"}"; fi
 fi
 echo "==> Done"

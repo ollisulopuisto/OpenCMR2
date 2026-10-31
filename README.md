@@ -124,6 +124,44 @@ Accuracy is tested against the original executable rather than assumed:
 Graphical enhancements will be added one at a time and kept optional, so the
 original look stays available.
 
+## macOS rebuild and launch shortcut
+
+`./rebuild.sh` still only does a clean macOS build. Updating and launching are opt-in:
+
+```sh
+export CMR2_DATA="/path/to/your/owned/CMR2"
+export CMR2_MODS_DIR="/path/to/your/owned/car-zips"  # default: mods in this checkout
+./rebuild.sh --update --all-mods --run
+```
+
+Use ASCII `--`, not typographic dashes. Run from an existing checkout with a local
+`main` branch. The first time, use `git switch main && git pull --ff-only` to get
+these new switches after their PR is merged. `--update` fetches `origin/main`,
+switches to `main` and fast-forwards only. Tracked edits, untracked files, or an
+ahead/diverged local `main` stop it without discarding, stashing or resetting work.
+It then re-enters the updated script so the build and preset come from one version.
+
+`--all-mods` is a named experimental audiovisual preset, not “turn every effect
+on”. It preserves the current launch settings: shell trees with wind, animated
+spectators, real driver names, the 205/Subaru/Fabia/Lancer liveries, Finland1 roads,
+portable uprez textures, spatial AA/MetalFX, dust/body dirt, shadows/god rays,
+vapor trails and the existing speed-FOV/tunnel/camera settings. Temporal AA,
+volumetric clouds, bloom, particles, color grading, motion blur, DoF and speed
+lines stay off. Source filtering does not restore missing detail; atlas mixing,
+native appearance/performance and cockpit geometry clipping remain unverified.
+No physics or gameplay changes. Original assets stay private and unchanged.
+
+Paths can instead be passed as `--data DIR --mods-dir DIR`; `OPENCMR2_DATA` is also
+accepted when `CMR2_DATA` is unset. No personal path is stored in the repository.
+This shortcut does not download missing car ZIPs or enhancement dependencies.
+Missing/invalid sources fail in the existing hash-checking preparation helper.
+`--all-mods` cannot be mixed with individual asset options. `--run` alone launches
+with normal saved settings after building, without applying the preset.
+`--assets-only --all-mods --run` uses an existing binary without rebuilding.
+`--dry-run` prints the local plan, including an optional update, without fetching,
+building, preparing or launching; it cannot validate incoming remote changes or
+source hashes. See `./rebuild.sh --help`.
+
 ## Running
 
 Download the package for your platform from
