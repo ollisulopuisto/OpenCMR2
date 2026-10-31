@@ -74,6 +74,12 @@ covered by tests/fog_math.cpp.
   cap, sun glow falloff, raw-depth fallback.
 - tests/air_mote_spawn.cpp: ring bounds, uniform disc density, spawn rate
   scaling, drift/sink/fade step, pool caps.
+- tests/air_mote_pool.cpp: the real production spawn path (Particle_Spawn in
+  Graphics.cpp) with a full 400-slot pool: 48 base cap at amount 100, gameplay
+  rand stream untouched, drift/sink update through the registered callback,
+  original particles never evicted by motes, motes evicted first by other
+  spawns. tests/billboard_queue_wiring.py pins the queue acceptance counters.
+  Actual mote pixels in a rendered stage remain unverified.
 - tests/gl_effects_runtime.cpp (manual, `python3 tests/gl_effects_runtime.py
   --build build/linux --output out`): production fog.frag through the real GL
   executor on llvmpipe. Off = exact identity, near/cockpit-depth pixels
