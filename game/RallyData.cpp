@@ -1,5 +1,6 @@
 #include "CameraMove.h"
 #include "AirMote.h"
+#include "SnowMaterial.h"
 #include "TuningMode.h"
 #include "EffectAmounts.h"
 #include "TuningPanel.h"
@@ -6808,6 +6809,13 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
                 if(Sys_GetOption("video.air_motes",0)==0)snprintf(text,sizeof text,"Air motes: off (video.air_motes=0)");
                 else snprintf(text,sizeof text,"Air motes: live %d, queued %u total (queued is not visible pixels)",al,ad);
                 line(text,Sys_GetOption("video.air_motes",0)&&al>0?lit:dim);
+            }
+            {
+                int tagged=0,applied=0;SnowMaterial_GetStats(&tagged,&applied);
+                int sm=Sys_GetOption("video.snow_material",0);
+                if(sm<=0)snprintf(text,sizeof text,"Snow material: off (video.snow_material=0)");
+                else snprintf(text,sizeof text,"Snow material: %s, %d ground vertices tagged snow (setting %d%%)",applied?"lifting":"tagged, no lift",tagged,sm);
+                line(text,sm>0&&applied?lit:dim);
             }
         }
         {

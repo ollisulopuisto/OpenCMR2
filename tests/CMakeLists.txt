@@ -304,6 +304,20 @@ add_test(NAME light_field COMMAND light_field_test)
 add_executable(snow_glint_test snow_glint.cpp)
 target_include_directories(snow_glint_test PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/game)
 add_test(NAME snow_glint COMMAND snow_glint_test)
+
+add_executable(snow_material_test snow_material.cpp)
+target_include_directories(snow_material_test PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/game)
+add_test(NAME snow_material COMMAND snow_material_test)
+
+add_executable(snow_vertex_channel_test snow_vertex_channel.cpp
+    ${PROJECT_SOURCE_DIR}/src/render/gfx_core.cpp
+    ${PROJECT_SOURCE_DIR}/src/diagnostics/observer.cpp)
+target_include_directories(snow_vertex_channel_test PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/game)
+target_link_libraries(snow_vertex_channel_test PRIVATE SDL3::SDL3)
+add_test(NAME snow_vertex_channel COMMAND snow_vertex_channel_test)
+
+add_test(NAME snow_material_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/snow_material_wiring.py)
+set_tests_properties(snow_material_wiring PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 add_executable(weather_glint_test weather_glint.cpp)
 target_include_directories(weather_glint_test PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/game)
 add_test(NAME weather_glint COMMAND weather_glint_test)

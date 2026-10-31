@@ -116,11 +116,11 @@ struct EnhancementOptions {
             // signed on the command line (negative clears toward the finish), stored 0..200 neutral 100
             if(value.empty()||*end||n<-100||n>100)error="--fog-evolve expects -100..100 (negative clears, positive thickens)";else overrides["video.fog_evolve"]=(int)n+100;
         }
-        if(key=="--fog-amount"||key=="--fog-glow"||key=="--fog-clear"||key=="--fog-lights"||key=="--air-motes-amount"||key=="--snow-glint"){
+        if(key=="--fog-amount"||key=="--fog-glow"||key=="--fog-clear"||key=="--fog-lights"||key=="--air-motes-amount"||key=="--snow-glint"||key=="--snow-material"){
             char *end=nullptr;long n=strtol(value.c_str(),&end,10);
             int hi=key=="--fog-glow"?100:key=="--air-motes-amount"?500:200;
             if(value.empty()||*end||n<0||n>hi)error=key+" expects 0.."+std::to_string(hi);
-            else overrides[key=="--fog-amount"?"video.fog_amount":key=="--fog-clear"?"video.fog_clear":key=="--fog-lights"?"video.fog_lights":key=="--fog-glow"?"video.fog_glow":key=="--snow-glint"?"video.snow_glint":"video.air_motes_amount"]=(int)n;
+            else overrides[key=="--fog-amount"?"video.fog_amount":key=="--fog-clear"?"video.fog_clear":key=="--fog-lights"?"video.fog_lights":key=="--fog-glow"?"video.fog_glow":key=="--snow-glint"?"video.snow_glint":key=="--snow-material"?"video.snow_material":"video.air_motes_amount"]=(int)n;
         }
         if(key=="--test-preset"){
             bool ok=!value.empty();size_t begin=0;int parts=0;

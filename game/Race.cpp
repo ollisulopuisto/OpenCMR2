@@ -7,6 +7,7 @@
 #include "AirMote.h"
 #include "FogDynamics.h"
 #include "CurvedRoad.h"
+#include "SnowMaterial.h"
 #include "SceneryPack.h"
 #include "SceneryPackFormat.h"
 #include <stddef.h>
@@ -367,8 +368,10 @@ void Race_LoadStageModel(void)
     pBuffer = CGenericFileLoader::FindFile((GenericFile *)StageTiming_GetStageFile3(), g_strTempC3D, NULL, NULL, 0);
     if (CurvedRoad_Render()) pBuffer=CurvedRoad_Render();
     if (pBuffer != NULL) {
+        SceneNode *root;
         pFile = Race_GetLoadedStageFile();
-        Sector_BuildC3DModelScene(pBuffer, RallyData_GetChallengeRenderState(), pFile);
+        root = Sector_BuildC3DModelScene(pBuffer, RallyData_GetChallengeRenderState(), pFile);
+        SnowMaterial_SetStageScene(root);   // video.snow_material: terrain snow tagging walks this scene
     }
 }
 
