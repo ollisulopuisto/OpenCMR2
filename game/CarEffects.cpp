@@ -1,6 +1,7 @@
 #include "port/sys.h"
 #include "DustPlume.h"
 #include "AirMote.h"
+extern FixVector g_particleWind;
 #include "FogDynamics.h"
 #include "RallyRoute.h"
 #include "port/gfx.h"
@@ -1885,8 +1886,10 @@ void FogDynamics_Step(int step16_16)
     g_fogDynamicsEffective = eff;
 }
 
-// Optional floating dust motes (video.air_motes): slow pale specks drifting in the air around the
-// viewed car, visible at any speed (see AirMote.h). Spawn only; own LCG, never rand(), and the
+// Optional floating dust motes (video.air_motes): small bug-like specks flying on their
+// own around the viewed car, visible at any speed (see AirMote.h). The shared drift is
+// wind/16 plus most of the viewed car's velocity, so the swarm travels along instead of
+// the car driving into stationary spots. Spawn only; own LCG, never rand(), and the
 // particles never feed back into the car, the camera or physics.
 void AirMotes_Step(int step16_16)
 {
@@ -1894,6 +1897,9 @@ void AirMotes_Step(int step16_16)
     Car *car = Car_Get(0);
     if (!car) return;
     int amount = Sys_GetOption("video.air_motes_amount", 100);
+    g_airMoteDrift.x = g_particleWind.x / 16 + (int)(car->velocity.x * 0.65f);
+    g_airMoteDrift.y = g_particleWind.y / 16 + (int)(car->velocity.y * 0.65f);
+    g_airMoteDrift.z = g_particleWind.z / 16 + (int)(car->velocity.z * 0.65f);
     static float carry = 0.f;
     static unsigned seed = 0x53c9e1a7u;
     auto unit = [&]() { seed = seed * 1664525u + 1013904223u; return (seed >> 8) / 16777216.f; };

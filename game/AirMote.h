@@ -1,6 +1,7 @@
 #ifndef OPENCMR2_AIR_MOTE_H
 #define OPENCMR2_AIR_MOTE_H
 #include <cmath>
+#include <cstring>
 struct Texture;
 #include "Particle.h"
 // Optional floating dust motes (video.air_motes, default off): pale specks drifting
@@ -15,8 +16,9 @@ constexpr int AIR_MOTE_LIFE = 150;   // 25 Hz steps = 6 s
 constexpr int AIR_MOTE_MAX_AMOUNT = 500;
 // Peak alpha: raised 130 -> 190 after the first native look found the specks too faint
 // against bright fog. Second native look ("smaller and more plentiful, like small
-// bugs"): size dropped 0x3800 -> 0x2000 (see StageTiming) and the amount ceiling
-// raised 300 -> 500 (cap 144 -> 240); alpha stays 190.
+// bugs"): size 0x3800 -> 0x2000 and the amount ceiling 300 -> 500 (cap 144 -> 240).
+// Third native look ("much smaller"): size 0x2000 -> 0x1000 (see StageTiming); count,
+// cap and alpha stay - the density, not the speck size, carries the effect.
 constexpr int AIR_MOTE_ALPHA_MAX = 190;
 // video.air_motes_amount (0..500): spawn rate and, above 100, the live cap grow with it.
 inline int AirMote_Cap(int amountPercent) {
@@ -33,12 +35,33 @@ inline bool AirMote_HasBudget(int active, int motes, int capacity, int amountPer
     if (motes < AIR_MOTE_BASE) return true;
     return motes < AirMote_Cap(amountPercent) && active < capacity * 3 / 4;
 }
-// Slow drift: p.position is the per-step velocity (16.16 fixed), eased toward a gentle
-// ambient drift (a fraction of the stage wind) plus a slow sink. Alpha fades in and out.
-inline void AirMote_Step(Particle &p, const FixVector &wind) {
-    p.position.x += (wind.x / 16 - p.position.x) / 48;
-    p.position.z += (wind.z / 16 - p.position.z) / 48;
-    p.position.y += (-0x300 - p.position.y) / 48;   // sinks about 0.3 world units per second
+// Shared drift the motes wander around: stage wind/16 plus most of the viewed car's
+// velocity, set by the caller (AirMotes_Step) so the swarm travels WITH the car - the
+// third native look ("they float and fly around on their own instead of looking like
+// black spots we drive into"). Set per spawn by the caller too: the wander seed the
+// init callback stamps into the particle.
+extern FixVector g_airMoteDrift;
+extern unsigned g_airMoteNextSeed;
+// Bugs, not sinking dust: p.position is the per-step velocity (16.16 fixed), eased
+// snappily toward the shared drift plus a per-particle wander - a smooth loop whose
+// direction, turn rate, speed and bob phase come from the spawn-time seed, so every
+// mote flies its own little path. No sink: the vertical component oscillates gently.
+// Alpha fades in and out as before. Pure maths, covered by tests/air_mote_spawn.cpp.
+inline void AirMote_Step(Particle &p, const FixVector &drift) {
+    unsigned seed;
+    std::memcpy(&seed, p.pad0x5c, 4);
+    if (seed == 0) seed = 0x9e3779b9u;   // particles spawned before the init callback existed stay deterministic
+    float steps = (float)(p.age >> 16);
+    float ang0 = (seed & 0xffff) * 6.2831853f / 65536.f;
+    float turn = 0.5f + ((seed >> 16) & 0xff) * (1.5f / 255.f);   // 0.5..2.0 rad/s, per mote
+    float spd = 0.3f + ((seed >> 24) & 0xff) * (0.6f / 255.f);    // 0.3..0.9 units/s, per mote
+    float ang = ang0 + steps * turn / 25.f;                       // 25 Hz steps
+    int wx = (int)std::lround(std::cos(ang) * spd * 65536.f / 25.f);
+    int wz = (int)std::lround(std::sin(ang) * spd * 65536.f / 25.f);
+    int wy = (int)std::lround(std::sin(ang0 * 2.f + steps * (0.8f + turn) / 25.f) * 0.25f * 65536.f / 25.f);
+    p.position.x += (drift.x + wx - p.position.x) / 24;
+    p.position.z += (drift.z + wz - p.position.z) / 24;
+    p.position.y += (drift.y + wy - p.position.y) / 24;
     p.sourceVector.x += p.position.x;
     p.sourceVector.y += p.position.y;
     p.sourceVector.z += p.position.z;
@@ -69,6 +92,7 @@ inline float AirMote_SpawnRate(int amountPercent) {
     return 0.32f * (a / 100.f);
 }
 void AirMote_Update(Particle *, ParticleType *, SceneNode *);
+void AirMote_Init(Particle *, ParticleType *, void *);
 void AirMote_Spawn(FixVector *world);
 void AirMotes_Step(int step16_16);
 void AirMote_LogStats(int stepsElapsed);

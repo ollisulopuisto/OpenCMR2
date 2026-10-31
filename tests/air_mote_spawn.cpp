@@ -3,6 +3,7 @@
 #include "AirMote.h"
 #include <cstdio>
 #include <cmath>
+#include <cstring>
 static int fails;
 #define CHECK(c) do{ if(!(c)){ std::printf("FAIL %d: %s\n", __LINE__, #c); ++fails; } }while(0)
 int main(){
@@ -44,22 +45,46 @@ int main(){
     CHECK(AirMote_SpawnRate(0) == 0.f);
     CHECK(std::fabs(AirMote_SpawnRate(300) - 0.96f) < 1e-6f);
     CHECK(std::fabs(AirMote_SpawnRate(900) - 1.6f) < 1e-6f);   // clamps at the 500 ceiling
-    // Step: drift eases toward wind/16 with a slow sink; alpha fades in and out, never negative, never above AIR_MOTE_ALPHA_MAX.
+    // Step: velocity eases toward the shared drift plus a bounded per-particle wander (bug
+    // flight, no sink); alpha fades in and out, never negative, never above AIR_MOTE_ALPHA_MAX.
     for (int ageSteps : {0, 15, 30, 75, 100, 149, 150, 200}) {
         Particle p = {};
         p.age = ageSteps << 16;
         p.position = {0, 0, 0};
         p.sourceVector = {100 << 16, 50 << 16, -30 << 16};
-        FixVector wind = {0x10000, 0, -0x8000};
-        int before = p.sourceVector.y;
-        AirMote_Step(p, wind);
+        FixVector drift = {0x10000, 0, -0x8000};
+        AirMote_Step(p, drift);
         CHECK(p.type0x56 <= AIR_MOTE_ALPHA_MAX);
         CHECK(p.vector0x28.x == p.sourceVector.x && p.vector0x28.z == p.sourceVector.z);
-        if (ageSteps > 0) CHECK(p.sourceVector.y <= before);   // sinks (or is still easing toward the sink)
+        // one step eases 1/24 toward drift + wander, wander bounded at 0.9 units/s
+        int maxWanderStep = (int)(0.9f * 65536.f / 25.f) + 2;
+        CHECK(p.position.x >= (drift.x - maxWanderStep) / 24 - 1 && p.position.x <= (drift.x + maxWanderStep) / 24 + 1);
+        int maxBob = (int)(0.25f * 65536.f / 25.f) + 2;
+        CHECK(p.position.y >= (-maxBob) / 24 - 1 && p.position.y <= (drift.y + maxBob) / 24 + 1);   // bob, no monotonic sink
         int alpha = p.type0x56;
         if (ageSteps == 0) CHECK(alpha == 0);                  // brand-new mote is invisible
         if (ageSteps == 150) CHECK(alpha == 0);                // dead of old age
         if (ageSteps == 75) CHECK(alpha > 0);
+    }
+    // Wander is per-particle and deterministic: same seed same flight, different seed different flight,
+    // seed untouched by stepping, zero seed falls back to the shared constant.
+    {   auto fresh = []{ Particle q = {}; q.age = 75 << 16; q.sourceVector = {100 << 16, 50 << 16, -30 << 16}; return q; };
+        unsigned s1 = 0x11111111u, s2 = 0xabcdef01u, fallback = 0x9e3779b9u;
+        Particle b = fresh(); std::memcpy(b.pad0x5c, &s1, 4);
+        Particle bCopy = b;                                   // same seed, same age, same position
+        Particle c = fresh(); std::memcpy(c.pad0x5c, &s2, 4);
+        Particle zero = fresh();                              // pad zeroed
+        Particle explicitFallback = fresh(); std::memcpy(explicitFallback.pad0x5c, &fallback, 4);
+        FixVector drift = {0x10000, 0, -0x8000};
+        for (int i = 0; i < 30; ++i) {                        // a few seconds of flight
+            AirMote_Step(b, drift); AirMote_Step(bCopy, drift); AirMote_Step(c, drift);
+            AirMote_Step(zero, drift); AirMote_Step(explicitFallback, drift);
+        }
+        CHECK(b.position.x == bCopy.position.x && b.position.y == bCopy.position.y && b.position.z == bCopy.position.z);
+        CHECK(b.position.x != c.position.x || b.position.y != c.position.y || b.position.z != c.position.z);
+        CHECK(zero.position.x == explicitFallback.position.x && zero.position.y == explicitFallback.position.y);
+        unsigned seedAfter; std::memcpy(&seedAfter, b.pad0x5c, 4);
+        CHECK(seedAfter == s1);                               // the step never touches the stamped seed
     }
     if (!fails) std::puts("air_mote_spawn ok");
     return fails;

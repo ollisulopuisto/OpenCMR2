@@ -5429,6 +5429,8 @@ void Particle_SetPoolCapacity(int count)
 // Wind the particle drag pulls toward.
 // GLOBAL: CMR2 0x006a2ce8
 FixVector g_particleWind;
+FixVector g_airMoteDrift = {0,0,0};
+unsigned g_airMoteNextSeed = 0;
 
 // Advances every active particle by one step: age, drag, gravity, alpha, size
 // and angle ramps, floor kill or bounce (unless the type has its own update).
@@ -7154,7 +7156,16 @@ void SpeedMote_NoteSkippedGround(void) { ++g_speedMotesNoGround; }
 
 void AirMote_Update(Particle *p, ParticleType *, SceneNode *)
 {
-    AirMote_Step(*p, g_particleWind);
+    AirMote_Step(*p, g_airMoteDrift);
+}
+
+// Stamps the per-particle wander seed at spawn (see AirMote.h). callbackParam is unused;
+// the caller publishes the seed through g_airMoteNextSeed right before Particle_Spawn.
+void AirMote_Init(Particle *p, ParticleType *, void *)
+{
+    if (!p) return;
+    unsigned seed = g_airMoteNextSeed ? g_airMoteNextSeed : 0x9e3779b9u;
+    std::memcpy(p->pad0x5c, &seed, 4);
 }
 
 void AirMote_Spawn(FixVector *world)
