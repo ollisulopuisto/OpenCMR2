@@ -21,7 +21,11 @@ extern "C" {
 
 /* Milliseconds since an arbitrary start, wrapping at 2^32 (timeGetTime). */
 DWORD Sys_GetTicks(void);
-// Process resident memory in bytes for diagnostics (0 when the query fails).
+// Process memory in bytes for diagnostics (0 when the query fails): physical
+// footprint where the platform has the notion (macOS phys_footprint, what
+// Activity Monitor shows as "Memory"), resident size elsewhere. A footprint
+// reading is not comparable across platforms and does not alone prove or
+// rule out a leak.
 unsigned long long Sys_GetProcessMemoryBytes(void);
 /* The same clock in fractions of a millisecond, for durations shorter than
    one (frames above 1000 per second). */
