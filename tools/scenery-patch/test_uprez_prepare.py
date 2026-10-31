@@ -29,6 +29,15 @@ class Tests(unittest.TestCase):
   by_hash={}
   for r in u.INDEX:
    self.assertEqual(by_hash.setdefault(r['sha256'],r['output_sha256']),r['output_sha256'])
+ def test_experimental_alpha_and_bridge_coverage(self):
+  import collections
+  alpha=[r for r in u.INDEX if r.get('category')=='alpha-object-experimental']
+  bridge=[r for r in u.INDEX if r.get('category')=='bridge-terrain-experimental']
+  self.assertEqual(len(u.INDEX),545)
+  self.assertEqual(collections.Counter(r['archive']for r in alpha),{'finhit.bfl':12,'finlot.bfl':8,'frahit.bfl':14,'fralot.bfl':8})
+  self.assertEqual(len(bridge),7)
+  self.assertTrue(all(r['repeat']==[False,False]for r in alpha+bridge))
+  self.assertTrue(all(r['kind']=='full-canvas-cutout'for r in alpha))
  def test_source_refusal(self):
   with self.assertRaises(ValueError):u.encode(b'wrong',u.INDEX[0])
  def test_cutout_refusal(self):
