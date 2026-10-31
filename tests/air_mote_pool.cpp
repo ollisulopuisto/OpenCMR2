@@ -29,7 +29,7 @@ int main(){
   AirMote_Update(m,&types[AIR_MOTE_TYPE],nullptr);
   if(m->position.x<=0||m->position.y>=0)++fail;
   if(m->sourceVector.x-before.x!=m->position.x||m->vector0x28.x!=m->sourceVector.x)++fail; // world position advances by the drift, mirror kept in sync
-  if(m->type0x56>130)++fail;
+  if(m->type0x56>AIR_MOTE_ALPHA_MAX)++fail;
  }
  // Never evict original particles: a pool with 336 active originals refuses new motes.
  for(auto&p:pool)p.active=0;
