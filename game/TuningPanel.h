@@ -29,6 +29,7 @@ inline const TuningRow *Tuning_Rows(int &count)
         {"Fog amount % (100 = deliberately heavy)", "video.fog_amount", 0, 100, 10, 100},
         {"Fog sun glow %", "video.fog_glow", 0, 100, 10, 60},
         {"Fog near clear dist, world units (0 off; global, not road-only)", "video.fog_clear", 0, 200, 10, 0},
+        {"Fog draw cull (0/1, experimental, unmeasured)", "video.fog_cull", 0, 1, 1, 0},
         {"Air motes (0/1)", "video.air_motes", 0, 1, 1, 0},
         {"Air motes amount %", "video.air_motes_amount", 0, 300, 25, 100},
         {"Corner tilt % (up to four degrees)", "video.camera_roll", 0, 100, 5, 0},

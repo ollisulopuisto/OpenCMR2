@@ -12650,6 +12650,7 @@ const EffectAmountRow kAtmosphereRows[]={
  {"Fog amount % (100 = deliberately heavy)","video.fog_amount",100,101},
  {"Fog sun glow %","video.fog_glow",60,101},
  {"Fog near clear dist, world units (0 off)","video.fog_clear",0,201},
+ {"Fog draw cull (0/1, experimental, unmeasured)","video.fog_cull",0,2},
  {"Air motes (0/1)","video.air_motes",0,2},
  {"Air motes amount %","video.air_motes_amount",100,301},
 };

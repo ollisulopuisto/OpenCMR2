@@ -7,6 +7,7 @@
 #include "FloatToInt.h"
 #include "FixedPoint.h"
 #include "GraphicsOptions.h"
+#include "render/fog_math.h"
 #include "MovingObject.h"
 #include "Graphics.h"
 #include "GameInfo.h"
@@ -835,6 +836,15 @@ void View_SetPlayerProjection(unsigned int player)
     // OpenCMR2: the user's draw distance scales the far plane
     // ([video] video.draw_distance).
     int farPlane = (int)((long long)View_GetShownFarPlane(i) * View_GetDrawDistancePercent() / 100);
+    // Opt-in fog-aware draw culling ([video] video.fog_cull): shorten the far plane to
+    // the fully fogged shell. Render-only; route easing above still applies; physics,
+    // the route window and collision are untouched. See Fog_CullDistance.
+    if (Sys_GetOption("video.fog_cull", 0) && Sys_GetOption("video.fog", 0)) {
+        float fogCull = Fog_CullDistance(Sys_GetOption("video.fog_amount", 100),
+                                         Sys_GetOption("video.fog_clear", 0));
+        int fogCullFixed = (int)(fogCull * 65536.0f);
+        if (fogCull > 0.f && farPlane > fogCullFixed) farPlane = fogCullFixed;
+    }
 
     if (Race_IsMultiplayerRecordMode10() == 0 && RallyData_IsHeadToHeadRaceMode()) {
         if (CGameInfo::IsSplitBarEnabled())

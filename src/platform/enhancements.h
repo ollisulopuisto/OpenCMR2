@@ -20,7 +20,7 @@ struct EnhancementOptions {
         if(equal==key.npos && key=="--asset-upgrades"){trees="shell";treeCoverage="all";spectators="animated";textures="uprez";roads="finland1";return true;}
         if(equal==key.npos && key=="--prepare-only"){prepareOnly=true;return true;}
         if(equal==key.npos && key=="--install-enhancement-deps"){installDependencies=true;return true;}
-        if(key!="--camera-roll"&&key!="--sun-glare"&&key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect"&&key!="--attract-capture"&&key!="--capture-interval"&&key!="--capture-count"&&key!="--speed-fov"&&key!="--tunnel-vision"&&key!="--tunnel-lines"&&key!="--speed-motes-stretch"&&key!="--speed-motes-amount"&&key!="--speed-motes-size"&&key!="--dof-blur-max-px"&&key!="--speed-streak"&&key!="--speed-hold"&&key!="--tree-coverage"&&key!="--spectator-gain"&&key!="--cockpit-eye-shift"&&key!="--tree-coverage"&&key!="--spectator-gain"&&key!="--camera-move-chase"&&key!="--camera-move-cockpit"&&key!="--camera-move-car"&&key!="--fov-dolly-curve"&&key!="--tire-debris"&&key!="--tree-rustle"&&key!="--spectator-irregular"&&key!="--tire-track-length"&&key!="--tire-track-history"&&key!="--camera-move-type"&&key!="--fov-preview"&&key!="--dof-focus-car"&&key!="--drone-speed-drop"&&key!="--drone-distance"&&key!="--speed-fov-cockpit"&&key!="--cockpit-blur-clear"&&key!="--test-preset"&&key!="--fog-amount"&&key!="--fog-glow"&&key!="--fog-clear"&&key!="--air-motes-amount")return false;
+        if(key!="--camera-roll"&&key!="--sun-glare"&&key!="--textures"&&key!="--roads"&&key!="--tree-wind"&&key!="--car-names"&&key!="--trees"&&key!="--spectators"&&key!="--driver-names"&&key!="--cars"&&key!="--mods-dir"&&key!="--effect"&&key!="--attract-capture"&&key!="--capture-interval"&&key!="--capture-count"&&key!="--speed-fov"&&key!="--tunnel-vision"&&key!="--tunnel-lines"&&key!="--speed-motes-stretch"&&key!="--speed-motes-amount"&&key!="--speed-motes-size"&&key!="--dof-blur-max-px"&&key!="--speed-streak"&&key!="--speed-hold"&&key!="--tree-coverage"&&key!="--spectator-gain"&&key!="--cockpit-eye-shift"&&key!="--tree-coverage"&&key!="--spectator-gain"&&key!="--camera-move-chase"&&key!="--camera-move-cockpit"&&key!="--camera-move-car"&&key!="--fov-dolly-curve"&&key!="--tire-debris"&&key!="--tree-rustle"&&key!="--spectator-irregular"&&key!="--tire-track-length"&&key!="--tire-track-history"&&key!="--camera-move-type"&&key!="--fov-preview"&&key!="--dof-focus-car"&&key!="--drone-speed-drop"&&key!="--drone-distance"&&key!="--speed-fov-cockpit"&&key!="--cockpit-blur-clear"&&key!="--test-preset"&&key!="--fog-amount"&&key!="--fog-glow"&&key!="--fog-clear"&&key!="--fog-cull"&&key!="--air-motes-amount")return false;
         if(equal==std::string::npos && i+1>=argc){error="Missing value for "+key;return true;}
         std::string value=equal==std::string::npos?argv[++i]:inlineValue;
         if(key=="--camera-roll"){char*end=nullptr;long n=strtol(value.c_str(),&end,10);if(value.empty()||*end||n<0||n>100)error="--camera-roll expects 0..100";else overrides["video.camera_roll"]=(int)n;}
@@ -102,6 +102,10 @@ struct EnhancementOptions {
         if(key=="--speed-streak"){
             char *end=nullptr;long n=strtol(value.c_str(),&end,10);
             if(value.empty()||*end||n<0||n>100)error="--speed-streak expects 0..100";else overrides["video.speed_streak"]=(int)n;
+        }
+        if(key=="--fog-cull"){
+            char *end=nullptr;long n=strtol(value.c_str(),&end,10);
+            if(value.empty()||*end||n<0||n>1)error="--fog-cull expects 0 or 1";else overrides["video.fog_cull"]=(int)n;
         }
         if(key=="--fog-amount"||key=="--fog-glow"||key=="--fog-clear"||key=="--air-motes-amount"){
             char *end=nullptr;long n=strtol(value.c_str(),&end,10);
