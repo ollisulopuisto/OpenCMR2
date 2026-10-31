@@ -60,7 +60,13 @@ All patches are PRs. Merges remain human-led. Never commit original game bytes.
 
 ## What's New changelog (31 October 2026)
 
-Claim: feat/whats-new, based main 4c2d748. A "What's new" screen shows once
+PRs #211/#212/#213 (fog lights, snow glints, weather/mote light response +
+durable atmosphere preset) merged by the owner at 21:33 EET; main is 673cb4a.
+feat/whats-new (#215) and feat/drone-tuning-range (#214) rebased onto it;
+suites 157/158 and 155/156 with only the pre-existing replay_controls_wiring
+failure.
+
+Claim: feat/whats-new, based main 673cb4a. A "What's new" screen shows once
 per content revision when the main menu is entered (ui.whatsnew_seen in
 opencmr2.ini; recorded when queued so a crash cannot loop it) and stays
 reachable from Options > Graphics > Screen ("What's new..." row, localized
