@@ -47,6 +47,7 @@ short Car_GetOrderCount(void);
 #include "CarLightState.h"
 #include "LightField.h"
 #include "SnowGlint.h"
+#include "SnowMaterial.h"
 #include "Graphics.h"
 #include "Font.h"
 #include "Sprite.h"
@@ -10417,6 +10418,8 @@ void StageObject_DrawProjectedViewIcon(int *pViewRect, int param_2)
     icon.y = 0;
     Gfx_SetSunScreenPosition(0,0,FALSE);
     Gfx_SetFogLights(NULL, 0);
+    if (param_2 == 0)
+        SnowMaterial_UpdateFrame();   // video.snow_material: once per frame, view 0
     if (g_unk0x00547ad0 == 0)
         return;
     uv.x = g_unk0x00547ad0->field_0x11c;
