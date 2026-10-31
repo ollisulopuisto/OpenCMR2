@@ -43,6 +43,8 @@
 #include <string.h>
 #include "Glow.h"
 #include "CarExhaust.h"
+#include "ParticleAmount.h"
+#include "port/sys.h"
 #include "PrecipitationQuad.h"
 
 // GLOBAL: CMR2 0x00543da0
@@ -9082,9 +9084,20 @@ void CarEffect_UpdateExhaustSmokeAndBackfire(int car)
             velocity.y += carVelocity.y;
             velocity.x += carVelocity.x;
             velocity.z += carVelocity.z;
-            t = FixMul((int)FTOI(__int64, X87S_MUL(X87S_MUL(X87S_FILD(float, rand()), g_oneOverRandMax), CGraphics::m_65536)), 0x3d7);
-            Particle_Spawn(big, &g_carExhaustWorldPositions[car], &velocity, g_carExhaustWorldPositions[car].y - 0x10000, 0, NULL, 0, 0,
-                           pCar->pBodyNode->viewMask);
+            // OpenCMR2: video.exhaust_smoke_amount (0..300, default 200 -
+            // deliberately overdone, tone down in the tuning panel) repeats
+            // the puff per step; the backfire spark below is unchanged.
+            int smokePuffs = ParticleAmount_PuffCount(Sys_GetOption("video.exhaust_smoke_amount", 200));
+            for (int puff = 0; puff < smokePuffs; puff++) {
+                t = FixMul((int)FTOI(__int64, X87S_MUL(X87S_MUL(X87S_FILD(float, rand()), g_oneOverRandMax), CGraphics::m_65536)), 0x3d7);
+                if (puff > 0) {   // extra puffs fan out a little along the exhaust direction
+                    velocity.x += (rand() & 0x7ff) - 0x3ff;
+                    velocity.y += (rand() & 0x3ff);
+                    velocity.z += (rand() & 0x7ff) - 0x3ff;
+                }
+                Particle_Spawn(big, &g_carExhaustWorldPositions[car], &velocity, g_carExhaustWorldPositions[car].y - 0x10000, 0, NULL, 0, 0,
+                               pCar->pBodyNode->viewMask);
+            }
         }
         if (g_trailForced[car] != 0)
             g_carExhaustBurstFrames[car] = (BYTE)g_trailForcedSurface[car];

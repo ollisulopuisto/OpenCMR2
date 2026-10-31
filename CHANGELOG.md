@@ -53,6 +53,19 @@ ed guard:
   rain/snow, exhaust, wheel splash/spray, skid smoke) keep their original
   amounts. What's New revision 5 (stacks after #222's revision 4).
 
+### Effects
+
+- **Overdrivable wheel spray and exhaust smoke amounts**: `video.spray_amount`
+  (0..300%, default 200%) scales the per-wheel spray emission interval
+  (interval halved at 200%, never below one step, 0 disables spray), and
+  `video.exhaust_smoke_amount` (0..300%, default 200%) repeats the exhaust
+  smoke puff per step (1 -> 2 at 200%, capped at 3, 0 disables). Both stay
+  on the fixed 25 Hz effects step (frame-rate independent) and inside the
+  existing bounded particle pool - no pool growth. Backfire sparks, splash
+  particles, skid smoke, weather precipitation (an original fixed 400-slot
+  array), air/speed motes and snow glints are unchanged. What's New
+  revision 6.
+
 ### Interface
 
 - **Atmosphere menu directly under Graphics options**: the fog/air

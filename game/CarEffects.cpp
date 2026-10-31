@@ -15,6 +15,7 @@ int Track_GetGroundHeightSurface(FixVector *pPoint, FixVector *pNormal, short *p
 #include <cmath>
 #include "CarBodyDirt.h"
 #include "WheelParticleEmission.h"
+#include "ParticleAmount.h"
 #include "CarInfo.h"
 #include "FloatToInt.h"
 #include "TyreWear.h"
@@ -987,6 +988,13 @@ void WheelSpray_Update(int player)
         if (pSlip[0xcf] != 0) {
             effect = WheelSpray_GetEffect(*pSurface);
             wet = StageObject_GetCarWeatherRampValue(pCar);
+            // OpenCMR2: video.spray_amount (0..300, default 200 - deliberately
+            // overdone, tone down in the tuning panel) scales the emission
+            // interval; 0 disables wheel spray. Step-based, frame-rate
+            // independent, original intervals untouched.
+            int sprayAmount = Sys_GetOption("video.spray_amount", 200);
+            if (sprayAmount <= 0)
+                continue;
             if (effect >= 0 && (wet != 0 || g_sprayAlways[effect] != 0) &&
                 --g_sprayCountdown[pCar->index][wheel] <= 0) {
                 pDust = &g_sprayDust[effect];
@@ -997,8 +1005,9 @@ void WheelSpray_Update(int player)
                         Tyre_AddWear(pCar->index, wheel, 0, 1);
                 }
                 g_sprayCountdown[pCar->index][wheel] =
-                    (char)(FixMul((g_sprayInterval[effect][1] - g_sprayInterval[effect][0]) << 16, wet) >> 16) +
-                    g_sprayInterval[effect][0];
+                    (char)ParticleAmount_ScaledInterval(
+                        (FixMul((g_sprayInterval[effect][1] - g_sprayInterval[effect][0]) << 16, wet) >> 16) +
+                        g_sprayInterval[effect][0], sprayAmount);
                 if (pSlip[0xde] != 0)
                     slip = *pSlip;
                 else
