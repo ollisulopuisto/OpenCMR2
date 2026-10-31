@@ -24,7 +24,10 @@
 #ifdef rand
 #undef rand
 #endif
+#pragma push_macro("rand")
+#undef rand
 #include <algorithm>
+#pragma pop_macro("rand")
 #include <cstring>
 #include <limits>
 using namespace SceneryFormat;
