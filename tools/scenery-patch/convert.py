@@ -6,6 +6,11 @@ import numpy as np,math,json
 
 # Full-canvas source-fit contract. No restored artwork is bundled or fetched.
 TREE_CANDIDATES={('frahit.bfl','tre_md1'),('frahit.bfl','tre_md4'),('finhit.bfl','tre_fir1')}
+# Additional fixed-cutout mappings reviewed at four angles and against actual
+# Finland1/France1 full-canvas cards. Shell defaults stay unchanged.
+CROSSED_CANDIDATES={(archive,name) for archive,names in (
+ ('finhit.bfl',('tre_fir2','tre_fr3')),('finlot.bfl',('tre_fir2','tre_fr3')),
+ ('frahit.bfl',('tre_md2',)),('fralot.bfl',('tre_md2',))) for name in names}
 root=None
 def crown_profile(alpha):
  # Species-independent crown/stem split from the alpha mask alone. A row is crown while it is at least 22% as wide as the widest row;
@@ -463,7 +468,7 @@ def main():
    for key,rec in index.items():
     archive,leaf=key.split('/');a={**rec,'archive':archive,'texture':leaf};rel=Path(Path(archive).stem)/Path(leaf).stem
     source=Path(tmp)/archive/leaf;source.parent.mkdir(exist_ok=True);source.write_bytes(data[key]);a['path']=str(source)
-    if rec.get('category')=='individual-tree' and (archive,Path(leaf).stem) in TREE_CANDIDATES:
+    if rec.get('category')=='individual-tree' and ((archive,Path(leaf).stem) in TREE_CANDIDATES or (args.tree_geometry=='crossed' and (archive,Path(leaf).stem) in CROSSED_CANDIDATES)):
      asset=(crossed_tree if args.tree_geometry=='crossed' else tree)(a,Path('trees')/rel);rows.append('\t'.join(['tree',archive,leaf,asset,'','1']));status='source-fitted-interpolated'
     elif rec.get('category') in ('individual-tree','individual-bush') and args.all_trees:
      # Every other individual tree: crown/stem split from its own alpha. Sparse crowns use crossed planes, dense ones the smoothed shell.
