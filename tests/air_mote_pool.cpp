@@ -21,9 +21,13 @@ int main(){
  std::srand(1234);int expected=std::rand();std::srand(1234);
  for(int i=0;i<80;++i)AirMote_Spawn(&world);
  if(std::rand()!=expected)++fail;
- // Budget: exactly the 48-strong base cap at the default amount 100, no eviction of others.
+ // Budget: the overdone default amount 200 doubles the cap; all 80 spawns fit, no eviction of others.
  int motes=0;for(auto&p:pool)if(p.active){if(p.pType==&types[AIR_MOTE_TYPE])++motes;else++fail;}
- if(motes!=AIR_MOTE_BASE)++fail;
+ if(motes!=80)++fail;
+ // The doubled cap still pins: 40 more spawns stop at 2x the base.
+ for(int i=0;i<40;++i)AirMote_Spawn(&world);
+ motes=0;for(auto&p:pool)if(p.active&&p.pType==&types[AIR_MOTE_TYPE])++motes;
+ if(motes!=AIR_MOTE_BASE*2)++fail;
  for(auto&p:pool)if(p.active&&(p.attachmentMatrix||p.field0x55!=1))++fail;
  // Init stamps the wander seed; update through the registered callback: eases toward the
  // shared drift, never monotonic sink, alpha bounded.

@@ -12678,8 +12678,8 @@ const EffectAmountRow kAtmosphereRows[]={
  {"Fog spatial pockets (0/1)","video.fog_spatial",0,2},
  {"Fog evolve (100 neutral; <100 clears, >100 thickens)","video.fog_evolve",100,201},
  {"Air motes (0/1)","video.air_motes",0,2},
- {"Air motes amount %","video.air_motes_amount",100,501},
- {"Snow glints % (banks + falling flakes)","video.snow_glint",100,201},
+ {"Air motes amount %","video.air_motes_amount",200,501},
+ {"Snow glints % (banks + falling flakes)","video.snow_glint",200,201},
  {"Fog through windscreen glass (0/1)","video.cockpit_glass_fog",1,2},
 };
 void EnterAtmosphere(Menu*m,int){
