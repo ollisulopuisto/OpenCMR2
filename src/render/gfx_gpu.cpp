@@ -2810,12 +2810,20 @@ struct Executor : GfxExecutor {
         bool tunnelLinesOn = Sys_GetOption("video.tunnel_lines", 1) != 0 && speedFocusSmooth > 0.01f;   // radial lines inside the tunnel vision zone
         if ((speedStreakSmooth > 0.01f || vaporDraw || tunnelLinesOn) && raceWorld && gradingTarget != nullptr && presentSource != nullptr &&
             presentSource != gradingTarget && SpeedStreakPipeline() != nullptr) {
-            float uniforms[4 + 60 * 4 + 4 + 4];   // + tunnelLines, after depthInfo
+            float uniforms[4 + 60 * 4 + 4 + 4 + 4] = {};   // cockpitDepth and tunnelLines, after depthInfo
             uniforms[0] = speedStreakSmooth; uniforms[1] = backHeight ? (float)backWidth / (float)backHeight : 1.0f; uniforms[2] = speedStreakClock;
             uniforms[3] = Sys_GetOption("video.speed_lines", 1) != 0 ? speedStreakSmooth : 0.0f;   // radial lines have their own toggle
             memcpy(uniforms + 4, vaporUniforms, sizeof(vaporUniforms));
-            uniforms[4 + 60 * 4 + 4] = speedFocusSmooth; uniforms[4 + 60 * 4 + 5] = tunnelLinesOn ? 1.0f : 0.0f; uniforms[4 + 60 * 4 + 6] = 0.0f; uniforms[4 + 60 * 4 + 7] = 0.0f;
-            SDL_GPUTextureSamplerBinding binding[2] = { { presentSource, linearSampler }, vaporDraw ? SDL_GPUTextureSamplerBinding{ backDepth, depthSampler } : SDL_GPUTextureSamplerBinding{ presentSource, linearSampler } };   // no trails: the second sampler just needs some texture
+            float cockpitNear = 0.0f, cockpitFar = 0.0f;
+            const float cockpitClear = Gfx_GetTunnelNearClear();
+            if (cockpitClear > 0.0f && sampledDepth && backDepth != nullptr)
+                ResolveProjection(&cockpitNear, &cockpitFar);
+            const bool cockpitDepth = cockpitClear > 0.0f && cockpitNear > 0.0f && cockpitFar > cockpitNear;
+            uniforms[4 + 60 * 4 + 4] = cockpitDepth ? cockpitClear : 0.0f;
+            uniforms[4 + 60 * 4 + 5] = cockpitNear;
+            uniforms[4 + 60 * 4 + 6] = cockpitFar;
+            uniforms[4 + 60 * 4 + 8] = speedFocusSmooth; uniforms[4 + 60 * 4 + 9] = tunnelLinesOn ? 1.0f : 0.0f;
+            SDL_GPUTextureSamplerBinding binding[2] = { { presentSource, linearSampler }, (vaporDraw || cockpitDepth) ? SDL_GPUTextureSamplerBinding{ backDepth, depthSampler } : SDL_GPUTextureSamplerBinding{ presentSource, linearSampler } };   // No trails or cockpit depth mask: the second sampler just needs some texture
             if (PostProcessPass(cmd, SpeedStreakPipeline(), gradingTarget, binding, 2, uniforms, sizeof(uniforms)))
                 {presentSource = gradingTarget;encoded|=256;streakApplied = true;}
         }

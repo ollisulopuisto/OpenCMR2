@@ -8,6 +8,7 @@ layout(std140, set = 3, binding = 0) uniform SpeedStreakUniforms {
     vec4 trailPts[28]; // 7 points per trail: uv x, uv y, half width (screen heights, 0 = point unusable), opacity
     vec4 trailZ[28];   // x = view depth of that point (world units)
     vec4 depthInfo;    // x near plane, y far plane (0 = no depth: trails off), z depth tolerance (world units, the car's own surface), w fade width (world units)
+    vec4 cockpitDepth; // x clear distance (0 disabled), y near, z far, w reserved
     vec4 tunnelLines;  // x tunnel vision strength 0..2 (eased, same as dof.frag), y 1 = radial lines inside the tunnel vision zone
 };
 // Mirrors src/render/speed_streak.h. Directional radial streak: samples run from the pixel toward the screen centre, so the
@@ -83,6 +84,15 @@ void main()
     vec2 c = uv - vec2(0.5);
     float r = length(c * vec2(settings.y, 1.0));
     float w = smoothstep(INNER, INNER + RAMP, r) * clamp(settings.x, 0.0, 1.0);
+    // The radial streak runs after tunnel blur. Preserve the same nearby cockpit
+    // surfaces here instead of smearing them again in this later pass.
+    float cockpitEffect = 1.0;
+    if (cockpitDepth.x > 0.0 && cockpitDepth.y > 0.0 && cockpitDepth.z > cockpitDepth.y) {
+        float d = texture(depthTex, uv).r;
+        float z = cockpitDepth.y * cockpitDepth.z / max(cockpitDepth.z - d * (cockpitDepth.z - cockpitDepth.y), 1e-6);
+        cockpitEffect = smoothstep(cockpitDepth.x, cockpitDepth.x * 1.4, z);
+    }
+    w *= cockpitEffect;
     float linesAmount = smoothstep(LINES_ONSET, LINES_FULL, clamp(settings.w, 0.0, 1.0));
     float lines = linesAmount > 0.0 ? speedLines(c * vec2(settings.y, 1.0), settings.z, 0.0, 1.0) * linesAmount * LINES_OPACITY : 0.0;
     // Lines inside the tunnel vision zone (video.tunnel_lines): the same rays, shown only where dof.frag blurs (same clear circle), so the centre and
@@ -98,6 +108,7 @@ void main()
         float lt = speedLines(c * vec2(settings.y, 1.0), settings.z, 1.0, 0.55) * zoneT * zoneT * amountT * LINES_OPACITY * 0.12 * (1.0 + 0.3 * clamp(tl - 1.0, 0.0, 1.0));
         lines = max(lines, lt);
     }
+    lines *= cockpitEffect;
     lines = max(lines, vaporTrails(uv, settings.y, settings.z));
     if (w <= 0.0) { outColor = vec4(mix(base.rgb, vec3(0.93, 0.95, 1.0), lines), base.a); return; }
     vec2 toCenter = -c * (w * MAXLEN);

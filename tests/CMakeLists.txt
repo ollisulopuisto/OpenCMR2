@@ -145,6 +145,7 @@ if(Python3_Interpreter_FOUND)
     add_test(NAME reference_capture_format
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/reference_capture.py)
     add_test(NAME speed_fov_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/speed_fov_wiring.py)
+    add_test(NAME cockpit_streak_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/cockpit_streak_wiring.py)
     add_test(NAME speed_streak_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/speed_streak_wiring.py)
     add_test(NAME speed_lines_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/speed_lines_wiring.py)
     add_test(NAME grade_scurve_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/grade_scurve_wiring.py)
@@ -244,6 +245,7 @@ endif()
 option(OPENCMR2_SHADER_PIXEL_TESTS "Run optional EGL shader pixel tests" OFF)
 if(OPENCMR2_SHADER_PIXEL_TESTS)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_test(NAME cockpit_streak_pixels COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/cockpit_streak_shader.py)
     add_test(NAME post_effects_pixels COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/post_effects_shader.py)
     add_test(NAME post_shader_semantics COMMAND ${Python3_EXECUTABLE}
