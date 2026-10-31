@@ -22,7 +22,7 @@ inline const WhatsNewLine *WhatsNew_Lines(int &count)
         {2, "Fog responds to headlights and rear lights"},
         {2, "Snow glints: banks sparkle, flakes twinkle in sun and beams"},
         {2, "Falling snow and air motes respond to light"},
-        {2, "Snow ground lighting prototype (off: --snow-material to try)"},
+        {2, "Snow ground lighting prototype (off: --snow-material 100 to try)"},
         {2, "Drone tuning: spring down to 5%, height drop up to 200%"},
     };
     count = (int)(sizeof(lines) / sizeof(*lines));
