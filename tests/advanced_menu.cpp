@@ -7,6 +7,7 @@
 #include "SettingsPage.h"
 #include "EffectAmounts.h"
 #include <cstdio>
+Menu* FrontendMenu_GetAtmosphereAmounts(Menu*);
 #include <cstring>
 #include <initializer_list>
 extern void FrontendMenu_BuildAdvancedGraphicsOptions();
@@ -51,7 +52,7 @@ int main(int argc,char **argv){
    if(g_spriteCount1>900)++fail;
  }
  Menu* amounts=FrontendMenu_GetEffectAmounts(m);amounts->pfnCallback0(amounts,0);
- {int rn;EffectAmount_Rows(rn);if(amounts->itemCount!=rn+1 || amounts->pParent!=m)++fail;
+ {int rn;EffectAmount_Rows(rn);if(amounts->itemCount!=rn+2 || amounts->pParent!=m)++fail; // +Atmosphere submenu link +OK
  for(int r=0;r<rn;r++)if(amounts->items[r].value!=0x40+r)++fail;}
  amounts->cursor=0;
  for(int i=0;i<amounts->itemCount;i++){if(amounts->cursor!=i)++fail;Menu_Update(amounts,8);Menu_Update(amounts,0);}
@@ -64,6 +65,11 @@ int main(int argc,char **argv){
  }
  amounts->cursor=0;Menu_Update(amounts,2);Menu_Update(amounts,0);if(amounts->items[0].max!=17)++fail;
  amounts->items[0].max=35;Menu_Update(amounts,2);Menu_Update(amounts,0);if(amounts->items[0].max!=35)++fail;
+ {Menu*atmo=FrontendMenu_GetAtmosphereAmounts(amounts);if(atmo->itemCount!=6||atmo->pParent!=amounts)++fail;
+  if(std::strcmp(atmo->items[0].text,"Fog (0/1)")||std::strcmp(atmo->items[4].text,"Air motes amount %"))++fail;
+  for(int i=0;i<5;i++)if(atmo->items[i].value!=0x40+i)++fail;
+  atmo->pfnCallback0(atmo,0); // EnterAtmosphere reads saved options; must not crash with defaults
+  for(int i=0;i<5;i++)if(atmo->items[i].max<0)++fail;}
  int n;const auto*rows=EffectAmount_Rows(n);if(n>=22)++fail;
  int remainder=0,sum=0;for(int i=0;i<100;i++)sum+=Effect_Accumulate(1,25,remainder);
  if(sum!=25||remainder!=0||Effect_Scale(200,-1)!=0||Effect_Scale(200,200)!=200)++fail;

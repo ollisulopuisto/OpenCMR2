@@ -15,6 +15,7 @@
 #include "port/sys.h"
 #include "render/presentation.h"
 #include "render/dof_focus.h"
+#include "render/fog_math.h"
 #include "render/tunnel_vision.h"
 #include "render/projection_vote.h"
 #include "render/gfx_internal.h"
@@ -283,20 +284,20 @@ struct Executor : GfxExecutor {
         SDL_GL_DestroyContext(context);
     }
 
-    bool motionOn = false, bloomOn = false, dofOn = false, raysOn = false;
+    bool motionOn = false, bloomOn = false, dofOn = false, raysOn = false, fogOn = false;
     bool speedEffectsSuppressed=false;
     float speedFocusTarget = 0.0f, speedFocusSmooth = 0.0f; std::chrono::steady_clock::time_point speedFocusTime{}; bool speedFocusTimed = false; // tunnel vision, same easing as SDL_GPU
     float speedStreakTarget = 0.0f, speedStreakSmooth = 0.0f, speedStreakClock = 0.0f; std::chrono::steady_clock::time_point speedStreakTime{}; bool speedStreakTimed = false;
     float glCarFocusRaw = -1.0f, glCarDepth = 0.0f;   // dof_focus_car: raw GL depth of the followed car this frame (-1 none)
     bool effectsRaceFrame = true; // set per frame before ApplyEffects: depth blur is a race effect, never run on menu/preview frames
-    int motionMix = 0, bloomAmount = 0, dofFocus = 50, dofRange = 30, dofBlur = 0, raysAmount = 0;
+    int motionMix = 0, bloomAmount = 0, dofFocus = 50, dofRange = 30, dofBlur = 0, raysAmount = 0, fogAmount = 100, fogGlow = 60;
     float grade[4] = {0, 0, 1, 1}, grime[4] = {};
     SunGlareState sunGlare;std::chrono::steady_clock::time_point sunGlareTime;bool sunGlareTimed=false;
     float sunX = 0, sunY = 0; bool sunVisible = false;
     GLuint effectFbo[4] = {}, effectTex[4] = {}, effectUbo = 0, effectVao = 0;
     GLuint historyTex = 0; bool historyValid = false;
     unsigned encodedEffects = 0;
-    GLuint effectPrograms[12] = {};
+    GLuint effectPrograms[13] = {};
     CloudUniforms cloudUniforms={};
     bool cloudsValid=false,cloudLogged=false;
     GLuint cloudMask=0,cloudMaskTexture=0,cloudMaskFbo=0;
@@ -577,6 +578,7 @@ struct Executor : GfxExecutor {
     void ClearSpeedEffects() override { speedFocusTarget = speedFocusSmooth = 0.0f; speedStreakTarget = speedStreakSmooth = 0.0f; }
     void SetSpeedStreak(float strength) override { speedStreakTarget = speedEffectsSuppressed || !(strength > 0.0f) ? 0.0f : strength > 1.0f ? 1.0f : strength; }
     void SetGodRays(BOOL on, int amount) override { raysOn = on != 0; raysAmount = std::clamp(amount, 0, 255); }
+    void SetPostFog(BOOL on, int amount, int glow) override { fogOn = on != 0; fogAmount = std::clamp(amount, 0, 200); fogGlow = std::clamp(glow, 0, 100); }
     void SetColorGrading(int temp, int tint, int saturation, int contrast) override {
         grade[0] = std::clamp(temp, -100, 100) / 100.0f; grade[1] = std::clamp(tint, -100, 100) / 100.0f;
         grade[2] = std::clamp(saturation, 0, 200) / 100.0f; grade[3] = std::clamp(contrast, 0, 200) / 100.0f;
@@ -1422,7 +1424,7 @@ struct Executor : GfxExecutor {
         if(!worldEffectsApplied) historyValid=false;
         GLuint presentFbo = backFramebuffer;
         BindFramebuffer(presentFbo);
-        unsigned requested=(Sys_GetOption("video.spatial_aa",0)?1:0)|(bloomOn?2:0)|(motionOn?4:0)|(dofOn?8:0)|(raysOn?16:0)|((grade[0]||grade[1]||grade[2]!=1||grade[3]!=1)?32:0)|(shadowType?64:0)|(weatherType&&weatherAmount?128:0);
+        unsigned requested=(Sys_GetOption("video.spatial_aa",0)?1:0)|(bloomOn?2:0)|(motionOn?4:0)|(dofOn?8:0)|(raysOn?16:0)|((grade[0]||grade[1]||grade[2]!=1||grade[3]!=1)?32:0)|(shadowType?64:0)|(weatherType&&weatherAmount?128:0)|(fogOn&&fogAmount>0?512:0);
         // GL error check means accepted commands, never GPU completion or pixels.
         Gfx_SetRaysStatus(!raysOn?GFX_RAYS_OFF:encodedEffects&16?GFX_RAYS_ENCODED:
             !worldEffectsApplied?GFX_RAYS_NO_WORLD:!sunVisible?GFX_RAYS_NO_SUN:

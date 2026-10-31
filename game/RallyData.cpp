@@ -1,4 +1,5 @@
 #include "CameraMove.h"
+#include "AirMote.h"
 #include "TuningMode.h"
 #include "EffectAmounts.h"
 #include "TuningPanel.h"
@@ -6795,6 +6796,18 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
                 else snprintf(text,sizeof text,"Speed streak: %s (setting %d%%, centre zone kept clear)",ssOn?"encoded":"idle",ss);
                 line(text,ssOn?lit:dim);
             }
+            {
+                bool fogEnc=(status.encoded&512)!=0;
+                if(Sys_GetOption("video.fog",0)==0)snprintf(text,sizeof text,"Fog: off (video.fog=0)");
+                else snprintf(text,sizeof text,"Fog: %s (amount %d%%, glow %d%%)",fogEnc?"encoded":"requested, not encoded",Sys_GetOption("video.fog_amount",100),Sys_GetOption("video.fog_glow",60));
+                line(text,fogEnc?lit:dim);
+            }
+            {
+                int al=0;unsigned ad=0;AirMote_GetStats(&al,&ad);
+                if(Sys_GetOption("video.air_motes",0)==0)snprintf(text,sizeof text,"Air motes: off (video.air_motes=0)");
+                else snprintf(text,sizeof text,"Air motes: live %d, queued %u total (queued is not visible pixels)",al,ad);
+                line(text,Sys_GetOption("video.air_motes",0)&&al>0?lit:dim);
+            }
         }
         {
             int viewType=0,drone=0,zoomRaw=0,fovYRaw=0,fovSet=70;
@@ -8283,7 +8296,7 @@ void RallyData_InitializeRaceRendering(void)
         CGame::SetSectorDrawState(3);
     RallyData_IsChampionshipFinalStage();
     Particle_BuildTriangleStripIndices();
-    Particle_Init(0x22, 400);
+    Particle_Init(0x23, 400);   // 0x22 added: optional air motes (video.air_motes), original types unchanged
     if (CGameInfo::IsActiveCheatEnabled(0) != 0)
         Glow_AllocateEntryTable(4);
     else

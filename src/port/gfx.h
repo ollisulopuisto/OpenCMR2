@@ -298,6 +298,9 @@ void Gfx_SetVaporTrail(float strength);
 /* OpenCMR2: god rays / volumetric lighting. `enabled` turns it on/off,
    `intensity` (0..255) scales the effect strength. SDL_GPU only. */
 void Gfx_SetGodRays(BOOL enabled, int intensity);
+// OpenCMR2: optional atmosphere fog. amount 0..200 (percent, 100 = heavy default),
+// glow 0..100 (sun-ward brightening of the fog).
+void Gfx_SetPostFog(BOOL enabled, int amount, int glow);
 void Gfx_SetSunScreenPosition(float x, float y, BOOL visible);
 void Gfx_SetShadowQuality(int resolution, int softness);
 /* OpenCMR2: color grading. `temperature` (-100..100) cool->warm,

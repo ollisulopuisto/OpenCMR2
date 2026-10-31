@@ -1,5 +1,6 @@
 #include "sun_glare.h"
 #include "render/dof_gate.h"
+#include "render/fog_math.h"
 #include "render/tunnel_vision.h"
 #include "render/dof_focus.h"
 #include "render/car_region.h"
@@ -210,7 +211,7 @@ struct Executor : GfxExecutor {
     SDL_GPUShader *vsParticle = nullptr, *fsParticle = nullptr;
     SDL_GPUShader *vsShadow = nullptr, *fsShadow = nullptr;
     SDL_GPUShader *fsLensGrime = nullptr, *fsSpeedStreak = nullptr;
-    SDL_GPUShader *fsDoF = nullptr, *fsGodRays = nullptr, *fsColorGrading = nullptr;
+    SDL_GPUShader *fsDoF = nullptr, *fsGodRays = nullptr, *fsColorGrading = nullptr, *fsFog = nullptr;
     // OpenCMR2: optional single-frame AA, with an independent non-aliasing target.
     SDL_GPUShader *fsClouds=nullptr;
     SDL_GPUGraphicsPipeline *cloudPipeline=nullptr;
@@ -289,6 +290,7 @@ struct Executor : GfxExecutor {
     SDL_GPUGraphicsPipeline *lensGrimePipeline = nullptr, *speedStreakPipeline = nullptr;
     SDL_GPUGraphicsPipeline *dofPipeline = nullptr;       // depth of field
     SDL_GPUGraphicsPipeline *godRaysPipeline = nullptr;   // volumetric light shafts
+    SDL_GPUGraphicsPipeline *fogPipeline = nullptr;         // atmosphere fog (video.fog)
     SDL_GPUGraphicsPipeline *colorGradingPipeline = nullptr; // analytic color grading
     SDL_GPUTexture *gradingTarget = nullptr;
     bool sampledDepth = false;
@@ -344,6 +346,7 @@ struct Executor : GfxExecutor {
     }
     SDL_GPUTexture *dofBuf1 = nullptr;  // depth-aware disk blur output
     SDL_GPUTexture *godRaysBuf1 = nullptr; // normalized light-shaft output
+    SDL_GPUTexture *fogBuf1 = nullptr;       // atmosphere fog output
     // OpenCMR2: depth of field state.
     bool dofEnabled = false;
     int dofFocalDistance = 50;   // 0..100, focus plane depth
@@ -359,6 +362,9 @@ struct Executor : GfxExecutor {
     SunGlareState sunGlare; Uint64 sunGlareTicks=0;
     bool godRaysEnabled = false;
     int godRaysIntensity = 100;
+    // OpenCMR2: atmosphere fog state (video.fog). Amount is a menu percent (0..200 via CLI).
+    bool fogEnabled = false;
+    int fogAmount = 100, fogGlow = 60;
     float sunX=.5f,sunY=.5f;bool sunVisible=false;
     int shadowSize=1024;float shadowSoftness=1.f;
     // OpenCMR2: color grading state.
@@ -424,6 +430,7 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUTexture(device, gradingTarget);
         SDL_ReleaseGPUTexture(device, dofBuf1);
         SDL_ReleaseGPUTexture(device, godRaysBuf1);
+        SDL_ReleaseGPUTexture(device, fogBuf1);
         SDL_ReleaseGPUTexture(device, white2D);
         SDL_ReleaseGPUTexture(device, whiteCube);
         SDL_ReleaseGPUBuffer(device, vertexBuffer);
@@ -444,6 +451,7 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUShader(device, fsLensGrime);
         SDL_ReleaseGPUShader(device, fsSpeedStreak);
         SDL_ReleaseGPUShader(device, fsDoF);
+        SDL_ReleaseGPUShader(device, fsFog);
         SDL_ReleaseGPUShader(device,fsClouds);
         SDL_ReleaseGPUShader(device,fsTemporal);
         SDL_ReleaseGPUGraphicsPipeline(device,temporalPipeline);
@@ -468,6 +476,7 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUGraphicsPipeline(device, speedStreakPipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, dofPipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, godRaysPipeline);
+        SDL_ReleaseGPUGraphicsPipeline(device, fogPipeline);
         SDL_ReleaseGPUGraphicsPipeline(device, colorGradingPipeline);
         SDL_ReleaseGPUBuffer(device, particleVB);
         SDL_ReleaseGPUTexture(device, shadowMap);
@@ -586,6 +595,7 @@ struct Executor : GfxExecutor {
         fsLensGrime = Shader(SHADER_CODE(lens_grime_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
         fsSpeedStreak = Shader(SHADER_CODE(speedstreak_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1);
         fsDoF = Shader(SHADER_CODE(dof_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1);
+        fsFog = Shader(SHADER_CODE(fog_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1);
         fsGodRays = Shader(SHADER_CODE(godRays_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 3, 1);
         fsColorGrading = Shader(SHADER_CODE(colorGrading_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
         vsParticle = Shader(SHADER_CODE(particle_vert), SDL_GPU_SHADERSTAGE_VERTEX, 0, 1);
@@ -593,7 +603,7 @@ struct Executor : GfxExecutor {
         vsShadow = Shader(SHADER_CODE(shadow_vert), SDL_GPU_SHADERSTAGE_VERTEX, 0, 1);
         fsShadow = Shader(SHADER_CODE(shadow_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 1, 1);
         if (!vs3d || !vsTL || !fs || !vsClear || !fsClear || !vsMotionBlur || !fsMotionBlur ||
-            !fsBrightPass || !fsBlur || !fsComposite || !fsLensGrime || !fsSpeedStreak || !fsDoF || !fsGodRays ||
+            !fsBrightPass || !fsBlur || !fsComposite || !fsLensGrime || !fsSpeedStreak || !fsDoF || !fsGodRays || !fsFog ||
             !fsColorGrading || !vsParticle || !fsParticle || !vsShadow || !fsShadow)
             return false;
 
@@ -657,6 +667,7 @@ struct Executor : GfxExecutor {
             SDL_ReleaseGPUTexture(device, bloomBuf2);
             SDL_ReleaseGPUTexture(device, dofBuf1);
             SDL_ReleaseGPUTexture(device, godRaysBuf1);
+            SDL_ReleaseGPUTexture(device, fogBuf1);
             SDL_ReleaseGPUTexture(device, gradingTarget);
             SDL_ReleaseGPUTexture(device, shadowMap);
             SDL_ReleaseGPUTexture(device, shadowDepth);
@@ -683,6 +694,8 @@ struct Executor : GfxExecutor {
                                     SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
             godRaysBuf1 = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, width, height, 1, 1,
                                         SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
+            fogBuf1 = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, width, height, 1, 1,
+                                    SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
             // Shadow map is created lazily when shadows are first enabled,
             // because D24_UNORM_S8_UINT + sampler is not valid on Metal.
             shadowMap = NULL;
@@ -691,7 +704,7 @@ struct Executor : GfxExecutor {
             if (backColor == NULL || backDepth == NULL || backdrop == NULL ||
                 motionBlurPrevious == NULL || motionBlurTemp == NULL ||
                 bloomBuf1 == NULL || bloomBuf2 == NULL ||
-                dofBuf1 == NULL || godRaysBuf1 == NULL || gradingTarget == NULL)
+                dofBuf1 == NULL || godRaysBuf1 == NULL || fogBuf1 == NULL || gradingTarget == NULL)
                 return false;
         }
         SDL_SetWindowResizable(window, true);
@@ -861,6 +874,15 @@ struct Executor : GfxExecutor {
     {
         godRaysEnabled = enabled != 0;
         godRaysIntensity = intensity < 0 ? 0 : intensity > 255 ? 255 : intensity;
+    }
+
+    // OpenCMR2: atmosphere fog. `amount` (0..200) scales density, `glow` (0..100) the sun-ward
+    // brightening of the fog. See render/fog_math.h.
+    void SetPostFog(BOOL enabled, int amount, int glow) override
+    {
+        fogEnabled = enabled != 0;
+        fogAmount = amount < 0 ? 0 : amount > 200 ? 200 : amount;
+        fogGlow = glow < 0 ? 0 : glow > 100 ? 100 : glow;
     }
 
     // OpenCMR2: color grading. `temperature` (-100..100) cool->warm,
@@ -1548,6 +1570,37 @@ struct Executor : GfxExecutor {
         if (godRaysPipeline == NULL)
             Sys_Log("gfx: god rays pipeline: %s", SDL_GetError());
         return godRaysPipeline;
+    }
+
+    // Atmosphere fog pipeline: full-screen scene+depth pass, no blending (fog.frag).
+    SDL_GPUGraphicsPipeline *FogPipeline()
+    {
+        if (fogPipeline != nullptr)
+            return fogPipeline;
+        SDL_GPUColorTargetDescription color = {};
+        color.format = colorFormat;
+        color.blend_state.enable_blend = false;
+        SDL_GPUGraphicsPipelineCreateInfo info = {};
+        info.vertex_shader = vsMotionBlur;
+        info.fragment_shader = fsFog;
+        info.vertex_input_state.vertex_buffer_descriptions = nullptr;
+        info.vertex_input_state.num_vertex_buffers = 0;
+        info.vertex_input_state.vertex_attributes = nullptr;
+        info.vertex_input_state.num_vertex_attributes = 0;
+        info.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+        info.rasterizer_state.fill_mode = SDL_GPU_FILLMODE_FILL;
+        info.rasterizer_state.cull_mode = SDL_GPU_CULLMODE_NONE;
+        info.depth_stencil_state.enable_depth_test = false;
+        info.depth_stencil_state.enable_depth_write = false;
+        info.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_ALWAYS;
+        info.target_info.color_target_descriptions = &color;
+        info.target_info.num_color_targets = 1;
+        info.target_info.depth_stencil_format = depthFormat;
+        info.target_info.has_depth_stencil_target = true;
+        fogPipeline = SDL_CreateGPUGraphicsPipeline(device, &info);
+        if (fogPipeline == NULL)
+            Sys_Log("gfx: fog pipeline: %s", SDL_GetError());
+        return fogPipeline;
     }
 
     SDL_GPUShader *fsSunGlare=nullptr;
@@ -2443,7 +2496,7 @@ struct Executor : GfxExecutor {
 
         // OpenCMR2: bloom (bright-pass extract, separable blur, additive
         // composite) followed by motion blur (previous-frame blend).
-        unsigned requested=(particleType&&particleIntensity?128:0)|(Sys_GetOption("video.spatial_aa",0)?1:0)|(bloomEnabled?2:0)|(motionBlurEnabled?4:0)|(dofEnabled?8:0)|(godRaysEnabled?16:0)|((colorGradingTemperature||colorGradingTint||colorGradingSaturation!=100||colorGradingContrast!=100)?32:0)|(shadowType?64:0);
+        unsigned requested=(particleType&&particleIntensity?128:0)|(Sys_GetOption("video.spatial_aa",0)?1:0)|(bloomEnabled?2:0)|(motionBlurEnabled?4:0)|(dofEnabled?8:0)|(godRaysEnabled?16:0)|((colorGradingTemperature||colorGradingTint||colorGradingSaturation!=100||colorGradingContrast!=100)?32:0)|(shadowType?64:0)|(fogEnabled&&fogAmount>0?512:0);
         int metalFXStatus=metalFXSpatial?0:-1;
         unsigned encoded=(shadowEncoded?64:0)|(precipitationEncoded?128:0);
         dofStatus={0,speedFocusTarget,0.0f,0.0f,0.0f};
@@ -2642,6 +2695,22 @@ struct Executor : GfxExecutor {
         depthStage.address = GFX_ADDRESS_CLAMP;
         SDL_GPUSampler *linearSampler = Sampler(linearStage);
         SDL_GPUSampler *depthSampler = Sampler(depthStage);
+        // Atmosphere fog (video.fog): one scene+depth pass, before DoF/god rays so blur
+        // and shafts stack on the fogged scene. Uses the same projection votes as DoF;
+        // unknown projection falls back to a raw-depth ramp inside the shader.
+        if (fogEnabled && fogAmount > 0 && sampledDepth && backDepth != nullptr &&
+            fogBuf1 != nullptr && FogPipeline() != nullptr) {
+            ResolveProjection(&sceneNear, &sceneFar);
+            float fogUniforms[8] = { Fog_Density(fogAmount), fogGlow / 100.0f, sceneNear, sceneFar,
+                                     sunX, sunY, sunVisible ? 1.0f : 0.0f,
+                                     backHeight ? (float)backWidth / (float)backHeight : 1.0f };
+            SDL_GPUTextureSamplerBinding fogBindings[2] = {
+                { presentSource, linearSampler }, { backDepth, depthSampler }
+            };
+            if (PostProcessPass(cmd, FogPipeline(), fogBuf1, fogBindings, 2,
+                                fogUniforms, sizeof(fogUniforms)))
+                { presentSource = fogBuf1; encoded |= 512; }
+        }
         // Tunnel vision is independent of the depth blur (see render/dof_gate.h): it still runs with DoF off or dof_blur 0.
         DofGate dofGate = Dof_Gate(dofEnabled, dofFocalRange, dofMaxBlur, speedFocusTarget, speedFocusSmooth, sampledDepth && backDepth, raceWorld);
         dofStatus={dofGate.reason,speedFocusTarget,0.0f,0.0f,0.0f};
@@ -2946,11 +3015,12 @@ struct Executor : GfxExecutor {
 
         static unsigned lastEncoded=~0u;
         if(encoded!=lastEncoded){
-            Sys_Log("effects: SDL_GPU passes encoded this frame (GPU completion and pixels unverified): AA=%s bloom=%s motion-blur=%s depth-blur=%s sun-rays=%s grade=%s shadow-pass=%s",
+            Sys_Log("effects: SDL_GPU passes encoded this frame (GPU completion and pixels unverified): AA=%s bloom=%s motion-blur=%s depth-blur=%s sun-rays=%s grade=%s shadow-pass=%s fog=%s",
                 encoded&1?"yes":spatialAA?"fallback":"off",encoded&2?"yes":bloomEnabled?"fallback":"off",
                 encoded&4?"yes":motionBlurEnabled?"seed/skipped/fallback":"off",encoded&8?"yes":dofEnabled?"fallback":"off",
                 encoded&16?"yes":godRaysEnabled?sunVisible?"fallback":"sun-offscreen/skipped":"off",
-                encoded&32?"yes":colorGradingTemperature||colorGradingTint||colorGradingSaturation!=100||colorGradingContrast!=100?"fallback":"off/neutral",encoded&64?"yes":shadowType?"fallback":"off");
+                encoded&32?"yes":colorGradingTemperature||colorGradingTint||colorGradingSaturation!=100||colorGradingContrast!=100?"fallback":"off/neutral",encoded&64?"yes":shadowType?"fallback":"off",
+                encoded&512?"yes":fogEnabled?sampledDepth?"fallback":"no-depth":"off");
             lastEncoded=encoded;
         }
         bool submitted;

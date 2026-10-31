@@ -24,6 +24,15 @@ It does not introduce MetalFX, force effects on, or replace any game assets.
   ping-pong buffers are removed and a distinct grading target prevents feedback.
   Lens grime also avoids sampling its output and supplies its full uniform block.
 
+## Atmosphere fog addition
+
+An optional fog pass (video.fog, default off) now runs between lens grime and
+DoF in the chain so blur and god rays stack on the fogged scene. It is a single
+full-screen scene+depth pass with distance fog, a ground-mist gradient, a sky
+cap and a sun-ward glow - screen-space, not occluded volumetric shafts. It is
+deliberately heavy at amount100 by request and meant to be dialed down. Full
+details, controls and evidence: docs/ATMOSPHERE.md.
+
 ## Taste and limits
 
 The intent is less white fog, actual soft defocus and a subtle grade, rather than

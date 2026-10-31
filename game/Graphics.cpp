@@ -3,6 +3,7 @@
 #include "France1Textures.h"
 #include "SceneryPack.h"
 #include "DustPlume.h"
+#include "AirMote.h"
 #include "CarBodyDirt.h"
 #include "WorldDust.h"
 static WorldDust::Pool worldDust;
@@ -5621,6 +5622,7 @@ void SpeedMote_ApplyStreak(BillboardDef *def, SceneNode *camera)
 #define DRAW_PARTICLE (*(Particle *)(pb - offsetof(Particle, field0x55)))
 // FUNCTION: CMR2 0x004b0480
 static unsigned g_speedMotesRefused=0,g_speedMotesDrawn=0,g_speedMotesSpawned=0,g_speedMotesBudgetSkipped=0,g_speedMotesNoGround=0;
+static unsigned g_airMotesRefused=0,g_airMotesDrawn=0,g_airMotesSpawned=0,g_airMotesBudgetSkipped=0;
 void Particle_DrawAll(SceneNode *pCamera, BYTE view)
 {
     BillboardDef def;
@@ -5712,6 +5714,9 @@ void Particle_DrawAll(SceneNode *pCamera, BYTE view)
             if (g_particleTypeCount > SPEED_MOTE_TYPE && pType == &g_particleTypes[SPEED_MOTE_TYPE]) {
                 if (g_unk0x006dd784 > queuedBefore) ++g_speedMotesDrawn; else ++g_speedMotesRefused;  // refused = queue disabled or full
             }
+            if (g_particleTypeCount > AIR_MOTE_TYPE && pType == &g_particleTypes[AIR_MOTE_TYPE]) {
+                if (g_unk0x006dd784 > queuedBefore) ++g_airMotesDrawn; else ++g_airMotesRefused;
+            }
         }
     }
     // Camera-facing cloud sheets are fallback only. Original chips/spray are
@@ -5755,7 +5760,7 @@ void Particle_SpawnTagged(int typeIndex, FixVector *pSource, FixVector *pPositio
     // Extra cosmetic clouds must not consume the gameplay/global rand stream.
     static unsigned cloudSeed = 0x5a17d93u;
     auto random = [&]() -> int {
-        if (typeIndex != DUST_PLUME_TYPE && typeIndex != SPEED_MOTE_TYPE) return rand();
+        if (typeIndex != DUST_PLUME_TYPE && typeIndex != SPEED_MOTE_TYPE && typeIndex != AIR_MOTE_TYPE) return rand();
         cloudSeed = cloudSeed * 1664525u + 1013904223u;
         return (int)((cloudSeed >> 1) % ((unsigned)RAND_MAX + 1u));
     };
@@ -5843,10 +5848,12 @@ void Particle_SpawnTagged(int typeIndex, FixVector *pSource, FixVector *pPositio
                 goto particleFound;
             break;
         }
-        // Optional speed motes yield first: when the pool is full, a spawn of any other type takes a mote slot
-        // before it would evict an original particle. Never true with video.speed_motes off (no motes exist).
-        if (typeIndex != SPEED_MOTE_TYPE && g_particleTypeCount > SPEED_MOTE_TYPE &&
-            pParticle->pType == &g_particleTypes[SPEED_MOTE_TYPE]) {
+        // Optional speed/air motes yield first: when the pool is full, a spawn of any other type takes a mote slot
+        // before it would evict an original particle. Never true with the mote effects off (no motes exist).
+        if ((typeIndex != SPEED_MOTE_TYPE && g_particleTypeCount > SPEED_MOTE_TYPE &&
+            pParticle->pType == &g_particleTypes[SPEED_MOTE_TYPE]) ||
+            (typeIndex != AIR_MOTE_TYPE && g_particleTypeCount > AIR_MOTE_TYPE &&
+            pParticle->pType == &g_particleTypes[AIR_MOTE_TYPE])) {
             selected = g_nextParticle;
             best = 0x7fffffff;
         } else if (best != 0x7fffffff && pParticle->pType->lifetime - pParticle->age > best) {
@@ -7144,6 +7151,50 @@ void SpeedMote_GetStats(int *live, unsigned *drawn)
 }
 
 void SpeedMote_NoteSkippedGround(void) { ++g_speedMotesNoGround; }
+
+void AirMote_Update(Particle *p, ParticleType *, SceneNode *)
+{
+    AirMote_Step(*p, g_particleWind);
+}
+
+void AirMote_Spawn(FixVector *world)
+{
+    if (!world || !g_particles || !g_particleTypes || g_particleTypeCount <= AIR_MOTE_TYPE || g_particleCount <= 64) return;
+    int motes = 0, active = 0;
+    for (int i=0; i<g_particleCount; ++i) {
+        if (!g_particles[i].active) continue;
+        ++active;
+        if (g_particles[i].pType == &g_particleTypes[AIR_MOTE_TYPE]) ++motes;
+    }
+    // Never evict original particles: Particle_Spawn reuses the oldest slot when the pool is full.
+    if (!AirMote_HasBudget(active, motes, g_particleCount, Sys_GetOption("video.air_motes_amount", 100))) { ++g_airMotesBudgetSkipped; return; }
+    FixVector still = {0,0,0};
+    Particle_Spawn(AIR_MOTE_TYPE, world, &still, world->y, NULL, NULL, 0, NULL, 1);
+    ++g_airMotesSpawned;
+}
+
+void AirMote_GetStats(int *live, unsigned *drawn)
+{
+    int n = 0;
+    if (g_particles && g_particleTypes && g_particleTypeCount > AIR_MOTE_TYPE)
+        for (int i = 0; i < g_particleCount; ++i)
+            if (g_particles[i].active && g_particles[i].pType == &g_particleTypes[AIR_MOTE_TYPE]) ++n;
+    *live = n; *drawn = g_airMotesDrawn;
+}
+
+void AirMote_LogStats(int stepsElapsed)
+{
+    static int steps = 0;
+    steps += stepsElapsed > 0 ? 1 : 0;
+    if (steps < 125) return; // about 5 s of 25 Hz steps
+    steps = 0;
+    int live = 0;
+    if (g_particles && g_particleTypes && g_particleTypeCount > AIR_MOTE_TYPE)
+        for (int i = 0; i < g_particleCount; ++i)
+            if (g_particles[i].active && g_particles[i].pType == &g_particleTypes[AIR_MOTE_TYPE]) ++live;
+    Sys_Log("air motes: spawned=%u budget_skipped=%u live=%d billboards_queued=%u refused_by_queue=%u (cumulative; queued = accepted by Billboard_Add, not proof of visible pixels)",
+        g_airMotesSpawned, g_airMotesBudgetSkipped, live, g_airMotesDrawn, g_airMotesRefused);
+}
 
 void SpeedMote_LogStats(float speedRatio, int stepsElapsed)
 {

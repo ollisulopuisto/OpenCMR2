@@ -1,4 +1,5 @@
 #include "DustPlume.h"
+#include "AirMote.h"
 #include "CarBodyDirt.h"
 #include "AIReferenceRoute.h"
 #include "FloatToInt.h"
@@ -6439,6 +6440,16 @@ void StageTiming_InitEffectParticleTypes(void)
   ParticleEdit_SetSizeRamp(0x4000,0x4000,0);
   ParticleEdit_SetSpread(0,0,0,0);
   ParticleEdit_SetCallbacks(0,SpeedMote_Update,0,0,0);
+  ParticleEdit_CommitCurrentType();
+  // Optional floating air motes (video.air_motes): smaller, warmer, slow-drifting specks.
+  ParticleEdit_Select(AIR_MOTE_TYPE);
+  ParticleEdit_SetTextureParams(g_unk0x00543664, -0x10000, 0x10000, 0x10000, -0x10000);
+  ParticleEdit_SetMotion(AIR_MOTE_LIFE << 16, 0, 0, 0, 0, 0, 0);
+  ParticleEdit_SetAlphaRamp(0, 0, 0, 0);
+  ParticleEdit_SetColour(0xf2,0xea,0xd8,1);
+  ParticleEdit_SetSizeRamp(0x3000,0x3000,0);
+  ParticleEdit_SetSpread(0,0,0,0);
+  ParticleEdit_SetCallbacks(0,AirMote_Update,0,0,0);
   ParticleEdit_CommitCurrentType();
   return;
 }

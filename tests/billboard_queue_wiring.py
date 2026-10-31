@@ -6,6 +6,7 @@ add = g[g.index('void Billboard_Add(BillboardDef'):g.index('// Release callback:
 assert 'g_billboardRefusedDisabled' in add and 'g_billboardRefusedFull' in add, 'refusal causes must be counted in Billboard_Add'
 loop = g[g.index('const int queuedBefore = g_unk0x006dd784;'):g.index('// Camera-facing cloud sheets are fallback only')]
 assert re.search(r'Billboard_Add\(&def, texture\);\s*if \(g_particleTypeCount > SPEED_MOTE_TYPE .*?\{\s*if \(g_unk0x006dd784 > queuedBefore\) \+\+g_speedMotesDrawn; else \+\+g_speedMotesRefused;', loop, re.S), 'queued counter must follow acceptance'
+assert re.search(r'if \(g_particleTypeCount > AIR_MOTE_TYPE && pType == &g_particleTypes\[AIR_MOTE_TYPE\]\) \{\s*if \(g_unk0x006dd784 > queuedBefore\) \+\+g_airMotesDrawn; else \+\+g_airMotesRefused;', loop, re.S), 'air mote queued counter must follow acceptance'
 assert 'g_billboardPeakQueue' in g[g.index('void Billboard_Draw(SceneNode'):g.index('// Takes a free texture slot')]
 assert 'billboards_submitted' not in g, 'old label overstated: queued is not drawn/visible'
 assert 'Gfx_GetBlendDepthState' in g and 'billboard draw state:' in g

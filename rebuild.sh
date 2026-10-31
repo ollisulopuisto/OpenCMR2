@@ -19,6 +19,9 @@
 #   --driver-names real         Real driver names (display only)
 #   --install-enhancement-deps  Allow uv to set up an isolated Python with Pillow/numpy (network); default is no downloads
 #   --assets-only               Skip the rebuild and prepare with the existing binary
+#   --test-preset overdo|atmosphere|off
+#                               Diagnostic preset for the launch; with --all-mods it is added to the baked overdo
+#                               (e.g. --test-preset atmosphere gives overdo,atmosphere: the usual look plus exaggerated fog/motes)
 #   --dry-run                   Check the inputs and print the plan; build nothing, write nothing
 #   -h, --help                  This text
 # Missing or unsupported inputs stop the script with a message; nothing is skipped silently. Generated packs are derived game art:
@@ -40,6 +43,7 @@ for arg in "$@"; do [ "$arg" = --update ] || REEXEC_ARGS+=("$arg"); done
 DRY=0
 ASSETS_ONLY=0
 FLAGS=()
+TEST_PRESET=
 need_value() { [ "$#" -ge 2 ] && [ -n "$2" ] || die "$1 needs a value (see --help)"; }
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -55,6 +59,7 @@ while [ "$#" -gt 0 ]; do
         --roads) need_value "$@"; [ "$2" = curved ] || die "--roads takes curved, got '$2'"; FLAGS+=(--roads "$2"); shift 2 ;;
         --driver-names) need_value "$@"; [ "$2" = real ] || die "--driver-names takes real, got '$2'"; FLAGS+=(--driver-names "$2"); shift 2 ;;
         --install-enhancement-deps) FLAGS+=(--install-enhancement-deps); shift ;;
+        --test-preset) need_value "$@"; TEST_PRESET="$2"; shift 2 ;;
         --assets-only) ASSETS_ONLY=1; shift ;;
         --dry-run) DRY=1; shift ;;
         *) die "unknown option '$1' (see --help)" ;;
@@ -78,6 +83,11 @@ if [ "$UPDATE" = 1 ]; then
 fi
 if [ "$ALL_MODS" = 1 ]; then
     [ "${#FLAGS[@]}" -eq 0 ] || die "--all-mods cannot be combined with individual asset/dependency options"
+    # Baked diagnostic preset is overdo; --test-preset atmosphere extends it, off replaces it.
+    ALL_MODS_PRESET=overdo
+    if [ -n "$TEST_PRESET" ]; then
+        if [ "$TEST_PRESET" = off ]; then ALL_MODS_PRESET=off; else ALL_MODS_PRESET="overdo,$TEST_PRESET"; fi
+    fi
     [ -d "$MODS" ] || die "owned car ZIP folder not found: $MODS (use --mods-dir or CMR2_MODS_DIR)"
     FLAGS=(
         --asset-upgrades
@@ -125,7 +135,7 @@ if [ "$ALL_MODS" = 1 ]; then
         --effect
         depth_of_field=off
         --test-preset
-        overdo
+        "$ALL_MODS_PRESET"
         --speed-hold
         0
         --effect
@@ -155,10 +165,16 @@ if [ "$ALL_MODS" = 1 ]; then
     )
 fi
 
+
 PREPARE=0
 for f in "${FLAGS[@]+"${FLAGS[@]}"}"; do case "$f" in --trees|--spectators|--textures|--roads|--driver-names) PREPARE=1 ;; esac; done
 [ "$ALL_MODS" = 0 ] || PREPARE=1
 [ "$PREPARE" = 1 ] || { [ "${#FLAGS[@]}" -eq 0 ] || die "--install-enhancement-deps needs an asset option"; [ "$ASSETS_ONLY" = 0 ] || die "--assets-only needs an asset option"; }
+
+# Launch-only passthrough, not an asset option: after the asset-option guard above.
+if [ "$ALL_MODS" != 1 ] && [ -n "$TEST_PRESET" ]; then
+    FLAGS+=(--test-preset "$TEST_PRESET")
+fi
 
 BIN=build/macos/src/opencmr2
 if [ "$PREPARE" = 1 ]; then

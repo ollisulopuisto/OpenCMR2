@@ -73,11 +73,11 @@ GLuint EffectProgram(int effect)
     if (effectPrograms[effect]) return effectPrograms[effect];
     static const unsigned char *sources[] = {g_brightpass_frag_glsl, g_blur_frag_glsl,
         g_composite_frag_glsl, g_motionblur_frag_glsl, g_lens_grime_frag_glsl,
-        g_dof_frag_glsl, g_godRays_frag_glsl, g_colorGrading_frag_glsl, g_spatial_aa_frag_glsl,g_clouds_frag_glsl,g_speedstreak_frag_glsl,g_sun_glare_frag_glsl};
+        g_dof_frag_glsl, g_godRays_frag_glsl, g_colorGrading_frag_glsl, g_spatial_aa_frag_glsl,g_clouds_frag_glsl,g_speedstreak_frag_glsl,g_sun_glare_frag_glsl,g_fog_frag_glsl};
     static const char *blocks[] = {"BrightPassUniforms", "BlurUniforms", "CompositeUniforms",
-        "MotionBlurUniforms", "LensGrimeUniforms", "DoFUniforms", "GodRaysUniforms", "ColorGradingUniforms", "SpatialAAUniforms","CloudUniforms","SpeedStreakUniforms","SunGlareUniforms"};
-    static const char *samplers0[] = {"scene", "source", "scene", "current", "scene", "sceneTex", "scene", "scene", "scene", "scene", "scene", "scene"};
-    static const char *samplers1[] = {NULL, NULL, "bloom", "previous", NULL, "depthTex", "depthTex", NULL, NULL,"depthTex", NULL,"depthTex"};
+        "MotionBlurUniforms", "LensGrimeUniforms", "DoFUniforms", "GodRaysUniforms", "ColorGradingUniforms", "SpatialAAUniforms","CloudUniforms","SpeedStreakUniforms","SunGlareUniforms","FogUniforms"};
+    static const char *samplers0[] = {"scene", "source", "scene", "current", "scene", "sceneTex", "scene", "scene", "scene", "scene", "scene", "scene", "scene"};
+    static const char *samplers1[] = {NULL, NULL, "bloom", "previous", NULL, "depthTex", "depthTex", NULL, NULL,"depthTex", NULL,"depthTex", "depthTex"};
     GLuint p = Link(glEffectsVertex, sources[effect]);
     if (p) {
         GLuint block = gl.GetUniformBlockIndex(p, blocks[effect]);
@@ -151,7 +151,7 @@ GLuint ApplyEffects()
     float glareStrength=sunGlare.Step(sunX,sunY,effectsRaceFrame&&sunVisible,glareAmount,glareDt);
     bool glareActive=effectsRaceFrame&&glareAmount>0&&glareStrength>.0001f;
     bool active = glareActive || streakOn || cloudsValid || spatialAA || bloomOn && bloomAmount > 0 || motionOn && motionMix > 0 ||
-        depthBlurOn || tunnelOn || raysOn && raysAmount > 0 && sunVisible ||
+        depthBlurOn || tunnelOn || raysOn && raysAmount > 0 && sunVisible || fogOn && fogAmount > 0 ||
         grade[0] || grade[1] || grade[2] != 1 || grade[3] != 1 || grime[0] || grime[1] || grime[2];
     if (!active) { historyValid = false; return backFramebuffer; }
     if (!EffectTargets()) return backFramebuffer;
@@ -161,7 +161,7 @@ GLuint ApplyEffects()
         int target = source == effectTex[0] ? 1 : 0;
         if (EffectPass(effect, target, source, second, data, bytes)) {
             source = effectTex[target]; sourceFbo = effectFbo[target];
-            static const unsigned bits[]={0,0,2,4,0,8,16,32,1,0,256,0};
+            static const unsigned bits[]={0,0,2,4,0,8,16,32,1,0,256,0,512};
             encodedEffects |= bits[effect];
             return true;
         }
@@ -210,6 +210,15 @@ GLuint ApplyEffects()
         ForgetEffectState();
     } else historyValid = false;
     if (grime[0] || grime[1] || grime[2]) run(4, 0, grime, sizeof(grime));
+    // Atmosphere fog (video.fog): before DoF/rays so blur and shafts stack on the fogged
+    // scene. The GL path has no near/far recovery, so near/far are zero and the shader
+    // uses its raw-depth ramp (a stand-in curve, see render/fog_math.h).
+    if (fogOn && fogAmount > 0) {
+        float u[8] = {Fog_Density(fogAmount), fogGlow / 100.0f, 0.0f, 0.0f,
+                      sunX, sunY, sunVisible ? 1.0f : 0.0f,
+                      backHeight ? (float)backWidth / (float)backHeight : 1.0f};
+        run(12, backDepth, u, sizeof(u));
+    }
     if (depthBlurOn || tunnelOn) {
         // Same 8-float DoFUniforms layout as SDL_GPU. Depth blur keeps the existing GL look (raw depth, no near/far recovery);
         // tunnel vision adds the speed-driven peripheral blur with its own radius (kTunnelRadiusPerHeight x height px at full strength).

@@ -12642,6 +12642,25 @@ char *FrontendMenu_GetScreenOptionsLabel(void)
 
 namespace {
 Menu effectAmounts;
+Menu atmosphereAmounts;
+// Atmosphere gets its own submenu: Menu::items is layout-locked at 22 entries
+// (LayoutChecks MenuSizeCheck), so these rows cannot join the main list.
+const EffectAmountRow kAtmosphereRows[]={
+ {"Fog (0/1)","video.fog",0,2},
+ {"Fog amount % (100 = deliberately heavy)","video.fog_amount",100,101},
+ {"Fog sun glow %","video.fog_glow",60,101},
+ {"Air motes (0/1)","video.air_motes",0,2},
+ {"Air motes amount %","video.air_motes_amount",100,301},
+};
+void EnterAtmosphere(Menu*m,int){
+ for(unsigned i=0;i<sizeof(kAtmosphereRows)/sizeof(*kAtmosphereRows);i++)
+  m->items[i].max=EffectSettings::Clamp(Sys_GetOption(kAtmosphereRows[i].key,kAtmosphereRows[i].initial),0,kAtmosphereRows[i].count-1);
+}
+void ApplyAtmosphere(Menu*m,MenuItem*){
+ for(unsigned i=0;i<sizeof(kAtmosphereRows)/sizeof(*kAtmosphereRows);i++)
+  Sys_SetOption(kAtmosphereRows[i].key,m->items[i].max);
+ EffectSettings::Apply();
+}
 void EnterAmounts(Menu*m,int){
  int n;const auto*rows=EffectAmount_Rows(n); if(n>20)n=20;
  for(int i=0;i<n;i++){
@@ -12662,12 +12681,22 @@ void ApplyAmounts(Menu*m,MenuItem*){
  EffectSettings::Apply();
 }
 }
+Menu* FrontendMenu_GetAtmosphereAmounts(Menu*parent);
 Menu* FrontendMenu_GetEffectAmounts(Menu*parent){
  Menu_Init(&effectAmounts,(char*)"Effect amounts",-1,0,parent,NULL,1,0,1);
  int n;const auto*rows=EffectAmount_Rows(n);
  if(n>20)n=20; // Menu::items holds 22: leave room for the OK row
  for(int i=0;i<n;i++)Menu_AddItemType3(&effectAmounts,(char*)rows[i].label,-1,rows[i].count,0,0,0,0,0x40+i);
+ Menu_AddItemType2(&effectAmounts,(char*)"Atmosphere...",-1,FrontendMenu_GetAtmosphereAmounts(&effectAmounts),0,0x30);
  Menu_AddItemType1(&effectAmounts,0,0x67,ApplyAmounts,0xe);
  Menu_SetCallbacks(&effectAmounts,EnterAmounts,NULL,(MenuCallback)FrontendMenu_DrawAdvancedGraphicsOptions,NULL);
  Menu_ValidateCursor(&effectAmounts,0);return &effectAmounts;
+}
+Menu* FrontendMenu_GetAtmosphereAmounts(Menu*parent){
+ Menu_Init(&atmosphereAmounts,(char*)"Atmosphere",-1,0,parent,NULL,1,0,1);
+ for(unsigned i=0;i<sizeof(kAtmosphereRows)/sizeof(*kAtmosphereRows);i++)
+  Menu_AddItemType3(&atmosphereAmounts,(char*)kAtmosphereRows[i].label,-1,kAtmosphereRows[i].count,0,0,0,0,0x40+i);
+ Menu_AddItemType1(&atmosphereAmounts,0,0x67,ApplyAtmosphere,0xe);
+ Menu_SetCallbacks(&atmosphereAmounts,EnterAtmosphere,NULL,(MenuCallback)FrontendMenu_DrawAdvancedGraphicsOptions,NULL);
+ Menu_ValidateCursor(&atmosphereAmounts,0);return &atmosphereAmounts;
 }
