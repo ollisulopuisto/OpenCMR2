@@ -616,3 +616,20 @@ optional wind without changing collision/driving; fences get texture filtering
 only. See `tools/scenery-patch/README.md` for coverage and rollback flags.
 Source interpolation adds no new artwork detail. Native appearance/FPS remain
 unverified, and original assets are required and never modified.
+
+### Replay chase-camera orbit
+
+During replay, hold Left/Right to orbit horizontally and Up/Down to orbit
+vertically in every chase camera (types 4, 5 and 6, including the drone variant).
+R clears the active camera's rotation offsets and restores its normal current
+position and angle. The car keeps moving underneath the normal chase camera;
+this does not rewind the car or restore a saved world coordinate. Rotation works
+while replay playback is paused and uses real frame time, not playback speed.
+Switching camera/target starts with zero offsets; replay exit clears them.
+
+Arrows/R are consumed only for replay chase/free cameras, never during driving
+or in the race menu/F10 tuning panel. Free-camera WASD/QE/arrows/R, Tab camera
+cycling, comma/period speed, Space pause and saved chase settings are unchanged.
+Offsets are applied to a fresh interpolated render pose, not camera records,
+recorded controls, physics or original game assets. Native Mac acceptance remains
+unverified.

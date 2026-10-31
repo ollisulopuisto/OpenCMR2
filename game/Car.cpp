@@ -4,6 +4,7 @@
 #include "SpeedFov.h"
 #include "ReplayCameraCycle.h"
 #include "FreeCam.h"
+#include "ReplayChaseOrbit.h"
 #include <math.h>
 #include "FloatToInt.h"
 #include <stddef.h>
@@ -8571,6 +8572,38 @@ int View_CameraMoveStep(int cameraType, int view)
     return (int)((long long)setting * 0xCCC * ratio / 65536);
 }
 
+bool ReplayControls_Active();
+// Replay arrows adjust only render-time offsets; original camera records remain intact.
+static ReplayChaseOrbit g_replayChaseOrbit[2];
+static double g_replayChaseLastMs[2]={};
+static int g_replayChaseSignature[2]={-1,-1};
+void View_ReplayChaseReset(){for(int i=0;i<2;i++){g_replayChaseOrbit[i].Reset();g_replayChaseLastMs[i]=0;g_replayChaseSignature[i]=-1;}}
+void View_ReplayChaseFrame(unsigned view,int left,int right,int up,int down,int reset){
+ if(view>=2)return;
+ int mode=View_GetActiveCameraMode((BYTE)view);
+ unsigned record=g_activeViewRecord[view]+view*2;
+ int signature=mode*256+(record<8?g_droneVariant[record]*16:0)+View_GetActiveCameraFlags((BYTE)view);
+ if(g_replayChaseSignature[view]!=signature){g_replayChaseOrbit[view].Reset();g_replayChaseLastMs[view]=0;g_replayChaseSignature[view]=signature;}
+ double now=Sys_GetTicksPrecise(),dt=g_replayChaseLastMs[view]?(now-g_replayChaseLastMs[view])/1000.:0;
+ g_replayChaseLastMs[view]=now;
+ if(reset)g_replayChaseOrbit[view].Reset();else g_replayChaseOrbit[view].Step(left,right,up,down,dt);
+}
+static void View_ApplyReplayChase(BYTE view,FixMatrix&matrix,int lookDistance){
+ if(view>=2||!ReplayControls_Active()||View_FreeCamActive()||!ReplayChaseOrbit::Chase(View_GetActiveCameraMode(view)))return;
+ const auto&o=g_replayChaseOrbit[view];if(o.yaw==0&&o.pitch==0)return;
+ double p[3]={matrix.position.x/65536.,matrix.position.y/65536.,matrix.position.z/65536.};
+ double f[3]={matrix.forward.x/65536.,matrix.forward.y/65536.,matrix.forward.z/65536.};
+ double u[3]={matrix.up.x/65536.,matrix.up.y/65536.,matrix.up.z/65536.};
+ double r[3]={matrix.right.x/65536.,matrix.right.y/65536.,matrix.right.z/65536.};
+ // Prefer the camera's own aim distance; legacy chase records without it use
+ // the distance to the followed car, not a player-indexed or guessed slot.
+ double distance=lookDistance/65536.;
+ if(distance<1){Car*car=View_GetLivePresentationCar(view);if(!car)return;double dx=p[0]-car->position.x/65536.,dy=p[1]-car->position.y/65536.,dz=p[2]-car->position.z/65536.;distance=std::sqrt(dx*dx+dy*dy+dz*dz);}
+ o.Apply(p,r,u,f,distance);
+ auto fixed=[](const double*v){return FixVector{(int)std::lround(v[0]*65536),(int)std::lround(v[1]*65536),(int)std::lround(v[2]*65536)};};
+ matrix.position=fixed(p);matrix.right=fixed(r);matrix.up=fixed(u);matrix.forward=fixed(f);
+}
+
 // FUNCTION: CMR2 0x00422140
 void View_BlendCameraStates(BYTE view, int t)
 {
@@ -8633,6 +8666,7 @@ void View_BlendCameraStates(BYTE view, int t)
             FixMatrix_SetUp(&pitch, &matrix);
         }
     }
+    View_ApplyReplayChase(view,matrix,f5c);
     node = g_viewNodes[view];
     FixMatrix_CopyRotation(&matrix, &node->current);
     while (node != NULL) {
