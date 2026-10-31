@@ -43,8 +43,8 @@ inline const TuningRow *Tuning_Rows(int &count)
         {"Drone distance %", "video.drone_distance", 50, 150, 5, 60},
         {"Drone height %", "video.drone_height", 50, 150, 5, 100},
         {"Drone lateral follow % (lower floats more)", "video.drone_lateral", 25, 200, 5, 100},
-        {"Drone accel/brake spring %", "video.drone_spring", 25, 200, 5, 100},
-        {"Drone speed height drop %", "video.drone_speed_drop", 0, 100, 5, 100},
+        {"Drone accel/brake spring %", "video.drone_spring", 5, 200, 5, 100},
+        {"Drone speed height drop %", "video.drone_speed_drop", 0, 200, 5, 100},
     };
     count = (int)(sizeof(rows) / sizeof(*rows));
     return rows;

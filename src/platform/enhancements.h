@@ -77,7 +77,7 @@ struct EnhancementOptions {
         }
         if(key=="--drone-speed-drop"||key=="--drone-distance"||key=="--speed-fov-cockpit"||key=="--cockpit-blur-clear"||key=="--tunnel-vision"||key=="--tunnel-lines"){   // wins over opencmr2.ini, so a value saved there earlier cannot hide the default
             char *end=nullptr;long n=strtol(value.c_str(),&end,10);
-            int lo=key=="--drone-distance"?50:0,hi=key=="--drone-speed-drop"?100:key=="--drone-distance"?150:key=="--speed-fov-cockpit"?100:key=="--tunnel-vision"?200:key=="--tunnel-lines"?1:60;
+            int lo=key=="--drone-distance"?50:0,hi=key=="--drone-speed-drop"?200:key=="--drone-distance"?150:key=="--speed-fov-cockpit"?100:key=="--tunnel-vision"?200:key=="--tunnel-lines"?1:60;
             if(value.empty()||*end||n<lo||n>hi)error=key+" expects "+std::to_string(lo)+".."+std::to_string(hi);
             else overrides[key=="--drone-speed-drop"?"video.drone_speed_drop":key=="--drone-distance"?"video.drone_distance":key=="--speed-fov-cockpit"?"video.speed_fov_cockpit":key=="--tunnel-vision"?"video.tunnel_vision":key=="--tunnel-lines"?"video.tunnel_lines":"video.cockpit_blur_clear"]=(int)n;
         }
