@@ -22,6 +22,10 @@
 #   --test-preset overdo|atmosphere|off
 #                               Diagnostic preset for the launch; with --all-mods it is added to the baked overdo
 #                               (e.g. --test-preset atmosphere gives overdo,atmosphere: the usual look plus exaggerated fog/motes)
+#   --fog-clear N               Near-field fog clear distance 0-200 (0 = off): launch tuning passed straight to the game
+#   --fog-cull 0|1              Experimental fog culling past the far draw distance (default 0 = off); silhouettes may pop
+#   --fog-amount N / --fog-glow N / --air-motes-amount N
+#                               Other atmosphere dials (docs/ATMOSPHERE.md), also launch-only passthrough
 #   --dry-run                   Check the inputs and print the plan; build nothing, write nothing
 #   -h, --help                  This text
 # Missing or unsupported inputs stop the script with a message; nothing is skipped silently. Generated packs are derived game art:
@@ -43,6 +47,7 @@ for arg in "$@"; do [ "$arg" = --update ] || REEXEC_ARGS+=("$arg"); done
 DRY=0
 ASSETS_ONLY=0
 FLAGS=()
+TUNING=()
 TEST_PRESET=
 need_value() { [ "$#" -ge 2 ] && [ -n "$2" ] || die "$1 needs a value (see --help)"; }
 while [ "$#" -gt 0 ]; do
@@ -62,6 +67,10 @@ while [ "$#" -gt 0 ]; do
         --test-preset) need_value "$@"; TEST_PRESET="$2"; shift 2 ;;
         --assets-only) ASSETS_ONLY=1; shift ;;
         --dry-run) DRY=1; shift ;;
+        --fog-amount|--fog-glow|--fog-clear|--air-motes-amount) need_value "$@"; TUNING+=("$1" "$2"); shift 2 ;;
+        --fog-cull) need_value "$@"; case "$2" in 0|1) ;; *) die "--fog-cull takes 0 or 1, got '$2'" ;; esac; TUNING+=("$1" "$2"); shift 2 ;;
+        --fog-amount=*|--fog-glow=*|--fog-clear=*|--air-motes-amount=*) TUNING+=("${1%%=*}" "${1#*=}"); shift ;;
+        --fog-cull=*) case "${1#*=}" in 0|1) ;; *) die "--fog-cull takes 0 or 1" ;; esac; TUNING+=(--fog-cull "${1#*=}"); shift ;;
         *) die "unknown option '$1' (see --help)" ;;
     esac
 done
@@ -175,6 +184,9 @@ for f in "${FLAGS[@]+"${FLAGS[@]}"}"; do case "$f" in --trees|--spectators|--tex
 if [ "$ALL_MODS" != 1 ] && [ -n "$TEST_PRESET" ]; then
     FLAGS+=(--test-preset "$TEST_PRESET")
 fi
+# Launch-only atmosphere tuning (game flags, not asset options): same guard placement as --test-preset,
+# so these combine with --all-mods instead of tripping its "no individual options" check.
+[ "${#TUNING[@]}" = 0 ] || FLAGS+=("${TUNING[@]}")
 
 BIN=build/macos/src/opencmr2
 if [ "$PREPARE" = 1 ]; then
