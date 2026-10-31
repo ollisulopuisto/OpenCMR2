@@ -54,7 +54,7 @@ static void putQuad()
         memset(&v[i], 0, sizeof v[i]);
         v[i].x = px[i]; v[i].y = py[i]; v[i].z = 1.99f;
         v[i].nz = -1.f;
-        v[i].diffuse = 0xff7080a0;   // bright blue-grey daylight scene (ARGB)
+        v[i].diffuse = i < 2 ? 0xff4a4038 : 0xff90a8c8;   // dark road below, bright sky above (ARGB)
         v[i].specular = 0xff000000;
     }
     Gfx_UnlockVertexBuffer(vb);
@@ -121,8 +121,8 @@ int main(int argc, char **argv)
         Gfx_UnlockTexture(whiteTex, 0, 0);
     }
 
-    // A real dirt map: heavy spatter over the whole glass, then one dry blade
-    // arc wiped through it - dirt outside the arc, clean glass inside.
+    // EXTREME FIXTURE (boundary test, not a representative look): saturated
+    // dirt over the whole glass, one dry blade arc wiped through it.
     Windshield_ResetAll();
     WindshieldMap *m = &g_windshieldMaps[0];
     for (int i = 0; i < WINDSHIELD_MAP_W * WINDSHIELD_MAP_H; i++)
@@ -131,20 +131,41 @@ int main(int argc, char **argv)
     m->wet = 0;
     require(Windshield_Wipe(m, 0.34f, 1.02f, 0.72f, -0.25f, 0.06f, 1) > 0, "wipe removes dirt");
 
+    // REPRESENTATIVE look: the production accumulation path
+    // (Windshield_AddSpatter, as driving calls it) at a moderate level, then
+    // two wet blade sweeps at different angles - the readable everyday state.
+    WindshieldMap *r = &g_windshieldMaps[1];
+    Windshield_Reset(r, 0x5eedu);
+    for (int pass = 0; pass < 80; pass++)   // ~80 driving spatter events
+        Windshield_AddSpatter(r, 3, 100, 0.3f);
+    for (int i = 0; i < WINDSHIELD_MAP_W * WINDSHIELD_MAP_H; i++)
+        if (r->dirt[i] > 150) r->dirt[i] = 150;   // cap at a mid accumulation level
+    r->wet = 200;
+    require(Windshield_Wipe(r, 0.34f, 1.02f, 0.72f, -0.25f, 0.06f, 0) > 0, "wet sweep one");
+    require(Windshield_Wipe(r, 0.34f, 1.02f, 0.72f, 0.35f, 0.06f, 0) > 0, "wet sweep two");
+
     const char *prefix = argc > 1 ? argv[1] : nullptr;
-    static DWORD clean[W * H], dirty[W * H];
+    static DWORD clean[W * H], dirty[W * H], repr[W * H];
     // 1. Control: no dirt.
     WindshieldMap saved = *m;
     memset(m->dirt, 0, sizeof m->dirt);
     putQuad();
     drawAndRead(clean, true);
-    // 2. Dirty glass with the wiped arc.
+    // 2. Dirty glass with the wiped arc (extreme fixture).
     *m = saved;
     putQuad();
     drawAndRead(dirty, true);
+    // 3. Representative: moderate production spatter + two wet sweeps.
+    {   WindshieldMap keep = *m;
+        *m = *r;
+        putQuad();
+        drawAndRead(repr, true);
+        *m = keep;
+    }
 
     dumpPpm(prefix, "clean", clean);
     dumpPpm(prefix, "dirty", dirty);
+    dumpPpm(prefix, "representative", repr);
     // The map's dirt area darkens the scene toward the grime tint.
     // Glass centre, away from the wiped arc: px (48, 16) is inside the mask.
     require(chan(dirty,48,16,16) < chan(clean,48,16,16) - 24, "dirt darkens the glass");
@@ -153,6 +174,18 @@ int main(int argc, char **argv)
     require(chan(dirty,21,34,16) >= chan(clean,21,34,16) - 8, "wiped arc stays clean");
     // The dash band takes no dirt at all: px (48, 60) is below the mask.
     require(chan(dirty,48,60,16) == chan(clean,48,60,16), "dash band untouched");
+    // Representative: sky through partial dirt stays readable (much closer to
+    // clean than the saturated fixture), and both swept arcs sit between.
+    require(chan(repr,48,16,2) > chan(dirty,48,16,2) + 24, "representative dirt stays readable");
+    {   int maxDark = 0;
+        for (int y = 4; y < 56; y++)
+            for (int x = 8; x < 88; x++) {
+                int d = chan(clean,x,y,2) - chan(repr,x,y,2);
+                if (d > maxDark) maxDark = d;
+            }
+        require(maxDark >= 24, "representative dirt is visible");
+        printf("representative max darkening %d\n", maxDark);
+    }
     printf("windshield_render ok\n");
     return 0;
 }
