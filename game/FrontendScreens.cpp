@@ -1016,6 +1016,7 @@ int FrontendCredits_GetStartTime(void);
 // PORT: "what's new" changelog (implementation with the screen options below).
 void WhatsNew_MaybeAutoShow(void);
 void FrontendMenu_BuildWhatsNew(void);
+void FrontendMenu_OpenWhatsNew(Menu *, MenuItem *);
 
 // Draws the two columns of text of the scrolling credits screen; when every
 // line has scrolled past the top the screen finishes.
@@ -12419,69 +12420,7 @@ void FrontendMenu_DrawNetworkSessionSetup(Menu *pMenu)
 
 Menu g_screenOptionsMenu;
 
-// PORT: "What's new" changelog screen. Content lives in game/WhatsNew.h:
-// bump kWhatsNewRevision and add a line when user-visible changes ship. The
-// screen appears once per revision on the main menu (ui.whatsnew_seen) and
-// stays reachable from the Screen page below.
-#include "WhatsNew.h"
-namespace {
-Menu whatsNewMenu;
-Menu *g_whatsNewReturn;
-void FrontendMenu_LeaveWhatsNew(Menu *m, MenuItem *)
-{
-    Menu_GoBack(m);
-}
-void FrontendMenu_EnterWhatsNew(Menu *m, int)
-{
-    if (g_whatsNewReturn != NULL)
-        m->pParent = g_whatsNewReturn;
-}
-void FrontendMenu_DrawWhatsNew(Menu *)
-{
-    int n;
-    const WhatsNewLine *lines = WhatsNew_Lines(n);
-    int x = (int)(g_pGraphics->resX * 60) / 640;
-    int y = (int)(g_pGraphics->resY * 60) / 480;
-    Font_DrawText(2, (char *)"What's new in OpenCMR2", x, y, (int *)g_colourWhite0x00524968, 0x11);
-    y += (int)(g_pGraphics->resY * 36) / 480;
-    for (int i = 0; i < n; i++) {
-        Font_DrawText(1, (char *)lines[i].text, x, y, (int *)g_colourText0x0052496c, 0x11);
-        y += (int)(g_pGraphics->resY * 24) / 480;
-    }
-    Font_DrawText(1, CFrontend::GetTextString(0x67), x, (int)(g_pGraphics->resY * 420) / 480,
-                  (int *)g_colourWhite0x00524968, 0x11);
-    FrontendDraw_Carousel(FrontendMenu_GetMain(), 0, NULL);
-}
-Menu *FrontendMenu_GetWhatsNew(void)
-{
-    Menu_Init(&whatsNewMenu, (char *)"What's new", -1, 0, FrontendMenu_GetMain(), NULL, 1, 0, 1);
-    Menu_AddItemType1(&whatsNewMenu, 0, 0x67, (MenuItemAction)FrontendMenu_LeaveWhatsNew, 0xe);
-    Menu_SetCallbacks(&whatsNewMenu, FrontendMenu_EnterWhatsNew, NULL, (MenuCallback)FrontendMenu_DrawWhatsNew, NULL);
-    Menu_ValidateCursor(&whatsNewMenu, 0);
-    return &whatsNewMenu;
-}
-}
-void FrontendMenu_OpenWhatsNew(Menu *, MenuItem *)
-{
-    g_whatsNewReturn = FrontendMenu_GetActiveMenu();
-    Menu_SetNextAction(FrontendMenu_GetWhatsNew());
-}
-void FrontendMenu_BuildWhatsNew(void)
-{
-    (void)FrontendMenu_GetWhatsNew();
-}
-// Auto-show once per changelog revision when the main menu is entered; the
-// Screen page row reopens it any time. Seen is recorded when the screen is
-// queued so a crash or an early exit cannot loop it.
-void WhatsNew_MaybeAutoShow(void)
-{
-    int seen = Sys_GetOption("ui.whatsnew_seen", 0);
-    if (seen >= kWhatsNewRevision)
-        return;
-    Sys_SetOption("ui.whatsnew_seen", kWhatsNewRevision);
-    g_whatsNewReturn = NULL;   // keep the built parent: the main menu
-    Menu_SetNextAction(FrontendMenu_GetWhatsNew());
-}
+
 
 enum ScreenOptionsItem {
     SCREEN_ITEM_HUD,

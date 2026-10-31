@@ -16,6 +16,7 @@ int main()
     }
     CHECK(WhatsNew_UnseenCount(0) == n);                    // a first run shows everything once
     CHECK(WhatsNew_UnseenCount(kWhatsNewRevision) == 0);    // current revision: nothing new, no auto-show
+    CHECK(WhatsNew_UnseenCount(kWhatsNewRevision - 1) >= 1);   // every revision adds lines, so an auto-show always has content
     if (!fails) std::puts("whats_new ok");
     return fails;
 }
