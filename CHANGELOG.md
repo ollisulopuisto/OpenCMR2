@@ -3,6 +3,12 @@
 All notable changes to OpenCMR2 are documented here.
 
 ## [Unreleased]
+### Fixed
+- Fog light beams crossing the near plane (rear lamps in chase view,
+  headlights in R look-back) no longer draw as a streak toward the
+  upper-left corner; the beam wedge is clipped at the near plane and keeps
+  its true direction. Beam appearance and intensity are unchanged.
+
 
 ### Added
 

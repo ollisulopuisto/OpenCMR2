@@ -646,3 +646,19 @@ before spawn, smaller replacement allocation and both valid views. Old main
 aborts the regression on invalid-pointer dereference (Zig null-page check);
 repair passes. Full build and137/142CTest,
 same5baseline Zig aborts. Native Mac stage transition retest still pending.
+
+## User reference settings (2026-11-01, native M2, NOT defaults - respect in fog/light work)
+From four user screenshots (Finland1 snow, chase cam type 4, Subaru):
+- fog: encoded amount 70, glow 100; fog evolve 60 (100 neutral clears thickens); fog light response 100
+- air motes on, amount 500; snow glints 100; snow material OFF (video.snow_material=0)
+- speed fov 100; speed streak 100; tunnel vision 130; motion blur 60; dof off; radial speed lines off; vapor trails on
+- tyre debris 400; dust/snow plume 200; wheel spray 200; exhaust smoke 200; wheel splash 200; backfire sparks 200; rain/snow amount 200; cockpit speed fov 25
+- camera chase type 4 (move family 0.05 units:0); corner tilt 30; drone distance 50, height 100
+- fog culling row NOT visible on tuning pages 1/43, 19/43, 43/43 - exposure unresolved, do not invent a value
+
+## Known bug: fog beam wedge direction (rear lamps) - fix in progress
+Beam end 30wu along lamp dir can sit behind the camera (rear lamps in chase view);
+FixMatrix_ProjectWorldPointToView returns sentinel (-100,-100)px, producing a wedge
+drawn toward the upper-left corner = red streak up the left snowbank (user report
+2026-11-01). Fix: clip lamp->beamEnd segment at the near plane in view space
+(StageObjects.cpp fog-light projection block) before projecting.

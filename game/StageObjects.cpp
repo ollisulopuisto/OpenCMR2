@@ -10453,8 +10453,28 @@ void StageObject_DrawProjectedViewIcon(int *pViewRect, int param_2)
             beamEnd.z = src->pos.z + FixMul(src->dir.z, 0x1e0000);
             float endU = lampU, endV = lampV;
             if (src->dir.x != 0 || src->dir.y != 0 || src->dir.z != 0) {
-                FixMatrix_ProjectWorldPointToView((int *)&vOut, &beamEnd, view);
-                endU = (float)(vOut.x >> 16) / resXf; endV = (float)(vOut.y >> 16) / resYf;
+                FixVector endView;
+                FixMatrix_TransformPoint(&endView, &beamEnd, &invView);
+                if (endView.z >= 0x10000) {
+                    FixMatrix_ProjectWorldPointToView((int *)&vOut, &beamEnd, view);
+                    endU = (float)(vOut.x >> 16) / resXf; endV = (float)(vOut.y >> 16) / resYf;
+                } else {
+                    // The beam crosses the near plane (rear lamps from a chase
+                    // view): clip the lamp-to-end segment at the near plane in
+                    // view space. Projecting the raw end yields the behind-camera
+                    // sentinel (-100,-100 px), which mirrored the wedge toward the
+                    // upper-left corner - the red streak up the left bank.
+                    if (vView.z - endView.z > 0) {   // lamp in front, end behind
+                        FixVector clip;
+                        LightField_ClipBeamToNearPlane(&clip, &vView, &endView);
+                        // Back to world, then through the standard projection
+                        // (clip.z equals its in-front threshold, so it passes).
+                        FixVector clipWorld;
+                        FixMatrix_TransformPoint(&clipWorld, &clip, &view->world);
+                        FixMatrix_ProjectWorldPointToView((int *)&vOut, &clipWorld, view);
+                        endU = (float)(vOut.x >> 16) / resXf; endV = (float)(vOut.y >> 16) / resYf;
+                    }
+                }
             }
             // Drop only when the whole beam (lamp to end, with wedge margin) is off screen.
             float u0 = lampU < endU ? lampU : endU, u1 = lampU > endU ? lampU : endU;
