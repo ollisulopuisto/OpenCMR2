@@ -27,6 +27,15 @@
 #include "opencmr2_icon.h"
 #endif
 
+// Process-memory probe headers (Sys_GetProcessMemoryBytes, file end).
+#if defined(_WIN32)
+#include <psapi.h>
+#elif defined(__APPLE__)
+#include <mach/mach.h>
+#else
+#include <unistd.h>
+#endif
+
 namespace {
 
 SDL_Window *s_window;
@@ -1419,4 +1428,30 @@ const char *Sys_GetCarDisplayName(int archiveSlot, BOOL brief)
     if(archiveSlot<0||archiveSlot>=22||s_carDir.empty()||!Sys_GetOption("video.skin_car_names",1))return nullptr;
     const auto &name=s_carNames[archiveSlot][brief?1:0];
     return name.empty()?nullptr:name.c_str();
+}
+
+// Process resident memory in bytes for the diagnostics overlay (0 when the
+// platform query fails). Read-only probe: no allocations, safe per frame.
+extern "C" unsigned long long Sys_GetProcessMemoryBytes(void)
+{
+#if defined(_WIN32)
+    PROCESS_MEMORY_COUNTERS_EX counters;
+    if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS *)&counters, sizeof(counters)))
+        return (unsigned long long)counters.WorkingSetSize;
+    return 0;
+#elif defined(__APPLE__)
+    task_basic_info_64_data_t info;
+    mach_msg_type_number_t count = TASK_BASIC_INFO_64_COUNT;
+    if (task_info(mach_task_self(), TASK_BASIC_INFO_64, (task_info_t)&info, &count) == KERN_SUCCESS)
+        return (unsigned long long)info.resident_size;
+    return 0;
+#else
+    FILE *f = fopen("/proc/self/statm", "r");
+    if (!f) return 0;
+    unsigned long pages = 0, resident = 0;
+    int ok = fscanf(f, "%lu %lu", &pages, &resident);
+    fclose(f);
+    if (ok != 2) return 0;
+    return (unsigned long long)resident * (unsigned long long)sysconf(_SC_PAGESIZE);
+#endif
 }

@@ -21,6 +21,8 @@ extern "C" {
 
 /* Milliseconds since an arbitrary start, wrapping at 2^32 (timeGetTime). */
 DWORD Sys_GetTicks(void);
+// Process resident memory in bytes for diagnostics (0 when the query fails).
+unsigned long long Sys_GetProcessMemoryBytes(void);
 /* The same clock in fractions of a millisecond, for durations shorter than
    one (frames above 1000 per second). */
 double Sys_GetTicksPrecise(void);
