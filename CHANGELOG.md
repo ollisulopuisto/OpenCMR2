@@ -66,6 +66,19 @@ ed guard:
   array), air/speed motes and snow glints are unchanged. What's New
   revision 6.
 
+### Effects
+
+- **Particle overdo round 3**: `video.splash_amount` (0..300%, default 200%)
+  repeats the wheel splash spawn per wheel-step on standing water;
+  `video.backfire_amount` (0..300%, default 200%) repeats the backfire
+  spark per step. Existing dials move to overdone defaults per the user's
+  overdo-first instruction: air motes amount 100 -> 200 and snow glints
+  100 -> 200 (both previously native-tuned to 100; tone down in the
+  tuning panel or the Atmosphere menu). All emission stays on the fixed
+  25 Hz effects step inside the existing bounded pool. Weather
+  precipitation remains original (sidecar pool under investigation).
+  What's New revision 7.
+
 ### Interface
 
 - **Atmosphere menu directly under Graphics options**: the fog/air

@@ -9101,7 +9101,10 @@ void CarEffect_UpdateExhaustSmokeAndBackfire(int car)
         }
         if (g_trailForced[car] != 0)
             g_carExhaustBurstFrames[car] = (BYTE)g_trailForcedSurface[car];
-        if (heat > 0x50 && speed < 0x5cccc) {
+        // OpenCMR2: video.backfire_amount (0..300, default 200 - deliberately
+        // overdone, tone down in the tuning panel) repeats the spark per step.
+        int backfireSparks = ParticleAmount_PuffCount(Sys_GetOption("video.backfire_amount", 200));
+        for (int sparkN = 0; heat > 0x50 && speed < 0x5cccc && sparkN < backfireSparks; sparkN++) {
             heat -= rand() % 20;
             r = (int)FTOI(__int64, X87S_MUL(X87S_MUL(X87S_FILD(float, rand()), g_oneOverRandMax), CGraphics::m_65536));
             line = rand() % 4;
