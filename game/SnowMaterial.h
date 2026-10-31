@@ -72,6 +72,35 @@ inline int SnowMaterial_VertexIsSnow(unsigned char vertexFlags) {
     return vertexFlags == SNOW_MATERIAL_VERTEX_HAS_SNOW;
 }
 
+#include "SnowGlint.h"
+
+// Peak per-channel lift at amount 100: a visible brightening that stays below
+// full white so the surface keeps its texture.
+#define SNOW_MATERIAL_LIFT_MAX 90
+
+// Combined light response 0..1 of one snow vertex: the sun glint (specular
+// against the facet-jittered normal, weather light gated) plus the car-beam
+// cone boost summed from the light field. Pure, shared by the game loop and
+// the rendered-pixel test.
+inline float SnowMaterial_Response(float specular, float sunLevel, float beamBoost) {
+    float r = specular * sunLevel + beamBoost * 0.8f;
+    return r > 1.f ? 1.f : r;
+}
+
+// The lifted vertex colour: original ARGB plus an equal white lift per colour
+// channel, alpha preserved. Recomputed from the saved original every frame, so
+// it never accumulates; scale 0 (option off) returns the original unchanged.
+inline DWORD SnowMaterial_LiftedDiffuse(DWORD original, float response, float scale) {
+    int lift = (int)(response * scale);
+    int r = ((original >> 16) & 0xff) + lift;
+    int g = ((original >> 8) & 0xff) + lift;
+    int b = (original & 0xff) + lift;
+    if (r > 255) r = 255;
+    if (g > 255) g = 255;
+    if (b > 255) b = 255;
+    return (original & 0xff000000) | ((DWORD)r << 16) | ((DWORD)g << 8) | (DWORD)b;
+}
+
 struct SceneNode;
 void SnowMaterial_SetStageScene(SceneNode *pRoot);
 void SnowMaterial_UpdateFrame(void);

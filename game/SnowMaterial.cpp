@@ -21,10 +21,6 @@ void StageObject_GetRotatedStageLightVector(FixVector *pOut);
 int StageObject_GetWeatherLightIntensity(void);
 extern TrackTriangle *g_trackTriangles;
 
-// Peak per-channel lift at amount 100: a visible brightening that stays below
-// full white so the surface keeps its texture.
-#define SNOW_MATERIAL_LIFT_MAX 90
-
 namespace {
 
 struct SnowMaterialVertex {
@@ -257,9 +253,9 @@ void SnowMaterial_UpdateFrame(void)
             float vl = std::sqrt(vx * vx + vy * vy + vz * vz);
             if (vl < 1e-3f)
                 continue;
-            float response = SnowGlint_Specular(sv->nx, sv->ny, sv->nz,
+            float specular = SnowGlint_Specular(sv->nx, sv->ny, sv->nz,
                                                 sunX, sunY, sunZ, vx / vl, vy / vl, vz / vl,
-                                                SnowGlint_FacetSeed(sv->world.x, sv->world.z)) * sunLevel;
+                                                SnowGlint_FacetSeed(sv->world.x, sv->world.z));
             float boost = 0.f;
             for (int li = 0; li < g_fogLightSourceCount && li < LIGHT_FIELD_MAX; li++) {
                 FogLightSource *L = &g_fogLightSources[li];
@@ -268,17 +264,9 @@ void SnowMaterial_UpdateFrame(void)
                                              L->dir.x / 65536.f, L->dir.y / 65536.f, L->dir.z / 65536.f,
                                              L->intensity / 65536.f);
             }
-            response += boost * 0.8f;
-            if (response > 1.f) response = 1.f;
-            int lift = (int)(response * scale);
             DWORD orig = rec->originalDiffuse[sv->index];
-            int r = ((orig >> 16) & 0xff) + lift;
-            int g = ((orig >> 8) & 0xff) + lift;
-            int b = (orig & 0xff) + lift;
-            if (r > 255) r = 255;
-            if (g > 255) g = 255;
-            if (b > 255) b = 255;
-            verts[sv->index].diffuseColour = (orig & 0xff000000) | ((DWORD)r << 16) | ((DWORD)g << 8) | (DWORD)b;
+            verts[sv->index].diffuseColour =
+                SnowMaterial_LiftedDiffuse(orig, SnowMaterial_Response(specular, sunLevel, boost), scale);
         }
         Mesh_RefreshVertices(rec->mesh);
     }
