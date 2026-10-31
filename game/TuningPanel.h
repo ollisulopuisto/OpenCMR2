@@ -3,6 +3,10 @@
 #include <cstring>
 // Live, in-race tuning of the visual effects (no physics). Pure row maths; the key handling and drawing live in RallyData.cpp.
 struct TuningRow { const char *label, *key; int lo, hi, step, fallback; };
+// RallyData.cpp sizes its tuning snapshot/preset arrays by this bound; keep the row
+// list below it (pinned in tests/tuning_panel.cpp). Rows outgrowing 32 overflowed those
+// arrays: stack smashing abort on the drone lock toggle.
+constexpr int kTuningMaxRows = 64;
 inline const TuningRow *Tuning_Rows(int &count)
 {
     static const TuningRow rows[] = {
