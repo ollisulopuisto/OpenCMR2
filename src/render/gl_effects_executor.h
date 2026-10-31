@@ -151,7 +151,7 @@ GLuint ApplyEffects()
     float glareStrength=sunGlare.Step(sunX,sunY,effectsRaceFrame&&sunVisible,glareAmount,glareDt);
     bool glareActive=effectsRaceFrame&&glareAmount>0&&glareStrength>.0001f;
     bool active = glareActive || streakOn || cloudsValid || spatialAA || bloomOn && bloomAmount > 0 || motionOn && motionMix > 0 ||
-        depthBlurOn || tunnelOn || raysOn && raysAmount > 0 && sunVisible || fogOn && fogAmount > 0 ||
+        depthBlurOn || tunnelOn || raysOn && raysAmount > 0 && sunVisible || effectsRaceFrame && fogOn && fogAmount > 0 ||
         grade[0] || grade[1] || grade[2] != 1 || grade[3] != 1 || grime[0] || grime[1] || grime[2];
     if (!active) { historyValid = false; return backFramebuffer; }
     if (!EffectTargets()) return backFramebuffer;
@@ -213,7 +213,7 @@ GLuint ApplyEffects()
     // Atmosphere fog (video.fog): before DoF/rays so blur and shafts stack on the fogged
     // scene. The GL path has no near/far recovery, so near/far are zero and the shader
     // uses its raw-depth ramp (a stand-in curve, see render/fog_math.h).
-    if (fogOn && fogAmount > 0) {
+    if (effectsRaceFrame && fogOn && fogAmount > 0) {
         float u[8] = {Fog_Density(fogAmount), fogGlow / 100.0f, 0.0f, 0.0f,
                       sunX, sunY, sunVisible ? 1.0f : 0.0f,
                       backHeight ? (float)backWidth / (float)backHeight : 1.0f};
