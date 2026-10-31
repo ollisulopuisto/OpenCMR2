@@ -109,7 +109,7 @@ struct EnhancementOptions {
             if(value.empty()||*end||n<0||n>hi)error=key+" expects 0.."+std::to_string(hi);
             else overrides[key=="--fog-amount"?"video.fog_amount":key=="--fog-glow"?"video.fog_glow":"video.air_motes_amount"]=(int)n;
         }
-        if(key=="--test-preset"){if(value!="overdo"&&value!="off")error="--test-preset expects overdo or off";else testPreset=value;}
+        if(key=="--test-preset"){if(value!="overdo"&&value!="atmosphere"&&value!="off")error="--test-preset expects overdo, atmosphere or off";else testPreset=value;}
         if(key=="--attract-capture"){if(value.empty())error="--attract-capture needs an output folder";else captureDir=value;}
         if(key=="--capture-interval"||key=="--capture-count"){
             char *end=nullptr;long n=strtol(value.c_str(),&end,10);bool interval=key=="--capture-interval";
@@ -123,11 +123,17 @@ struct EnhancementOptions {
     }
     // Exaggerated diagnostic look (per launch, nothing saved). Explicit flags always win.
     void ApplyTestPreset(){
-        if(testPreset!="overdo")return;
-        static const std::pair<const char*,int> kOverdo[]={{"video.speed_motes",0},
-            {"video.speed_fov",40},{"video.speed_fov_hold",1},{"video.depth_of_field",1},{"video.dof_blur",100},{"video.dof_blur_max_px",16},{"video.tunnel_vision",130},{"video.tunnel_lines",1},{"video.motion_blur",1},{"video.motion_blur_amount",60},{"video.speed_streak",100},{"video.dof_focus_car",1},
-            {"video.fog",1},{"video.fog_amount",100},{"video.fog_glow",100},{"video.air_motes",1},{"video.air_motes_amount",300},{"video.god_rays",1},{"video.god_rays_amount",100}};
-        for(auto&e:kOverdo)if(!overrides.count(e.first))overrides[e.first]=e.second;
+        if(testPreset=="overdo"){
+            static const std::pair<const char*,int> kOverdo[]={{"video.speed_motes",0},
+                {"video.speed_fov",40},{"video.speed_fov_hold",1},{"video.depth_of_field",1},{"video.dof_blur",100},{"video.dof_blur_max_px",16},{"video.tunnel_vision",130},{"video.tunnel_lines",1},{"video.motion_blur",1},{"video.motion_blur_amount",60},{"video.speed_streak",100},{"video.dof_focus_car",1}};
+            for(auto&e:kOverdo)if(!overrides.count(e.first))overrides[e.first]=e.second;
+        } else if(testPreset=="atmosphere"){
+            // The requested exaggerated atmosphere starting look, separate from overdo so
+            // --all-mods keeps its established appearance. Per launch, nothing saved.
+            static const std::pair<const char*,int> kAtmosphere[]={
+                {"video.fog",1},{"video.fog_amount",100},{"video.fog_glow",100},{"video.air_motes",1},{"video.air_motes_amount",300}};
+            for(auto&e:kAtmosphere)if(!overrides.count(e.first))overrides[e.first]=e.second;
+        }
     }
     void Apply(){
         if(!textures.empty())overrides["video.texture_uprez"]=textures=="uprez";
@@ -220,8 +226,8 @@ inline const char *EnhancementHelp(){return
 "  --fog-amount 0..200         Atmosphere fog density percent (needs --effect fog=on or video.fog; default 100 = deliberately heavy)\n"
 "  --fog-glow 0..100           Sun-ward brightening of the fog, percent (default 60)\n"
 "  --air-motes-amount 0..300   Floating dust motes percent (needs --effect air_motes=on; default 100; live cap 48 at 100)\n"
-"  --test-preset overdo        Exaggerated diagnostic look: speed lines/streak, FOV, DoF, tunnel vision 130 with lines,\n"
-"                              plus atmosphere fog 100/100 and air motes 300 (legacy speed motes stay off; add --effect speed_motes=on)\n"
+"  --test-preset overdo        Exaggerated diagnostic look for speed lines/streak, FOV, DoF, tunnel vision 130 with lines (legacy motes off; add --effect speed_motes=on)\n"
+"  --test-preset atmosphere    Exaggerated atmosphere starting look: fog 100 with full sun glow, air motes 300\n"
 "                              and motion blur, plus heavy fog with full sun glow, 300% air motes and full god rays. Explicit flags override it; nothing is saved\n"
 "  --attract-capture DIR       Start the attract demo at once, save PNGs of the frame at\n"
 "                              stage-clock 0, N, 2N... s into DIR (+ capture.csv), then quit\n"

@@ -50,6 +50,13 @@ int main(){
   t=p;CHECK(run({"t","--test-preset","overdo","--speed-streak","0"})&&e2.empty());t.Apply();CHECK(t.overrides["video.speed_streak"]==0);   // explicit flag wins over the preset
   t=p;CHECK(run({"t","--test-preset","overdo","--speed-hold","0","--dof-focus-car","0"})&&e2.empty());t.Apply();CHECK(t.overrides["video.speed_fov_hold"]==0&&t.overrides["video.dof_focus_car"]==0);   // explicit flags beat the preset
   t=p;CHECK(run({"t","--test-preset","overdo"})&&e2.empty());t.Apply();CHECK(t.overrides["video.speed_fov_hold"]==1&&t.overrides["video.dof_focus_car"]==1);   // preset default unchanged except focus
+  t=p;CHECK(run({"t","--test-preset","overdo"})&&e2.empty());t.Apply();CHECK(!t.overrides.count("video.fog")&&!t.overrides.count("video.air_motes")&&!t.overrides.count("video.god_rays"));   // overdo never enables atmosphere; --all-mods look unchanged
+  t=p;CHECK(run({"t","--test-preset","atmosphere"})&&e2.empty());t.Apply();
+  CHECK(t.overrides["video.fog"]==1&&t.overrides["video.fog_amount"]==100&&t.overrides["video.fog_glow"]==100&&t.overrides["video.air_motes"]==1&&t.overrides["video.air_motes_amount"]==300);   // exaggerated atmosphere starting look
+  CHECK(!t.overrides.count("video.speed_fov"));   // atmosphere leaves the overdo speed look alone
+  t=p;CHECK(run({"t","--test-preset","atmosphere","--fog-amount","40","--effect","air_motes=off"})&&e2.empty());t.Apply();
+  CHECK(t.overrides["video.fog_amount"]==40&&t.overrides["video.air_motes"]==0);   // explicit flags beat the atmosphere preset
+  t=p;CHECK(run({"t","--test-preset","foggy"})&&!e2.empty());   // unknown preset reports an error
   t=p;CHECK(run({"t","--speed-hold","1"})&&e2.empty());t.Apply();CHECK(t.overrides["video.speed_fov_hold"]==1&&!t.overrides.count("video.dof_focus_car"));   // without the preset only what was asked
   t=p;CHECK(run({"t","--fov-preview","40"})&&e2.empty());t.Apply();CHECK(t.overrides["video.fov_preview"]==40);
   CHECK(run({"t","--fov-preview","0"})&&e2.empty());CHECK(run({"t","--fov-preview","19"})&&!e2.empty());CHECK(run({"t","--fov-preview","151"})&&!e2.empty());CHECK(run({"t","--fov-preview","x"})&&!e2.empty());

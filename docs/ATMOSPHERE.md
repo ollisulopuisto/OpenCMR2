@@ -36,9 +36,11 @@ All settings are [video] options, off unless enabled:
 | video.air_motes_amount | 0..300 | 100 | count/rate scale |
 
 CLI: `--effect fog --fog-amount 100 --fog-glow 60 --effect air_motes
---air-motes-amount 100`. The `--preset overdo` bundle now includes fog at
-100/100 and motes at 300, matching the overdo-first intent. The default
-`--all-mods` preset does **not** enable them.
+--air-motes-amount 100`. The exaggerated starting look is one command:
+`--test-preset atmosphere` (fog 100/100 + motes 300, per launch, nothing
+saved; explicit flags win, e.g. `--fog-amount 40`). It is deliberately
+separate from `--test-preset overdo`, so the default `--all-mods` launch
+keeps its established look.
 
 Menus: Advanced graphics > Effect amounts > Atmosphere... has all five rows
 (its own submenu because Menu::items is layout-locked at 22 entries). The F10
