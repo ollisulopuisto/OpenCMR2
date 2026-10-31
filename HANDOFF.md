@@ -766,3 +766,35 @@ tint with a per-glass dirt map that only the real 3D wiper blades clear.
 - Pivot position and arc band are an approximation of the original blade
   sweep (profile maxAngle as the band); exact blade-tip tracking against
   the interior model is a follow-up.
+
+## Fog light beam stability and forward halo (1 November 2026, late)
+
+Branch fix/fog-light-axial-halo (stacked on #235). User replay report on
+clean main 00e2a5f (WITH #233's clip): "lights jump all over, pointing up
+one second and down the next" plus bonnet/body glow overlap.
+
+- Mechanism (source-grounded, then pixel-pinned): the wedge direction came
+  from the projected beam END; when the end crosses the near plane the
+  projection is noise, so near-axial beams flipped side frame to frame and
+  stretched across the sky. Now: direction = the beam's transverse
+  view-space component (continuous), length = foreshortened world length at
+  the lamp depth, capped at 0.6 of the screen; exactly axial beams collapse
+  to the halo. The praised near-axial look (reverse lights in dust,
+  phonemsg-01M6A3C88QJ0VEGFFAC0PATE3M) is preserved: toward-camera beams
+  keep a bounded shaft toward their closest-approach side.
+- Halo: the glow bubble anchors 3 world units forward along the beam
+  (haloX/haloY/haloRef in GfxFogLight; FogUniforms 27->35 vec4 = 140
+  floats, single shared packer; GL remaps haloRef like depthRef). The
+  bubble floats in the lit air in front of the car; bodywork occludes it.
+  The wedge gate reference moved from 1 unit in front of the lamp to half
+  a unit behind it so the car's own panels (within ~1 unit) occlude.
+- Harness (tests/fog_beam_render.cpp): 6 scenarios incl. axial collapse,
+  20-degree yawed transverse wedge, camera-cut side/length continuity,
+  bonnet forward halo, gated occlusion, look-back halo. Rendered-pixel
+  asserted and frame-inspected. GL on Linux, not native Mac Metal.
+- Native attribution: user's frames were on 00e2a5f (pre-#235); the
+  residual direction/body-overlap defects existed there. This branch +
+  #235 are UNVERIFIED natively; no "fixed for you" claim until a native
+  run on a build containing both.
+- FixMatrix_RotateVector moved unchanged into FixedMatrixCore.cpp (same
+  pattern as #234) so the harness links the production primitive.

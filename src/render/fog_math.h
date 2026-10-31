@@ -11,10 +11,10 @@
 
 // FogUniforms std140 layout, shared by shaders/fog.frag and both executors
 // (gfx_gpu.cpp, gl_effects_executor.h): fog, sun, extra, lights[8],
-// lightInfo[8], beams[8] = 27 vec4 = 108 floats. The CPU arrays MUST be this
-// size: beam writes reach index 76 + 7*4 + 2 = 106 with all 8 lights active.
-inline constexpr int kFogUniformFloats = 27 * 4;
-static_assert(kFogUniformFloats >= 76 + 7 * 4 + 3, "beams[8] writes must fit the FogUniforms array");
+// lightInfo[8], beams[8], halos[8] = 35 vec4 = 140 floats. The CPU arrays MUST
+// be this size: halo writes reach index 108 + 7*4 + 2 = 138 with all 8 lights.
+inline constexpr int kFogUniformFloats = 35 * 4;
+static_assert(kFogUniformFloats >= 108 + 7 * 4 + 3, "halos[8] writes must fit the FogUniforms array");
 
 inline float Fog_Density(int amountPercent) {
     int a = amountPercent < 0 ? 0 : amountPercent > 200 ? 200 : amountPercent;

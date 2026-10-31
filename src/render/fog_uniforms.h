@@ -4,7 +4,7 @@
 // executors (SDL_GPU in gfx_gpu.cpp, GL in gl_effects_executor.h) call this:
 // the 23-vs-27-vec4 stack overflow came from two hand-copied fill loops whose
 // size constant drifted from the shader when beams[8] was added. Layout:
-// fog, sun, extra, lights[8], lightInfo[8], beams[8] = 27 vec4 = 108 floats
+// fog, sun, extra, lights[8], lightInfo[8], beams[8], halos[8] = 35 vec4 = 140 floats
 // (kFogUniformFloats). Every float is written explicitly - no zero-init
 // reliance - so the pushed block never carries stale or unwritten lanes.
 #include "port/gfx.h"
@@ -43,6 +43,10 @@ inline void FogUniforms_Pack(float *out, const FogUniformParams &p,
         out[76 + i*4 + 1] = on ? L->beamY : 0.0f;
         out[76 + i*4 + 2] = on ? L->beamLen : 0.0f;
         out[76 + i*4 + 3] = 0.0f;
+        out[108 + i*4 + 0] = on ? L->haloX : 0.0f;
+        out[108 + i*4 + 1] = on ? L->haloY : 0.0f;
+        out[108 + i*4 + 2] = on ? L->haloRef : 0.0f;
+        out[108 + i*4 + 3] = 0.0f;
     }
 }
 #endif

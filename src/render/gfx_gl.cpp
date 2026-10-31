@@ -577,6 +577,7 @@ struct Executor : GfxExecutor {
         if (lights) for (int i = 0; i < count && i < 8; i++) {
             fogLights[i] = lights[i];
             fogLights[i].depthRef = lights[i].depthRef > 0.0f ? 0.5f + 0.5f * lights[i].depthRef : 0.0f;
+            fogLights[i].haloRef = lights[i].haloRef > 0.0f ? 0.5f + 0.5f * lights[i].haloRef : 0.0f;
             fogLightCount++;
         }
     }

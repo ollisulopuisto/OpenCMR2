@@ -306,11 +306,13 @@ void Gfx_SetSunScreenPosition(float x, float y, BOOL visible);
 // One car light projected to the screen for the fog pass (video.fog_lights).
 struct GfxFogLight {
     float x, y;       // screen uv (v downwards)
-    float depthRef;   // depth-buffer value 1 world unit in front of the lamp (game projection); <= 0 disables the depth gate
+    float depthRef;   // depth-buffer value half a world unit behind the lamp anchor (game projection) so own-bodywork occludes; <= 0 disables the depth gate
     float intensity;  // 0..1
     float r, g, b;    // tint 0..1 (headlight warm white, rear/indicator per the glow)
-    float beamX, beamY; // aspect-corrected screen unit vector the beam travels; (0,0) = unknown
-    float beamLen;      // projected beam length in the same units (foreshortened ~0 head-on)
+    float beamX, beamY; // aspect-corrected screen unit vector the beam travels (transverse view dir); (0,0) = unknown/axial
+    float beamLen;      // wedge length in the same units (foreshortened ~0 head-on)
+    float haloX, haloY; // screen uv of the glow anchor, a few units forward along the beam (the lit air in front of the car)
+    float haloRef;      // depth-buffer value for the halo gate; <= 0 disables it
 };
 // Up to 8 car lights for the fog pass; count 0 clears. Called per view per frame.
 void Gfx_SetFogLights(const GfxFogLight *lights, int count);

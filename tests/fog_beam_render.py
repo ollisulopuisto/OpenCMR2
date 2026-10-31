@@ -34,7 +34,7 @@ sdl = list(build.rglob('libSDL3.so')) + list(build.rglob('libSDL3.dylib'))
 if not sdl:
     sys.exit('No built SDL3 shared library found: supply a vendored-SDL GL-enabled build')
 lib = sdl[0].resolve().parent
-result += ['-L' + str(lib), '-Wl,-rpath,' + str(lib), '-lSDL3', '-o', str(out)]
+result += ['-fuse-ld=lld', '-L' + str(lib), '-Wl,-rpath,' + str(lib), '-lSDL3', '-o', str(out)]
 subprocess.run(result, cwd=entry['directory'], check=True)
 env = os.environ.copy()
 if sys.platform.startswith('linux'): env.setdefault('SDL_VIDEODRIVER', 'offscreen')

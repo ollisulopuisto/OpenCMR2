@@ -123,16 +123,48 @@ int main(int argc, char **argv)
     require(LightField_Add(&lampPos, &lampDir, 0x10000, 0x10000, 0x1200, 0) == 1, "light add");
     // The harness scene quad lands at raw depth ~0.997 (GL buffer); the game
     // projection handed to the projector gives the lamp a D3D-space depthRef
-    // 0.6667 - 0.3333/7 = 0.619, remapped by the GL executor to 0.809 - below
-    // the quad, so the gate passes and the beam stays visible.
+    // 0.6667 - 0.3333/8.5 = 0.627 (half-unit self-occlusion bias), remapped by
+    // the GL executor to ~0.814 - below the quad, so the gate passes.
+    // This beam is exactly axial (pointing at the camera): the wedge must
+    // collapse to the halo (the 2026-11-01 replay jumping fix), anchored 3
+    // units forward along the beam at (-2,0,5) -> u 0.30.
     GfxFogLight lights[LIGHT_FIELD_MAX];
     int n = FogBeam_ProjectLights(lights, LIGHT_FIELD_MAX, &view, (float)W, (float)H, 1.0f/1.5f, -0.5f/1.5f);
     require(n == 1, "one projected light");
     require(lights[0].x > 0.30f && lights[0].x < 0.45f, "lamp u");
     require(lights[0].y > 0.45f && lights[0].y < 0.55f, "lamp v");
-    require(lights[0].beamX < -0.9f && lights[0].beamY > -0.05f && lights[0].beamY < 0.05f,
-            "wedge direction horizontal-left, no upward drift");
-    require(lights[0].depthRef > 0.55f && lights[0].depthRef < 0.70f, "depth gate ref from the game projection");
+    require(lights[0].beamLen < 0.02f, "axial beam: wedge collapses to the halo (no flip-prone direction)");
+    require(lights[0].depthRef > 0.626f && lights[0].depthRef < 0.629f, "self-occlusion bias: ref half a unit behind the lamp");
+    require(lights[0].haloX > 0.27f && lights[0].haloX < 0.33f && lights[0].haloY > 0.45f && lights[0].haloY < 0.55f,
+            "halo anchor 3 units in front of the lamp");
+    require(lights[0].haloRef > 0.57f && lights[0].haloRef < 0.60f, "halo gate ref at its forward anchor");
+
+    // Same lamp, beam yawed 20 degrees toward -X (transverse fraction 0.34):
+    // the accepted chase look - a real wedge running screen-left, no flip.
+    LightField_Clear();
+    FixVector yDir = {-0x5791, 0, -0xF0A4};            // (-0.342, 0, -0.940)
+    require(LightField_Add(&lampPos, &yDir, 0x10000, 0x10000, 0x1200, 0) == 1, "yawed light add");
+    GfxFogLight ylights[LIGHT_FIELD_MAX];
+    int yn = FogBeam_ProjectLights(ylights, LIGHT_FIELD_MAX, &view, (float)W, (float)H, 1.0f/1.5f, -0.5f/1.5f);
+    require(yn == 1, "yawed light survives");
+    require(ylights[0].beamX < -0.9f && ylights[0].beamY > -0.05f && ylights[0].beamY < 0.05f,
+            "yawed beam: wedge runs screen-left");
+    require(ylights[0].beamLen > 0.55f && ylights[0].beamLen <= 0.61f, "yawed beam: foreshortened wedge length");
+
+    // Temporal continuity: the same world light seen from a camera yawed 10
+    // degrees (an auto-cam cut) must keep the wedge on the SAME screen side
+    // with a comparable length - no sign flip across the cut.
+    static SceneNode cut;
+    memset(&cut, 0, sizeof cut);
+    FixMatrix_Identity(&cut.world);
+    cut.world.right.x = 0xFBF8;  cut.world.right.z = -0x2C72;   // +10 degrees about Y
+    cut.world.forward.x = 0x2C72; cut.world.forward.z = 0xFBF8;
+    GfxFogLight clights[LIGHT_FIELD_MAX];
+    int cn = FogBeam_ProjectLights(clights, LIGHT_FIELD_MAX, &cut, (float)W, (float)H, 1.0f/1.5f, -0.5f/1.5f);
+    require(cn == 1, "cut light survives");
+    require((clights[0].beamX < 0.0f) == (ylights[0].beamX < 0.0f), "camera cut: no wedge side flip");
+    require(clights[0].beamLen > ylights[0].beamLen * 0.3f && clights[0].beamLen < ylights[0].beamLen * 3.0f,
+            "camera cut: wedge length continuous");
 
     // R look-back case (user screenshot: red glow by the left spoiler
     // support): camera rotated 180 degrees, rear lamp ahead in view, beam
@@ -152,8 +184,7 @@ int main(int argc, char **argv)
     int rn = FogBeam_ProjectLights(rlights, LIGHT_FIELD_MAX, &lookback, (float)W, (float)H, 1.0f/1.5f, -0.5f/1.5f);
     require(rn == 1, "look-back rear lamp survives");
     require(rlights[0].x > 0.55f && rlights[0].x < 0.70f, "look-back lamp on its true screen side");
-    require(rlights[0].beamX > 0.9f && rlights[0].beamY > -0.05f && rlights[0].beamY < 0.05f,
-            "look-back wedge runs screen-right, no mirror to the upper-left");
+    require(rlights[0].beamLen < 0.02f, "look-back axial beam: halo only, no mirror to the upper-left");
 
     // Bonnet/bumper case: lamp 0.5 units ahead of the camera (inside the
     // near-plane threshold), beam 30 units forward into view. The light must
@@ -166,7 +197,10 @@ int main(int argc, char **argv)
     GfxFogLight blights[LIGHT_FIELD_MAX];
     int bn = FogBeam_ProjectLights(blights, LIGHT_FIELD_MAX, &view, (float)W, (float)H, 1.0f/1.5f, -0.5f/1.5f);
     require(bn == 1, "lamp inside the near plane keeps its light");
-    require(blights[0].depthRef == 0.0f, "near-plane anchor carries no depth gate");
+    require(blights[0].depthRef > 0.43f && blights[0].depthRef < 0.46f, "clipped anchor gated at 1.5 units out");
+    require(blights[0].haloX > 0.18f && blights[0].haloX < 0.25f && blights[0].haloY > 0.45f && blights[0].haloY < 0.55f,
+            "bonnet halo anchor forward, on screen");
+    require(blights[0].haloRef > 0.52f && blights[0].haloRef < 0.55f, "bonnet halo gate ref");
 
     GfxViewport vp = { 0, 0, W, H, 0.f, 1.f };
     Gfx_SetViewport(&vp);
@@ -206,6 +240,7 @@ int main(int argc, char **argv)
     // leave the frame at the control level.
     GfxFogLight occluded = lights[0];
     occluded.depthRef = 0.9999f;   // GL remap -> 0.99995, past the quad's ~0.997
+    occluded.haloRef = 0.9999f;
     static DWORD gated[W * H];
     Gfx_SetFogLights(&occluded, 1);
     putQuad();
@@ -215,21 +250,31 @@ int main(int argc, char **argv)
     Gfx_SetFogLights(blights, bn);
     putQuad();
     drawAndRead(bonnet);
-    // 5. R look-back: the wedge brightens right of the lamp, never the upper-left.
+    // 5. R look-back: the halo glows at the lamp, never the upper-left.
     static DWORD rlook[W * H];
     Gfx_SetFogLights(rlights, rn);
     putQuad();
     drawAndRead(rlook);
+    // 6. Yawed chase beam: the wedge brightens the beam path screen-left.
+    static DWORD yawed[W * H];
+    Gfx_SetFogLights(ylights, yn);
+    putQuad();
+    drawAndRead(yawed);
 
     dumpPpm(prefix, "control", control);
     dumpPpm(prefix, "lit", lit);
     dumpPpm(prefix, "gated", gated);
     dumpPpm(prefix, "bonnet", bonnet);
     dumpPpm(prefix, "lookback", rlook);
+    dumpPpm(prefix, "yawed", yawed);
     require(memcmp(control, lit, sizeof control) != 0, "beam changes pixels");
-    // The wedge runs horizontally LEFT from the lamp (lamp at px 36,32):
-    // a pixel on the beam path brightens well beyond the control.
-    require(red(lit,12,32) > red(control,12,32) + 24, "beam path brightens");
+    // Axial beam: the halo glows at its forward anchor (px ~29,32) and no
+    // long wedge reaches 24px from the lamp.
+    require(red(lit,29,32) > red(control,29,32) + 24, "axial beam: forward halo glows");
+    require(red(lit,12,32) <= red(control,12,32) + 8, "axial beam: no long wedge");
+    // Yawed beam: the wedge path brightens well beyond the control.
+    require(red(yawed,12,32) > red(control,12,32) + 24, "yawed beam: wedge path brightens");
+    require(red(yawed,2,2) <= red(control,2,2) + 8, "yawed beam: no upper-left streak");
     // The reported bug: the streak ran to the upper-left corner. It must not:
     require(red(lit,2,2) <= red(control,2,2) + 8, "no upper-left streak (corner)");
     require(red(lit,12,8) <= red(control,12,8) + 8, "no upward drift above the beam");
@@ -238,10 +283,11 @@ int main(int argc, char **argv)
     // The gate must blank the whole light when the scene sits in front of it.
     require(abs(red(gated,12,32) - red(control,12,32)) <= 8, "occluded lamp: beam path gated off");
     require(abs(red(gated,36,32) - red(control,36,32)) <= 8, "occluded lamp: halo gated off");
-    // Bonnet case: the clipped wedge brightens the frame it would have missed.
-    require(red(bonnet,12,32) > red(control,12,32) + 24, "near-plane lamp: clipped wedge renders");
-    // Look-back: lamp at px ~60,32; the wedge runs RIGHT, the upper-left stays dark.
-    require(red(rlook,84,32) > red(control,84,32) + 24, "look-back: wedge brightens screen-right");
+    // Bonnet case: the forward halo brightens the frame it would have missed.
+    require(red(bonnet,20,32) > red(control,20,32) + 24, "near-plane lamp: forward halo renders");
+    // Look-back: the halo glows at the lamp (px ~60,32); no wedge, no upper-left.
+    require(red(rlook,67,32) > red(control,67,32) + 24, "look-back: halo at its forward anchor (px ~67)");
+    require(red(rlook,84,32) <= red(control,84,32) + 8, "look-back: no right-side wedge");
     require(red(rlook,2,2) <= red(control,2,2) + 8, "look-back: no upper-left glow");
     require(red(rlook,12,32) <= red(control,12,32) + 8, "look-back: no left-side spill");
     printf("fog_beam_render ok\n");

@@ -159,15 +159,8 @@ FixMatrix *FixMatrix_Multiply(FixMatrix *pOut, FixMatrix *pA, FixMatrix *pB)
     return pOut;
 }
 
-// out = v.x * right + v.y * up + v.z * forward (local -> parent space).
-// FUNCTION: CMR2 0x004b9c20
-int FixMatrix_RotateVector(FixVector *pOut, FixVector *pV, FixMatrix *pM)
-{
-    pOut->x = FixMul(pM->right.x, pV->x) + FixMul(pM->up.x, pV->y) + FixMul(pM->forward.x, pV->z);
-    pOut->y = FixMul(pM->right.y, pV->x) + FixMul(pM->up.y, pV->y) + FixMul(pM->forward.y, pV->z);
-    pOut->z = FixMul(pM->right.z, pV->x) + FixMul(pM->up.z, pV->y) + FixMul(pM->forward.z, pV->z);
-    return 1;
-}
+// FixMatrix_RotateVector (CMR2 0x004b9c20) lives in FixedMatrixCore.cpp - moved
+// unchanged so the rendered-beam harness links the production primitive.
 
 // out = (v . right, v . up, v . forward) (parent -> local space).
 // FUNCTION: CMR2 0x004b9da0
