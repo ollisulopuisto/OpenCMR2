@@ -214,26 +214,20 @@ GLuint ApplyEffects()
     // scene. The GL path has no near/far recovery, so near/far are zero and the shader
     // uses its raw-depth ramp (a stand-in curve, see render/fog_math.h).
     if (effectsRaceFrame && fogOn && fogAmount > 0) {
-        // Same 23-vec4 FogUniforms layout as SDL_GPU. The GL path has no near/far
-        // recovery (raw-depth ramp), so per-light viewZ is 0: the shader skips the
-        // depth gate and the glow is unoccluded here - a documented approximation.
-        float fogLightStrength = std::max(0, std::min(200, Sys_GetOption("video.fog_lights", 100))) / 100.0f;
-        float u[92] = {Fog_Density(fogAmount), fogGlow / 100.0f, 0.0f, 0.0f,
-                       sunX, sunY, sunVisible ? 1.0f : 0.0f,
-                       backHeight ? (float)backWidth / (float)backHeight : 1.0f,
-                       (float)fogClearDistance, fogLightStrength, 0.0f, 0.0f};
-        for (int i = 0; i < 8 && i < fogLightCount; i++) {
-            u[12 + i*4 + 0] = fogLights[i].x;
-            u[12 + i*4 + 1] = fogLights[i].y;
-            u[12 + i*4 + 2] = fogLights[i].intensity;
-            u[44 + i*4 + 0] = 0.0f;
-            u[44 + i*4 + 1] = fogLights[i].r;
-            u[44 + i*4 + 2] = fogLights[i].g;
-            u[44 + i*4 + 3] = fogLights[i].b;
-            u[76 + i*4 + 0] = fogLights[i].beamX;
-            u[76 + i*4 + 1] = fogLights[i].beamY;
-            u[76 + i*4 + 2] = fogLights[i].beamLen;
-        }
+        // FogUniforms: packed by the single shared packer (render/fog_uniforms.h).
+        // The GL path has no near/far recovery, so withViewZ=false: the shader
+        // skips the depth gate and the glow is unoccluded - a documented approximation.
+        FogUniformParams fogP;
+        fogP.density = Fog_Density(fogAmount);
+        fogP.glow = fogGlow / 100.0f;
+        fogP.nearZ = 0.0f; fogP.farZ = 0.0f;
+        fogP.sunX = sunX; fogP.sunY = sunY;
+        fogP.sunVisible = sunVisible ? 1.0f : 0.0f;
+        fogP.aspect = backHeight ? (float)backWidth / (float)backHeight : 1.0f;
+        fogP.clearDistance = (float)fogClearDistance;
+        fogP.lightStrength = std::max(0, std::min(200, Sys_GetOption("video.fog_lights", 100))) / 100.0f;
+        float u[kFogUniformFloats];
+        FogUniforms_Pack(u, fogP, fogLights, fogLightCount, false);
         run(12, backDepth, u, sizeof(u));
     }
     if (depthBlurOn || tunnelOn) {

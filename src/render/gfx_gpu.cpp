@@ -1,6 +1,7 @@
 #include "sun_glare.h"
 #include "render/dof_gate.h"
 #include "render/fog_math.h"
+#include "render/fog_uniforms.h"
 #include "render/tunnel_vision.h"
 #include "render/dof_focus.h"
 #include "render/car_region.h"
@@ -2730,24 +2731,18 @@ struct Executor : GfxExecutor {
         if (raceWorld && fogEnabled && fogAmount > 0 && sampledDepth && backDepth != nullptr &&
             fogBuf1 != nullptr && FogPipeline() != nullptr) {
             ResolveProjection(&sceneNear, &sceneFar);
-            // FogUniforms std140: fog, sun, extra, lights[8], lightInfo[8], beams[8] (23 vec4).
-            float fogLightStrength = std::max(0, std::min(200, Sys_GetOption("video.fog_lights", 100))) / 100.0f;
-            float fogUniforms[92] = { Fog_Density(fogAmount), fogGlow / 100.0f, sceneNear, sceneFar,
-                                      sunX, sunY, sunVisible ? 1.0f : 0.0f,
-                                      backHeight ? (float)backWidth / (float)backHeight : 1.0f,
-                                      (float)fogClearDistance, fogLightStrength, 0.0f, 0.0f };
-            for (int i = 0; i < 8 && i < fogLightCount; i++) {
-                fogUniforms[12 + i*4 + 0] = fogLights[i].x;
-                fogUniforms[12 + i*4 + 1] = fogLights[i].y;
-                fogUniforms[12 + i*4 + 2] = fogLights[i].intensity;
-                fogUniforms[44 + i*4 + 0] = fogLights[i].viewZ;
-                fogUniforms[44 + i*4 + 1] = fogLights[i].r;
-                fogUniforms[44 + i*4 + 2] = fogLights[i].g;
-                fogUniforms[44 + i*4 + 3] = fogLights[i].b;
-                fogUniforms[76 + i*4 + 0] = fogLights[i].beamX;
-                fogUniforms[76 + i*4 + 1] = fogLights[i].beamY;
-                fogUniforms[76 + i*4 + 2] = fogLights[i].beamLen;
-            }
+            // FogUniforms: packed by the single shared packer (render/fog_uniforms.h).
+            FogUniformParams fogP;
+            fogP.density = Fog_Density(fogAmount);
+            fogP.glow = fogGlow / 100.0f;
+            fogP.nearZ = sceneNear; fogP.farZ = sceneFar;
+            fogP.sunX = sunX; fogP.sunY = sunY;
+            fogP.sunVisible = sunVisible ? 1.0f : 0.0f;
+            fogP.aspect = backHeight ? (float)backWidth / (float)backHeight : 1.0f;
+            fogP.clearDistance = (float)fogClearDistance;
+            fogP.lightStrength = std::max(0, std::min(200, Sys_GetOption("video.fog_lights", 100))) / 100.0f;
+            float fogUniforms[kFogUniformFloats];
+            FogUniforms_Pack(fogUniforms, fogP, fogLights, fogLightCount, true);
             SDL_GPUTextureSamplerBinding fogBindings[2] = {
                 { presentSource, linearSampler }, { backDepth, depthSampler }
             };

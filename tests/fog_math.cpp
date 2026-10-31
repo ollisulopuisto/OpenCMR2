@@ -112,5 +112,11 @@ int main(){
     for (float m : {0.f, .2f, .5f, .8f, 1.f})
         CHECK(Fog_LightHeadroom(m, m, m) >= 0.f && Fog_LightHeadroom(m, m, m) <= 1.f);
     if (!fails) std::puts("fog_math ok");
+    // FogUniforms layout pin: shaders/fog.frag declares fog, sun, extra,
+    // lights[8], lightInfo[8], beams[8] = 27 vec4; the executors' beam writes
+    // reach index 76 + 7*4 + 2 = 106 with all 8 lights.
+    CHECK(kFogUniformFloats == 108);
+    CHECK(76 + 7 * 4 + 3 <= kFogUniformFloats);
+
     return fails;
 }
