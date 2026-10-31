@@ -6170,6 +6170,7 @@ void TuningPanel_Update(void)
 // The recorded controls still run through the unchanged physics; only the time that feeds the step count is scaled (Car.cpp).
 #include "ReplayControls.h"
 #include "FreeCam.h"
+#include "ReplayChaseOrbit.h"
 #include "ReplayStream.h"
 int Race_GetPlayerRecordField4(BYTE index);
 int View_GetActiveCameraMode(BYTE index);
@@ -6194,10 +6195,13 @@ void View_UpdateCamera(BYTE view);
 int View_FreeCamActive(void);
 void View_FreeCamStop(void);
 void View_FreeCamFrame(unsigned char view, const FreeCamInput *in, int reset);
+void View_ReplayChaseReset();
+void View_ReplayChaseFrame(unsigned,int,int,int,int,int);
 static const int kFreeCamKeys[] = {0x11, 0x1f, 0x1e, 0x20, 0x10, 0x12, 0x13, 0x2a, 0x36, 0xc8, 0xd0, 0xcb, 0xcd};
 bool ReplayControls_KeyIsFreeCamKey(int key)
 {
-    if (!ReplayControls_Active() || !View_FreeCamActive()) return false;
+    if (!ReplayControls_Active() || CGameInfo::IsInRaceMenuOpen() || TuningPanel_PreviewActive()) return false;
+    if(!View_FreeCamActive())return ReplayChaseOrbit::Chase(View_GetActiveCameraMode(0)) && ReplayChaseOrbit::Key(key);
     for (int k : kFreeCamKeys) if (k == key) return true;
     return false;
 }
@@ -6210,17 +6214,20 @@ static void ReplayControls_CycleCamera(void)
 }
 void ReplayControls_Update(void)
 {
-    if (!ReplayControls_Active()) { g_replayControls.Reset(); View_FreeCamStop(); return; }   // replay over or stage changed: the free camera never carries over
+    if (!ReplayControls_Active()) { g_replayControls.Reset(); View_FreeCamStop(); View_ReplayChaseReset(); return; }   // replay over or stage changed: the free camera never carries over
     if (ReplayKeyUsable(kReplayKeySlower) && g_replayEdges.Edge(0, Input_IsKeyDown(kReplayKeySlower) != 0)) g_replayControls.Slower();
     if (ReplayKeyUsable(kReplayKeyFaster) && g_replayEdges.Edge(1, Input_IsKeyDown(kReplayKeyFaster) != 0)) g_replayControls.Faster();
     if (ReplayKeyUsable(kReplayKeyPause) && g_replayEdges.Edge(2, Input_IsKeyDown(kReplayKeyPause) != 0)) g_replayControls.TogglePause();
     if (ReplayKeyUsable(kReplayKeyCamera) && g_replayEdges.Edge(3, Input_IsKeyDown(kReplayKeyCamera) != 0)) ReplayControls_CycleCamera();
+    if(CGameInfo::IsInRaceMenuOpen() || TuningPanel_PreviewActive()){View_ReplayChaseFrame(0,0,0,0,0,0);return;}
+    bool cameraReset=g_replayEdges.Edge(4,Input_IsKeyDown(0x13)!=0);
+    if(!View_FreeCamActive())View_ReplayChaseFrame(0,Input_IsKeyDown(0xcb)!=0,Input_IsKeyDown(0xcd)!=0,Input_IsKeyDown(0xc8)!=0,Input_IsKeyDown(0xd0)!=0,cameraReset);
     if (View_FreeCamActive()) {   // arrows and WASD are free in replay: the recorded controls drive the car
         FreeCamInput in = {};
         in.forward = Input_IsKeyDown(0x11) != 0; in.back = Input_IsKeyDown(0x1f) != 0; in.left = Input_IsKeyDown(0x1e) != 0; in.right = Input_IsKeyDown(0x20) != 0;
         in.down = Input_IsKeyDown(0x10) != 0; in.up = Input_IsKeyDown(0x12) != 0; in.fast = Input_IsKeyDown(0x2a) != 0 || Input_IsKeyDown(0x36) != 0;
         in.lookUp = Input_IsKeyDown(0xc8) != 0; in.lookDown = Input_IsKeyDown(0xd0) != 0; in.turnLeft = Input_IsKeyDown(0xcb) != 0; in.turnRight = Input_IsKeyDown(0xcd) != 0;
-        View_FreeCamFrame(0, &in, g_replayEdges.Edge(4, Input_IsKeyDown(0x13) != 0) ? 1 : 0);
+        View_FreeCamFrame(0, &in, cameraReset ? 1 : 0);
     }
 }
 // Small bottom-centre line: replay time (the stage clock, which the re-run reproduces), speed, camera. Drawn only while replaying.
@@ -6251,7 +6258,7 @@ void ReplayControls_Draw(void)
     }
     if (!clock[0]) ReplayClock_FormatCentiseconds(StageTiming_GetClockTime(), clock, sizeof clock);   // not a controls stream: the stage clock only, no total
     g_replayControls.Label(speed, sizeof speed);
-    snprintf(text, sizeof text, "replay %s  %s  cam %s  , . space tab", clock, speed, View_FreeCamActive() ? "free (wasd qe arrows r)" : ReplayCameraName(View_GetActiveCameraMode(0)));
+    snprintf(text, sizeof text, "replay %s  %s  cam %s  , . space tab", clock, speed, View_FreeCamActive() ? "free (wasd qe arrows r)" : ReplayChaseOrbit::Chase(View_GetActiveCameraMode(0)) ? "chase (arrows orbit, r reset)" : ReplayCameraName(View_GetActiveCameraMode(0)));
     DebugOverlayLayout layout = DebugOverlayLayout::For(g_pGraphics->resX, g_pGraphics->resY, 1);
     int width = std::min((int)strlen(text) * layout.font * 6 / 10 + 2 * layout.pad, g_pGraphics->resX - 2 * layout.x);
     short panel[4] = {(short)((g_pGraphics->resX - width) / 2), (short)(g_pGraphics->resY - layout.height - layout.y), (short)width, (short)layout.height};
