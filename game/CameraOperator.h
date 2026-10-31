@@ -96,7 +96,7 @@ struct State{
   height=Clamp(distance*.45f+curveLift*.25f,3.8f,distance*.58f);
   // Actual car speed, independent of SpeedLook (disabled for drone).
   // Descend gradually at speed and rise back more slowly. No projection/FOV change.
-  float wantedDrop=Clamp(speedDropAmount,0.f,1.f)*speedUnit*1.8f;
+  float wantedDrop=Clamp(speedDropAmount,0.f,2.f)*speedUnit*1.8f;
   speedDrop+=(wantedDrop-speedDrop)*(1-std::exp(-dt/(wantedDrop>speedDrop?1.1f:1.6f)));
   height=Max(2.2f,height*Clamp(heightScale,.5f,1.5f)-speedDrop);
   float orbitHeading=carHeading; // gameplay: the driver needs a view from behind, even on a different route tangent

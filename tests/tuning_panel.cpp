@@ -9,6 +9,9 @@ int main(){
     CHECK(n == 37);   // includes the fog clear/cull/spatial/evolve, fog lights and snow glint rows
     CHECK(n <= kTuningMaxRows);   // RallyData.cpp snapshot/preset arrays are sized kTuningMaxRows - outgrowing 32 crashed the drone lock toggle
     { int bi = -1; for (int i = 0; i < n; ++i) if (!std::strcmp(r[i].key, "video.blur_mode")) bi = i; CHECK(bi >= 0 && r[bi].lo == 0 && r[bi].hi == 1 && r[bi].fallback == 0); }
+    { int si = -1, di = -1; for (int i = 0; i < n; ++i) { if (!std::strcmp(r[i].key, "video.drone_spring")) si = i; if (!std::strcmp(r[i].key, "video.drone_speed_drop")) di = i; }
+      CHECK(si >= 0 && r[si].lo == 5 && r[si].hi == 200 && r[si].fallback == 100);   // native request: spring below the old 25 floor; 0 would remove the spring outright
+      CHECK(di >= 0 && r[di].lo == 0 && r[di].hi == 200 && r[di].fallback == 100); } // native request: drop above the old 100 cap; defaults unchanged
     for (int i = 0; i < n; ++i) { CHECK(r[i].lo < r[i].hi); CHECK(r[i].step > 0); CHECK(r[i].fallback >= r[i].lo && r[i].fallback <= r[i].hi); CHECK(!std::strncmp(r[i].key, "video.", 6)); }
     CHECK(CameraMove_Effective(kCamMoveUnset, 30) == 30 && CameraMove_Effective(0, 30) == 0 && CameraMove_Effective(-5, 30) == -5);   // an explicit 0 is an override, absent is not
     CHECK(!std::strcmp(CameraMove_FamilyKey(5), "video.camera_move_chase") && !std::strcmp(CameraMove_FamilyKey(3), "video.camera_move_cockpit") && !std::strcmp(CameraMove_FamilyKey(2), "video.camera_move_car"));

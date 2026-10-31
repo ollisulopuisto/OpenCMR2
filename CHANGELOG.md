@@ -78,6 +78,12 @@ look stays available.
 - **Advanced graphics menu** — new rows for Draw Distance, Debug HUD, Texture
   Filtering, Breakable Trees, Camera Effects, Animated Scenery, Motion Blur,
   Bloom, Particles and Shadows, all saved to `opencmr2.ini`.
+- **Drone tuning ranges** — the F10 tuning panel's Drone accel/brake spring row
+  now goes down to 5% (was 25%) and Drone speed height drop up to 200% (was
+  100%), per native testing feedback. Selected values and defaults (100%) are
+  unchanged; the spring's critically damped ratio holds at the new floor, and
+  the speed drop keeps its 2.2-unit height floor. `--drone-speed-drop` accepts
+  0..200 to match.
 
 ### Related visual work in this batch
 
