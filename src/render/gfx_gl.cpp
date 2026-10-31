@@ -16,6 +16,7 @@
 #include "render/presentation.h"
 #include "render/dof_focus.h"
 #include "render/fog_math.h"
+#include "render/weather_glint.h"
 #include "render/tunnel_vision.h"
 #include "render/projection_vote.h"
 #include "render/gfx_internal.h"
@@ -294,6 +295,7 @@ struct Executor : GfxExecutor {
     float grade[4] = {0, 0, 1, 1}, grime[4] = {};
     SunGlareState sunGlare;std::chrono::steady_clock::time_point sunGlareTime;bool sunGlareTimed=false;
     float sunX = 0, sunY = 0; bool sunVisible = false;
+    GfxFogLight fogLights[8] = {}; int fogLightCount = 0;
     GLuint effectFbo[4] = {}, effectTex[4] = {}, effectUbo = 0, effectVao = 0;
     GLuint historyTex = 0; bool historyValid = false;
     unsigned encodedEffects = 0;
@@ -566,6 +568,10 @@ struct Executor : GfxExecutor {
         int size = resolution <= 512 ? 512 : resolution <= 1024 ? 1024 : 2048;
         if (size != shadowSize) { if (context) ReleaseShadow(); shadowSize = size; }
         shadowSoftness = std::clamp(softness, 0, 100);
+    }
+    void SetFogLights(const GfxFogLight *lights, int count) override {
+        fogLightCount = 0;
+        if (lights) for (int i = 0; i < count && i < 8; i++) { fogLights[i] = lights[i]; fogLightCount++; }
     }
     void SetSunScreenPosition(float x, float y, BOOL visible) override {
         sunX = x; sunY = y; sunVisible = visible && std::isfinite(x) && std::isfinite(y);

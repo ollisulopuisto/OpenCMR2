@@ -1,5 +1,6 @@
 #include "DustPlume.h"
 #include "AirMote.h"
+#include "SnowGlint.h"
 #include "FogDynamics.h"
 #include "CarBodyDirt.h"
 #include "AIReferenceRoute.h"
@@ -6456,6 +6457,17 @@ void StageTiming_InitEffectParticleTypes(void)
   ParticleEdit_SetSizeRamp(0x1000,0x1000,0);
   ParticleEdit_SetSpread(0,0,0,0);
   ParticleEdit_SetCallbacks(0,AirMote_Update,0,AirMote_Init,0);
+  ParticleEdit_CommitCurrentType();
+  // Optional snow glints (video.snow_glint): tiny bright puffs flashing where the
+  // sun/view alignment hits a snow-surface facet, plus light-cone boosts. Static,
+  // short-lived; peak alpha stamped by the init callback (SnowGlint.h).
+  ParticleEdit_Select(SNOW_GLINT_TYPE);
+  ParticleEdit_SetTextureParams(g_unk0x0054366c, -0x10000, 0x10000, 0x10000, -0x10000);
+  ParticleEdit_SetMotion(SNOW_GLINT_LIFE << 16, 0, 0, 0, 0, 0, 0);
+  ParticleEdit_SetColour(0xff,0xff,0xff,1);
+  ParticleEdit_SetSizeRamp(0x600,0x500,0);
+  ParticleEdit_SetSpread(0,0,0,0);
+  ParticleEdit_SetCallbacks(0,SnowGlint_Update,0,SnowGlint_Init,0);
   ParticleEdit_CommitCurrentType();
   return;
 }

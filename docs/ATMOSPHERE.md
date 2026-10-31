@@ -16,6 +16,35 @@ change. Both effects work on the SDL_GPU (Metal) and GL paths.
   It is screen-space glow in the fog pass, **not** occluded volumetric light
   shafts - geometry does not carve beams out of it. Existing god rays remain the
   occluded-shaft effect and stack on top.
+- **Fog light response** (`video.fog_lights`): head and rear lights cut the
+  fog. The per-step car-light update records each enabled car-light glow
+  (world position, intensity, tint - the same values the glow sprites use)
+  into a small light field (game/LightField.h); the per-frame view draw
+  projects up to 8 of them to the screen and the fog pass adds radial
+  in-scatter around each, coupled to the local fog density so only foggy air
+  lights up, tinted per light (warm headlights, red rear lights). A depth
+  gate keeps the glow off the car's own body (SDL_GPU path; the GL renderer
+  has no near/far recovery and keeps the glow unoccluded - documented
+  approximation). 0..200 percent, default 100.
+- **Snow glints** (`video.snow_glint`): snow responds to light. Ground
+  samples on snow/ice surface cells spawn short glint billboards (a new
+  particle type, 24 live at most, 0.4 s life) when the half-vector between
+  the rotated stage sun and the view aligns with the cell's micro-facet -
+  the true ground normal from the untouched collision mesh, jittered by a
+  deterministic per-position seed (game/SnowGlint.h). Sun strength follows
+  the stage's weather light intensity, so overcast snowfall glints less
+  than clear-air sun. The same light field as the fog response adds a cone
+  boost: samples and flakes inside a head/rear light beam brighten with the
+  beam. Falling flakes twinkle per flake from their sway phase (brightest
+  toward the sun, forward scatter) and inside beams. Amount scales glint
+  rate and flake brightness 0..200 percent, default 100; 0 disables both.
+  Render-only: own deterministic seeds, gameplay rand stream untouched.
+- **Weather overlay glints** (`video.snow_glint`): the port-layer snowfall
+  overlay (OpenGL RenderWeather and SDL_GPU RenderParticles, one shared maths
+  header src/render/weather_glint.h) twinkles per flake toward the sun's
+  screen position - forward scatter, where real snow glints - and brightens
+  inside projected car light beams, tinted per light. 0 disables the overlay
+  response; the game-side flake and bank glints share the option.
 - **Air motes** (`video.air_motes`): small bug-like specks flying on their
   own around the viewed car, a new particle type in the existing plume pool.
   Base cap 48 billboards at 100 percent, 240 at 500. Each mote gets a
@@ -107,6 +136,17 @@ covered by tests/fog_math.cpp.
   percent of the sky, sun-ward glow localized, amount scaling, alpha preserved,
   plus stacked off/100/200 review frames (out-fog-road.ppm). llvmpipe pixels
   prove appearance and math, not native Metal FPS.
+- tests/weather_glint.cpp: phase determinism, sun-proximity falloff and
+  aspect correction, twinkle bands, tinted beam boost. Pixel-pinned through
+  the real GL executor on llvmpipe in tests/gl_effects_runtime.cpp: same
+  flake with a projected beam on vs off, sun on vs off, and snow_glint 0
+  disabling the response. (The harness's older god-rays occluder assertion
+  fails in this llvmpipe sandbox on this branch and its parent alike -
+  environment sensitivity, not a regression from this work.)
+- tests/snow_glint.cpp: facet-seed determinism and cell quantization,
+  half-vector lobe (peak on alignment, dead off-axis, opposed sun/view
+  zero), cone boost (in-beam, behind, past reach, zero direction, zero
+  intensity), flake twinkle bounds and determinism, fade envelope.
 - Menu wiring covered by tests/advanced_menu.cpp; F10 rows by
   tests/tuning_panel.cpp and tests/tuning_runtime.cpp.
 

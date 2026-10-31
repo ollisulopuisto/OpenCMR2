@@ -4,6 +4,37 @@ All notable changes to OpenCMR2 are documented here.
 
 ## [Unreleased]
 
+### Atmosphere
+
+- **Fog responds to car lights** (`video.fog_lights`, 0-200%, default 100):
+  head and rear lights visibly cut the fog - radial in-scatter around each
+  projected car light in the fog pass, tinted per light and coupled to the
+  local fog density, with a depth gate off the car's own body (SDL_GPU; the
+  OpenGL renderer keeps the glow unoccluded). Atmosphere menu row, launch
+  flag `--fog-lights`, and the `atmosphere` test preset enable it.
+
+- **Snow glints** (`video.snow_glint`, 0-200%, default 100): snow sparkles in
+  the light. Snowbanks throw short-lived glint particles where the half-vector
+  between sun and view aligns with a jittered micro-facet of the true ground
+  normal (deterministic per ground position, so glints stick to the ground
+  and flicker as the view moves), and falling flakes twinkle with their own
+  sway phase, strongest looking toward the sun (forward scatter). Car head
+  and rear lights boost both from the same light field the fog response uses,
+  so flakes and banks brighten inside the beams. Render-only; nothing feeds
+  physics or the rand stream. Atmosphere menu row, launch flag
+  `--snow-glint`, and the `atmosphere` test preset enable it.
+
+- **Weather and motes respond to light** (`video.snow_glint` / `video.air_motes`):
+  the screen-space snowfall overlay (both renderers) twinkles toward the sun
+  (forward scatter) and brightens inside projected car light beams, tinted per
+  light; the floating air motes do the same in world space - sun forward
+  scatter computed per step from the view and the stage sun, beam boosts from
+  the shared light field. The `atmosphere` test preset is now the durable
+  "accepted atmosphere + effects under test" bundle: fog 100 with full sun
+  glow, near clear 60, spatial pockets, clearing toward the finish, fog light
+  response, snow glints, 500% air motes and god rays 80. Explicit flags still
+  override; the experimental `video.fog_cull` stays opt-in.
+
 ### Rendering enhancements ("juice")
 
 All changes below are optional and gated behind `[video]` settings in

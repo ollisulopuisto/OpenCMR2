@@ -4,6 +4,8 @@
 #include "SceneryPack.h"
 #include "DustPlume.h"
 #include "AirMote.h"
+#include "LightField.h"
+#include "SnowGlint.h"
 #include "CarBodyDirt.h"
 #include "WorldDust.h"
 static WorldDust::Pool worldDust;
@@ -5430,7 +5432,11 @@ void Particle_SetPoolCapacity(int count)
 // GLOBAL: CMR2 0x006a2ce8
 FixVector g_particleWind;
 FixVector g_airMoteDrift = {0,0,0};
+float g_airMoteSunScatter = 0.f;
 unsigned g_airMoteNextSeed = 0;
+int g_snowGlintNextPeak = 0;
+FogLightSource g_fogLightSources[LIGHT_FIELD_MAX];
+int g_fogLightSourceCount = 0;
 
 // Advances every active particle by one step: age, drag, gravity, alpha, size
 // and angle ramps, floor kill or bounce (unless the type has its own update).
@@ -7153,6 +7159,37 @@ void SpeedMote_GetStats(int *live, unsigned *drawn)
 }
 
 void SpeedMote_NoteSkippedGround(void) { ++g_speedMotesNoGround; }
+
+void SnowGlint_Update(Particle *p, ParticleType *, SceneNode *)
+{
+    SnowGlint_Step(*p);
+}
+
+// Same pool discipline as the air motes: glints never evict original particles
+// and stay within their small cap; Particle_Spawn reuses the oldest slot when full.
+void SnowGlint_Spawn(FixVector *world, int peakAlpha)
+{
+    if (!world || !g_particles || !g_particleTypes || g_particleTypeCount <= SNOW_GLINT_TYPE || g_particleCount <= 64) return;
+    int glints = 0, active = 0;
+    for (int i=0; i<g_particleCount; ++i) {
+        if (!g_particles[i].active) continue;
+        ++active;
+        if (g_particles[i].pType == &g_particleTypes[SNOW_GLINT_TYPE]) ++glints;
+    }
+    if (glints >= SNOW_GLINT_CAP || active >= g_particleCount - 64) return;
+    FixVector still = {0,0,0};
+    g_snowGlintNextPeak = peakAlpha;   // the init callback stamps this glint's peak
+    Particle_Spawn(SNOW_GLINT_TYPE, world, &still, world->y, NULL, NULL, 0, NULL, 1);
+}
+
+// Stamps the peak alpha at spawn (see SnowGlint.h); the caller publishes it
+// through g_snowGlintNextPeak right before Particle_Spawn.
+void SnowGlint_Init(Particle *p, ParticleType *, void *)
+{
+    if (!p) return;
+    int peak = g_snowGlintNextPeak;
+    std::memcpy(p->pad0x5c, &peak, 4);
+}
 
 void AirMote_Update(Particle *p, ParticleType *, SceneNode *)
 {

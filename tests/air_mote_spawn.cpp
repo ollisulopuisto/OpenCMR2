@@ -1,6 +1,9 @@
 #include <initializer_list>
 #include "port/types.h"
 #include "AirMote.h"
+FogLightSource g_fogLightSources[LIGHT_FIELD_MAX];
+int g_fogLightSourceCount = 0;
+float g_airMoteSunScatter = 0.f;
 #include <cstdio>
 #include <cmath>
 #include <cstring>

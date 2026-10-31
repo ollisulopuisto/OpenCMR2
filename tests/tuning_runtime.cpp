@@ -20,7 +20,7 @@ int main(){
  // Actual live panel controls, save/lock/unlock/reset through raw keys.
  auto press=[&](int k){keys[k]=0x80;TuningPanel_Update();keys[k]=0;TuningPanel_Update();};
  press(68);CHECK(TuningPanel_IsOpen());
- for(int i=0;i<30;i++)press(3); // distance row, after 27 legacy rows (incl. fog clear + fog cull + fog spatial/evolve) and lock row
+ for(int i=0;i<32;i++)press(3); // distance row, after 29 legacy rows (incl. fog clear + fog cull + fog spatial/evolve + fog lights + snow glints) and lock row
  press(5);CHECK(Sys_GetOption("video.drone_distance",60)==65);
  press(2);press(5); // lock row -> save and lock
  CHECK(Sys_GetOption("video.drone_locked",0)==1);

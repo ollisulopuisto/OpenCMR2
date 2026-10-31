@@ -1503,6 +1503,9 @@ void Gfx_HashFrame(const uint8_t *bgra, int width, int height)
 extern "C" void Gfx_SetSunScreenPosition(float x,float y,BOOL visible) {
  if(s_executor)s_executor->SetSunScreenPosition(x,y,visible);
 }
+extern "C" void Gfx_SetFogLights(const GfxFogLight *lights,int count) {
+ if(s_executor)s_executor->SetFogLights(lights,count);
+}
 extern "C" void Gfx_SetShadowQuality(int resolution,int softness) {
  if(s_executor)s_executor->SetShadowQuality(resolution,softness);
 }

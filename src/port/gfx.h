@@ -303,6 +303,15 @@ void Gfx_SetGodRays(BOOL enabled, int intensity);
 void Gfx_SetPostFog(BOOL enabled, int amount, int glow);
 void Gfx_SetPostFogClearDistance(int worldUnits);
 void Gfx_SetSunScreenPosition(float x, float y, BOOL visible);
+// One car light projected to the screen for the fog pass (video.fog_lights).
+struct GfxFogLight {
+    float x, y;       // screen uv (v downwards)
+    float viewZ;      // world units from the camera; <= 0 disables the depth gate
+    float intensity;  // 0..1
+    float r, g, b;    // tint 0..1 (headlight warm white, rear/indicator per the glow)
+};
+// Up to 8 car lights for the fog pass; count 0 clears. Called per view per frame.
+void Gfx_SetFogLights(const GfxFogLight *lights, int count);
 void Gfx_SetShadowQuality(int resolution, int softness);
 /* OpenCMR2: color grading. `temperature` (-100..100) cool->warm,
    `tint` (-100..100) green->magenta, `saturation` (0..200) color strength,

@@ -25,8 +25,9 @@
 #   --fog-clear N               Near-field fog clear distance 0-200 (0 = off): launch tuning passed straight to the game
 #   --fog-cull 0|1              Experimental fog culling past the far draw distance (default 0 = off); silhouettes may pop
 #   --fog-spatial 0|1           Fog pockets along the stage route (default 0 = off)
+#   --fog-lights 0..200        Fog response to head/rear lights, percent (default 100)
 #   --fog-evolve -100..100      Fog trend start to finish: negative clears, positive thickens (default 0)
-#   --fog-amount N / --fog-glow N / --air-motes-amount N
+#   --fog-amount N / --fog-glow N / --air-motes-amount N / --snow-glint N
 #                               Other atmosphere dials (docs/ATMOSPHERE.md), also launch-only passthrough
 #   --dry-run                   Check the inputs and print the plan; build nothing, write nothing
 #   -h, --help                  This text
@@ -69,9 +70,9 @@ while [ "$#" -gt 0 ]; do
         --test-preset) need_value "$@"; TEST_PRESET="$2"; shift 2 ;;
         --assets-only) ASSETS_ONLY=1; shift ;;
         --dry-run) DRY=1; shift ;;
-        --fog-amount|--fog-glow|--fog-clear|--air-motes-amount|--fog-evolve) need_value "$@"; TUNING+=("$1" "$2"); shift 2 ;;
+        --fog-amount|--fog-glow|--fog-clear|--fog-lights|--air-motes-amount|--fog-evolve|--snow-glint) need_value "$@"; TUNING+=("$1" "$2"); shift 2 ;;
         --fog-cull|--fog-spatial) need_value "$@"; case "$2" in 0|1) ;; *) die "$1 takes 0 or 1, got '$2'" ;; esac; TUNING+=("$1" "$2"); shift 2 ;;
-        --fog-amount=*|--fog-glow=*|--fog-clear=*|--air-motes-amount=*|--fog-evolve=*) TUNING+=("${1%%=*}" "${1#*=}"); shift ;;
+        --fog-amount=*|--fog-glow=*|--fog-clear=*|--fog-lights=*|--air-motes-amount=*|--fog-evolve=*|--snow-glint=*) TUNING+=("${1%%=*}" "${1#*=}"); shift ;;
         --fog-cull=*|--fog-spatial=*) case "${1#*=}" in 0|1) ;; *) die "${1%%=*} takes 0 or 1" ;; esac; TUNING+=("${1%%=*}" "${1#*=}"); shift ;;
         *) die "unknown option '$1' (see --help)" ;;
     esac
