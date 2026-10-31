@@ -429,3 +429,24 @@ source hashes/stage gates are unchanged. Recipe changes select a new private
 cache rather than deleting/reusing old outputs. Failure diagnostics now identify
 archive/member and expected/actual digest plus Pillow version. No integrity
 bypass, no source changes, no native acceptance claim.
+
+### Experimental original-card foliage fallback (611 variants)
+
+Adds66exact-source foliage variants actually referenced by Finland1/France1
+`temp.obj`:20Finland and13France materials in each hi/lo archive. Trees, shrubs
+and bushes left on original cards can now use the same portable source2x
+filter/mips as the other uprez textures. This does not create new detail or new
+3D geometry. Existing shell/crossed-tree and animated-spectator replacements
+keep their own generated textures; they are not replaced by this fallback.
+
+All66identities also match the existing scenery source index. Original UVs,
+material addressing, culling, alpha policy, geometry and physics are unchanged.
+Spectator atlases are deliberately excluded. The previous545payloads remain
+byte-identical. Runtime upload/every-mip byte checks, stage/source refusal and
+reset tests pass for all66new variants. Same-display-size source/top-level/mip2
+comparisons were inspected privately. Source2x alpha coverage differs by up to
+1.55percentage points at mip0; tiny mips cannot exactly preserve coverage. This
+is experimental source filtering, not recovered artwork. Native Metal driving,
+distance transitions, culling and performance remain unverified; no claim that
+all stage assets or all trees are now fully upgraded. `--textures original`
+disables this fallback without changing originals.

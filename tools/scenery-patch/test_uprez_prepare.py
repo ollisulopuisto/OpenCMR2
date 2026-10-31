@@ -33,11 +33,20 @@ class Tests(unittest.TestCase):
   import collections
   alpha=[r for r in u.INDEX if r.get('category')=='alpha-object-experimental']
   bridge=[r for r in u.INDEX if r.get('category')=='bridge-terrain-experimental']
-  self.assertEqual(len(u.INDEX),545)
+  self.assertEqual(len(u.INDEX),611)
   self.assertEqual(collections.Counter(r['archive']for r in alpha),{'finhit.bfl':12,'finlot.bfl':8,'frahit.bfl':14,'fralot.bfl':8})
   self.assertEqual(len(bridge),7)
   self.assertTrue(all(r['repeat']==[False,False]for r in alpha+bridge))
   self.assertTrue(all(r['kind']=='full-canvas-cutout'for r in alpha))
+ def test_foliage_fallback_coverage(self):
+  import collections,json
+  rows=[r for r in u.INDEX if r.get('category')=='foliage-fallback-experimental']
+  self.assertEqual(collections.Counter(r['archive']for r in rows),{'finhit.bfl':20,'finlot.bfl':20,'frahit.bfl':13,'fralot.bfl':13})
+  source=json.loads((Path(u.__file__).parent/'source-index.json').read_text())
+  for r in rows:
+   self.assertEqual(source[r['archive']+'/'+r['member']]['sha256'],r['sha256'])
+   self.assertNotEqual(source[r['archive']+'/'+r['member']]['kind'],'spectator')
+   self.assertEqual(r['kind'],'full-canvas-cutout');self.assertEqual(r['repeat'],[False,False])
  def test_source_refusal(self):
   with self.assertRaises(ValueError):u.encode(b'wrong',u.INDEX[0])
  def test_cutout_refusal(self):
