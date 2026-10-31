@@ -1440,6 +1440,14 @@ extern "C" unsigned long long Sys_GetProcessMemoryBytes(void)
         return (unsigned long long)counters.WorkingSetSize;
     return 0;
 #elif defined(__APPLE__)
+    // phys_footprint is the number Activity Monitor shows as "Memory": it
+    // counts compressed and GPU-backed pages the resident_size misses. They
+    // can differ by gigabytes on Apple Silicon; neither proves or rules out a
+    // leak on its own.
+    task_vm_info_data_t vmInfo;
+    mach_msg_type_number_t vmCount = TASK_VM_INFO_COUNT;
+    if (task_info(mach_task_self(), TASK_VM_INFO, (task_info_t)&vmInfo, &vmCount) == KERN_SUCCESS)
+        return (unsigned long long)vmInfo.phys_footprint;
     task_basic_info_64_data_t info;
     mach_msg_type_number_t count = TASK_BASIC_INFO_64_COUNT;
     if (task_info(mach_task_self(), TASK_BASIC_INFO_64, (task_info_t)&info, &count) == KERN_SUCCESS)
