@@ -103,6 +103,60 @@ int main(int argc, char **argv)
             size_t i=((h/4)*w+w/2)*4; // top row: height scale keeps the factor below the clamp
             require(std::abs(int(f200[i])-int(scene[i]))>std::abs(int(f50[i])-int(scene[i])),"fog amount scales the effect");
         }
+        {   // car-light beam wedge (video.fog_lights): one lamp mid-frame, beam
+            // pointing down-screen. The wedge brightens the fogged scene along the
+            // beam (strongest near the lamp, decaying along it), the 30% floor keeps
+            // it visible on near-clean air, and headroom dims it on a bright scene.
+            GfxFogLight lamp={};lamp.x=0.5f;lamp.y=0.4f;lamp.viewZ=-1;lamp.intensity=1;
+            lamp.r=1;lamp.g=0.95f;lamp.b=0.85f;lamp.beamX=0.f;lamp.beamY=1.f;lamp.beamLen=0.4f;
+            auto px=[&](const std::vector<unsigned char>&f,float uy){size_t i=((int)(h*uy)*w+w/2)*4;return int(f[i])+int(f[i+1])+int(f[i+2]);};
+            e.SetPostFog(true,100,0);
+            gl.BindFramebuffer(GL_FRAMEBUFFER,e.backFramebuffer);gl.DepthMask(GL_TRUE);gl.ClearDepth(.9995);gl.Clear(GL_DEPTH_BUFFER_BIT);e.ForgetEffectState();
+            upload();auto noLamp=read(e.ApplyEffects());
+            e.SetFogLights(&lamp,1);upload();auto withLamp=read(e.ApplyEffects());
+            require(withLamp!=noLamp,"beam light changes the fogged frame");
+            int dNear=px(withLamp,0.47f)-px(noLamp,0.47f);   // just down-beam of the lamp
+            int dFar=px(withLamp,0.75f)-px(noLamp,0.75f);    // far down the beam
+            int dBack=px(withLamp,0.30f)-px(noLamp,0.30f);   // behind the lamp
+            require(dNear>10,"beam wedge brightens the scene along the beam");
+            require(dFar>0&&dFar<dNear,"beam decays along its length");
+            require(dBack<dNear,"beam is strongest forward of the lamp, not behind it");
+            {   // mid-beam pixel never clips to flat white (soft shoulder + headroom)
+                size_t i=((int)(h*0.55f)*w+w/2)*4;
+                require(withLamp[i]<255&&withLamp[i+1]<255&&withLamp[i+2]<255,"beam pixel stays below clipping");
+            }
+            // 30% floor: near-clean air (depth 0, fog factor 0) still shows the beam.
+            gl.BindFramebuffer(GL_FRAMEBUFFER,e.backFramebuffer);gl.DepthMask(GL_TRUE);gl.ClearDepth(0);gl.Clear(GL_DEPTH_BUFFER_BIT);e.ForgetEffectState();
+            e.SetFogLights(NULL,0);upload();require(read(e.ApplyEffects())==scene,"no lamp on clean air stays identity");
+            e.SetFogLights(&lamp,1);upload();auto cleanLamp=read(e.ApplyEffects());
+            require(px(cleanLamp,0.47f)>px(scene,0.47f)+5,"beam floor lights near-clean air");
+            // Headroom: at a mild fog factor the same beam adds less on a bright
+            // scene than on a dark one, so a bright horizon is not pushed to white.
+            std::vector<unsigned char> bright(scene.size());
+            for(size_t i=0;i<scene.size();i+=4){bright[i]=235;bright[i+1]=238;bright[i+2]=242;bright[i+3]=255;}
+            auto uploadBright=[&](){gl.BindTexture(GL_TEXTURE_2D,e.backColor);gl.TexSubImage2D(GL_TEXTURE_2D,0,0,0,w,h,GL_RGBA,GL_UNSIGNED_BYTE,bright.data());};
+            gl.BindFramebuffer(GL_FRAMEBUFFER,e.backFramebuffer);gl.DepthMask(GL_TRUE);gl.ClearDepth(.9925);gl.Clear(GL_DEPTH_BUFFER_BIT);e.ForgetEffectState();
+            uploadBright();auto brightLamp=read(e.ApplyEffects());
+            e.SetFogLights(NULL,0);uploadBright();auto brightNoLamp=read(e.ApplyEffects());
+            e.SetFogLights(&lamp,1);
+            gl.BindFramebuffer(GL_FRAMEBUFFER,e.backFramebuffer);gl.DepthMask(GL_TRUE);gl.ClearDepth(.9925);gl.Clear(GL_DEPTH_BUFFER_BIT);e.ForgetEffectState();
+            upload();auto darkLamp=read(e.ApplyEffects());
+            e.SetFogLights(NULL,0);upload();auto darkNoLamp=read(e.ApplyEffects());
+            int addBright=px(brightLamp,0.47f)-px(brightNoLamp,0.47f);
+            int addDark=px(darkLamp,0.47f)-px(darkNoLamp,0.47f);
+            require(addBright<addDark,"headroom dims the beam on an already bright scene");
+            upload();e.SetFogLights(NULL,0);
+            if(argc>1){   // beam review frame: no-lamp / lamp stacked, heavy fog
+                gl.BindFramebuffer(GL_FRAMEBUFFER,e.backFramebuffer);gl.DepthMask(GL_TRUE);gl.ClearDepth(.9995);gl.Clear(GL_DEPTH_BUFFER_BIT);e.ForgetEffectState();
+                upload();auto rv0=read(e.ApplyEffects());
+                e.SetFogLights(&lamp,1);upload();auto rv1=read(e.ApplyEffects());
+                e.SetFogLights(NULL,0);
+                FILE*f=fopen((std::string(argv[1])+"-fog-beam.ppm").c_str(),"wb");
+                if(f){fprintf(f,"P6\n%d %d\n255\n",w,h*2);
+                    for(auto*arr:{&rv0,&rv1})for(int y=h-1;y>=0;--y)for(int x=0;x<w;++x)fwrite(arr->data()+((size_t)y*w+x)*4,1,3,f);
+                    fclose(f);}
+            }
+        }
         {   // near-field clear distance (video.fog_clear): depth 0.991 is about 1.5 world
             // units down the raw-depth ramp, inside a 100-unit clear distance, so the
             // pixels survive; the same depth fogs with the clear distance off.
@@ -283,7 +337,20 @@ int main(int argc, char **argv)
             {size_t hi=((112)*fw+fw/2)*4, li=((fh-20)*fw+fw/2)*4;
              int dH=std::abs(int(frames[1][hi])-int(road[hi])),dL=std::abs(int(frames[1][li])-int(road[li]));
              if(!(dH>dL)){fprintf(stderr,"FAIL: fog review frame not depth graded\n");exit(1);}}
-            FILE*f=fopen((std::string(argv[1])+"-fog-road.ppm").c_str(),"wb");fprintf(f,"P6\n%d %d\n255\n",fw,fh*3);
+            {   // 4th frame: fog 100 with a headlight pair on the car, beams
+                // pointing up-road toward the horizon (screen-space wedge).
+                GfxFogLight pair[2]={};
+                for(int k=0;k<2;k++){pair[k].y=0.70f;pair[k].viewZ=-1;pair[k].intensity=1;
+                    pair[k].r=1;pair[k].g=0.95f;pair[k].b=0.85f;pair[k].beamX=0;pair[k].beamY=-1;pair[k].beamLen=0.55f;}
+                pair[0].x=0.44f;pair[1].x=0.56f;
+                gl.ActiveTexture(GL_TEXTURE0);gl.BindTexture(GL_TEXTURE_2D,e.backColor);gl.TexSubImage2D(GL_TEXTURE_2D,0,0,0,fw,fh,GL_RGBA,GL_UNSIGNED_BYTE,road.data());
+                gl.BindTexture(GL_TEXTURE_2D,e.backDepth);gl.TexSubImage2D(GL_TEXTURE_2D,0,0,0,fw,fh,GL_DEPTH_COMPONENT,GL_FLOAT,depths.data());e.ForgetEffectState();
+                e.SetSunScreenPosition(.51f,.24f,true);e.SetPostFog(true,100,100);e.SetFogLights(pair,2);
+                GLuint output=e.ApplyEffects();std::vector<unsigned char> result(road.size());
+                gl.BindFramebuffer(GL_FRAMEBUFFER,output);gl.ReadPixels(0,0,fw,fh,GL_RGBA,GL_UNSIGNED_BYTE,result.data());e.ForgetEffectState();
+                frames.push_back(result);e.SetFogLights(NULL,0);e.SetPostFog(false,0,0);
+            }
+            FILE*f=fopen((std::string(argv[1])+"-fog-road.ppm").c_str(),"wb");fprintf(f,"P6\n%d %d\n255\n",fw,fh*4);
             for(auto&fr:frames)for(int i=0;i<fw*fh;i++)fwrite(fr.data()+i*4,1,3,f);
             fclose(f);e.SetVideoMode(w,h,false);
         }

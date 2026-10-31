@@ -25,6 +25,12 @@ struct MeshPart {
 };
 
 struct MeshCollisionRecord;
+// OpenCMR2 port-side mesh flag (bit 20, beyond every original flag bit): meshes
+// carrying it draw their semi-transparent parts without depth writes, so the
+// world depth behind cockpit windscreen glass survives for the fog pass
+// (video.cockpit_glass_fog). Opaque parts keep writing depth, so interior
+// self-occlusion is unchanged. Set on the interior model meshes at build time.
+#define MESH_FLAG_GLASS_NO_ZWRITE 0x100000u
 // ON-DISK: 0x120-byte stage mesh header, relocated in place at 0x4b93c0.
 // pVertexData, pTriangles and pCollisionRecords hold relocated file offsets;
 // the port must separate this disk representation from native mesh storage.

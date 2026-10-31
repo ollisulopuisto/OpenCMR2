@@ -6,6 +6,29 @@ All notable changes to OpenCMR2 are documented here.
 
 ### Atmosphere
 
+- **Fog light beams + cockpit fog fixes** (`video.fog_lights`, new
+  `video.cockpit_glass_fog` default on): the fog-pass car-light response is
+  now a directional wedge from each lamp along its projected beam direction
+  (brightest at the lamps, decaying along the beam, with a small halo for
+  foreshortened lamps) instead of a radial glow parked at the horizon. A 30%
+  floor decouples the beam from the local fog factor, so the near road and
+  the cockpit windscreen region show beams; a soft shoulder plus a headroom
+  term keep an already bright horizon from clipping to white. The producer
+  no longer drops lamps whose source projects off-screen when their beam
+  still crosses the frame (cockpit view: your own headlights), keeping the
+  behind-camera drop. Interior (cockpit) model meshes draw their
+  semi-transparent parts without depth writes (`MESH_FLAG_GLASS_NO_ZWRITE`,
+  per-part alpha scan; opaque interior parts unchanged), so the world depth
+  behind windscreen glass survives for the fog pass (Atmosphere
+  menu row included here so the control never ships without its
+  implementation). The wedge is a
+  screen-space approximation of lit air, not volumetric road illumination.
+  Pure maths in render/fog_math.h, one fog.frag for both renderers;
+  pixel-verified on the GL executor harness (beam direction/decay/floor,
+  headroom vs bright scenes, no clip at mid-beam, review frames).
+
+### Atmosphere (earlier)
+
 - **Fog responds to car lights** (`video.fog_lights`, 0-200%, default 100):
   head and rear lights visibly cut the fog - radial in-scatter around each
   projected car light in the fog pass, tinted per light and coupled to the

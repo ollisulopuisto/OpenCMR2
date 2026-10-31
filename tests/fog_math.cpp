@@ -82,6 +82,35 @@ int main(){
     CHECK(std::fabs(Fog_CullDistance(200, 0.f) - 150.f) < 1e-6f);   // 88 clamps to the 150 floor
     CHECK(std::fabs(Fog_CullDistance(100, 200.f) - 250.f) < 1e-6f); // clear distance floor wins
     CHECK(Fog_CullDistance(30, 0.f) > 500.f);                       // light fog barely culls
+    // Light beam wedge (screen-space approximation): brightest at the lamp, decays
+    // along the beam, falls off laterally, zero behind the lamp and with no intensity.
+    float beamAtLamp = Fog_LightBeam(0.f, 0.f, 0.f, 1.f, 0.4f, 0.9f);
+    float beamMid = Fog_LightBeam(0.f, 0.2f, 0.f, 1.f, 0.4f, 0.9f);
+    CHECK(beamAtLamp > 0.8f);                          // halo at the origin (wedge ramps in)
+    CHECK(beamMid > 0.f && beamMid < beamAtLamp);      // decays along the beam
+    CHECK(beamMid > Fog_LightBeam(0.f, 0.4f, 0.f, 1.f, 0.4f, 0.9f));
+    CHECK(Fog_LightBeam(0.f, -0.2f, 0.f, 1.f, 0.4f, 0.9f) < beamMid);  // behind the lamp: halo only
+    CHECK(Fog_LightBeam(0.3f, 0.2f, 0.f, 1.f, 0.4f, 0.9f) < beamMid);  // lateral falloff
+    CHECK(Fog_LightBeam(0.f, 0.2f, 0.f, 1.f, 0.4f, 0.f) == 0.f);       // no intensity no light
+    // Foreshortened beam (len ~0, pointing at the camera): the halo still glows at the lamp.
+    CHECK(Fog_LightBeam(0.f, 0.f, 0.f, 1.f, 0.f, 0.9f) > 0.8f);
+    CHECK(Fog_LightBeam(0.2f, 0.f, 0.f, 1.f, 0.f, 0.9f) < 0.05f);      // but not away from it
+    // Zero direction collapses to the halo rather than NaN.
+    CHECK(Fog_LightBeam(0.f, 0.f, 0.f, 0.f, 0.4f, 0.9f) > 0.8f);
+    // Soft shoulder: 0 at 0, monotonic, approaches but never reaches 1.
+    CHECK(Fog_SoftShoulder(0.f) == 0.f);
+    CHECK(Fog_SoftShoulder(-1.f) == 0.f);
+    CHECK(Fog_SoftShoulder(0.5f) < Fog_SoftShoulder(1.0f));
+    CHECK(Fog_SoftShoulder(2.f) < 1.f);
+    CHECK(Fog_SoftShoulder(10.f) <= 1.f);          // float: 1-exp(-20) rounds to 1
+    CHECK(Fog_SoftShoulder(100.f) <= 1.f);
+    // Headroom: 1 on a black scene, 0 at full white, monotonic between, clamped 0..1.
+    CHECK(Fog_LightHeadroom(0.f, 0.f, 0.f) == 1.f);
+    CHECK(Fog_LightHeadroom(1.f, 1.f, 1.f) == 0.f);
+    CHECK(Fog_LightHeadroom(0.9f, 0.5f, 0.2f) < Fog_LightHeadroom(0.4f, 0.5f, 0.2f));
+    CHECK(Fog_LightHeadroom(2.f, 2.f, 2.f) == 0.f);
+    for (float m : {0.f, .2f, .5f, .8f, 1.f})
+        CHECK(Fog_LightHeadroom(m, m, m) >= 0.f && Fog_LightHeadroom(m, m, m) <= 1.f);
     if (!fails) std::puts("fog_math ok");
     return fails;
 }

@@ -214,11 +214,11 @@ GLuint ApplyEffects()
     // scene. The GL path has no near/far recovery, so near/far are zero and the shader
     // uses its raw-depth ramp (a stand-in curve, see render/fog_math.h).
     if (effectsRaceFrame && fogOn && fogAmount > 0) {
-        // Same 19-vec4 FogUniforms layout as SDL_GPU. The GL path has no near/far
+        // Same 23-vec4 FogUniforms layout as SDL_GPU. The GL path has no near/far
         // recovery (raw-depth ramp), so per-light viewZ is 0: the shader skips the
         // depth gate and the glow is unoccluded here - a documented approximation.
         float fogLightStrength = std::max(0, std::min(200, Sys_GetOption("video.fog_lights", 100))) / 100.0f;
-        float u[76] = {Fog_Density(fogAmount), fogGlow / 100.0f, 0.0f, 0.0f,
+        float u[92] = {Fog_Density(fogAmount), fogGlow / 100.0f, 0.0f, 0.0f,
                        sunX, sunY, sunVisible ? 1.0f : 0.0f,
                        backHeight ? (float)backWidth / (float)backHeight : 1.0f,
                        (float)fogClearDistance, fogLightStrength, 0.0f, 0.0f};
@@ -230,6 +230,9 @@ GLuint ApplyEffects()
             u[44 + i*4 + 1] = fogLights[i].r;
             u[44 + i*4 + 2] = fogLights[i].g;
             u[44 + i*4 + 3] = fogLights[i].b;
+            u[76 + i*4 + 0] = fogLights[i].beamX;
+            u[76 + i*4 + 1] = fogLights[i].beamY;
+            u[76 + i*4 + 2] = fogLights[i].beamLen;
         }
         run(12, backDepth, u, sizeof(u));
     }
