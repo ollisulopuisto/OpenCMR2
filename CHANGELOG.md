@@ -35,6 +35,17 @@ All notable changes to OpenCMR2 are documented here.
   response, snow glints, 500% air motes and god rays 80. Explicit flags still
   override; the experimental `video.fog_cull` stays opt-in.
 
+- **Snow surface material** (`video.snow_material`, 0-200%, default 0 = off;
+  prototype): the snow ground itself responds to light. Visible terrain
+  triangles are tagged snow only on collision-mesh evidence (the raw surface
+  ids the wheel particles use at the triangle centroid, an on-ground height
+  tolerance and an upward face normal), a vertex shared with a non-snow
+  triangle is never lifted, and tagged vertices get a sun half-vector glint
+  plus a cone boost inside car light beams, recomputed from the saved
+  original colours every frame. Launch flag `--snow-material`. Terrain beyond
+  the collision corridor gets no response; the per-frame vertex-buffer
+  refresh cost is unmeasured, hence off by default.
+
 ### Rendering enhancements ("juice")
 
 All changes below are optional and gated behind `[video]` settings in
@@ -84,6 +95,11 @@ look stays available.
   unchanged; the spring's critically damped ratio holds at the new floor, and
   the speed drop keeps its 2.2-unit height floor. `--drone-speed-drop` accepts
   0..200 to match.
+
+- **What's new screen** — a short changelog of shipped changes shows once on
+  the main menu after an update (tracked in `ui.whatsnew_seen`) and stays
+  reachable from Options > Graphics > Screen. Content is curated in
+  `game/WhatsNew.h`; `kWhatsNewRevision` is bumped with new entries.
 
 ### Related visual work in this batch
 

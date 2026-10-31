@@ -1013,6 +1013,11 @@ int FrontendCredits_GetEntryCount(void);
 void *FrontendCredits_GetRoleTable(void);
 int FrontendCredits_GetStartTime(void);
 
+// PORT: "what's new" changelog (implementation with the screen options below).
+void WhatsNew_MaybeAutoShow(void);
+void FrontendMenu_BuildWhatsNew(void);
+void FrontendMenu_OpenWhatsNew(Menu *, MenuItem *);
+
 // Draws the two columns of text of the scrolling credits screen; when every
 // line has scrolled past the top the screen finishes.
 // match 86%: below the 90% bar; kept as FUNCTION on purpose so reccmp measures it (see CONVENCIONES)
@@ -1748,6 +1753,7 @@ void FrontendMenu_BuildPagesAndSelectInitial(BYTE param1, BYTE back)
     FrontendMenu_BuildGameOptions();
     FrontendMenu_BuildGraphicsOptions();
     FrontendMenu_BuildScreenOptions();     // PORT
+    FrontendMenu_BuildWhatsNew();        // PORT
     FrontendMenu_BuildRenderDeviceOptions();
     FrontendMenu_BuildAdvancedGraphicsOptions();
     FrontendMenu_BuildDisplayDevice();
@@ -5454,6 +5460,7 @@ void FrontendMenu_EnterMain(Menu *pMenu, int param)
     p->startTime = CFrontend::GetFrontendTimestamp();
     p->pMenu = pMenu;
     CGameInfo::SetGameModeOptionBit19(0);
+    WhatsNew_MaybeAutoShow();   // PORT: once per changelog revision
 }
 
 // Update callback of the main menu: scroller, animation, and the attract
@@ -12413,11 +12420,14 @@ void FrontendMenu_DrawNetworkSessionSetup(Menu *pMenu)
 
 Menu g_screenOptionsMenu;
 
+
+
 enum ScreenOptionsItem {
     SCREEN_ITEM_HUD,
     SCREEN_ITEM_MENU,
     SCREEN_ITEM_VSYNC,
     SCREEN_ITEM_FULLSCREEN,
+    SCREEN_ITEM_WHATS_NEW = 0xf,
     SCREEN_ITEM_OK = 0xe
 };
 
@@ -12427,18 +12437,19 @@ enum ScreenOptionsText {
     SCREEN_TEXT_MENU,
     SCREEN_TEXT_VSYNC,
     SCREEN_TEXT_FULLSCREEN,
+    SCREEN_TEXT_WHATS_NEW,
     SCREEN_TEXT_COUNT
 };
 
 // In the game's character set (Windows-1252; Polish letters in place of
 // some symbols: 0xb1 is l with a stroke).
 static const char *const g_screenOptionsText[6][SCREEN_TEXT_COUNT] = {
-    { "Screen", "HUD Size", "Menu Size", "Vertical Sync", "Full Screen" },
-    { "\xc9" "cran", "Taille du HUD", "Taille des menus", "Synchro verticale", "Plein \xe9" "cran" },
-    { "Pantalla", "Tama\xf1o del HUD", "Tama\xf1o de los men\xfas", "Sincronizaci\xf3n vertical", "Pantalla completa" },
-    { "Schermo", "Dimensione HUD", "Dimensione menu", "Sincronia verticale", "Schermo intero" },
-    { "Bildschirm", "HUD-Gr\xf6\xdf" "e", "Men\xfcgr\xf6\xdf" "e", "VSync", "Vollbild" },
-    { "Ekran", "Rozmiar HUD", "Rozmiar menu", "Synchronizacja pionowa", "Pe\xb1ny ekran" },
+    { "Screen", "HUD Size", "Menu Size", "Vertical Sync", "Full Screen", "What's new..." },
+    { "\xc9" "cran", "Taille du HUD", "Taille des menus", "Synchro verticale", "Plein \xe9" "cran", "Nouveaut\xe9s..." },
+    { "Pantalla", "Tama\xf1o del HUD", "Tama\xf1o de los men\xfas", "Sincronizaci\xf3n vertical", "Pantalla completa", "Novedades..." },
+    { "Schermo", "Dimensione HUD", "Dimensione menu", "Sincronia verticale", "Schermo intero", "Novit\xe0..." },
+    { "Bildschirm", "HUD-Gr\xf6\xdf" "e", "Men\xfcgr\xf6\xdf" "e", "VSync", "Vollbild", "Neuerungen..." },
+    { "Ekran", "Rozmiar HUD", "Rozmiar menu", "Synchronizacja pionowa", "Pe\xb1ny ekran", "Nowosci..." },
 };
 
 // Sizes offered, in percent.
@@ -12592,6 +12603,10 @@ void FrontendMenu_DrawScreenOptions(Menu *pMenu)
                               (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
             }
             break;
+        case SCREEN_ITEM_WHATS_NEW:
+            strcpy(CFrontend::m_stringDest, ScreenOptions_Text(SCREEN_TEXT_WHATS_NEW));
+            Font_DrawText(1, CFrontend::m_stringDest, x, textY, (int *)pColour, 0x11);
+            break;
         default:
             Font_DrawText(1, CFrontend::GetTextString(pItem->id), x, textY, (int *)pColour, 0x11);
             break;
@@ -12622,6 +12637,7 @@ void FrontendMenu_BuildScreenOptions(void)
                       SCREEN_ITEM_MENU);
     Menu_AddItemType3(&g_screenOptionsMenu, 0, -1, 2, 0, 0, 0, 0, SCREEN_ITEM_VSYNC);
     Menu_AddItemType3(&g_screenOptionsMenu, 0, -1, 2, 0, 0, 0, 0, SCREEN_ITEM_FULLSCREEN);
+    Menu_AddItemType1(&g_screenOptionsMenu, 0, -1, (MenuItemAction)FrontendMenu_OpenWhatsNew, SCREEN_ITEM_WHATS_NEW);
     Menu_AddItemType1(&g_screenOptionsMenu, 0, 0x67, (MenuItemAction)FrontendMenu_ApplyScreenOptions, SCREEN_ITEM_OK);
     Menu_SetCallbacks(&g_screenOptionsMenu, FrontendMenu_EnterScreenOptions, NULL,
                       (MenuCallback)FrontendMenu_DrawScreenOptions, NULL);
