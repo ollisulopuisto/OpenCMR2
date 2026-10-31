@@ -45,12 +45,13 @@ void France1Textures_Begin(GenericFile *archive,const char *stage){
  France1Textures_Clear();
  if(!stage||!Sys_GetTextureDirectory()||!*Sys_GetTextureDirectory())return;
  uprez=Sys_GetOption("video.texture_uprez",0)!=0;
- if(_stricmp(stage,"fra01")&&(!uprez||_stricmp(stage,"fin01")))return;
+ if(_stricmp(stage,"fra01")&&(!uprez||(_stricmp(stage,"fin01")&&_stricmp(stage,"gre01"))))return;
  DWORD n=0;const void*p=CGenericFileLoader::FindFile(archive,(char*)"temp.c3d",nullptr,&n,0);
  if(!p||n>4*1024*1024)return;
  auto hash=SceneryIdentity::SHA256(p,n);
  active=hash=="a78fbf25efcecb20a0cd7360c2bfc28e24ba040a028f6225a0d1f690f9eed8d0"||hash=="f5331c231abc299df2b2a42c9b0c2bb8e69ac79526a5c21f5550ed7311157c36";
  if(uprez&&!_stricmp(stage,"fin01"))active=hash=="ecfd29aac42deb799d798fa8ce2a5db840147f77a3d49c80276f93d0e8a3157b"||hash=="b613c03d3c3cd7e0e6cf14c99be09e9ace96863af520e350f0cf215176a89c35";
+ if(uprez&&!_stricmp(stage,"gre01"))active=hash=="f07641014a56442aae606f6148d5f9575005e1fd460c562ef751f79db42e2aed"||hash=="5d07fa23a2454bbe950233d61b4378144a47dc247c3e6f659f52b91a113e19c5";
  Sys_Log("textures: exact-source stage texture test %s; source2x filter, no new detail; native unverified",active?"source verified":"refused");
 }
 bool France1Textures_Apply(Texture *texture,const void*bytes,unsigned size){
@@ -88,7 +89,7 @@ bool France1Textures_Apply(Texture *texture,const void*bytes,unsigned size){
  }
  originals[texture]=texture->pSurface;
  if(uprez){std::string file=source->file;
-  if(file.find("tresh")==0||file.find("tre_w2")==0||file.find("tre_wl")==0||file.find("bsh_st1")==0)verifiedCutouts[texture]=texture->pSurface;
+  if(file.find("tresh")==0||file.find("tre_w2")==0||file.find("tre_wl")==0||file.find("bsh_st1")==0||file.find("bsh_sh1")==0||file.find("tre_s1")==0)verifiedCutouts[texture]=texture->pSurface;
  }
  Gfx_SetTextureReplacement(texture->pSurface,replacement); // original dimensions/UVs survive rollback
  Sys_Log("textures: source2x applied %s (%ux%u, %u mips)",source->file,w,h,levels);return true;

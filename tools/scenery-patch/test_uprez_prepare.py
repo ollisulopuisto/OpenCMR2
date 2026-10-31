@@ -19,6 +19,12 @@ class Tests(unittest.TestCase):
   for r in u.INDEX:
    if 'temp.sht' in r.get('usage',''):counts[r['archive']]=counts.get(r['archive'],0)+1
   self.assertEqual(counts,{'finhit.bfl':5,'finlot.bfl':5,'frahit.bfl':20,'fralot.bfl':20})
+ def test_greece1_strip_coverage(self):
+  rows=[r for r in u.INDEX if r['stage']=='gre01']
+  self.assertEqual(len(rows),12)
+  self.assertEqual(sorted({r['archive']for r in rows}),['grehit.bfl','grelot.bfl'])
+  self.assertEqual(sorted({r['member']for r in rows}),['bsh_sh1a.dds','bsh_sh1c.dds','bsh_sh1z.dds','tre_s1_a.dds','tre_s1_b.dds','tre_s1_c.dds'])
+  self.assertTrue(all(r['kind']=='full-canvas-cutout'and r['repeat']==[False,False]for r in rows))
  def test_opaque_object_coverage(self):
   import collections
   rows=[r for r in u.INDEX if r.get('category')=='opaque-object']
@@ -33,7 +39,7 @@ class Tests(unittest.TestCase):
   import collections
   alpha=[r for r in u.INDEX if r.get('category')=='alpha-object-experimental']
   bridge=[r for r in u.INDEX if r.get('category')=='bridge-terrain-experimental']
-  self.assertEqual(len(u.INDEX),611)
+  self.assertEqual(len(u.INDEX),623)
   self.assertEqual(collections.Counter(r['archive']for r in alpha),{'finhit.bfl':12,'finlot.bfl':8,'frahit.bfl':14,'fralot.bfl':8})
   self.assertEqual(len(bridge),7)
   self.assertTrue(all(r['repeat']==[False,False]for r in alpha+bridge))

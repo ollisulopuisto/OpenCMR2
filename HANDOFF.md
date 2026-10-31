@@ -549,8 +549,15 @@ clamped within original quad axis-aligned bounds. Original mesh/collision
 records, physics, placement and material/light/fog binding are untouched.
 Two degenerate-axis parts cannot sway; one nonplanar part stays original.
 This is NOT individual3Dtrees or completed universal geometry coverage. Fence
-work is texture-only. Other track geometry is unchanged. Greece sources are
-still unavailable. Existing command opts in; --trees original disables this
+work is texture-only. Other track geometry is unchanged. Greece sources arrived 1 Nov
+(gre01hi/gre01lo/grehit/grelot, verified CMPR + content-identified). Greece1
+bush/tree sheet relief is on feat/greece1-brush-strips: 51 strip-part
+identities (hi==lo geometry) extracted by the new committed
+tools/scenery-patch/strip_sources.py (validated 58/58 against the Finland1
+tresh hashes), 12 exact-source cutout recipes in uprez-textures.json,
+stage/stem gates extended (gre01 temp.c3d hashes, bsh_sh1/tre_s1).
+Screenshot wall mapping: bsh_sh1* are the roadside bush cards by texture
+review; native visual acceptance still owed. Existing command opts in; --trees original disables this
 geometry, --textures original disables these texture and strip paths.
 
 Full local build passes;136/141tests pass, same five known baseline Zig

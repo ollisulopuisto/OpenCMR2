@@ -36,6 +36,18 @@ All notable changes to OpenCMR2 are documented here.
   default test build. The interposition isolation test is now behind the
   same GNU/Linux gate as the --wrap isolation tests (substitute-glyph
   evidence harness; no game change).
+### Scenery
+
+- **Greece 1 bush/tree sheet relief** (opt-in, `--textures uprez`): the Greek
+  stage's flat bush and small-tree cards (bsh_sh1*/tre_s1_*) get the same
+  visual-only per-quad relief as the Finland1/France1 forest strips. New
+  exact-source 2x cutouts come from the owned grehit/grelot archives through
+  the existing deterministic pipeline (12 verified recipes); 51 strip-part
+  identities come from the owned gre01hi/gre01lo stage models via the new
+  tools/scenery-patch/strip_sources.py extractor (validated to reproduce all
+  58 existing Finland1 tresh hashes byte-for-byte). Originals, collision and
+  placement untouched; native appearance/performance unverified.
+
 ### Camera
 
 - **Wider drone tuning rails** (defaults unchanged): distance 10-300% (was

@@ -14,5 +14,5 @@ class Tests(unittest.TestCase):
   self.assertNotIn("payloads[variant+'-curved.hpc']",helper)
  def test_package_contains_every_helper_dependency(self):
   text=(ROOT/'tools/package_release.py').read_text()
-  for leaf in ['finland1_roads.py','finland1-roads.json','uprez_prepare.py','uprez-textures.json','road_periodic.py','export-evidence.py']:self.assertIn(leaf,text)
+  for leaf in ['finland1_roads.py','finland1-roads.json','uprez_prepare.py','uprez-textures.json','strip_sources.py','road_periodic.py','export-evidence.py']:self.assertIn(leaf,text)
 if __name__=='__main__':unittest.main()

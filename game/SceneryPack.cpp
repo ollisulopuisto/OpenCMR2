@@ -478,7 +478,7 @@ bool SceneryPack_DrawFixedPart(Mesh *mesh,MeshPart *part){
  if(!mesh||!part||!Sys_GetOption("video.scenery_overrides",1)||!Sys_GetOption("video.tree_overrides",1)||
     !Sys_GetOption("video.texture_uprez",0)||!(mesh->flags&0x800)||mesh->flags&2||part->texture<0||unsigned(part->texture)>=CGraphics::m_textureCount)return false;
  Texture*source=CGraphics::GetTextureBuffer()[part->texture];if(!source||!source->pSurface||!mesh->pVertexData||!part->pData)return false;
- auto name=Stem(source->name);if(name.compare(0,5,"tresh")&&name.compare(0,6,"tre_w2")&&name.compare(0,6,"tre_wl")&&name.compare(0,7,"bsh_st1"))return false;
+ auto name=Stem(source->name);if(name.compare(0,5,"tresh")&&name.compare(0,6,"tre_w2")&&name.compare(0,6,"tre_wl")&&name.compare(0,7,"bsh_st1")&&name.compare(0,7,"bsh_sh1")&&name.compare(0,6,"tre_s1"))return false;
  // DDS identities are added by the private texture helper, independently of the
  // individual billboard pack. A same-named modified source never enters here.
  if(!France1Textures_IsVerifiedCutout(source))return false;

@@ -8,6 +8,10 @@
     "fin01": [
       "ecfd29aac42deb799d798fa8ce2a5db840147f77a3d49c80276f93d0e8a3157b",
       "b613c03d3c3cd7e0e6cf14c99be09e9ace96863af520e350f0cf215176a89c35"
+    ],
+    "gre01": [
+      "f07641014a56442aae606f6148d5f9575005e1fd460c562ef751f79db42e2aed",
+      "5d07fa23a2454bbe950233d61b4378144a47dc247c3e6f659f52b91a113e19c5"
     ]
   },
   "sources": [
@@ -10126,6 +10130,198 @@
       "category": "foliage-fallback-experimental",
       "usage": "Verified temp.obj foliage material and source-index identity; full-canvas 2x fallback for original card draws, original UVs and geometry unchanged. Does not replace generated 3D canopy art.",
       "output_sha256": "41318e1131a83bb1202ba208f32718a8127be9db053a7b7081335aa1961f7a61"
+    },
+    {
+      "archive": "grehit.bfl",
+      "member": "bsh_sh1a.dds",
+      "sha256": "6ac22ee8bf31f7af5be5524fed44549a38c95184691649d3509cd29827e04786",
+      "bytes": 8320,
+      "width": 128,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "bsh_sh1a-grehit.rgba",
+      "stage": "gre01",
+      "output_sha256": "ba4cc8931cae2ad0ed2e69cdd0352cc17bffccf90379d2ad2d1f3a1071899e7a"
+    },
+    {
+      "archive": "grehit.bfl",
+      "member": "bsh_sh1c.dds",
+      "sha256": "827087fccd619ac5d4ee036569760a6a24b8af4a06e19f64966b1445a961b04c",
+      "bytes": 8320,
+      "width": 128,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "bsh_sh1c-grehit.rgba",
+      "stage": "gre01",
+      "output_sha256": "89728e6bdd79c483160903c27ab5824ddd26f99f94291113b6884e07ebd76887"
+    },
+    {
+      "archive": "grehit.bfl",
+      "member": "bsh_sh1z.dds",
+      "sha256": "aa7a9570095e8df031e06b77387f5fe09afa85b2c88a7741a19ac6f687e06a8d",
+      "bytes": 8320,
+      "width": 128,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "bsh_sh1z-grehit.rgba",
+      "stage": "gre01",
+      "output_sha256": "9715fefc420d49498b6f89aa453fb6373102d0f4938434e60b40b8c39777bd74"
+    },
+    {
+      "archive": "grehit.bfl",
+      "member": "tre_s1_a.dds",
+      "sha256": "b2931eb012243b6eab3490f14e2dce4a208bda4deadd790ee28bc8c3741c96f2",
+      "bytes": 32896,
+      "width": 256,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_s1_a-grehit.rgba",
+      "stage": "gre01",
+      "output_sha256": "5735c437646173af22b328e9ddf669e805a356ed044318c4424d6dccc9e05d5b"
+    },
+    {
+      "archive": "grehit.bfl",
+      "member": "tre_s1_b.dds",
+      "sha256": "3a094ea1f8733d67f0e181c4fe64c3740f7151682c1965d3e0f47822cd9ee963",
+      "bytes": 32896,
+      "width": 256,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_s1_b-grehit.rgba",
+      "stage": "gre01",
+      "output_sha256": "65d6228357eb916db42d3c58838dadc0f90b333ad89992743fe2d5636798ca51"
+    },
+    {
+      "archive": "grehit.bfl",
+      "member": "tre_s1_c.dds",
+      "sha256": "3d8cfa65633326894e794b8bf656e5da7ee55df02bed9206d402d7aa94496f80",
+      "bytes": 32896,
+      "width": 256,
+      "height": 128,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_s1_c-grehit.rgba",
+      "stage": "gre01",
+      "output_sha256": "31a69f25f81835f9834d131bfd54a43f9d0fa099210b1da57379475bb2101402"
+    },
+    {
+      "archive": "grelot.bfl",
+      "member": "bsh_sh1a.dds",
+      "sha256": "126c3d74917e336495850db41f66a8e449e8ed33ca498f9ebb6e1d3eaf0cb620",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "bsh_sh1a-grelot.rgba",
+      "stage": "gre01",
+      "output_sha256": "25dba5b2a5fdf29ce8bcc14e138a64b187c21b63362914a9b6846d50570dcc40"
+    },
+    {
+      "archive": "grelot.bfl",
+      "member": "bsh_sh1c.dds",
+      "sha256": "4d489f0256f1c1b9b8bb0ea80abe2e7a579049fafc0bb468b47995bb103a550e",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "bsh_sh1c-grelot.rgba",
+      "stage": "gre01",
+      "output_sha256": "d23d98d74c62d1fca3603c37f43f1eba1de72a3c71caa4994247aafab97419d0"
+    },
+    {
+      "archive": "grelot.bfl",
+      "member": "bsh_sh1z.dds",
+      "sha256": "9cfc966d0756d562373c6ef300e89754158bba4766ae0354c88b390a43136830",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "bsh_sh1z-grelot.rgba",
+      "stage": "gre01",
+      "output_sha256": "02bb05c618ca970652a339da0fa443fbc5c3cac5bc708a59081ede0e956eab5b"
+    },
+    {
+      "archive": "grelot.bfl",
+      "member": "tre_s1_a.dds",
+      "sha256": "89f2261903e35f5685c69404f6c9f59cf8f688b84b4c11a77d9837011e3c5628",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_s1_a-grelot.rgba",
+      "stage": "gre01",
+      "output_sha256": "033f5efb819d2a1c4622310f0a84cacbeeaaaba7e86308ffe9fd2e97db52a2cd"
+    },
+    {
+      "archive": "grelot.bfl",
+      "member": "tre_s1_b.dds",
+      "sha256": "cad4012e3a61c0f9d7fe2cbc702e19d03bbb5e7bfab0dc766455f7fd9be0f527",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_s1_b-grelot.rgba",
+      "stage": "gre01",
+      "output_sha256": "e646e3b3b273ce453ff9c6a8db27e32dec78733a1c2ecb42f80c6891368292b6"
+    },
+    {
+      "archive": "grelot.bfl",
+      "member": "tre_s1_c.dds",
+      "sha256": "761b7c6f4e4ae71a88d93a79d5c9f25f5be6729906545dbe8ca4156359e0e29b",
+      "bytes": 4224,
+      "width": 64,
+      "height": 64,
+      "repeat": [
+        false,
+        false
+      ],
+      "kind": "full-canvas-cutout",
+      "output": "tre_s1_c-grelot.rgba",
+      "stage": "gre01",
+      "output_sha256": "f2c2e2859896582dce166784e520cc2f3fc745114412356c4fa32131a8f1d2e1"
     }
   ]
 }
