@@ -129,13 +129,19 @@ int main(int argc, char **argv)
             // Same flake across renders: beam on vs off, then sun on vs off.
             e.SetFogLights(NULL,0);
             upload();e.RenderWeather();
-            int plain=lum(0.25f,0.5f);
+            // Review frames for visual inspection: plain, beam-lit, sun-lit.
+            auto snap=[&](const char *tag){if(argc>1){std::vector<unsigned char> pix(ww*wh*4);
+                gl.BindFramebuffer(GL_FRAMEBUFFER,e.backFramebuffer);gl.ReadPixels(0,0,ww,wh,GL_RGBA,GL_UNSIGNED_BYTE,pix.data());
+                FILE *f=fopen((std::string(argv[1])+"-weather-"+tag+".ppm").c_str(),"wb");
+                if(f){fprintf(f,"P6\n%d %d\n255\n",ww,wh);
+                    for(int y=wh-1;y>=0;--y)for(int x=0;x<ww;++x)fwrite(pix.data()+((size_t)y*ww+x)*4,1,3,f);fclose(f);}}};
+            int plain=lum(0.25f,0.5f);snap("plain");
             e.SetFogLights(&one,1);
             upload();e.RenderWeather();
-            require(lum(0.25f,0.5f)>plain+20,"beam brightens its flake");
+            require(lum(0.25f,0.5f)>plain+20,"beam brightens its flake");snap("beam");
             e.SetFogLights(NULL,0);e.SetSunScreenPosition(0.25f,0.5f,true);
             upload();e.RenderWeather();
-            require(lum(0.25f,0.5f)>plain+20,"sun forward-scatter brightens the flake toward it");
+            require(lum(0.25f,0.5f)>plain+20,"sun forward-scatter brightens the flake toward it");snap("sun");
             // Disabled: light on vs light off must read the same.
             snowGlintSetting=0;e.SetSunScreenPosition(0.5f,0.2f,false);
             upload();e.RenderWeather();
