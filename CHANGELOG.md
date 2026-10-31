@@ -19,6 +19,39 @@ All notable changes to OpenCMR2 are documented here.
   (was 0-200). Native tuning screenshots showed distance, height, spring
   and drop pinned at the old rails. Menu rows and runtime clamps move
   together (tests/drone_range_wiring.py).
+ed guard:
+  chip budget caps live chips at 60% of the pool, the plume keeps a 64-slot
+  reserve, and air/speed motes stay evict-first, so the original effects
+  keep their space at the defaults. Emission stays on the fixed 25 Hz
+  effects step (frame-rate independent, pinned by executable simulation in
+  tests/wheel_particle_emission.cpp). Rendered-pixel evidence in
+  tests/dust_plume_render.cpp: denser cloud covers more screen and lifts it
+  further, dirt tint stays warm, snow stays bright; sampled draw cost is
+  printed by the harness (sandbox software GL, relative only - native perf
+  unverified). Remaining emitters (air/speed motes, snow glints, weather
+  rain/snow, exhaust, wheel splash/spray, skid smoke) keep their original
+  amounts. What's New revision 5 (stacks after #222's revision 4).
+
+### Effects
+
+- **Overdrivable tyre debris and dust/snow plume amounts**: the tyre debris
+  dial (`--tire-debris`, tuning panel, `[video] tire_debris`) now runs
+  0..2000% with a new 800% default (8 chips per wheel per effects step -
+  twice the old 400% ceiling), and a new `video.dust_plume_amount` dial
+  (tuning panel, `[video] dust_plume_amount`, 0..300%, default 200%)
+  scales the rooster-tail emission rate and live cloud cap (96 -> 192 at
+  200%). Particle pool 400 -> 1200 (~+86 KiB Win32) with a composed guard:
+  chip budget caps live chips at 60% of the pool, the plume keeps a 64-slot
+  reserve, and air/speed motes stay evict-first, so the original effects
+  keep their space at the defaults. Emission stays on the fixed 25 Hz
+  effects step (frame-rate independent, pinned by executable simulation in
+  tests/wheel_particle_emission.cpp). Rendered-pixel evidence in
+  tests/dust_plume_render.cpp: denser cloud covers more screen and lifts it
+  further, dirt tint stays warm, snow stays bright; sampled draw cost is
+  printed by the harness (sandbox software GL, relative only - native perf
+  unverified). Remaining emitters (air/speed motes, snow glints, weather
+  rain/snow, exhaust, wheel splash/spray, skid smoke) keep their original
+  amounts. What's New revision 5 (stacks after #222's revision 4).
 
 ### Interface
 

@@ -1584,6 +1584,16 @@ void CarEffect_UpdateWheelSurfaceParticles(int car, bool emitParticles)
     if (car < 0 || car >= 8)
         return;
     pCar = Car_Get(car);
+    // OpenCMR2: live wheel chips (types 0x10..0x17) for the flood guard below.
+    extern Particle *g_particles;
+    extern ParticleType *g_particleTypes;
+    extern int g_particleCount;
+    int liveChips = 0;
+    if (g_particles && g_particleTypes)
+        for (int pi = 0; pi < g_particleCount; pi++)
+            if (g_particles[pi].active && g_particles[pi].pType >= &g_particleTypes[0x10] &&
+                g_particles[pi].pType <= &g_particleTypes[0x17])
+                liveChips++;
     // One phase per effects update, not wall-clock: catch-up simulation calls
     // must not all land on the same GetFrameTime()/20 phase.
     static unsigned cloudPhase[8] = {};
@@ -1744,7 +1754,7 @@ void CarEffect_UpdateWheelSurfaceParticles(int car, bool emitParticles)
         // hid front-only spin, leaked the count across wheels and rand()%4/4
         // could never emit a particle in the lower speed band.
         count = emitParticles ? WheelParticle_BoostedCount(Car_GetWheelSpeed(pCar, (BYTE)wheel, 0),
-            pCar->cornerOnGround[wheel] != 0, water != 0 || emit != 0, (unsigned)rand(), Sys_GetOption("video.tire_debris", 0)) : 0;
+            pCar->cornerOnGround[wheel] != 0, water != 0 || emit != 0, (unsigned)rand(), Sys_GetOption("video.tire_debris", 800)) : 0;
         // Physical wheel/surface exposure, independent of billboard budget,
         // camera visibility and the airborne-particle toggle. Fixed effects
         // stepping supplies time, rather than rendered-frame dirt growth.
@@ -1760,9 +1770,16 @@ void CarEffect_UpdateWheelSurfaceParticles(int car, bool emitParticles)
         // Default-on dry dust, separate from chips/water/snow. Explicit0 opts out. Existing per-wheel
         // contact/speed gating above supplies emission opportunity. Use a
         // stable per-wheel cadence, no extra global RNG/physics state changes.
+        // OpenCMR2: video.dust_plume_amount (0..300, default 200 - deliberately
+        // heavy per user request) scales the puff cadence; the live cloud cap
+        // scales inside DustPlume_Emit. 0 keeps the original every-3rd cadence.
+        int plumeAmount = Sys_GetOption("video.dust_plume_amount", 200);
+        if (plumeAmount < 0) plumeAmount = 0;
+        if (plumeAmount > 300) plumeAmount = 300;
+        unsigned plumePeriod = plumeAmount >= 200 ? 1 : plumeAmount >= 100 ? 2 : 3;
         if (count > 0 && DustPlume_Surface(dirt, gravel, water, snow, ice) &&
             Sys_GetOption("video.dust_plume", 1) != 0 &&
-            ((phase + (unsigned)wheel + (unsigned)car) % 3 == 0)) {
+            ((phase + (unsigned)wheel + (unsigned)car) % plumePeriod == 0)) {
             FixVector cloudWorld = g_trailPos[car][wheel];
             FixVector cloudVelocity = {-(pCar->cornerVelocity[wheel].x/4), 0x800,
                                        -(pCar->cornerVelocity[wheel].z/4)};
@@ -1782,6 +1799,11 @@ void CarEffect_UpdateWheelSurfaceParticles(int car, bool emitParticles)
         const bool dryWheelDust = DustPlume_Surface(dirt, gravel, water, snow, ice) &&
             Sys_GetOption("video.dust_plume", 1) != 0;
         for (k = count; k > 0; k--) {
+            // OpenCMR2: chip flood guard - never let the dirt wall starve the
+            // plume reserve, weather, skid smoke or other original effects.
+            if (!WheelParticle_ChipBudgetOK(liveChips, g_particleCount))
+                break;
+            liveChips++;
             position.x = g_trailPos[car][wheel].x - pCar->position.x;
             position.y = g_trailPos[car][wheel].y - pCar->position.y;
             position.z = g_trailPos[car][wheel].z - pCar->position.z;

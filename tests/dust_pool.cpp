@@ -14,12 +14,14 @@ int main(){
  int fail=0;for(int i=0;i<140;++i)DustPlume_Emit(&world,&v,c,0,1);
  if(std::rand()!=expected)++fail;
  int active=0;for(auto &p:pool)if(p.active){++active;if(p.attachmentMatrix || p.sourceVector.x!=world.x || p.field0x55!=1)++fail;}
- if(active!=96)++fail;
+ if(active!=140)++fail;   // default amount 200: live cap 192, 140 emits all fit
+ for(int i=0;i<120;++i)DustPlume_Emit(&world,&v,c,0,1);
+ active=0;for(auto &p:pool)active+=p.active!=0;if(active!=192)++fail;   // cap pins at LiveCap(200)
  for(auto &p:pool)p.active=0;
  for(int i=0;i<336;++i){pool[i].active=1;pool[i].pType=&types[0];}
  DustPlume_Emit(&world,&v,c,0,1);
  active=0;for(auto &p:pool)active+=p.active!=0;if(active!=336)++fail;
  g_particleCount=0;DustPlume_Emit(&world,&v,c,0,1);
- puts(fail?"FAIL cloud pool":"cloud pool:96cap,64reservedslots,world-space and disabledpool pass");
+ puts(fail?"FAIL cloud pool":"cloud pool:192cap at default 200,64reservedslots,world-space and disabledpool pass");
  g_particles=nullptr;g_particleTypes=nullptr;g_particleCount=g_particleTypeCount=0;return fail?1:0;
 }

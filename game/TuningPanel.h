@@ -25,7 +25,8 @@ inline const TuningRow *Tuning_Rows(int &count)
         {"Radial speed lines (0/1)", "video.speed_lines", 0, 1, 1, 1},
         {"Speed streak %", "video.speed_streak", 0, 100, 10, 0},
         {"FOV preview, video.fov number (0 off)", "video.fov_preview", 0, 150, 5, 0},   // absolute video.fov, debug only, a legacy scale number not an angle, below 20 acts as 20; Speed FOV % is separate
-        {"Tyre debris (0 off; chips per wheel per step x100, loose/wet ground)", "video.tire_debris", 0, 400, 25, 0},
+        {"Tyre debris (0 off; chips per wheel per step x100, loose/wet ground)", "video.tire_debris", 0, 2000, 25, 800},
+        {"Dust/snow plume amount % (rate and cloud cap)", "video.dust_plume_amount", 0, 300, 25, 200},
         {"Cockpit speed FOV % of Speed FOV (cockpit only)", "video.speed_fov_cockpit", 0, 100, 5, 25},
         {"Active camera forward(+)/back(-) at full speed, 0.05 units", "video.camera_move_active", -200, 200, 5, 0},   // special row: edits video.camera_move_type<N> of the camera in use; RallyData.cpp resolves it
         {"Sun glare %", "video.sun_glare", 0, 100, 5, 0},
