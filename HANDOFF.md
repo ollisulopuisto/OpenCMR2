@@ -120,6 +120,30 @@ failure is genuinely resolved: full suite 170/170, ZERO failures (first
 green). LOCAL ONLY per main 1:26; WhatsNew rev 11 collides with
 #235/#239/motes rev 11, renumber at survivor rebase.
 
+## Tree wind distance falloff (1 November 2026)
+
+Claim: feat/tree-wind-radius, based main 00e2a5f, todo rainy replay 14-22 fps
+(user's rainy chase replay: scenery CPU 17.7 ms, wind math 11.17 ms,
+2,018,592 rustled verts/frame, executor encode+submit 26.2 ms, swapchain wait
+17.1 ms). Cause boundary: the replacement-tree path has NO distance handling -
+every replaced tree draws at full detail and pays per-vertex wind math every
+frame; dense Finland forest pushes 672,864 tree tris/frame. The fix adds
+video.tree_wind_radius (world units, default 150, 0 = unlimited): wind
+amplitude (WindFrame.ampScale, scales BOTH sway offset and gust rustle) fades
+linearly from full at 60% of the radius to zero at the radius, where the tree
+takes the existing STATIC draw path and skips WindPart entirely - no feature
+removal, near trees move exactly as before, no sway pop (fade band).
+SceneryPack_BeginBatch now takes the camera eye from the Game.cpp caller
+(g_viewNodes stays out of SceneryPack so tests link it standalone).
+tree_rustle/tree_wind/tree_wind_radius remain config-only options, no menu
+row (advanced page layout-locked at 22 rows, amounts page capped at 20, both
+full). Counters unchanged; the rustled-verts OSD line now shows the drop.
+tests/tree_wind_radius green; suite 170/171 with only the pre-existing
+replay_controls_wiring failure. One frame does not prove the whole slowdown;
+executor encode (2.3M verts) and GPU swapchain wait point at total tree tri
+volume as the next lever (distance LOD to original cards), deliberately NOT
+bundled here.
+
 ## What's New changelog (31 October 2026)
 
 PRs #211/#212/#213 (fog lights, snow glints, weather/mote light response +
