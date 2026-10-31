@@ -10,6 +10,7 @@
 #include "SceneryPack.h"
 #include "CrowdSelection.h"
 #include "ScenerySHA256.h"
+#include "SceneryMip.h"
 #include <filesystem>
 #include <chrono>
 #include "SceneryPackFormat.h"
@@ -43,10 +44,21 @@ extern "C" void Sys_Log(const char*fmt,...){char b[2048];va_list ap;va_start(ap,
 extern "C" void Sys_GetDesktopSize(int *w,int *h){*w=640;*h=480;}
 int Platform_GetSettingInt(const char*,int x){return x;}
 const char *Platform_GetSetting(const char*,const char *x){return x;}
+static unsigned treeSamples=0,atlasSamples=0;
+static bool samplingValid=true;
 struct Capture: GfxExecutor {
  bool SetVideoMode(int,int,bool)override{return true;} void SetFullscreen(bool)override{}
  void Execute(GfxFrame &frame,std::vector<GfxTexture*>&,GfxReadback&,bool,bool,bool)override{
- for(auto &c:frame.commands)if(c.type==GFX_CMD_DRAW){draws++;auto &s=frame.states[c.state];world=s.world;bound=s.stages[0].texture;const GfxVertex *v=(const GfxVertex*)(frame.vertices.data()+c.firstVertexByte);captured.assign(v,v+c.vertexCount);}}
+ for(auto &c:frame.commands)if(c.type==GFX_CMD_DRAW){draws++;auto &s=frame.states[c.state];world=s.world;bound=s.stages[0].texture;
+ if(bound&&bound->mipLevels>1){++treeSamples;
+  samplingValid &= s.stages[0].minFilter==GFX_FILTER_LINEAR&&s.stages[0].magFilter==GFX_FILTER_LINEAR&&s.stages[0].mipFilter==GFX_MIPFILTER_LINEAR;
+  unsigned opaque=0;for(size_t i=3;i<bound->levels[0][0].size();i+=4)opaque+=bound->levels[0][0][i]>=128;
+  double coverage=double(opaque)/(bound->width*bound->height);unsigned w=bound->width,h=bound->height;
+  auto expected=bound->levels[0][0];for(int level=1;level<bound->mipLevels;level++){
+   expected=SceneryMip::Down(expected,w,h,coverage);samplingValid &= expected==bound->levels[0][level];w=std::max(1u,w/2);h=std::max(1u,h/2);
+  }
+ }else{++atlasSamples;samplingValid &= s.stages[0].minFilter==GFX_FILTER_POINT&&s.stages[0].magFilter==GFX_FILTER_POINT&&s.stages[0].mipFilter==GFX_MIPFILTER_NONE;}
+ const GfxVertex *v=(const GfxVertex*)(frame.vertices.data()+c.firstVertexByte);captured.assign(v,v+c.vertexCount);}}
  void DestroyTexture(GfxTexture*)override{} void ReadTexture(GfxTexture*)override{}
 };
 GfxExecutor *Gfx_CreateGpuExecutor(){return new Capture;}
@@ -106,6 +118,7 @@ if(argc<2)return 0;base=argv[1];legacy=argc>2&&!strcmp(argv[2],"legacy");separat
    strcpy(source.name,"spc_mn9a.dds");
    SceneryPack_RegisterSource(&source,"xyz",3);CHECK(!SceneryPack_Draw(&object,(float*)&billboard));
    CHECK(logs.find("spectator sidecar active")!=std::string::npos);
+   CHECK(samplingValid&&treeSamples>0&&atlasSamples>0);
    SceneryPack_Clear();SceneryPack_RegisterArchive(&archive,"DATA/FRAHIT.BFL");source.pArchive=&archive;
    CHECK(!SceneryPack_Draw(&object,(float*)&billboard)); // new pack must not bypass missing identity
    Gfx_Shutdown();std::filesystem::remove_all(temporary);puts("exact-byte scenery routing: stage archives, loose textures, animation frames, modified bytes and reset pass");return 0;
