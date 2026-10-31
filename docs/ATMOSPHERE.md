@@ -44,7 +44,10 @@ command: `--test-preset atmosphere` (fog 100/100 + motes 300 + god rays at
 God rays are the occlusion-masked light shafts: geometry between the camera
 and the sun blocks the shaft, so beams read as cutting through the fog. It is deliberately
 separate from `--test-preset overdo`, so the default `--all-mods` launch
-keeps its established look. To try it on top of the usual run:
+keeps its established look. rebuild.sh passes the atmosphere dials straight
+through to the game: --fog-amount, --fog-glow, --fog-clear, --fog-cull and
+--air-motes-amount (space or = form; they combine with --all-mods). To try it
+on top of the usual run:
 `./rebuild.sh --update --all-mods --run --test-preset atmosphere` (passed
 to the game as `--test-preset overdo,atmosphere`: the usual overdo look
 plus the exaggerated atmosphere; presets combine comma-separated).
