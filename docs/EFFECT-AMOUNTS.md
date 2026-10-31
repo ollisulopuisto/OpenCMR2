@@ -25,7 +25,8 @@ profile migration. No setting is written merely by opening the page.
   World-volume availability/fallback still depends on the renderer.
 - Cube reflection size is Stage/64/128/256. It applies when cube textures are
   created on stage reload. This is quality, not reflection strength.
-- Atmosphere... opens a separate submenu (the main list is full: Menu::items is
+- Atmosphere... lives directly on the Graphics options page (moved out of
+  Effect amounts); it is a separate submenu (Menu::items is
   layout-locked). Fog, fog amount/glow and air motes amount live there and in
   the F10 panel; all default off. Fog amount100 is deliberately heavy; see
   docs/ATMOSPHERE.md.

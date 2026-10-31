@@ -1,6 +1,7 @@
 #include "port/sys.h"
 #include "FrontendMenus.h"
 Menu* FrontendMenu_GetEffectAmounts(Menu*);
+Menu* FrontendMenu_GetAtmosphereAmounts(Menu*);
 #include "GameInfo.h"
 #include "Graphics.h"
 #include "Frontend.h"
@@ -2586,6 +2587,9 @@ void FrontendMenu_BuildGraphicsOptions(void)
     Menu_AddItemType2(&g_menu0x008210f8, 0, 0x1ac, &g_menu0x0081cd78, 0, 6);
     // PORT: the screen options (HUD and menu sizes, vertical sync, fullscreen).
     Menu_AddItemType2(&g_menu0x008210f8, 0, -1, FrontendMenu_GetScreenOptions(), 0, 0xf);
+    // OpenCMR2: fog, air motes and snow glints - one level up from Effect
+    // amounts so the fog layer is directly reachable (Options > Graphics).
+    Menu_AddItemType2(&g_menu0x008210f8, (char*)"Atmosphere...", -1, FrontendMenu_GetAtmosphereAmounts(&g_menu0x008210f8), 0, 0x10);
     Menu_AddItemType1(&g_menu0x008210f8, 0, 0x67, FrontendMenu_ApplyGraphicsOptions, 0xe);
     Menu_SetCallbacks(&g_menu0x008210f8, FrontendMenu_EnterGraphicsOptions, NULL, (MenuCallback)FrontendMenu_DrawGraphicsOptions, (MenuCallback)FrontendMenu_LeaveGraphicsOptions);
     Menu_ValidateCursor(&g_menu0x008210f8, 0);

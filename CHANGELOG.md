@@ -4,6 +4,14 @@ All notable changes to OpenCMR2 are documented here.
 
 ## [Unreleased]
 
+### Interface
+
+- **Atmosphere menu directly under Graphics options**: the fog/air
+  motes/snow glint rows move up from Advanced graphics > Effect amounts, so
+  the fog layer is one click from Graphics options. Adds a "Fog through
+  windscreen glass" row (video.cockpit_glass_fog; effective with the fog
+  light beams change). What's New revision 3 notes the move.
+
 ### Atmosphere
 
 - **Fog responds to car lights** (`video.fog_lights`, 0-200%, default 100):
