@@ -5,7 +5,7 @@
 // FrontendScreens.cpp (PORT). Bump kWhatsNewRevision and add lines when
 // user-visible changes ship: the screen then shows once on the main menu
 // (tracked in ui.whatsnew_seen) and stays reachable from the Screen page.
-inline constexpr int kWhatsNewRevision = 1;
+inline constexpr int kWhatsNewRevision = 2;
 struct WhatsNewLine { int revision; const char *text; };
 inline const WhatsNewLine *WhatsNew_Lines(int &count)
 {
@@ -19,6 +19,11 @@ inline const WhatsNewLine *WhatsNew_Lines(int &count)
         {1, "rebuild.sh --test-preset atmosphere for the full look"},
         {1, "Smaller, livelier air motes from native feedback"},
         {1, "Fix: tuning panel row overflow crash"},
+        {2, "Fog responds to headlights and rear lights"},
+        {2, "Snow glints: banks sparkle, flakes twinkle in sun and beams"},
+        {2, "Falling snow and air motes respond to light"},
+        {2, "Snow ground lighting prototype (off: --snow-material to try)"},
+        {2, "Drone tuning: spring down to 5%, height drop up to 200%"},
     };
     count = (int)(sizeof(lines) / sizeof(*lines));
     return lines;

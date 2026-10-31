@@ -119,8 +119,9 @@ int main(int argc, char **argv)
         if (std::strcmp(l.text, "OK") == 0) okRow++;
     }
     int content; WhatsNew_Lines(content);
+    int freshUnseen = WhatsNew_UnseenCount(kWhatsNewRevision - 1);   // fresh install: current revision only
     CHECK(g_drawn.size() >= 2 && g_drawn[0].font == 2);   // title first
-    CHECK(lines == content);                              // every unseen line drawn once
+    CHECK(lines == freshUnseen);                          // every unseen line drawn once
     CHECK(okRow == 1);
     CHECK(ordered && maxY + 10 <= H);                     // top to bottom, nothing off-frame
     CHECK(g_drawn.back().y >= (int)(H * 420) / 480);      // OK anchored at the bottom
