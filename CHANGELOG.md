@@ -6,6 +6,15 @@ All notable changes to OpenCMR2 are documented here.
 
 ### Fixes
 
+- **Launch crash on the main menu** (native SIGSEGV, `EXC_BAD_ACCESS` at
+  0x8 in `FrontendAnimation_EvaluatePathSpline`, stack from the
+  2026-11-01-000237 .ips): the boot render state can draw the
+  freshly-entered main menu before its first update ran, and the letter/dot
+  animation dereferenced the still-NULL menu path. The menu enter now
+  guarantees a path (shared `FrontendMenuPath_Ensure` inline, exercised by
+  `tests/frontend_menu_path.cpp`); the update's own branches stay the sole
+  writers afterwards, so morphs and the cheat path are unchanged.
+
 - **Native macOS build**: `frontend_whatsnew_runtime_test` used the GNU-only
   `-Wl,--allow-multiple-definition`, which Apple ld rejects, breaking the
   default test build. The interposition isolation test is now behind the

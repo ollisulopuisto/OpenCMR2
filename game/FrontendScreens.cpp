@@ -18,6 +18,7 @@
 #include "FrontendMenus.h"
 #include "InstallInfo.h"
 #include "Sprite.h"
+#include "FrontendMenuPath.h"
 #include "RegKey.h"
 #include "FixedPoint.h"
 #include "GraphicsOptions.h"
@@ -5443,6 +5444,9 @@ void FrontendMenu_EnterMain(Menu *pMenu, int param)
     g_mainMenuInputTime = Sys_GetTicks();
     AttractCapture::OnMainMenu();
     FrontendAnimation_ResetMainPath();
+    // PORT: guarantee the draw a path before the first update runs
+    // (boot render ordering; native NULL deref in EvaluatePathSpline).
+    FrontendMenuPath_Ensure(&g_pMenuPath, &g_menuPathInit, g_menuPaths[g_menuPathMode][0]);
     p = FrontendScroller_GetMainScroller();
     p->offset = 0;
     p->startOffset = 0;
