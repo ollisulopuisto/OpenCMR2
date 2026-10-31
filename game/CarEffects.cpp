@@ -1,5 +1,6 @@
 #include "port/sys.h"
 #include "DustPlume.h"
+#include "AirMote.h"
 #include <cmath>
 #include "CarBodyDirt.h"
 #include "WheelParticleEmission.h"
@@ -1841,4 +1842,34 @@ void SpeedMotes_Step(int step16_16)
     }
     if (carry > 4.f) carry = 4.f;
     SpeedMote_LogStats(ratio, step16_16);
+}
+
+// Optional floating dust motes (video.air_motes): slow pale specks drifting in the air around the
+// viewed car, visible at any speed (see AirMote.h). Spawn only; own LCG, never rand(), and the
+// particles never feed back into the car, the camera or physics.
+void AirMotes_Step(int step16_16)
+{
+    if (step16_16 <= 0 || Sys_GetOption("video.air_motes", 0) == 0) return;
+    Car *car = Car_Get(0);
+    if (!car) return;
+    int amount = Sys_GetOption("video.air_motes_amount", 100);
+    static float carry = 0.f;
+    static unsigned seed = 0x53c9e1a7u;
+    auto unit = [&]() { seed = seed * 1664525u + 1013904223u; return (seed >> 8) / 16777216.f; };
+    carry += AirMote_SpawnRate(amount) * (step16_16 / 65536.f);
+    int guard = 4;
+    while (carry >= 1.f && guard-- > 0) {
+        carry -= 1.f;
+        float dx, dz, h;
+        AirMote_SpawnOffset(unit(), unit(), unit(), &dx, &dz, &h);
+        float x = car->position.x / 65536.f + dx;
+        float z = car->position.z / 65536.f + dz;
+        FixVector p = { (int)std::lround(x * 65536.f), car->position.y, (int)std::lround(z * 65536.f) };
+        int ground;
+        if (Track_CameraGroundHeight(&p, &ground)) p.y = ground;   // falls back to the car height
+        p.y += (int)(h * 65536.f);
+        AirMote_Spawn(&p);
+    }
+    if (carry > 4.f) carry = 4.f;
+    AirMote_LogStats(step16_16);
 }

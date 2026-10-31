@@ -596,6 +596,12 @@ extern "C" void Gfx_SetGodRays(BOOL enabled, int intensity)
         s_executor->SetGodRays(enabled != 0, intensity);
 }
 
+extern "C" void Gfx_SetPostFog(BOOL enabled, int amount, int glow)
+{
+    if (s_executor != NULL)
+        s_executor->SetPostFog(enabled != 0, amount, glow);
+}
+
 extern "C" void Gfx_SetColorGrading(int temperature, int tint, int saturation, int contrast)
 {
     if (s_executor != NULL)

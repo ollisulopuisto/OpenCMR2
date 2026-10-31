@@ -61,6 +61,48 @@ int main(int argc, char **argv)
         e.SetBloom(false,0);e.SetDepthOfField(true,20,10,100);
         gl.BindFramebuffer(GL_FRAMEBUFFER,e.backFramebuffer);gl.DepthMask(GL_TRUE);gl.ClearDepth(.9);gl.Clear(GL_DEPTH_BUFFER_BIT);e.ForgetEffectState();
         upload();auto dof=read(e.ApplyEffects());require(dof!=scene,"DoF samples actual depth");
+        // Atmosphere fog through the production fog.frag. The GL executor feeds the raw-depth
+        // ramp (no near/far recovery, see fog_math.h): depth 0 is near, 0.990..1.0 the fog band.
+        e.SetDepthOfField(false,20,10,100);e.SetSunScreenPosition(.5f,.2f,false);
+        e.SetPostFog(false,100,60);upload();require(read(e.ApplyEffects())==scene,"fog off exact identity");
+        e.SetPostFog(true,100,60);
+        gl.BindFramebuffer(GL_FRAMEBUFFER,e.backFramebuffer);gl.DepthMask(GL_TRUE);gl.ClearDepth(0);gl.Clear(GL_DEPTH_BUFFER_BIT);e.ForgetEffectState();
+        upload();require(read(e.ApplyEffects())==scene,"near geometry (cockpit/UI depth) unfogged identity");
+        gl.BindFramebuffer(GL_FRAMEBUFFER,e.backFramebuffer);gl.DepthMask(GL_TRUE);gl.ClearDepth(.9995);gl.Clear(GL_DEPTH_BUFFER_BIT);e.ForgetEffectState();
+        upload();e.encodedEffects=0;auto fogged=read(e.ApplyEffects());
+        require(fogged!=scene,"distant geometry fogs");
+        require(e.encodedEffects&512,"fog encoded status bit");
+        {   // height gradient: bottom row fogs harder than the top row at equal depth
+            int tr=((1*w+w/2)*4), br=(((h-2)*w+w/2)*4);
+            int dTop=std::abs(int(fogged[tr])-int(scene[tr])), dBot=std::abs(int(fogged[br])-int(scene[br]));
+            require(dBot>dTop,"ground mist gradient fogs the bottom more");
+        }
+        for(size_t i=3;i<scene.size();i+=4) require(fogged[i]==scene[i],"fog preserves alpha");
+        gl.BindFramebuffer(GL_FRAMEBUFFER,e.backFramebuffer);gl.DepthMask(GL_TRUE);gl.ClearDepth(1);gl.Clear(GL_DEPTH_BUFFER_BIT);e.ForgetEffectState();
+        upload();auto sky=read(e.ApplyEffects());
+        {   // sky cap at the bottom row (height scale clamps factor to 1, cap holds it at 0.85):
+            // keeps 15 percent of the original pixel (here: the blue checker channel)
+            size_t i=(((h-2)*w)+w/2)*4+2; int orig=scene[i];
+            int expected=int(orig*0.15+184*0.85+0.5); // fog blue 0.72*255=184 at the 0.85 cap
+            require(std::abs(sky[i]-expected)<=3,"sky cap keeps 15 percent of the sky pixel");
+            size_t top=((h/4)*w+w/2)*4+2; // height gradient: top row fogs well under the cap
+            require(std::abs(sky[top]-int(scene[top]*0.4+184*0.6))<=8,"top of frame fogs less than the cap");
+        }
+        {   // sun glow: with the sun visible at top centre, pixels near it warm and brighten
+            e.SetSunScreenPosition(.5f,.2f,true);e.SetPostFog(true,100,100);
+            gl.BindFramebuffer(GL_FRAMEBUFFER,e.backFramebuffer);gl.DepthMask(GL_TRUE);gl.ClearDepth(.9995);gl.Clear(GL_DEPTH_BUFFER_BIT);e.ForgetEffectState();
+            upload();auto glow=read(e.ApplyEffects());
+            size_t nearSun=((int)(h*.2f)*w+w/2)*4, farSun=((int)(h*.2f)*w+4)*4;
+            require(int(glow[nearSun])+int(glow[nearSun+2])>int(glow[farSun])+int(glow[farSun+2]),"sun-ward glow brightens toward the sun");
+            e.SetSunScreenPosition(.5f,.2f,false);
+        }
+        {   // amount scaling: 200 fogs harder than 50 at equal depth
+            e.SetPostFog(true,50,0);upload();auto f50=read(e.ApplyEffects());
+            e.SetPostFog(true,200,0);upload();auto f200=read(e.ApplyEffects());
+            size_t i=((h/4)*w+w/2)*4; // top row: height scale keeps the factor below the clamp
+            require(std::abs(int(f200[i])-int(scene[i]))>std::abs(int(f50[i])-int(scene[i])),"fog amount scales the effect");
+        }
+        e.SetPostFog(false,0,0);upload();require(read(e.ApplyEffects())==scene,"fog toggle off restores identity");
         e.SetDepthOfField(false,20,10,100);e.SetGodRays(true,255);e.SetSunScreenPosition(.8,.2,false);upload();require(read(e.ApplyEffects())==scene,"invisible sun bypass");
         e.SetSunScreenPosition(.8,.2,true);gl.BindFramebuffer(GL_FRAMEBUFFER,e.backFramebuffer);gl.DepthMask(GL_TRUE);gl.ClearDepth(1);gl.Clear(GL_DEPTH_BUFFER_BIT);e.ForgetEffectState();
         upload();auto rays=read(e.ApplyEffects());require(rays!=scene,"visible sun rays execute");
@@ -147,6 +189,40 @@ int main(int argc, char **argv)
             GLuint output=e.ApplyEffects();std::vector<unsigned char> result(road.size());gl.BindFramebuffer(GL_FRAMEBUFFER,output);gl.ReadPixels(0,0,fw,fh,GL_RGBA,GL_UNSIGNED_BYTE,result.data());e.ForgetEffectState();
             FILE*f=fopen((std::string(argv[1])+"-road.ppm").c_str(),"wb");fprintf(f,"P6\n%d %d\n255\n",fw,fh*2);for(auto*arr:{&road,&result})for(int i=0;i<fw*fh;i++)fwrite(arr->data()+i*4,1,3,f);fclose(f);
             glareSetting=0;e.SetVideoMode(w,h,false);
+        }
+        if(argc>1){ // Fog review frame: road depth ramps through the fog band, sun visible. off / 100 / 200 stacked.
+            const int fw=640,fh=360;e.SetVideoMode(fw,fh,false);
+            std::vector<unsigned char> road(fw*fh*4);std::vector<float> depths(fw*fh,1.f);
+            for(int y=0;y<fh;y++)for(int x=0;x<fw;x++){
+                size_t i=(y*fw+x)*4;int r=100,g=150,b=190;
+                if(y>110){r=60;g=95;b=46;float t=(y-110.f)/(fh-110.f);depths[y*fw+x]=0.9998f-t*t*0.0085f;
+                    float width=(y-105)*1.5f;
+                    if(std::abs(x-fw/2)<width){r=g=b=72+(x+y)%7;if(std::abs(x-fw/2)<3&&y%30<16)r=g=b=220;}}
+                // Blue car and glass stay protected foreground pixels (near depth: no fog).
+                if(y>245&&y<345&&x>265&&x<375){r=28;g=58;b=148;depths[y*fw+x]=0.f;if(y<280){r=70;g=110;b=140;}}
+                float dx=x-fw*.51f,dy=y-fh*.24f;if(dx*dx+dy*dy<7*7)r=g=b=245;
+                road[i]=r;road[i+1]=g;road[i+2]=b;road[i+3]=255;
+            }
+            std::vector<std::vector<unsigned char>> frames;frames.push_back(road);
+            for(int amount:{100,200}){
+                gl.ActiveTexture(GL_TEXTURE0);gl.BindTexture(GL_TEXTURE_2D,e.backColor);gl.TexSubImage2D(GL_TEXTURE_2D,0,0,0,fw,fh,GL_RGBA,GL_UNSIGNED_BYTE,road.data());
+                gl.BindTexture(GL_TEXTURE_2D,e.backDepth);gl.TexSubImage2D(GL_TEXTURE_2D,0,0,0,fw,fh,GL_DEPTH_COMPONENT,GL_FLOAT,depths.data());e.ForgetEffectState();
+                e.SetSunScreenPosition(.51f,.24f,true);e.SetPostFog(true,amount,100);
+                GLuint output=e.ApplyEffects();std::vector<unsigned char> result(road.size());
+                gl.BindFramebuffer(GL_FRAMEBUFFER,output);gl.ReadPixels(0,0,fw,fh,GL_RGBA,GL_UNSIGNED_BYTE,result.data());e.ForgetEffectState();
+                frames.push_back(result);
+            }
+            e.SetPostFog(false,0,0);
+            // foreground car pixels are near depth: identical in all frames
+            for(int f=1;f<3;f++)for(int y=250;y<340;y+=17)for(int x=270;x<370;x+=13){size_t i=(y*fw+x)*4;
+                if(frames[f][i]!=road[i]||frames[f][i+1]!=road[i+1]||frames[f][i+2]!=road[i+2]){fprintf(stderr,"FAIL: fog touches foreground car pixels\n");exit(1);}}
+            // horizon fogs more than the bottom of the road at 100
+            {size_t hi=((112)*fw+fw/2)*4, li=((fh-20)*fw+fw/2)*4;
+             int dH=std::abs(int(frames[1][hi])-int(road[hi])),dL=std::abs(int(frames[1][li])-int(road[li]));
+             if(!(dH>dL)){fprintf(stderr,"FAIL: fog review frame not depth graded\n");exit(1);}}
+            FILE*f=fopen((std::string(argv[1])+"-fog-road.ppm").c_str(),"wb");fprintf(f,"P6\n%d %d\n255\n",fw,fh*3);
+            for(auto&fr:frames)for(int i=0;i<fw*fh;i++)fwrite(fr.data()+i*4,1,3,f);
+            fclose(f);e.SetVideoMode(w,h,false);
         }
         e.SetParticles(1,255);e.RenderWeather();SDL_Delay(30);e.RenderWeather();require(!e.weather.empty(),"weather emits");
         e.SetParticles(0,0);e.RenderWeather();require(e.weather.empty(),"weather clears on disable");

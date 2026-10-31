@@ -821,6 +821,10 @@ bool Platform_Init(int argc, char **argv)
         Sys_GetOption("video.speed_motes",0),Sys_GetOption("video.speed_motes_amount",100),Sys_GetOption("video.speed_motes_stretch",0),Sys_GetOption("video.speed_motes_size",100),Sys_GetOption("video.speed_fov",0),
         Sys_GetOption("video.depth_of_field",0),Sys_GetOption("video.dof_blur",30),Sys_GetOption("video.tunnel_vision",130),Sys_GetOption("video.speed_streak",0),Sys_GetOption("video.motion_blur",1),Sys_GetOption("video.speed_fov_hold",0),Sys_GetOption("video.dof_focus_car",0),Sys_GetOption("video.dof_blur_max_px",4),
         s_enhancements.testPreset.empty()?"none":s_enhancements.testPreset.c_str());
+    Sys_Log("effective atmosphere settings: fog=%d fog_amount=%d fog_glow=%d air_motes=%d air_motes_amount=%d god_rays=%d god_rays_amount=%d",
+        Sys_GetOption("video.fog",0),Sys_GetOption("video.fog_amount",100),Sys_GetOption("video.fog_glow",60),
+        Sys_GetOption("video.air_motes",0),Sys_GetOption("video.air_motes_amount",100),
+        Sys_GetOption("video.god_rays",0),Sys_GetOption("video.god_rays_amount",39));
     if(!s_sceneryDir.empty()&&s_enhancements.NeedsPack()){
         fprintf(stderr,"Do not combine --scenery-dir with automatic --trees/--spectators preparation. Select one route.\n");Platform_Shutdown();return false;
     }
