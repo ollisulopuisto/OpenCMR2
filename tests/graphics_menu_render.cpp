@@ -23,12 +23,13 @@ extern "C" int __wrap__Z21FrontendDraw_MenuPathP4MenuiiciPPci(Menu*,int,int,char
 extern "C" void __wrap__Z21FrontendDraw_CarouselP4MenucPc(Menu*,char,char*){}
 static const int W=640,H=480;
 static unsigned char fb[H][W][3];
-struct DrawnLine{int font,x,y;char text[128];};
+struct DrawnLine{int font,x,y,white;char text[128];};
 static DrawnLine drawn[512];static int drawnCount;
 static int fail=0;
 extern "C" void __real__Z13Font_DrawTexthPcssPij(BYTE,char*,short,short,int*,unsigned);
+extern "C" unsigned char g_colourWhite0x00524968[4];
 extern "C" void __wrap__Z13Font_DrawTexthPcssPij(BYTE slot,char *text,short x,short y,int *c,unsigned f){
- if(drawnCount<512){auto&l=drawn[drawnCount++];l.font=slot;l.x=x;l.y=y;std::strncpy(l.text,text?text:"",127);}
+ if(drawnCount<512){auto&l=drawn[drawnCount++];l.font=slot;l.x=x;l.y=y;l.white=c==(int*)g_colourWhite0x00524968;std::strncpy(l.text,text?text:"",127);}
  int cw=6,ch=slot==2?13:10;
  for(int i=0;text&&text[i];i++)for(int gy=0;gy<ch-1;gy++)for(int gx=0;gx<cw-1;gx++){
   int px=x+i*cw+gx,py=y+gy;if(px>=0&&px<W&&py>=0&&py<H){fb[py][px][0]=fb[py][px][1]=fb[py][px][2]=220;}
@@ -68,7 +69,9 @@ int main(int argc,char**argv){
  if(!sawText("OK")){std::puts("FAIL: OK not drawn");++fail;}
  for(int i=0;i<drawnCount;i++)if(drawn[i].y<8||drawn[i].y>=H-8){std::puts("FAIL: text off-frame page1");++fail;break;}
  if(argc>1){FILE*f=std::fopen((std::string(argv[1])+"-graphics.ppm").c_str(),"wb");
-  if(f){std::fprintf(f,"P6\n%d %d\n255\n",W,H);std::fwrite(fb,1,sizeof fb,f);std::fclose(f);}}
+  if(f){std::fprintf(f,"P6\n%d %d\n255\n",W,H);std::fwrite(fb,1,sizeof fb,f);std::fclose(f);}
+  FILE*l=std::fopen((std::string(argv[1])+"-graphics.lines").c_str(),"w");
+  if(l){for(int i=0;i<drawnCount;i++)std::fprintf(l,"%d %d %d %d %s\n",drawn[i].font,drawn[i].x,drawn[i].y,drawn[i].white,drawn[i].text);std::fclose(l);}}
  // Page 2: the opened Atmosphere submenu, cursor on the fog toggle.
  Menu *atmo=FrontendMenu_GetAtmosphereAmounts(m);
  atmo->pfnCallback0(atmo,0);   // EnterAtmosphere: read saved options
@@ -81,7 +84,9 @@ int main(int argc,char**argv){
  for(int i=0;i<drawnCount;i++)if(drawn[i].y<8||drawn[i].y>=H-8){std::puts("FAIL: text off-frame page2");++fail;break;}
  int maxY=0;for(int i=0;i<drawnCount;i++)if(drawn[i].y>maxY)maxY=drawn[i].y;
  if(argc>1){FILE*f=std::fopen((std::string(argv[1])+"-atmosphere.ppm").c_str(),"wb");
-  if(f){std::fprintf(f,"P6\n%d %d\n255\n",W,H);std::fwrite(fb,1,sizeof fb,f);std::fclose(f);}}
+  if(f){std::fprintf(f,"P6\n%d %d\n255\n",W,H);std::fwrite(fb,1,sizeof fb,f);std::fclose(f);}
+  FILE*l=std::fopen((std::string(argv[1])+"-atmosphere.lines").c_str(),"w");
+  if(l){for(int i=0;i<drawnCount;i++)std::fprintf(l,"%d %d %d %d %s\n",drawn[i].font,drawn[i].x,drawn[i].y,drawn[i].white,drawn[i].text);std::fclose(l);}}
  std::printf("graphics menu render: %s, page1 %d lines, page2 %d lines, deepest y %d\n",fail?"FAIL":"pass",0,0,maxY);
  return fail?1:0;
 }
