@@ -1013,6 +1013,10 @@ int FrontendCredits_GetEntryCount(void);
 void *FrontendCredits_GetRoleTable(void);
 int FrontendCredits_GetStartTime(void);
 
+// PORT: "what's new" changelog (implementation with the screen options below).
+void WhatsNew_MaybeAutoShow(void);
+void FrontendMenu_BuildWhatsNew(void);
+
 // Draws the two columns of text of the scrolling credits screen; when every
 // line has scrolled past the top the screen finishes.
 // match 86%: below the 90% bar; kept as FUNCTION on purpose so reccmp measures it (see CONVENCIONES)
@@ -1748,6 +1752,7 @@ void FrontendMenu_BuildPagesAndSelectInitial(BYTE param1, BYTE back)
     FrontendMenu_BuildGameOptions();
     FrontendMenu_BuildGraphicsOptions();
     FrontendMenu_BuildScreenOptions();     // PORT
+    FrontendMenu_BuildWhatsNew();        // PORT
     FrontendMenu_BuildRenderDeviceOptions();
     FrontendMenu_BuildAdvancedGraphicsOptions();
     FrontendMenu_BuildDisplayDevice();
@@ -5454,6 +5459,7 @@ void FrontendMenu_EnterMain(Menu *pMenu, int param)
     p->startTime = CFrontend::GetFrontendTimestamp();
     p->pMenu = pMenu;
     CGameInfo::SetGameModeOptionBit19(0);
+    WhatsNew_MaybeAutoShow();   // PORT: once per changelog revision
 }
 
 // Update callback of the main menu: scroller, animation, and the attract
@@ -12413,11 +12419,76 @@ void FrontendMenu_DrawNetworkSessionSetup(Menu *pMenu)
 
 Menu g_screenOptionsMenu;
 
+// PORT: "What's new" changelog screen. Content lives in game/WhatsNew.h:
+// bump kWhatsNewRevision and add a line when user-visible changes ship. The
+// screen appears once per revision on the main menu (ui.whatsnew_seen) and
+// stays reachable from the Screen page below.
+#include "WhatsNew.h"
+namespace {
+Menu whatsNewMenu;
+Menu *g_whatsNewReturn;
+void FrontendMenu_LeaveWhatsNew(Menu *m, MenuItem *)
+{
+    Menu_GoBack(m);
+}
+void FrontendMenu_EnterWhatsNew(Menu *m, int)
+{
+    if (g_whatsNewReturn != NULL)
+        m->pParent = g_whatsNewReturn;
+}
+void FrontendMenu_DrawWhatsNew(Menu *)
+{
+    int n;
+    const WhatsNewLine *lines = WhatsNew_Lines(n);
+    int x = (int)(g_pGraphics->resX * 60) / 640;
+    int y = (int)(g_pGraphics->resY * 60) / 480;
+    Font_DrawText(2, (char *)"What's new in OpenCMR2", x, y, (int *)g_colourWhite0x00524968, 0x11);
+    y += (int)(g_pGraphics->resY * 36) / 480;
+    for (int i = 0; i < n; i++) {
+        Font_DrawText(1, (char *)lines[i].text, x, y, (int *)g_colourText0x0052496c, 0x11);
+        y += (int)(g_pGraphics->resY * 24) / 480;
+    }
+    Font_DrawText(1, CFrontend::GetTextString(0x67), x, (int)(g_pGraphics->resY * 420) / 480,
+                  (int *)g_colourWhite0x00524968, 0x11);
+    FrontendDraw_Carousel(FrontendMenu_GetMain(), 0, NULL);
+}
+Menu *FrontendMenu_GetWhatsNew(void)
+{
+    Menu_Init(&whatsNewMenu, (char *)"What's new", -1, 0, FrontendMenu_GetMain(), NULL, 1, 0, 1);
+    Menu_AddItemType1(&whatsNewMenu, 0, 0x67, (MenuItemAction)FrontendMenu_LeaveWhatsNew, 0xe);
+    Menu_SetCallbacks(&whatsNewMenu, FrontendMenu_EnterWhatsNew, NULL, (MenuCallback)FrontendMenu_DrawWhatsNew, NULL);
+    Menu_ValidateCursor(&whatsNewMenu, 0);
+    return &whatsNewMenu;
+}
+}
+void FrontendMenu_OpenWhatsNew(Menu *, MenuItem *)
+{
+    g_whatsNewReturn = FrontendMenu_GetActiveMenu();
+    Menu_SetNextAction(FrontendMenu_GetWhatsNew());
+}
+void FrontendMenu_BuildWhatsNew(void)
+{
+    (void)FrontendMenu_GetWhatsNew();
+}
+// Auto-show once per changelog revision when the main menu is entered; the
+// Screen page row reopens it any time. Seen is recorded when the screen is
+// queued so a crash or an early exit cannot loop it.
+void WhatsNew_MaybeAutoShow(void)
+{
+    int seen = Sys_GetOption("ui.whatsnew_seen", 0);
+    if (seen >= kWhatsNewRevision)
+        return;
+    Sys_SetOption("ui.whatsnew_seen", kWhatsNewRevision);
+    g_whatsNewReturn = NULL;   // keep the built parent: the main menu
+    Menu_SetNextAction(FrontendMenu_GetWhatsNew());
+}
+
 enum ScreenOptionsItem {
     SCREEN_ITEM_HUD,
     SCREEN_ITEM_MENU,
     SCREEN_ITEM_VSYNC,
     SCREEN_ITEM_FULLSCREEN,
+    SCREEN_ITEM_WHATS_NEW = 0xf,
     SCREEN_ITEM_OK = 0xe
 };
 
@@ -12427,18 +12498,19 @@ enum ScreenOptionsText {
     SCREEN_TEXT_MENU,
     SCREEN_TEXT_VSYNC,
     SCREEN_TEXT_FULLSCREEN,
+    SCREEN_TEXT_WHATS_NEW,
     SCREEN_TEXT_COUNT
 };
 
 // In the game's character set (Windows-1252; Polish letters in place of
 // some symbols: 0xb1 is l with a stroke).
 static const char *const g_screenOptionsText[6][SCREEN_TEXT_COUNT] = {
-    { "Screen", "HUD Size", "Menu Size", "Vertical Sync", "Full Screen" },
-    { "\xc9" "cran", "Taille du HUD", "Taille des menus", "Synchro verticale", "Plein \xe9" "cran" },
-    { "Pantalla", "Tama\xf1o del HUD", "Tama\xf1o de los men\xfas", "Sincronizaci\xf3n vertical", "Pantalla completa" },
-    { "Schermo", "Dimensione HUD", "Dimensione menu", "Sincronia verticale", "Schermo intero" },
-    { "Bildschirm", "HUD-Gr\xf6\xdf" "e", "Men\xfcgr\xf6\xdf" "e", "VSync", "Vollbild" },
-    { "Ekran", "Rozmiar HUD", "Rozmiar menu", "Synchronizacja pionowa", "Pe\xb1ny ekran" },
+    { "Screen", "HUD Size", "Menu Size", "Vertical Sync", "Full Screen", "What's new..." },
+    { "\xc9" "cran", "Taille du HUD", "Taille des menus", "Synchro verticale", "Plein \xe9" "cran", "Nouveaut\xe9s..." },
+    { "Pantalla", "Tama\xf1o del HUD", "Tama\xf1o de los men\xfas", "Sincronizaci\xf3n vertical", "Pantalla completa", "Novedades..." },
+    { "Schermo", "Dimensione HUD", "Dimensione menu", "Sincronia verticale", "Schermo intero", "Novit\xe0..." },
+    { "Bildschirm", "HUD-Gr\xf6\xdf" "e", "Men\xfcgr\xf6\xdf" "e", "VSync", "Vollbild", "Neuerungen..." },
+    { "Ekran", "Rozmiar HUD", "Rozmiar menu", "Synchronizacja pionowa", "Pe\xb1ny ekran", "Nowosci..." },
 };
 
 // Sizes offered, in percent.
@@ -12592,6 +12664,10 @@ void FrontendMenu_DrawScreenOptions(Menu *pMenu)
                               (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
             }
             break;
+        case SCREEN_ITEM_WHATS_NEW:
+            strcpy(CFrontend::m_stringDest, ScreenOptions_Text(SCREEN_TEXT_WHATS_NEW));
+            Font_DrawText(1, CFrontend::m_stringDest, x, textY, (int *)pColour, 0x11);
+            break;
         default:
             Font_DrawText(1, CFrontend::GetTextString(pItem->id), x, textY, (int *)pColour, 0x11);
             break;
@@ -12622,6 +12698,7 @@ void FrontendMenu_BuildScreenOptions(void)
                       SCREEN_ITEM_MENU);
     Menu_AddItemType3(&g_screenOptionsMenu, 0, -1, 2, 0, 0, 0, 0, SCREEN_ITEM_VSYNC);
     Menu_AddItemType3(&g_screenOptionsMenu, 0, -1, 2, 0, 0, 0, 0, SCREEN_ITEM_FULLSCREEN);
+    Menu_AddItemType1(&g_screenOptionsMenu, 0, -1, (MenuItemAction)FrontendMenu_OpenWhatsNew, SCREEN_ITEM_WHATS_NEW);
     Menu_AddItemType1(&g_screenOptionsMenu, 0, 0x67, (MenuItemAction)FrontendMenu_ApplyScreenOptions, SCREEN_ITEM_OK);
     Menu_SetCallbacks(&g_screenOptionsMenu, FrontendMenu_EnterScreenOptions, NULL,
                       (MenuCallback)FrontendMenu_DrawScreenOptions, NULL);
