@@ -15,8 +15,9 @@ constexpr int AIR_MOTE_LIFE = 150;   // 25 Hz steps = 6 s
 constexpr int AIR_MOTE_MAX_AMOUNT = 500;
 // Peak alpha: raised 130 -> 190 after the first native look found the specks too faint
 // against bright fog. Second native look ("smaller and more plentiful, like small
-// bugs"): size dropped 0x3800 -> 0x2000 (see StageTiming) and the amount ceiling
-// raised 300 -> 500 (cap 144 -> 240); alpha stays 190.
+// bugs"): size 0x3800 -> 0x2000 and the amount ceiling 300 -> 500 (cap 144 -> 240).
+// Third native look ("much smaller"): size 0x2000 -> 0x1000 (see StageTiming); count,
+// cap and alpha stay - the density, not the speck size, carries the effect.
 constexpr int AIR_MOTE_ALPHA_MAX = 190;
 // video.air_motes_amount (0..500): spawn rate and, above 100, the live cap grow with it.
 inline int AirMote_Cap(int amountPercent) {
