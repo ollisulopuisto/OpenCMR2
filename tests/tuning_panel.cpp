@@ -6,7 +6,7 @@ static int fails;
 #define CHECK(c) do{ if(!(c)){ std::printf("FAIL %d: %s\n", __LINE__, #c); ++fails; } }while(0)
 int main(){
     int n; const TuningRow *r = Tuning_Rows(n);
-    CHECK(n == 35);   // includes the fog clear distance, fog draw cull, fog spatial and fog evolve rows
+    CHECK(n == 37);   // includes the fog clear/cull/spatial/evolve, fog lights and snow glint rows
     CHECK(n <= kTuningMaxRows);   // RallyData.cpp snapshot/preset arrays are sized kTuningMaxRows - outgrowing 32 crashed the drone lock toggle
     { int bi = -1; for (int i = 0; i < n; ++i) if (!std::strcmp(r[i].key, "video.blur_mode")) bi = i; CHECK(bi >= 0 && r[bi].lo == 0 && r[bi].hi == 1 && r[bi].fallback == 0); }
     for (int i = 0; i < n; ++i) { CHECK(r[i].lo < r[i].hi); CHECK(r[i].step > 0); CHECK(r[i].fallback >= r[i].lo && r[i].fallback <= r[i].hi); CHECK(!std::strncmp(r[i].key, "video.", 6)); }
