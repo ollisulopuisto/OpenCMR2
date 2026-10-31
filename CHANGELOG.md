@@ -27,6 +27,17 @@ All notable changes to OpenCMR2 are documented here.
   plus drawn-line dumps (substitute glyphs/fonts - layout, labels and
   wiring proof, not native fonts or native pixels).
 
+### Fixes
+
+- **Broken lamps stop emitting light (both sides)**: the shared type-8 car
+  light channel was never damage-gated, so its lamps kept glowing - and
+  lighting the fog - with every lamp glass broken. The channel now goes
+  dark when both sides' lamp glass is broken. Single-side behaviour is
+  unchanged (the channel carries one shared level; per-side gating could
+  extinguish an intact lamp), and the original per-side head/brake/reverse
+  gating is preserved. Rear lamp glass has no break state in the damage
+  model, so brake-light gating remains the original channel behaviour.
+
 ### Atmosphere
 
 - **Fog light beams + cockpit fog fixes** (`video.fog_lights`, new
