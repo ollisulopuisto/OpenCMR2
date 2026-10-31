@@ -6353,38 +6353,9 @@ static void CameraEffects_DrawOverlays(short *pRect)
         g_lensDirt[view] = LensDirt_Decay(g_lensDirt[view], 4);
     }
 
-    // ---- dirt on the windscreen --------------------------------------------
-    for (int view = 0; view < 8; view++) {
-        if (g_windscreenDirt[view] == 0)
-            continue;
-        BYTE colour[4] = { 0x30, 0x28, 0x20, (BYTE)g_windscreenDirt[view] };
-        short rect[4] = { 0, 0, (short)resX, (short)resY };
-        Sprite_FillRect(&g_pGraphics->field309_0x150, rect, colour, 1);
-        // Decay slowly so windscreen dirt lingers longer than lens dirt.
-        g_windscreenDirt[view] = WindscreenDirt_Decay(g_windscreenDirt[view], 2);
-    }
-
-    // ---- windscreen wipers --------------------------------------------------
-    if (Sys_GetOption("video.windscreen_wipers", 1) != 0) {
-        for (int view = 0; view < 8; view++) {
-            g_windscreenWipers[view].active = 1;
-            float pos = WindscreenWiper_Sweep(view);
-            if (pos < 0.0f)
-                continue;
-            // Draw the wiper as a thin vertical line at the sweep position.
-            int x = (int)(pos * (float)resX);
-            int w = 3;
-            if (x < 0)
-                x = 0;
-            if (x + w > resX)
-                x = resX - w;
-            BYTE colour[4] = { 0xff, 0xff, 0xff, 0xc0 };
-            short rect[4] = { (short)x, 0, (short)w, (short)resY };
-            Sprite_FillRect(&g_pGraphics->field309_0x150, rect, colour, 1);
-            // The wiper clears dirt in its path.
-            WindscreenWiper_ClearDirt(view, pos);
-        }
-    }
+    // The old flat windscreen tint and 1px wiper bar were replaced by the
+    // windshield-local dirt map (WindshieldDirt.cpp), drawn per cockpit view
+    // in the race frame; the pause scene shows the last rendered frame.
 
     // ---- lens flare -------------------------------------------------------
     if (g_sunVisibility < 10 || !Sys_GetOption("video.lens_flare",Sys_GetOption("video.camera_effects",1)))
@@ -6866,6 +6837,16 @@ void RallyData_UpdateViewFrameAndDebugOverlay(CallbackStateMachine *param1, int 
     }
     StageObject_UpdateRaceSkidTrails(maskedView);
     Race_ClearMessageDrawLatch();
+    // OpenCMR2: windshield-local dirt/wetness (video.windscreen_dirt /
+    // video.windscreen_wipers): cockpit camera only, before the HUD so the
+    // HUD stays clean. Chase and other cameras never see the glass overlay.
+    {   int viewType = 0, drone = 0;
+        AttractCapture_ViewSignature(param2, &viewType, &drone);
+        if (viewType == 3 && param3 != 0) {
+            Windshield_UpdateView(maskedView, maskedView < 2 ? maskedView : 0);
+            Windshield_DrawOverlay(maskedView, g_viewScreenRect[2], g_viewScreenRect[3]);
+        }
+    }
     if (CGameInfo::IsInRaceMenuOpen() != 0 && InRaceMenu_IsPlayerEditingCarSetup(maskedView) == 0)
         return;
     if ((BYTE)RallyData_IsChampionshipFinalStage() != 0)

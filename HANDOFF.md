@@ -673,3 +673,35 @@ drawn toward the upper-left corner = red streak up the left snowbank (user repor
 ## Fog light camera fixes (1 November 2026)
 
 Lamp-side near-plane clip (bonnet/bumper cams no longer drop lamps within 1u when the beam crosses into view; anchor at the crossing, no depth gate on a clipped anchor) and projection-independent depth gate: GfxFogLight.viewZ (world units, SDL_GPU-only, vote-dependent) replaced by depthRef (raw depth-buffer value 1 world unit in front of the lamp, from CGraphics::m_projection33/43 game-side; GL executor remaps into its half-range buffer), so the gate runs on BOTH renderers even when the near/far vote is ambiguous - the cockpit dash-spots failure mode. Rendered-pixel evidence: tests/fog_beam_render.cpp scenarios (near-plane-crossing rear beam, occluded-lamp gate-off, near-plane lamp wedge) through the real GL executor + fog.frag. Residual: if a real cockpit dash does not write depth, the gate cannot see it - needs native verification. R look-back glow: harness scenario added (camera 180 degrees, rear beam toward the camera) - the wedge keeps its true screen side and never mirrors to the upper-left; the pre-#233 sentinel geometry is consistent with the glow beside the left spoiler support, and the corrected mechanism is pinned by pixel assertions; the user's exact screenshot-specific cause and real-asset lamp alignment stay unverified natively.
+
+## Windscreen dirt and real wiper sweep (1 November 2026)
+
+Branch feat/windshield-wipe. Replaces the old flat fullscreen windscreen
+tint with a per-glass dirt map that only the real 3D wiper blades clear.
+
+- game/WindshieldDirt.{h,cpp}: 96x64 per-view dirt + wetness maps, a
+  trapezoid glass mask (v 0.04..0.66 with pillar taper - approximate; exact
+  per-poly glass mapping is a native follow-up), driving spatter hooked
+  into the two existing Race.cpp dirt-accumulation sites, and a wipe that
+  removes dirt along the blade's arc band: wet sweeps smear part of the
+  removed dirt to the trailing rim, dry sweeps leave up to 1/8 residue.
+  Wetness follows StageObject_GetViewWeatherField54; dirt decays over a
+  64-frame sweep so it does not accumulate forever.
+- Clearing is driven by the REAL blade state (g_carWiperStates +
+  g_carInteriorProfilePointers, cockpit slots only, direction-reversed
+  handled): in dry weather the blades stay parked and dirt only decays.
+  This is a behavior change from the old 2D white-bar overlay, which moved
+  regardless of the 3D blades and is removed from CameraEffects_DrawOverlays.
+  The 3D blade animation itself is original behavior, untouched.
+- The overlay draws a 96x64 BGRA grime texture as one alpha-blended TL quad
+  through gfx_core, so it runs on GL and SDL_GPU alike; cockpit only
+  (camera type 3). The old g_windscreenDirt global is now write-only
+  (kept; removing it is a separate cleanup).
+- Evidence: windshield_dirt unit test (masking, determinism, wetness,
+  wet/dry wipe, decay) and windshield_render, which builds a real dirt map
+  and runs the real Windshield_DrawOverlay through gfx_core -> GL with
+  readback: glass darkened toward the grime tint, the wiped arc stays
+  clean, the dash band untouched. Harness GL, not native Mac Metal/OpenGL.
+- Pivot position and arc band are an approximation of the original blade
+  sweep (profile maxAngle as the band); exact blade-tip tracking against
+  the interior model is a follow-up.

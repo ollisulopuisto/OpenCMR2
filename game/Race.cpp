@@ -4100,8 +4100,11 @@ void Race_PlayScrapeAndShakeCar(int view, int strength, int listener)
                 g_lensDirt[view] = LensDirt_Accumulate(g_lensDirt[view], shake * 20);
             // OpenCMR2: dirt on the windscreen from driving hard
             // ([video] video.windscreen_dirt).
-            if (Sys_GetOption("video.windscreen_dirt", 40) != 0)
-                g_windscreenDirt[view] = WindscreenDirt_Accumulate(g_windscreenDirt[view], Effect_Scale(shake * 10,Sys_GetOption("video.windscreen_dirt",40)));
+            if (Sys_GetOption("video.windscreen_dirt", 40) != 0) {
+                int hitDirt = Effect_Scale(shake * 10,Sys_GetOption("video.windscreen_dirt",40));
+                g_windscreenDirt[view] = WindscreenDirt_Accumulate(g_windscreenDirt[view], hitDirt);
+                Windshield_AddDrivingSpatter(view, hitDirt);   // localised blobs on the glass
+            }
         }
     }
 }
@@ -4742,6 +4745,7 @@ void Race_UpdateFrameEffects(int param_1)
             static int residue=0;
             amount=Effect_Accumulate(amount,Sys_GetOption("video.windscreen_dirt",40),residue);
             g_windscreenDirt[0] = WindscreenDirt_Accumulate(g_windscreenDirt[0], amount);
+            Windshield_AddDrivingSpatter(0, amount);   // localised blobs on the glass
         }
     }
     WindscreenWiper_UpdateInput();

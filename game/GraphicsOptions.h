@@ -318,7 +318,17 @@ inline bool WindscreenDirt_ShouldDraw(unsigned int level)
 }
 
 // Per-view dirt-on-the-windscreen levels, defined in RallyData.cpp.
+// Superseded for rendering by the windshield-local dirt map below; kept for
+// the old pause-scene overlay until that call site migrates.
 extern unsigned int g_windscreenDirt[8];
+
+// Windshield-local dirt map (game/WindshieldDirt.{h,cpp}): localised spatter,
+// wetness-dependent smearing, and blade-arc clearing driven by the cockpit
+// model's real sweep. Cockpit camera (type 3) only; the HUD draws over it.
+void Windshield_UpdateView(int view, int slot);
+void Windshield_AddDrivingSpatter(int view, int amount);
+void Windshield_DrawOverlay(int view, int resX, int resY);
+void Windshield_ResetAll(void);
 
 // OpenCMR2: windscreen wipers. `video.windscreen_wipers` turns them on/off.
 // The wiper sweeps back and forth across the screen, clearing dirt as it

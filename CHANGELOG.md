@@ -18,6 +18,13 @@ All notable changes to OpenCMR2 are documented here.
 
 
 ### Added
+- Windscreen dirt and wipers (cockpit view): dirt spatter from driving
+  builds up on the actual glass area instead of the old flat fullscreen
+  tint, rain wets it, and the 3D wiper blades now clear the dirt along
+  their real sweep, smearing it to the edge of the arc while wet. The old
+  white 2D wiper bar overlay is gone - the animated 3D blades are the
+  wipers. Dirt only decays slowly in dry weather, matching the parked
+  blades.
 
 - **Precipitation density dial** (`video.weather_particle_amount`, 0..300,
   default 200): rain and snow draw up to 3x the original particle count via a
