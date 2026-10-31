@@ -6053,7 +6053,7 @@ static bool g_tuneOpen = false, g_tuneSnapshotTaken = false;
 // overlays can be hidden to judge the effects.
 static int g_tuneMode = 0;
 static bool g_tuneEngaged = false;
-static int g_tuneRow = 0, g_tuneSnapshot[32], g_camMoveSnapshot[16];   // the camera move row edits one camera type: the snapshot holds every type's raw per-type value (kCamMoveUnset = no override)
+static int g_tuneRow = 0, g_tuneSnapshot[kTuningMaxRows], g_camMoveSnapshot[16];   // the camera move row edits one camera type: the snapshot holds every type's raw per-type value (kCamMoveUnset = no override)
 void AttractCapture_ViewSignature(int view, int *type, int *drone);
 static bool TuneIsCamMove(const TuningRow &r) { return !strcmp(r.key, "video.camera_move_active"); }
 static int TuneCamType(void) { int vt = 0, dr = 0; AttractCapture_ViewSignature(0, &vt, &dr); return vt < 0 || vt > 15 ? 0 : vt; }
@@ -6128,6 +6128,7 @@ void TuningPanel_Update(void)
         pressed[i] = i < 4 ? repeat.Fire(i, down, nowMs) : edge;
     }
     if (!g_tuneOpen) return;
+    if (count > kTuningMaxRows) count = kTuningMaxRows;   // snapshot/preset arrays are sized kTuningMaxRows; the tests pin the row list below it
     bool prevRow = pressed[0], nextRow = pressed[1], down = pressed[2], up = pressed[3], resetRow = pressed[4], resetAll = pressed[5], save = pressed[6];
     if (!g_tuneSnapshotTaken) {
         for (int i = 0; i < count; ++i) g_tuneSnapshot[i] = Sys_GetOption(rows[i].key, rows[i].fallback);
@@ -6139,7 +6140,7 @@ void TuningPanel_Update(void)
     if (nextRow) g_tuneRow = Tuning_Select(g_tuneRow, 1, count);
     if ((down || up) && !(Sys_GetOption("video.drone_locked",0)&&Tuning_DroneParameter(rows[g_tuneRow]))) {
         const TuningRow &r = rows[g_tuneRow];
-        int dronePreset[32]={};
+        int dronePreset[kTuningMaxRows]={};
         if(!strcmp(r.key,"video.drone_locked"))for(int i=0;i<count;i++)dronePreset[i]=Sys_GetOption(rows[i].key,rows[i].fallback);
         TuneSet(r, Tuning_Step(r, TuneGet(r), up ? 1 : -1));
         // Lock freezes chosen parameters, not adaptive camera motion. Save
