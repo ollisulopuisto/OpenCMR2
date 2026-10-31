@@ -306,7 +306,7 @@ void Gfx_SetSunScreenPosition(float x, float y, BOOL visible);
 // One car light projected to the screen for the fog pass (video.fog_lights).
 struct GfxFogLight {
     float x, y;       // screen uv (v downwards)
-    float viewZ;      // world units from the camera; <= 0 disables the depth gate
+    float depthRef;   // depth-buffer value 1 world unit in front of the lamp (game projection); <= 0 disables the depth gate
     float intensity;  // 0..1
     float r, g, b;    // tint 0..1 (headlight warm white, rear/indicator per the glow)
     float beamX, beamY; // aspect-corrected screen unit vector the beam travels; (0,0) = unknown

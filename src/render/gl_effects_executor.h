@@ -215,8 +215,8 @@ GLuint ApplyEffects()
     // uses its raw-depth ramp (a stand-in curve, see render/fog_math.h).
     if (effectsRaceFrame && fogOn && fogAmount > 0) {
         // FogUniforms: packed by the single shared packer (render/fog_uniforms.h).
-        // The GL path has no near/far recovery, so withViewZ=false: the shader
-        // skips the depth gate and the glow is unoccluded - a documented approximation.
+        // The depth gate is active here too: SetFogLights remaps each light's
+        // depthRef into this path's half-range depth buffer.
         FogUniformParams fogP;
         fogP.density = Fog_Density(fogAmount);
         fogP.glow = fogGlow / 100.0f;
@@ -227,7 +227,7 @@ GLuint ApplyEffects()
         fogP.clearDistance = (float)fogClearDistance;
         fogP.lightStrength = std::max(0, std::min(200, Sys_GetOption("video.fog_lights", 100))) / 100.0f;
         float u[kFogUniformFloats];
-        FogUniforms_Pack(u, fogP, fogLights, fogLightCount, false);
+        FogUniforms_Pack(u, fogP, fogLights, fogLightCount);
         run(12, backDepth, u, sizeof(u));
     }
     if (depthBlurOn || tunnelOn) {

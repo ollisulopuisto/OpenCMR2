@@ -12,7 +12,11 @@
 
 void FixMatrix_ProjectWorldPointToView(int *pOut, FixVector *pPoint, SceneNode *pView);
 
-inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNode *view, float resXf, float resYf)
+// proj33/proj43: the game's projection _33/_43 (CGraphics::SetProjection), so
+// each light's depth gate can be computed in depth-buffer space without the
+// renderer's near/far vote.
+inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNode *view, float resXf, float resYf,
+                                 float proj33, float proj43)
 {
     int fogLightTotal = 0;
     FixVector vOut;
@@ -23,10 +27,6 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
         FogLightSource *src = &g_fogLightSources[li];
         FixVector vView;
         FixMatrix_TransformPoint(&vView, &src->pos, &invView);
-        if (vView.z < 0x10000)
-            continue;   // behind the camera
-        FixMatrix_ProjectWorldPointToView((int *)&vOut, &src->pos, view);
-        const float lampU = (float)(vOut.x >> 16) / resXf, lampV = (float)(vOut.y >> 16) / resYf;
         // The beam's screen wedge: project a point 30 world units along the
         // beam. Off-screen lamps stay: their wedge can still cross the frame
         // (the cockpit's own lamps sit below the windscreen line).
@@ -34,29 +34,46 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
         beamEnd.x = src->pos.x + FixMul(src->dir.x, 0x1e0000);
         beamEnd.y = src->pos.y + FixMul(src->dir.y, 0x1e0000);
         beamEnd.z = src->pos.z + FixMul(src->dir.z, 0x1e0000);
-        float endU = lampU, endV = lampV;
-        if (src->dir.x != 0 || src->dir.y != 0 || src->dir.z != 0) {
-            FixVector endView;
+        const bool hasBeam = src->dir.x != 0 || src->dir.y != 0 || src->dir.z != 0;
+        FixVector endView = {0, 0, 0};
+        if (hasBeam)
             FixMatrix_TransformPoint(&endView, &beamEnd, &invView);
-            if (endView.z >= 0x10000) {
+        const bool lampIn = vView.z >= 0x10000, endIn = hasBeam && endView.z >= 0x10000;
+        if (!lampIn && !endIn)
+            continue;   // the whole beam sits behind the camera
+        FixVector anchorView = vView;
+        if (!lampIn) {
+            // Bonnet/bumper cameras sit within a unit of the lamps: the lamp is
+            // at/behind the near plane but its beam reaches into view. Anchor at
+            // the near-plane crossing instead of dropping the light.
+            if (endView.z - vView.z <= 0)
+                continue;
+            LightField_ClipBeamToNearPlane(&anchorView, &endView, &vView);
+        }
+        {   FixVector anchorWorld;
+            FixMatrix_TransformPoint(&anchorWorld, &anchorView, &view->world);
+            FixMatrix_ProjectWorldPointToView((int *)&vOut, &anchorWorld, view);
+        }
+        const float lampU = (float)(vOut.x >> 16) / resXf, lampV = (float)(vOut.y >> 16) / resYf;
+        float endU = lampU, endV = lampV;
+        if (hasBeam) {
+            if (endIn) {
                 FixMatrix_ProjectWorldPointToView((int *)&vOut, &beamEnd, view);
                 endU = (float)(vOut.x >> 16) / resXf; endV = (float)(vOut.y >> 16) / resYf;
-            } else {
+            } else if (vView.z - endView.z > 0) {   // lamp in front, end behind
                 // The beam crosses the near plane (rear lamps from a chase
                 // view): clip the lamp-to-end segment at the near plane in
                 // view space. Projecting the raw end yields the behind-camera
                 // sentinel (-100,-100 px), which mirrored the wedge toward the
                 // upper-left corner - the red streak up the left bank.
-                if (vView.z - endView.z > 0) {   // lamp in front, end behind
-                    FixVector clip;
-                    LightField_ClipBeamToNearPlane(&clip, &vView, &endView);
-                    // Back to world, then through the standard projection
-                    // (clip.z equals its in-front threshold, so it passes).
-                    FixVector clipWorld;
-                    FixMatrix_TransformPoint(&clipWorld, &clip, &view->world);
-                    FixMatrix_ProjectWorldPointToView((int *)&vOut, &clipWorld, view);
-                    endU = (float)(vOut.x >> 16) / resXf; endV = (float)(vOut.y >> 16) / resYf;
-                }
+                FixVector clip;
+                LightField_ClipBeamToNearPlane(&clip, &vView, &endView);
+                // Back to world, then through the standard projection
+                // (clip.z equals its in-front threshold, so it passes).
+                FixVector clipWorld;
+                FixMatrix_TransformPoint(&clipWorld, &clip, &view->world);
+                FixMatrix_ProjectWorldPointToView((int *)&vOut, &clipWorld, view);
+                endU = (float)(vOut.x >> 16) / resXf; endV = (float)(vOut.y >> 16) / resYf;
             }
         }
         // Drop only when the whole beam (lamp to end, with wedge margin) is off screen.
@@ -67,7 +84,14 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
         GfxFogLight *fl = &fogLights[fogLightTotal++];
         fl->x = lampU;
         fl->y = lampV;
-        fl->viewZ = vView.z / 65536.0f;
+        // Depth gate in depth-buffer space: the raw depth of a point 1 world
+        // unit in front of the anchor, from the game's own projection - valid
+        // on both renderers even when the renderer's near/far vote is
+        // ambiguous. An anchor clipped to the near plane (zGate <= 0) or an
+        // unknown projection (proj43 >= 0) carries no gate.
+        {   float zGate = anchorView.z / 65536.0f - 1.0f;
+            float d = (zGate > 0.0f && proj43 < 0.0f) ? proj33 + proj43 / zGate : 0.0f;
+            fl->depthRef = d > 1.0f ? 1.0f : d; }
         fl->intensity = src->intensity / 65536.0f;
         fl->r = src->r / 65536.0f;
         fl->g = src->g / 65536.0f;

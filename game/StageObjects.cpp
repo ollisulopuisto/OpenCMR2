@@ -10431,7 +10431,8 @@ void StageObject_DrawProjectedViewIcon(int *pViewRect, int param_2)
     view = g_viewNodes[param_2];
     // The fog pass's car lights (video.fog_lights): game/FogBeamProjection.h.
     {   GfxFogLight fogLights[LIGHT_FIELD_MAX];
-        int fogLightTotal = FogBeam_ProjectLights(fogLights, LIGHT_FIELD_MAX, view, (float)g_pGraphics->resX, (float)g_pGraphics->resY);
+        int fogLightTotal = FogBeam_ProjectLights(fogLights, LIGHT_FIELD_MAX, view, (float)g_pGraphics->resX, (float)g_pGraphics->resY,
+                                          (float)CGraphics::m_projection33, (float)CGraphics::m_projection43);
         Gfx_SetFogLights(fogLights, fogLightTotal);
     }
     StageObject_GetRotatedStageLightVector(&vR);

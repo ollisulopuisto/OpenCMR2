@@ -2742,7 +2742,7 @@ struct Executor : GfxExecutor {
             fogP.clearDistance = (float)fogClearDistance;
             fogP.lightStrength = std::max(0, std::min(200, Sys_GetOption("video.fog_lights", 100))) / 100.0f;
             float fogUniforms[kFogUniformFloats];
-            FogUniforms_Pack(fogUniforms, fogP, fogLights, fogLightCount, true);
+            FogUniforms_Pack(fogUniforms, fogP, fogLights, fogLightCount);
             SDL_GPUTextureSamplerBinding fogBindings[2] = {
                 { presentSource, linearSampler }, { backDepth, depthSampler }
             };

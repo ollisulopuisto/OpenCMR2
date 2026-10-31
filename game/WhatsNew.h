@@ -5,7 +5,7 @@
 // FrontendScreens.cpp (PORT). Bump kWhatsNewRevision and add lines when
 // user-visible changes ship: the screen then shows once on the main menu
 // (tracked in ui.whatsnew_seen) and stays reachable from the Screen page.
-inline constexpr int kWhatsNewRevision = 10;
+inline constexpr int kWhatsNewRevision = 11;
 
 struct WhatsNewLine { int revision; const char *text; };
 inline const WhatsNewLine *WhatsNew_Lines(int &count)
@@ -16,19 +16,18 @@ inline const WhatsNewLine *WhatsNew_Lines(int &count)
         {1, "Dynamic fog: clear pockets along the route, clearing trend"},
         {1, "Near-field fog clear distance around the car"},
         {1, "Effect amounts and Atmosphere menus; --test-preset atmosphere"},
-        {1, "F10 live tuning panel: save, presets, drone controls"},
-        {1, "Fix: tuning panel row overflow crash"},
+        {1, "F10 live tuning panel: save, presets, drone controls; overflow fix"},
         {2, "Fog responds to headlights and rear lights"},
         {2, "Snow glints: banks sparkle, flakes twinkle in sun and beams"},
         {2, "Falling snow and air motes respond to light"},
         {2, "Snow ground lighting prototype (off: --snow-material 100 to try)"},
-        {2, "Drone tuning: spring down to 5%, height drop up to 200%"},
-        {4, "Drone rails widen: distance 300%, height/spring 400%, drop 500%"},
+        {4, "Drone tuning: spring 5%, distance 300%, height/spring 400%, drop 500%"},
         {5, "Tyre debris to 2000%, dust/snow plume to 300% - overdone, dial down"},
         {7, "Spray, exhaust, splash, backfire, motes, glints overdone"},
         {8, "Rain and snow amount to 300% (default 200%)"},
         {9, "Fix: fog light beams no longer streak the wrong way"},
         {10, "Greece 1 bush and tree cards gain relief with --textures uprez"},
+        {11, "Fix: fog lights in bonnet view; cockpit glow gated off the dash"},
     };
     count = (int)(sizeof(lines) / sizeof(*lines));
     return lines;
