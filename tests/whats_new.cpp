@@ -8,7 +8,9 @@ int main()
     int n;
     const WhatsNewLine *lines = WhatsNew_Lines(n);
     CHECK(kWhatsNewRevision >= 1);
-    CHECK(n > 0 && n <= 16);   // the screen draws a title, the lines and OK on one 480p frame
+    // the draw adapts the step (24 down to a floor of 18 480p units, font 1's
+    // line height) so the show-all screen stays on-frame; 18 is the floor cap
+    CHECK(n > 0 && n <= 18);
     for (int i = 0; i < n; i++) {
         CHECK(lines[i].revision >= 1 && lines[i].revision <= kWhatsNewRevision);
         CHECK(lines[i].text != NULL);

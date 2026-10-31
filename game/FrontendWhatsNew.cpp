@@ -48,11 +48,25 @@ void FrontendMenu_DrawWhatsNew(Menu *)
     int y = (int)(g_pGraphics->resY * 60) / 480;
     Font_DrawText(2, (char *)"What's new in OpenCMR2", x, y, (int *)g_colourWhite0x00524968, 0x11);
     y += (int)(g_pGraphics->resY * 36) / 480;
+    // Adaptive spacing: at most 13 lines fit at the full 24-unit step above the
+    // OK row at 420; beyond that the step tightens (floored at 18, font 1's line
+    // height at 480p) so the show-all screen stays on-frame as the log grows.
+    int drawable = 0;
+    for (int i = 0; i < n; i++)
+        if (g_whatsNewShowAll || lines[i].revision > g_whatsNewSeenAtOpen)
+            drawable++;
+    int step = (int)(g_pGraphics->resY * 24) / 480;
+    if (drawable > 0) {
+        int fit = ((int)(g_pGraphics->resY * 420) / 480 - y) / drawable;
+        if (fit < step) step = fit;
+        int floorStep = (int)(g_pGraphics->resY * 18) / 480;
+        if (step < floorStep) step = floorStep;
+    }
     for (int i = 0; i < n; i++) {
         if (!g_whatsNewShowAll && lines[i].revision <= g_whatsNewSeenAtOpen)
             continue;   // auto-show after an upgrade lists only what is new
         Font_DrawText(1, (char *)lines[i].text, x, y, (int *)g_colourText0x0052496c, 0x11);
-        y += (int)(g_pGraphics->resY * 24) / 480;
+        y += step;
     }
     Font_DrawText(1, CFrontend::GetTextString(0x67), x, (int)(g_pGraphics->resY * 420) / 480,
                   (int *)g_colourWhite0x00524968, 0x11);
