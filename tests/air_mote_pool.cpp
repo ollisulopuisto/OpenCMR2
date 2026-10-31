@@ -2,10 +2,15 @@
 #include "AirMote.h"
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
+#include <cmath>
 extern int g_particleCount,g_particleTypeCount,g_nextParticle;
 extern Particle *g_particles;
 extern ParticleType *g_particleTypes;
 extern FixVector g_particleWind;
+extern FixVector g_airMoteDrift;
+extern unsigned g_airMoteNextSeed;
+void AirMote_Init(Particle*,ParticleType*,void*);
 void Particle_Spawn(int,FixVector*,FixVector*,int,FixMatrix*,BYTE*,BYTE,void*,BYTE);
 int main(){
  Particle pool[400]={};ParticleType types[0x23]={};
@@ -20,14 +25,17 @@ int main(){
  int motes=0;for(auto&p:pool)if(p.active){if(p.pType==&types[AIR_MOTE_TYPE])++motes;else++fail;}
  if(motes!=AIR_MOTE_BASE)++fail;
  for(auto&p:pool)if(p.active&&(p.attachmentMatrix||p.field0x55!=1))++fail;
- // Update through the registered callback: drifts toward wind/16, sinks, alpha bounded.
- g_particleWind={0x10000,0,0};
+ // Init stamps the wander seed; update through the registered callback: eases toward the
+ // shared drift, never monotonic sink, alpha bounded.
+ g_airMoteDrift={0x10000,0,0};
+ {unsigned seed=0x42u;g_airMoteNextSeed=seed;Particle ip={};AirMote_Init(&ip,&types[AIR_MOTE_TYPE],nullptr);unsigned got;std::memcpy(&got,ip.pad0x5c,4);if(got!=seed)++fail;}
  Particle*m=nullptr;for(auto&p:pool)if(p.active){m=&p;break;}
  if(!m)++fail;else{
   m->position={0,0,0};m->age=AIR_MOTE_LIFE<<16; // freshly spawned
   FixVector before=m->sourceVector;
   AirMote_Update(m,&types[AIR_MOTE_TYPE],nullptr);
-  if(m->position.x<=0||m->position.y>=0)++fail;
+  if(m->position.x<=0)++fail;                          // drift.x > 0 pulls it forward
+  if(std::abs(m->position.y)>0x1000)++fail;            // tiny bob only, no monotonic sink
   if(m->sourceVector.x-before.x!=m->position.x||m->vector0x28.x!=m->sourceVector.x)++fail; // world position advances by the drift, mirror kept in sync
   if(m->type0x56>AIR_MOTE_ALPHA_MAX)++fail;
  }

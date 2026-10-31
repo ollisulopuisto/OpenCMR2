@@ -6442,18 +6442,20 @@ void StageTiming_InitEffectParticleTypes(void)
   ParticleEdit_SetSpread(0,0,0,0);
   ParticleEdit_SetCallbacks(0,SpeedMote_Update,0,0,0);
   ParticleEdit_CommitCurrentType();
-  // Optional floating air motes (video.air_motes): smaller, warmer, slow-drifting specks.
+  // Optional floating air motes (video.air_motes): tiny bug-like specks. The bright snow
+  // cloud texture, not the exhaust smoke: the dark smoke read as black spots against
+  // bright fog on native. Wander seeds come from the init callback (bug flight, AirMote.h).
   // Size 0x3000 -> 0x3800 ("saw a few"), -> 0x2000 ("smaller and more plentiful"),
   // -> 0x1000 ("much smaller"): bug-sized specks now (~7px at 3 units, 1-3px far,
   // 1440p); the higher amount ceiling (500, cap 240) in AirMote.h keeps the field dense.
   ParticleEdit_Select(AIR_MOTE_TYPE);
-  ParticleEdit_SetTextureParams(g_unk0x00543664, -0x10000, 0x10000, 0x10000, -0x10000);
+  ParticleEdit_SetTextureParams(g_unk0x0054366c, -0x10000, 0x10000, 0x10000, -0x10000);
   ParticleEdit_SetMotion(AIR_MOTE_LIFE << 16, 0, 0, 0, 0, 0, 0);
   ParticleEdit_SetAlphaRamp(0, 0, 0, 0);
   ParticleEdit_SetColour(0xf2,0xea,0xd8,1);
   ParticleEdit_SetSizeRamp(0x1000,0x1000,0);
   ParticleEdit_SetSpread(0,0,0,0);
-  ParticleEdit_SetCallbacks(0,AirMote_Update,0,0,0);
+  ParticleEdit_SetCallbacks(0,AirMote_Update,0,AirMote_Init,0);
   ParticleEdit_CommitCurrentType();
   return;
 }

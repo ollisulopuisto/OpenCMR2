@@ -16,12 +16,17 @@ change. Both effects work on the SDL_GPU (Metal) and GL paths.
   It is screen-space glow in the fog pass, **not** occluded volumetric light
   shafts - geometry does not carve beams out of it. Existing god rays remain the
   occluded-shaft effect and stack on top.
-- **Air motes** (`video.air_motes`): slow-drifting floating dust particles, a
-  new particle type in the existing plume pool. Base cap 48 billboards at 100
-  percent, 240 at 500. They drift with a slight sink at any speed and are
-  deliberately distinct from the rejected speed-mote look (fast streaming
-  specks). Spawn/step math is pure and unit-tested; they render through the
-  existing particle draw path.
+- **Air motes** (`video.air_motes`): small bug-like specks flying on their
+  own around the viewed car, a new particle type in the existing plume pool.
+  Base cap 48 billboards at 100 percent, 240 at 500. Each mote gets a
+  spawn-time seed (stamped by an init callback) that drives its own smooth
+  wander loop - turn rate, speed and a gentle vertical bob - on top of a
+  shared drift (light wind plus most of the viewed car's velocity, so the
+  swarm travels along instead of the car driving into stationary spots).
+  No sink. They use the bright snow-cloud texture, not the dark exhaust
+  smoke: the smoke read as black spots against bright fog on native. Spawn/
+  step math is pure and unit-tested; they render through the existing
+  particle draw path.
 
 ## Controls
 
@@ -87,10 +92,11 @@ covered by tests/fog_math.cpp.
 - tests/fog_math.cpp: density anchors, viewZ round trip, height gradient, sky
   cap, sun glow falloff, raw-depth fallback.
 - tests/air_mote_spawn.cpp: ring bounds, uniform disc density, spawn rate
-  scaling, drift/sink/fade step, pool caps.
+  scaling, drift/wander step bounds, per-seed determinism, fade, pool caps.
 - tests/air_mote_pool.cpp: the real production spawn path (Particle_Spawn in
   Graphics.cpp) with a full 400-slot pool: 48 base cap at amount 100, gameplay
-  rand stream untouched, drift/sink update through the registered callback,
+  rand stream untouched, wander-seed stamping and drift update through the
+  registered callbacks,
   original particles never evicted by motes, motes evicted first by other
   spawns. tests/billboard_queue_wiring.py pins the queue acceptance counters.
   Actual mote pixels in a rendered stage remain unverified.
