@@ -12652,7 +12652,7 @@ const EffectAmountRow kAtmosphereRows[]={
  {"Fog near clear dist, world units (0 off)","video.fog_clear",0,201},
  {"Fog draw cull (0/1, experimental, unmeasured)","video.fog_cull",0,2},
  {"Air motes (0/1)","video.air_motes",0,2},
- {"Air motes amount %","video.air_motes_amount",100,301},
+ {"Air motes amount %","video.air_motes_amount",100,501},
 };
 void EnterAtmosphere(Menu*m,int){
  for(unsigned i=0;i<sizeof(kAtmosphereRows)/sizeof(*kAtmosphereRows);i++)
