@@ -19,6 +19,16 @@ class Tests(unittest.TestCase):
   for r in u.INDEX:
    if 'temp.sht' in r.get('usage',''):counts[r['archive']]=counts.get(r['archive'],0)+1
   self.assertEqual(counts,{'finhit.bfl':5,'finlot.bfl':5,'frahit.bfl':20,'fralot.bfl':20})
+ def test_opaque_object_coverage(self):
+  import collections
+  rows=[r for r in u.INDEX if r.get('category')=='opaque-object']
+  self.assertEqual(collections.Counter(r['archive']for r in rows),{'finhit.bfl':55,'finlot.bfl':46,'frahit.bfl':27,'fralot.bfl':30})
+  self.assertTrue(all('temp.obj' in r['usage']and r['repeat']==[False,False]for r in rows))
+  self.assertTrue(all(r['width']<=256 and r['height']<=256 for r in rows))
+  # One source hash must never name two different output pixel digests.
+  by_hash={}
+  for r in u.INDEX:
+   self.assertEqual(by_hash.setdefault(r['sha256'],r['output_sha256']),r['output_sha256'])
  def test_source_refusal(self):
   with self.assertRaises(ValueError):u.encode(b'wrong',u.INDEX[0])
  def test_cutout_refusal(self):
