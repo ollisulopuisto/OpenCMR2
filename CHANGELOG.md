@@ -4,6 +4,13 @@ All notable changes to OpenCMR2 are documented here.
 
 ## [Unreleased]
 
+### Interface
+
+- **Atmosphere menu directly under Graphics options**: the fog/air
+  motes/snow glint rows move up from Advanced graphics > Effect amounts, so
+  the fog layer is one click from Graphics options. What's New revision 3
+  notes the move.
+
 ### Atmosphere
 
 - **Fog light beams + cockpit fog fixes** (`video.fog_lights`, new

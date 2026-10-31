@@ -90,7 +90,7 @@ on top of the usual run:
 to the game as `--test-preset overdo,atmosphere`: the usual overdo look
 plus the exaggerated atmosphere; presets combine comma-separated).
 
-Menus: Advanced graphics > Effect amounts > Atmosphere... has the fog/mote rows
+Menus: Graphics options > Atmosphere... has the fog/mote rows (previously under Advanced graphics > Effect amounts)
 (its own submenu because Menu::items is layout-locked at 22 entries). The F10
 tuning panel adds the fog clear distance row and applies live. The OSD effect line and
 startup log show the active fog/mote state.

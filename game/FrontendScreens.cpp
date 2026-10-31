@@ -12710,7 +12710,6 @@ Menu* FrontendMenu_GetEffectAmounts(Menu*parent){
  int n;const auto*rows=EffectAmount_Rows(n);
  if(n>20)n=20; // Menu::items holds 22: leave room for the OK row
  for(int i=0;i<n;i++)Menu_AddItemType3(&effectAmounts,(char*)rows[i].label,-1,rows[i].count,0,0,0,0,0x40+i);
- Menu_AddItemType2(&effectAmounts,(char*)"Atmosphere...",-1,FrontendMenu_GetAtmosphereAmounts(&effectAmounts),0,0x30);
  Menu_AddItemType1(&effectAmounts,0,0x67,ApplyAmounts,0xe);
  Menu_SetCallbacks(&effectAmounts,EnterAmounts,NULL,(MenuCallback)FrontendMenu_DrawAdvancedGraphicsOptions,NULL);
  Menu_ValidateCursor(&effectAmounts,0);return &effectAmounts;
