@@ -9,7 +9,15 @@ All notable changes to OpenCMR2 are documented here.
 - **Atmosphere menu directly under Graphics options**: the fog/air
   motes/snow glint rows move up from Advanced graphics > Effect amounts, so
   the fog layer is one click from Graphics options. What's New revision 3
-  notes the move.
+  notes the move. The move exposed a draw bug - the new row's value fell
+  into the Graphics options draw switch's default case and rendered with no
+  label; `FrontendMenu_DrawGraphicsOptions` now draws it (case 0x10, same
+  idiom as the advanced page's case 0x30). Evidence: new
+  `tests/graphics_menu_render.cpp` drives the real Graphics options
+  build/draw and the real Atmosphere submenu draw through the shared menu
+  machine, asserting labels and on-frame bounds and dumping pixel frames
+  plus drawn-line dumps (substitute glyphs/fonts - layout, labels and
+  wiring proof, not native fonts or native pixels).
 
 ### Atmosphere
 
