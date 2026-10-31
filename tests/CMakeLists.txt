@@ -634,3 +634,7 @@ if(UNIX AND Python3_EXECUTABLE)
  add_test(NAME rebuild_options COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/rebuild_options.py)
  add_test(NAME rebuild_update_run COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/rebuild_update_run.py)
 endif()
+
+add_executable(scenery_mip_test scenery_mip.cpp)
+target_include_directories(scenery_mip_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
+add_test(NAME scenery_mip COMMAND scenery_mip_test)

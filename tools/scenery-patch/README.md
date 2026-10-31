@@ -476,3 +476,26 @@ is experimental source filtering, not recovered artwork. Native Metal driving,
 distance transitions, culling and performance remain unverified; no claim that
 all stage assets or all trees are now fully upgraded. `--textures original`
 disables this fallback without changing originals.
+
+### Generated tree sampling
+
+Generated tree materials now upload a complete mip chain, using premultiplied
+BGRA box filtering with nearest-attainable >=128 alpha coverage. Tree draws use
+linear minification/magnification and trilinear mips; existing wrap addressing
+is retained for the continuous circumference atlas. Original top-level TGA
+pixels, generated geometry and UVs are unchanged. The three current shell
+mappings add about3.33MB of mip data to10.01MB base pixel data (CPU/GPU
+allocations and backend overhead are separate). No pack regeneration is needed.
+
+This affects shell and crossed tree materials only. Spectator atlases retain
+one level and point/no-mip sampling, so filtering cannot mix adjacent people
+or frames. Original-card wind/fixed-strip paths retain their existing sampler.
+Tree/atlas cache keys are distinct even if a manual pack reuses one path.
+
+Private offscreen GPU comparisons of all three current shells at32/16/8px
+and a240px view show smoother, softer distance sampling. Tiny branches still
+disappear and shell tiers remain visible. Static comparisons do not establish
+motion stability or native Metal performance. Actual loader tests verify every
+uploaded mip byte and recorded sampler state, while identity/reset and legacy
+fallback tests remain intact. This is a sampling fix, not new source detail,
+new tree mappings, or native gameplay acceptance.

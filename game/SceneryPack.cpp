@@ -1,4 +1,5 @@
 #include "SceneryMotion.h"
+#include "SceneryMip.h"
 #include "ParallelFor.h"
 #include "OrderedBatch.h"
 #include "CrowdMesh.h"
@@ -75,20 +76,30 @@ bool Read(const std::string &path,std::string &out) {
     out.resize(n);bool ok=Sys_ReadFile(f,out.data(),n)==n;Sys_CloseFile(f);return ok;
 }
 std::string Dir(const std::string &s){auto at=s.find_last_of('/');return at==s.npos?"":s.substr(0,at+1);}
-PackTexture *Load(const std::string &relative){
-    auto cached=textures.find(relative);if(cached!=textures.end())return &cached->second;
+PackTexture *Load(const std::string &relative,bool tree=false){
+    const std::string cacheKey=(tree?"tree:":"atlas:")+relative;
+    auto cached=textures.find(cacheKey);if(cached!=textures.end())return &cached->second;
     if(!SafePath(relative))return nullptr;
     std::string bytes,path=root+relative;if(!Read(path,bytes)||bytes.size()<18)return nullptr;
     // Decoder accepts uncompressed truecolour only. Validate dimensions/size first.
     const unsigned char *b=(const unsigned char*)bytes.data();unsigned w=b[12]|b[13]<<8,h=b[14]|b[15]<<8;
     if(b[1]!=0||b[2]!=2||b[16]!=32||w==0||h==0||w>4096||h>4096||bytes.size()<18u+b[0]+size_t(w)*h*4)return nullptr;
     if(b[4]||b[5]||b[6]||b[7]||b[8]||b[9]||b[10]||b[11]||b[17]!=8)return nullptr;
-    GfxTexture *surface=Gfx_CreateTexture(w,h,GFX_FORMAT_BGRA8,1,0);if(!surface)return nullptr;
-    GfxLockedRect lock={};if(!Gfx_LockTexture(surface,0,0,&lock)){Gfx_DestroyTexture(surface);return nullptr;}
+    unsigned levels=1;if(tree)for(unsigned x=w,y=h;x>1||y>1;x=std::max(1u,x/2),y=std::max(1u,y/2))++levels;
+    GfxTexture *surface=Gfx_CreateTexture(w,h,GFX_FORMAT_BGRA8,levels,0);if(!surface)return nullptr;
+    std::vector<uint8_t> pixels(size_t(w)*h*4);
     // TGA rows begin at bottom; renderer UV v=0 is top, as native TGA path.
-    for(unsigned y=0;y<h;y++)memcpy((char*)lock.pixels+y*lock.pitch,b+18+b[0]+(h-1-y)*w*4,w*4);
-    Gfx_UnlockTexture(surface,0,0);ownedTextures.push_back(surface);
-    auto &t=textures[relative];t={surface,(int)w,(int)h};return &t;
+    for(unsigned y=0;y<h;y++)memcpy(pixels.data()+y*w*4,b+18+b[0]+(h-1-y)*w*4,w*4);
+    unsigned opaque=0;for(size_t i=3;i<pixels.size();i+=4)opaque+=pixels[i]>=128;
+    double coverage=double(opaque)/(w*h);unsigned mw=w,mh=h;
+    for(unsigned level=0;level<levels;level++){
+        GfxLockedRect lock={};if(!Gfx_LockTexture(surface,0,level,&lock)){Gfx_DestroyTexture(surface);return nullptr;}
+        for(unsigned y=0;y<mh;y++)memcpy((char*)lock.pixels+y*lock.pitch,pixels.data()+y*mw*4,mw*4);
+        Gfx_UnlockTexture(surface,0,level);
+        if(level+1<levels){pixels=SceneryMip::Down(pixels,mw,mh,coverage);mw=std::max(1u,mw/2);mh=std::max(1u,mh/2);}
+    }
+    ownedTextures.push_back(surface);
+    auto &t=textures[cacheKey];t={surface,(int)w,(int)h};return &t;
 }
 void Init(){
     if(loaded)return;loaded=true;
@@ -145,12 +156,12 @@ bool Prepare(Asset &a){
     while(std::getline(input,line)){std::istringstream in(line);in>>tag;
         if(tag=="newmtl")in>>material;else if(tag=="map_Kd"){std::string p;in>>p;if(!SafePath(p))return Reject(a,"unsafe material texture path");maps[material]=Dir(a.entry.asset)+Dir(mtl)+p;}}
     for(auto &g:groups){auto it=maps.find(g.material);if(it==maps.end())return Reject(a,"tree material has no texture mapping");
-        Part p;p.texture=Load(it->second);if(!p.texture)return Reject(a,"tree texture missing, invalid TGA or texture allocation failed");
+        Part p;p.texture=Load(it->second,true);if(!p.texture)return Reject(a,"tree texture missing, invalid TGA or texture allocation failed");
         for(auto &v:g.vertices)p.vertices.push_back({v.x,v.y,v.z,v.nx,v.ny,v.nz,0xffffffff,0,v.u,v.v,0,0});
         a.parts.push_back(std::move(p));}
     return a.ready=true;
 }
-void State(const GfxMatrix &m){
+void State(const GfxMatrix &m,bool tree=false){
     Gfx_PushState();Gfx_SetTransform(GFX_TRANSFORM_WORLD,&m);Gfx_SetLighting(FALSE);
     Gfx_SetDepthTest(TRUE);Gfx_SetDepthWrite(TRUE);Gfx_SetCullMode(GFX_CULL_NONE);
     Gfx_SetAlphaBlend(TRUE);Gfx_SetSrcBlend(GFX_BLEND_SRCALPHA);Gfx_SetDestBlend(GFX_BLEND_INVSRCALPHA);
@@ -158,6 +169,7 @@ void State(const GfxMatrix &m){
     Gfx_SetStageColorOp(0,GFX_TOP_MODULATE);Gfx_SetStageColorArg1(0,GFX_TA_TEXTURE);Gfx_SetStageColorArg2(0,GFX_TA_DIFFUSE);
     Gfx_SetStageAlphaOp(0,GFX_TOP_MODULATE);Gfx_SetStageAlphaArg1(0,GFX_TA_TEXTURE);Gfx_SetStageAlphaArg2(0,GFX_TA_DIFFUSE);
     Gfx_SetStageMinFilter(0,GFX_FILTER_POINT);Gfx_SetStageMagFilter(0,GFX_FILTER_POINT);Gfx_SetStageMipFilter(0,GFX_MIPFILTER_NONE);
+    if(tree){Gfx_SetStageMinFilter(0,GFX_FILTER_LINEAR);Gfx_SetStageMagFilter(0,GFX_FILTER_LINEAR);Gfx_SetStageMipFilter(0,GFX_MIPFILTER_LINEAR);}
     Gfx_SetStageTexCoordIndex(0,0);Gfx_SetStageTextureTransform(0,0);Gfx_SetStageAddress(0,GFX_ADDRESS_WRAP);
     Gfx_SetStageColorOp(1,GFX_TOP_DISABLE);Gfx_SetStageAlphaOp(1,GFX_TOP_DISABLE);
 }
@@ -333,7 +345,7 @@ static bool DrawReplacement(StageObject *object,const float *billboard,unsigned 
     if(windOn){double t0=Sys_GetTicksPrecise();windFrame=SceneryMotion::MakeWindFrame(height,animationTime,phase,Sys_GetOption("video.tree_rustle",100)/100.f);timeWindMathNs+=(unsigned long long)((Sys_GetTicksPrecise()-t0)*1e6);}
     if(!windOn){
         FlushTrees(); // keep the recorded order: anything deferred before this tree goes first
-        State(m);
+        State(m,true);
         for(auto &p:fitted->second){
             treeTrianglesTotal+=p.vertices.size()/3;
             Gfx_SetTexture(0,p.texture->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,p.vertices.data(),p.vertices.size());
@@ -376,7 +388,7 @@ void FlushTrees(){
     },8); // Keep tiny batches on caller: no worker wake/wait for 1..7 trees.
     double t1=Sys_GetTicksPrecise();
     pendingTrees.RecordAll([](const PendingTree &t,std::vector<std::vector<GfxVertex>> &out){
-        State(t.m);
+        State(t.m,true);
         for(size_t k=0;k<t.parts->size();k++){Gfx_SetTexture(0,(*t.parts)[k].texture->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,out[k].data(),out[k].size());}
         Gfx_PopState();
     });
