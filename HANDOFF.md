@@ -84,6 +84,35 @@ Update the relevant lane with tests, blockers and next handoff as it changes.
 Do not overlap these claimed lanes silently or combine inactive experiments into
 a road follow-up. Changes to eligibility/defaults need their own reviewed scope.
 
+## Fog light beams + cockpit fog (31 October 2026)
+
+Claim: feat/fog-light-beams, based main d8c25d0. Replaces the radial,
+fog-factor-coupled car-light glow in fog.frag (the horizon blowout + dark
+near-road mechanism) with a directional screen-space wedge per lamp
+(brightest at the lamps, axial ramp so it never shines backward, halo for
+foreshortened lamps), a 30% floor decoupling beams from local fog (near
+road + cockpit glass show beams), soft shoulder + headroom so a bright
+horizon cannot clip to white. Producer projects each beam (pos+dir*30 world
+units) and keeps lamps whose beam crosses the frame (fixes own-headlights
+drop in cockpit view; behind-camera drop kept). Interior cockpit meshes get
+MESH_FLAG_GLASS_NO_ZWRITE (bit 20, port-side) and the parts draw paths skip
+z-writes only for parts with real semi-transparent vertices (per-index alpha
+scan; opaque parts and interior self-occlusion unchanged), gated by ini-only
+video.cockpit_glass_fog (default 1) - the windscreen-glass poly cause stays
+HYPOTHETICAL until verified against real a5/c5 interior assets natively.
+The wedge is a screen-space approximation of lit air, NOT volumetric or
+world-space road illumination. FogUniforms grows to 23 vec4 (beams at
+offset 76) on both backends; GL keeps viewZ=0/no depth gate. Tests:
+tests/fog_math.cpp beam/shoulder/headroom pins; gl_effects_runtime drives
+the production fog.frag - beam brightens along direction, decays, no
+backward shine, floor lights clean air, headroom dims bright scenes,
+mid-beam stays unclipped, review frames frame-fog-beam.ppm +
+frame-fog-road.ppm (4th frame = beams) dumped and inspected. Suite passes
+with only the pre-existing replay_controls_wiring failure and the known
+llvmpipe god-rays occluder environment failure (fails on parent commits
+too). Native Mac Metal pixels unverified; interior transparency/sorting
+regression check needs a native cockpit run with real assets.
+
 ## France1 first asset test
 
 Claim: feat/france1-asset-test. User selected France1 first. Exact hi/lo quartets

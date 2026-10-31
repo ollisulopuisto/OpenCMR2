@@ -2730,9 +2730,9 @@ struct Executor : GfxExecutor {
         if (raceWorld && fogEnabled && fogAmount > 0 && sampledDepth && backDepth != nullptr &&
             fogBuf1 != nullptr && FogPipeline() != nullptr) {
             ResolveProjection(&sceneNear, &sceneFar);
-            // FogUniforms std140: fog, sun, extra, lights[8], lightInfo[8] (19 vec4).
+            // FogUniforms std140: fog, sun, extra, lights[8], lightInfo[8], beams[8] (23 vec4).
             float fogLightStrength = std::max(0, std::min(200, Sys_GetOption("video.fog_lights", 100))) / 100.0f;
-            float fogUniforms[76] = { Fog_Density(fogAmount), fogGlow / 100.0f, sceneNear, sceneFar,
+            float fogUniforms[92] = { Fog_Density(fogAmount), fogGlow / 100.0f, sceneNear, sceneFar,
                                       sunX, sunY, sunVisible ? 1.0f : 0.0f,
                                       backHeight ? (float)backWidth / (float)backHeight : 1.0f,
                                       (float)fogClearDistance, fogLightStrength, 0.0f, 0.0f };
@@ -2744,6 +2744,9 @@ struct Executor : GfxExecutor {
                 fogUniforms[44 + i*4 + 1] = fogLights[i].r;
                 fogUniforms[44 + i*4 + 2] = fogLights[i].g;
                 fogUniforms[44 + i*4 + 3] = fogLights[i].b;
+                fogUniforms[76 + i*4 + 0] = fogLights[i].beamX;
+                fogUniforms[76 + i*4 + 1] = fogLights[i].beamY;
+                fogUniforms[76 + i*4 + 2] = fogLights[i].beamLen;
             }
             SDL_GPUTextureSamplerBinding fogBindings[2] = {
                 { presentSource, linearSampler }, { backDepth, depthSampler }

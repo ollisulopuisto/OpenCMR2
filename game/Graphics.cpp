@@ -7028,6 +7028,25 @@ void Graphics_BindCarPaintDirt(Texture *texture){
  }else Gfx_SetBodyDirt(0,0,0,0);
 }
 
+// video.cockpit_glass_fog (default on): a part of a mesh flagged
+// MESH_FLAG_GLASS_NO_ZWRITE that actually contains semi-transparent vertices
+// (windscreen glass) is drawn without depth writes; fully opaque parts of the
+// same mesh keep writing depth. Mesh flag 0x8 (alpha blending enabled for the
+// mesh) is required - without blending the alpha would not show anyway.
+static bool Graphics_PartHasSemiTransparentAlpha(Mesh *pMesh, MeshPart *pPart)
+{
+    if (pMesh->pVertexData == NULL || pPart->pData == NULL || pPart->indexCount <= 0)
+        return false;
+    const MeshVertexF *verts = (const MeshVertexF *)pMesh->pVertexData;
+    for (int i = 0; i < pPart->indexCount; i++) {
+        DWORD d = verts[pPart->minIndex + pPart->pData[i]].diffuseColour;
+        BYTE a = (BYTE)(d >> 24);
+        if (a > 0 && a < 250)
+            return true;
+    }
+    return false;
+}
+
 // Draws every part of a mesh from its vertex buffer, one texture at a time,
 // and counts the triangles drawn.
 // FUNCTION: CMR2 0x0049c880
@@ -7044,8 +7063,12 @@ void Graphics_DrawMeshPartsByTexture(Mesh *pMesh)
             pPart = *ppPart;
             CGraphics::ApplyTextureStageChange(0, CGraphics::m_pTextureManager->textureBuffer[pPart->texture]);
             Graphics_BindCarPaintDirt(CGraphics::m_pTextureManager->textureBuffer[pPart->texture]);
+            bool glassNoZ = (pMesh->flags & (MESH_FLAG_GLASS_NO_ZWRITE | 0x8u)) == (MESH_FLAG_GLASS_NO_ZWRITE | 0x8u) &&
+                            Graphics_PartHasSemiTransparentAlpha(pMesh, pPart);
+            if (glassNoZ) CGraphics::SetZWriteEnable(0);
             if(!SceneryPack_DrawFixedPart(pMesh,pPart))
             Gfx_DrawIndexedPrimitiveVB(GFX_TRIANGLELIST, CGraphics::m_pTextureManager->pVertexBuffers[pMesh->vertexBufferIndex], pMesh->vertexOffset + pPart->minIndex, pMesh->field_0x10 - pPart->minIndex, pPart->pData, pPart->indexCount);
+            if (glassNoZ) CGraphics::SetZWriteEnable(1);
             CGame::m_unk0x0059ce18 += pPart->indexCount / 3;
             i++;
             ppPart++;
@@ -7069,8 +7092,12 @@ void Graphics_MarkTexturesAndDrawMeshParts(Mesh *pMesh)
             Frontend_SetObjectField118(CGraphics::m_pTextureManager->textureBuffer[pPart->texture], 10);
             CGraphics::ApplyTextureStageChange(0, CGraphics::m_pTextureManager->textureBuffer[pPart->texture]);
             Graphics_BindCarPaintDirt(CGraphics::m_pTextureManager->textureBuffer[pPart->texture]);
+            bool glassNoZ = (pMesh->flags & (MESH_FLAG_GLASS_NO_ZWRITE | 0x8u)) == (MESH_FLAG_GLASS_NO_ZWRITE | 0x8u) &&
+                            Graphics_PartHasSemiTransparentAlpha(pMesh, pPart);
+            if (glassNoZ) CGraphics::SetZWriteEnable(0);
             if(!SceneryPack_DrawFixedPart(pMesh,pPart))
             Gfx_DrawIndexedPrimitiveVB(GFX_TRIANGLELIST, CGraphics::m_pTextureManager->pVertexBuffers[pMesh->vertexBufferIndex], pMesh->vertexOffset + pPart->minIndex, pMesh->field_0x10 - pPart->minIndex, pPart->pData, pPart->indexCount);
+            if (glassNoZ) CGraphics::SetZWriteEnable(1);
             CGame::m_unk0x0059ce18 += pPart->indexCount / 3;
             i++;
             ppPart++;

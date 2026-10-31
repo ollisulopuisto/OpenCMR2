@@ -98,6 +98,51 @@ inline float Fog_LightGlow(float dx, float dy, float intensity, float radius) {
     if (t <= 0.f) return 0.f;
     return intensity * t * t;
 }
+// Car-light beam wedge (video.fog_lights): SCREEN-SPACE APPROXIMATION of the air
+// lit along a beam, not a volumetric or world-space simulation - it brightens the
+// already-rendered scene where the beam's screen wedge overlaps it, and it never
+// changes how the road or terrain itself is lit. (dx,dy) are aspect-corrected uv
+// offsets from the lamp; (dirX,dirY) the aspect-corrected unit direction the beam
+// travels on screen; len the projected beam length in the same units (~0 when the
+// beam points at the camera). The wedge is brightest right at the lamps and decays
+// along the beam, so the air between the lamps and the horizon lights up first;
+// a small radial halo keeps the lamp itself glowing when the wedge foreshortens
+// away. Mirrors the light loop in shaders/fog.frag.
+inline float Fog_LightBeam(float dx, float dy, float dirX, float dirY, float len, float intensity) {
+    if (!(intensity > 0.f)) return 0.f;
+    float wedge = 0.f;
+    if (dirX * dirX + dirY * dirY > 1e-6f) {
+        float a = dx * dirX + dy * dirY;          // axial distance along the beam
+        float l = dx * dirY - dy * dirX;          // signed lateral offset
+        float reach = len > 0.05f ? len : 0.05f;
+        float width = 0.015f + (a > 0.f ? a : 0.f) * 0.35f;   // cone spread
+        float lat = l / width;
+        if (lat > 1.f) lat = 1.f;
+        if (lat < -1.f) lat = -1.f;
+        float lateral = 1.f - lat * lat;
+        // Ramps in over the first 0.05 of the beam (where the halo owns the
+        // glow) and is zero behind the lamp: the beam never shines backward.
+        float axial = a <= 0.f ? 0.f : (a < 0.05f ? a / 0.05f : 1.f);
+        wedge = axial * lateral * lateral / (1.f + 6.f * a / reach);
+    }
+    float halo = Fog_LightGlow(dx, dy, 1.f, 0.05f);            // foreshortened lamp
+    return intensity * (wedge + halo);
+}
+// Soft shoulder for the accumulated light: approaches 1 per channel, never clips hard.
+inline float Fog_SoftShoulder(float x) {
+    if (x <= 0.f) return 0.f;
+    return 1.f - std::exp(-2.f * x);
+}
+// Headroom: dims the light where the fogged scene is already near white, so a bright
+// horizon cannot be pushed into a clipped patch while dark road still takes the beam.
+inline float Fog_LightHeadroom(float r, float g, float b) {
+    float m = r > g ? r : g;
+    if (b > m) m = b;
+    float h = (1.f - m) * 1.5f;
+    if (h < 0.f) h = 0.f;
+    if (h > 1.f) h = 1.f;
+    return h;
+}
 // Fog colour: cool grey-blue away from the sun, warm inside the glow. glow is Fog_SunGlow
 // clamped to 0..1 for the tint; the shader additionally brightens by 1 + glow * 0.6.
 inline void Fog_Color(float glow, float *r, float *g, float *b) {

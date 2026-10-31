@@ -11,6 +11,7 @@ layout(std140, set = 3, binding = 0) uniform FogUniforms {
     vec4 extra; // x near-field clear distance in world units (0 = off), y car-light response 0..2, zw unused
     vec4 lights[8];    // xy projected car light (uv, v downwards), z intensity 0..1, w unused
     vec4 lightInfo[8]; // x viewZ in world units (<= 0: no depth gate), yzw tint
+    vec4 beams[8];     // xy aspect-corrected unit screen beam direction, z projected beam length, w unused
 };
 void main()
 {
@@ -36,33 +37,57 @@ void main()
     factor = clamp(factor * (0.55 + 0.9 * smoothstep(0.15, 0.85, uv.y)), 0.0, 1.0);
     // The sky hazes but never turns into a flat wall.
     if (depth >= 0.9999) factor = min(factor, 0.85);
-    if (factor <= 0.0) { outColor = center; return; }
+    // Near-clean air still takes the beams (they carry their own floor below).
+    if (factor <= 0.0 && extra.y <= 0.0) { outColor = center; return; }
     // Sun-ward glow: the fog brightens and warms toward the projected sun.
     vec2 d = uv - sun.xy;
     d.x *= sun.w;
     float g = sun.z > 0.5 ? fog.y * pow(max(1.0 - length(d) * 1.6, 0.0), 3.0) : 0.0;
     vec3 fogColor = mix(vec3(0.62, 0.66, 0.72), vec3(0.98, 0.87, 0.70), clamp(g, 0.0, 1.0));
     fogColor *= 1.0 + g * 0.6;
-    // Car lights cutting through the fog (video.fog_lights): radial in-scatter
-    // around each projected light, coupled to the local fog density so only foggy
-    // air lights up. Where the scene sits in front of the light (the car's own
-    // body) the depth gate keeps the glow off it; the raw-depth fallback path and
-    // the GL renderer pass no per-light depth and keep the glow unoccluded.
-    vec3 lightAdd = vec3(0.0);
+    // Car lights cutting through the fog (video.fog_lights): a screen-space wedge
+    // from each lamp along its projected beam direction - an approximation of the
+    // air the beam lights, not world-space road illumination. Brightest at the
+    // lamps and decaying along the beam (Fog_LightBeam), so the stretch between
+    // the lamps and the horizon lights up instead of only the far fog. Fog makes
+    // the beam brighter but is not required for it (a 30% floor keeps the beam on
+    // near-clean air, e.g. the near road or the cockpit windscreen region). Where
+    // the scene sits in front of the light (the car's own body, the dashboard) the
+    // depth gate keeps the glow off it; the raw-depth fallback path and the GL
+    // renderer pass no per-light depth and keep the glow unoccluded. The soft
+    // shoulder and the headroom term keep an already bright horizon from clipping.
+    vec3 lightSum = vec3(0.0);
     if (extra.y > 0.0) {
         for (int i = 0; i < 8; i++) {
             float li = lights[i].z;
             if (li <= 0.0) continue;
             vec2 dl = uv - lights[i].xy;
             dl.x *= sun.w;
-            float t = 1.0 - dot(dl, dl) / (0.18 * 0.18);   // Fog_LightGlow, 0.18 reach
-            if (t <= 0.0) continue;
+            vec2 bdir = beams[i].xy;
+            float blen = max(beams[i].z, 0.05);
+            float wedge = 0.0;
+            if (dot(bdir, bdir) > 1e-6) {
+                float a = dot(dl, bdir);
+                float l = dl.x * bdir.y - dl.y * bdir.x;
+                float width = 0.015 + max(a, 0.0) * 0.35;
+                float lat = clamp(l / width, -1.0, 1.0);
+                float lateral = 1.0 - lat * lat;
+                // Ramps in over the first 0.05 of the beam (where the halo owns
+                // the glow); zero behind the lamp - no backward shine.
+                float axial = a <= 0.0 ? 0.0 : min(a / 0.05, 1.0);
+                wedge = axial * lateral * lateral / (1.0 + 6.0 * max(a, 0.0) / blen);
+            }
+            float t = 1.0 - dot(dl, dl) / (0.05 * 0.05);   // foreshortened-lamp halo
+            float halo = t > 0.0 ? t * t : 0.0;
             float gate = 1.0;
             if (lightInfo[i].x > 0.0 && fog.z > 0.0)
                 gate = step(lightInfo[i].x - 1.0, viewZ);
-            lightAdd += lightInfo[i].yzw * (li * t * t * gate);
+            lightSum += lightInfo[i].yzw * (li * (wedge + halo) * gate);
         }
-        lightAdd *= extra.y * factor;
+        lightSum *= extra.y * mix(0.30, 1.0, factor);
     }
-    outColor = vec4(mix(center.rgb, fogColor, factor) + lightAdd, center.a);
+    vec3 fogged = mix(center.rgb, fogColor, factor);
+    lightSum = vec3(1.0) - exp(-lightSum * 2.0);   // Fog_SoftShoulder
+    float head = clamp((1.0 - max(fogged.r, max(fogged.g, fogged.b))) * 1.5, 0.0, 1.0);   // Fog_LightHeadroom
+    outColor = vec4(fogged + lightSum * head, center.a);
 }

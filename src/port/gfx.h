@@ -309,6 +309,8 @@ struct GfxFogLight {
     float viewZ;      // world units from the camera; <= 0 disables the depth gate
     float intensity;  // 0..1
     float r, g, b;    // tint 0..1 (headlight warm white, rear/indicator per the glow)
+    float beamX, beamY; // aspect-corrected screen unit vector the beam travels; (0,0) = unknown
+    float beamLen;      // projected beam length in the same units (foreshortened ~0 head-on)
 };
 // Up to 8 car lights for the fog pass; count 0 clears. Called per view per frame.
 void Gfx_SetFogLights(const GfxFogLight *lights, int count);
