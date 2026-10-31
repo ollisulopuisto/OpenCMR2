@@ -12,22 +12,26 @@ struct Texture;
 constexpr int AIR_MOTE_TYPE = 0x22;
 constexpr int AIR_MOTE_BASE = 48;    // live cap at amount 100
 constexpr int AIR_MOTE_LIFE = 150;   // 25 Hz steps = 6 s
-constexpr int AIR_MOTE_MAX_AMOUNT = 300;
+constexpr int AIR_MOTE_MAX_AMOUNT = 500;
 // Peak alpha: raised 130 -> 190 after the first native look found the specks too faint
-// against bright fog; count and cap are unchanged (pool discipline stays as pinned).
+// against bright fog. Second native look ("smaller and more plentiful, like small
+// bugs"): size dropped 0x3800 -> 0x2000 (see StageTiming) and the amount ceiling
+// raised 300 -> 500 (cap 144 -> 240); alpha stays 190.
 constexpr int AIR_MOTE_ALPHA_MAX = 190;
-// video.air_motes_amount (0..300): spawn rate and, above 100, the live cap grow with it.
+// video.air_motes_amount (0..500): spawn rate and, above 100, the live cap grow with it.
 inline int AirMote_Cap(int amountPercent) {
     int a = amountPercent < 0 ? 0 : amountPercent > AIR_MOTE_MAX_AMOUNT ? AIR_MOTE_MAX_AMOUNT : amountPercent;
     return AIR_MOTE_BASE * a / 100;
 }
 // Same pool discipline as the dust plume and speed motes: the last 64 slots stay
-// original-only, and the cap above the base count only applies while the pool is less
-// than half full. Any other spawn may still evict a mote first (see Particle_Spawn).
+// original-only. The cap above the base count applies while the pool is less than
+// three-quarters full (raised from half for the "more plentiful" revision: any other
+// spawn may still evict a mote first (see Particle_Spawn), so a fuller mote share can
+// never starve original particles; priority is unchanged).
 inline bool AirMote_HasBudget(int active, int motes, int capacity, int amountPercent) {
     if (!(capacity > 64 && active < capacity - 64)) return false;
     if (motes < AIR_MOTE_BASE) return true;
-    return motes < AirMote_Cap(amountPercent) && active < capacity / 2;
+    return motes < AirMote_Cap(amountPercent) && active < capacity * 3 / 4;
 }
 // Slow drift: p.position is the per-step velocity (16.16 fixed), eased toward a gentle
 // ambient drift (a fraction of the stage wind) plus a slow sink. Alpha fades in and out.

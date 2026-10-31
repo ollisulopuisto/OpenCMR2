@@ -109,7 +109,7 @@ struct EnhancementOptions {
         }
         if(key=="--fog-amount"||key=="--fog-glow"||key=="--fog-clear"||key=="--air-motes-amount"){
             char *end=nullptr;long n=strtol(value.c_str(),&end,10);
-            int hi=key=="--fog-amount"?200:key=="--fog-clear"?200:key=="--fog-glow"?100:300;
+            int hi=key=="--fog-amount"?200:key=="--fog-clear"?200:key=="--fog-glow"?100:500;
             if(value.empty()||*end||n<0||n>hi)error=key+" expects 0.."+std::to_string(hi);
             else overrides[key=="--fog-amount"?"video.fog_amount":key=="--fog-clear"?"video.fog_clear":key=="--fog-glow"?"video.fog_glow":"video.air_motes_amount"]=(int)n;
         }
@@ -146,7 +146,7 @@ struct EnhancementOptions {
                 // The requested exaggerated atmosphere starting look, separate from overdo so
                 // --all-mods keeps its established appearance. Per launch, nothing saved.
                 static const std::pair<const char*,int> kAtmosphere[]={
-                    {"video.fog",1},{"video.fog_amount",100},{"video.fog_glow",100},{"video.air_motes",1},{"video.air_motes_amount",300},
+                    {"video.fog",1},{"video.fog_amount",100},{"video.fog_glow",100},{"video.air_motes",1},{"video.air_motes_amount",500},
                     {"video.god_rays",1},{"video.god_rays_amount",80}};
                 for(auto&e:kAtmosphere)if(!overrides.count(e.first))overrides[e.first]=e.second;
             }

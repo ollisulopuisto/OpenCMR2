@@ -6,18 +6,20 @@
 static int fails;
 #define CHECK(c) do{ if(!(c)){ std::printf("FAIL %d: %s\n", __LINE__, #c); ++fails; } }while(0)
 int main(){
-    // Cap and budget: base 48 at amount 100, up to 144 at 300, last 64 pool slots stay original-only.
+    // Cap and budget: base 48 at amount 100, up to 240 at 500, last 64 pool slots stay original-only.
     CHECK(AirMote_Cap(100) == 48);
     CHECK(AirMote_Cap(0) == 0);
     CHECK(AirMote_Cap(300) == 144);
-    CHECK(AirMote_Cap(900) == 144);
+    CHECK(AirMote_Cap(500) == 240);
+    CHECK(AirMote_Cap(900) == 240);
     CHECK(!AirMote_HasBudget(0, 0, 64, 100));          // pool of 64 leaves no original reserve
     CHECK(!AirMote_HasBudget(400 - 64, 0, 400, 100));  // only 64 slots left: refuse
     CHECK(AirMote_HasBudget(100, 47, 400, 100));
     CHECK(!AirMote_HasBudget(100, 48, 400, 100));      // at the base cap
     CHECK(!AirMote_HasBudget(100, 100, 400, 100));     // above base cap needs amount > 100...
-    CHECK(AirMote_HasBudget(100, 100, 400, 300));      // ...and a pool less than half full
-    CHECK(!AirMote_HasBudget(250, 100, 400, 300));     // pool half full: no motes past base
+    CHECK(AirMote_HasBudget(100, 100, 400, 300));      // ...and a pool less than three-quarters full
+    CHECK(AirMote_HasBudget(250, 100, 400, 300));      // three-quarter rule: still room at 250/400
+    CHECK(!AirMote_HasBudget(300, 100, 400, 300));     // pool three-quarters full: no motes past base
     // Spawn ring: distance 3..24 world units, height 0.3..4.0, any angle.
     for (float u1 : {0.f, .25f, .5f, .75f, 1.f}) for (float u2 : {0.f, .5f, 1.f}) for (float u3 : {0.f, .5f, 1.f}) {
         float dx, dz, h;
@@ -41,7 +43,7 @@ int main(){
     CHECK(std::fabs(AirMote_SpawnRate(100) - 0.32f) < 1e-7f);
     CHECK(AirMote_SpawnRate(0) == 0.f);
     CHECK(std::fabs(AirMote_SpawnRate(300) - 0.96f) < 1e-6f);
-    CHECK(std::fabs(AirMote_SpawnRate(900) - 0.96f) < 1e-6f);
+    CHECK(std::fabs(AirMote_SpawnRate(900) - 1.6f) < 1e-6f);   // clamps at the 500 ceiling
     // Step: drift eases toward wind/16 with a slow sink; alpha fades in and out, never negative, never above AIR_MOTE_ALPHA_MAX.
     for (int ageSteps : {0, 15, 30, 75, 100, 149, 150, 200}) {
         Particle p = {};

@@ -31,7 +31,7 @@ inline const TuningRow *Tuning_Rows(int &count)
         {"Fog near clear dist, world units (0 off; global, not road-only)", "video.fog_clear", 0, 200, 10, 0},
         {"Fog draw cull (0/1, experimental, unmeasured)", "video.fog_cull", 0, 1, 1, 0},
         {"Air motes (0/1)", "video.air_motes", 0, 1, 1, 0},
-        {"Air motes amount %", "video.air_motes_amount", 0, 300, 25, 100},
+        {"Air motes amount %", "video.air_motes_amount", 0, 500, 25, 100},
         {"Corner tilt % (up to four degrees)", "video.camera_roll", 0, 100, 5, 0},
         {"Drone preset locked (unlock to tune)", "video.drone_locked", 0, 1, 1, 0},
         {"Drone distance %", "video.drone_distance", 50, 150, 5, 60},
