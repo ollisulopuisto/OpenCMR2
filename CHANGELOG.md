@@ -4,6 +4,15 @@ All notable changes to OpenCMR2 are documented here.
 
 ## [Unreleased]
 
+### Atmosphere
+
+- **Fog responds to car lights** (`video.fog_lights`, 0-200%, default 100):
+  head and rear lights visibly cut the fog - radial in-scatter around each
+  projected car light in the fog pass, tinted per light and coupled to the
+  local fog density, with a depth gate off the car's own body (SDL_GPU; the
+  OpenGL renderer keeps the glow unoccluded). Atmosphere menu row, launch
+  flag `--fog-lights`, and the `atmosphere` test preset enable it.
+
 ### Rendering enhancements ("juice")
 
 All changes below are optional and gated behind `[video]` settings in

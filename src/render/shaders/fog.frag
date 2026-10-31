@@ -1,13 +1,16 @@
 #version 450
 // Optional atmosphere fog (video.fog): distance fog + ground-mist gradient + sun-ward
-// glow. Pure maths reference: render/fog_math.h. One full-screen pass, scene + depth in.
+// glow + car-light response (video.fog_lights). Pure maths reference: render/fog_math.h.
+// One full-screen pass, scene + depth in.
 layout(location = 0) out vec4 outColor;
 layout(set = 2, binding = 0) uniform sampler2D scene;
 layout(set = 2, binding = 1) uniform sampler2D depthTex;
 layout(std140, set = 3, binding = 0) uniform FogUniforms {
     vec4 fog;   // x density per world unit, y glow strength 0..1, z near, w far (0 = projection unknown)
     vec4 sun;   // xy projected sun (uv, v downwards), z sun visible (0/1), w aspect ratio
-    vec4 extra; // x near-field clear distance in world units (0 = off), yzw unused
+    vec4 extra; // x near-field clear distance in world units (0 = off), y car-light response 0..2, zw unused
+    vec4 lights[8];    // xy projected car light (uv, v downwards), z intensity 0..1, w unused
+    vec4 lightInfo[8]; // x viewZ in world units (<= 0: no depth gate), yzw tint
 };
 void main()
 {
@@ -40,5 +43,26 @@ void main()
     float g = sun.z > 0.5 ? fog.y * pow(max(1.0 - length(d) * 1.6, 0.0), 3.0) : 0.0;
     vec3 fogColor = mix(vec3(0.62, 0.66, 0.72), vec3(0.98, 0.87, 0.70), clamp(g, 0.0, 1.0));
     fogColor *= 1.0 + g * 0.6;
-    outColor = vec4(mix(center.rgb, fogColor, factor), center.a);
+    // Car lights cutting through the fog (video.fog_lights): radial in-scatter
+    // around each projected light, coupled to the local fog density so only foggy
+    // air lights up. Where the scene sits in front of the light (the car's own
+    // body) the depth gate keeps the glow off it; the raw-depth fallback path and
+    // the GL renderer pass no per-light depth and keep the glow unoccluded.
+    vec3 lightAdd = vec3(0.0);
+    if (extra.y > 0.0) {
+        for (int i = 0; i < 8; i++) {
+            float li = lights[i].z;
+            if (li <= 0.0) continue;
+            vec2 dl = uv - lights[i].xy;
+            dl.x *= sun.w;
+            float t = 1.0 - dot(dl, dl) / (0.18 * 0.18);   // Fog_LightGlow, 0.18 reach
+            if (t <= 0.0) continue;
+            float gate = 1.0;
+            if (lightInfo[i].x > 0.0 && fog.z > 0.0)
+                gate = step(lightInfo[i].x - 1.0, viewZ);
+            lightAdd += lightInfo[i].yzw * (li * t * t * gate);
+        }
+        lightAdd *= extra.y * factor;
+    }
+    outColor = vec4(mix(center.rgb, fogColor, factor) + lightAdd, center.a);
 }

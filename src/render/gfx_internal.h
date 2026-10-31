@@ -215,6 +215,8 @@ struct GfxExecutor {
     virtual void SetPostFogClearDistance(int) {}
     // Normalized top-left screen position of actual stage sun; false hides rays.
     virtual void SetSunScreenPosition(float, float, BOOL) {}
+    // OpenCMR2: car lights the fog pass responds to (video.fog_lights). Up to 8.
+    virtual void SetFogLights(const GfxFogLight *, int) {}
     // Map resolution 512/1024/2048; PCF softness 0..100 maps to radius 0..4 texels.
     virtual void SetShadowQuality(int, int) {}
     // OpenCMR2: color grading. `temperature` (-100..100) cool->warm,

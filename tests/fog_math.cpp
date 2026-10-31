@@ -47,6 +47,14 @@ int main(){
     CHECK(Fog_SunGlow(0.625f, 0.f, 1.f) == 0.f);
     CHECK(Fog_SunGlow(1.f, 0.f, 1.f) == 0.f);
     CHECK(Fog_SunGlow(0.3f, 0.f, 1.f) > 0.f && Fog_SunGlow(0.3f, 0.f, 1.f) < 1.f);
+    // Car-light glow: full at the light, zero at/past the radius, quadratic falloff, no negative.
+    CHECK(std::fabs(Fog_LightGlow(0.f, 0.f, 1.f, 0.18f) - 1.f) < 1e-6f);
+    CHECK(Fog_LightGlow(0.18f, 0.f, 1.f, 0.18f) == 0.f);
+    CHECK(Fog_LightGlow(0.3f, 0.f, 1.f, 0.18f) == 0.f);
+    CHECK(Fog_LightGlow(0.09f, 0.f, 1.f, 0.18f) > 0.5f && Fog_LightGlow(0.09f, 0.f, 1.f, 0.18f) < 0.6f);
+    CHECK(Fog_LightGlow(0.f, 0.f, 0.f, 0.18f) == 0.f);
+    CHECK(Fog_LightGlow(0.f, 0.f, 1.f, 0.f) == 0.f);
+    CHECK(Fog_LightGlow(0.05f, 0.05f, 0.5f, 0.18f) > 0.f && Fog_LightGlow(0.05f, 0.05f, 0.5f, 0.18f) < 0.5f);
     CHECK(Fog_SunGlow(0.f, 0.f, 0.f) == 0.f);
     CHECK(Fog_SunGlow(0.1f, 0.f, 0.5f) < Fog_SunGlow(0.1f, 0.f, 1.f));
     // Colour: cool at zero glow, warm at full glow, channels inside 0..1.

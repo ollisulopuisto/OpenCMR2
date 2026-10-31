@@ -4,6 +4,7 @@
 #include "SceneryPack.h"
 #include "DustPlume.h"
 #include "AirMote.h"
+#include "LightField.h"
 #include "CarBodyDirt.h"
 #include "WorldDust.h"
 static WorldDust::Pool worldDust;
@@ -5431,6 +5432,8 @@ void Particle_SetPoolCapacity(int count)
 FixVector g_particleWind;
 FixVector g_airMoteDrift = {0,0,0};
 unsigned g_airMoteNextSeed = 0;
+FogLightSource g_fogLightSources[LIGHT_FIELD_MAX];
+int g_fogLightSourceCount = 0;
 
 // Advances every active particle by one step: age, drag, gravity, alpha, size
 // and angle ramps, floor kill or bounce (unless the type has its own update).

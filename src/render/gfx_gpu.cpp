@@ -819,6 +819,12 @@ struct Executor : GfxExecutor {
         sunVisible=visible&&std::isfinite(x)&&std::isfinite(y)&&x>=0&&x<=1&&y>=0&&y<=1;
         sunX=x;sunY=y;
     }
+    // Car lights the fog pass responds to (video.fog_lights); see game/LightField.h.
+    GfxFogLight fogLights[8] = {}; int fogLightCount = 0;
+    void SetFogLights(const GfxFogLight *lights,int count) override {
+        fogLightCount=0;
+        if(lights) for(int i=0;i<count&&i<8;i++){fogLights[i]=lights[i];fogLightCount++;}
+    }
     void SetShadowQuality(int resolution,int softness) override {
         int size=resolution<=512?512:resolution>=2048?2048:1024;
         shadowSoftness=std::clamp(softness,0,100)*.04f;
@@ -2705,10 +2711,21 @@ struct Executor : GfxExecutor {
         if (raceWorld && fogEnabled && fogAmount > 0 && sampledDepth && backDepth != nullptr &&
             fogBuf1 != nullptr && FogPipeline() != nullptr) {
             ResolveProjection(&sceneNear, &sceneFar);
-            float fogUniforms[12] = { Fog_Density(fogAmount), fogGlow / 100.0f, sceneNear, sceneFar,
+            // FogUniforms std140: fog, sun, extra, lights[8], lightInfo[8] (19 vec4).
+            float fogLightStrength = std::max(0, std::min(200, Sys_GetOption("video.fog_lights", 100))) / 100.0f;
+            float fogUniforms[76] = { Fog_Density(fogAmount), fogGlow / 100.0f, sceneNear, sceneFar,
                                       sunX, sunY, sunVisible ? 1.0f : 0.0f,
                                       backHeight ? (float)backWidth / (float)backHeight : 1.0f,
-                                      (float)fogClearDistance, 0.0f, 0.0f, 0.0f };
+                                      (float)fogClearDistance, fogLightStrength, 0.0f, 0.0f };
+            for (int i = 0; i < 8 && i < fogLightCount; i++) {
+                fogUniforms[12 + i*4 + 0] = fogLights[i].x;
+                fogUniforms[12 + i*4 + 1] = fogLights[i].y;
+                fogUniforms[12 + i*4 + 2] = fogLights[i].intensity;
+                fogUniforms[44 + i*4 + 0] = fogLights[i].viewZ;
+                fogUniforms[44 + i*4 + 1] = fogLights[i].r;
+                fogUniforms[44 + i*4 + 2] = fogLights[i].g;
+                fogUniforms[44 + i*4 + 3] = fogLights[i].b;
+            }
             SDL_GPUTextureSamplerBinding fogBindings[2] = {
                 { presentSource, linearSampler }, { backDepth, depthSampler }
             };

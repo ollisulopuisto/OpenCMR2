@@ -45,6 +45,7 @@ short Car_GetOrderCount(void);
 #include "MeshVertex.h"
 #include "CarParts.h"
 #include "CarLightState.h"
+#include "LightField.h"
 #include "Graphics.h"
 #include "Font.h"
 #include "Sprite.h"
@@ -10407,6 +10408,7 @@ void StageObject_DrawProjectedViewIcon(int *pViewRect, int param_2)
     icon.x = 0;
     icon.y = 0;
     Gfx_SetSunScreenPosition(0,0,FALSE);
+    Gfx_SetFogLights(NULL, 0);
     if (g_unk0x00547ad0 == 0)
         return;
     uv.x = g_unk0x00547ad0->field_0x11c;
@@ -10414,6 +10416,34 @@ void StageObject_DrawProjectedViewIcon(int *pViewRect, int param_2)
     uv.w = g_unk0x00547ad0->width;
     uv.h = g_unk0x00547ad0->height;
     view = g_viewNodes[param_2];
+    // The fog pass's car lights (video.fog_lights): project this step's recorded
+    // lights to the screen, keeping their view depth for the shader's depth gate.
+    {   GfxFogLight fogLights[LIGHT_FIELD_MAX];
+        int fogLightTotal = 0;
+        FixMatrix invView;
+        FixMatrix_Invert(&invView, &view->world);
+        for (int li = 0; li < g_fogLightSourceCount && li < LIGHT_FIELD_MAX; li++) {
+            FogLightSource *src = &g_fogLightSources[li];
+            FixVector vView;
+            FixMatrix_TransformPoint(&vView, &src->pos, &invView);
+            if (vView.z < 0x10000)
+                continue;   // behind the camera
+            FixMatrix_ProjectWorldPointToView((int *)&vOut, &src->pos, view);
+            vOut.x >>= 16;
+            vOut.y >>= 16;
+            if (vOut.x < 0 || vOut.y < 0 || vOut.x >= g_pGraphics->resX || vOut.y >= g_pGraphics->resY)
+                continue;
+            GfxFogLight *fl = &fogLights[fogLightTotal++];
+            fl->x = vOut.x / (float)g_pGraphics->resX;
+            fl->y = vOut.y / (float)g_pGraphics->resY;
+            fl->viewZ = vView.z / 65536.0f;
+            fl->intensity = src->intensity / 65536.0f;
+            fl->r = src->r / 65536.0f;
+            fl->g = src->g / 65536.0f;
+            fl->b = src->b / 65536.0f;
+        }
+        Gfx_SetFogLights(fogLights, fogLightTotal);
+    }
     StageObject_GetRotatedStageLightVector(&vR);
     StageObject_GetCurrentObjectPosition(&vP);
     vR.x += vP.x;
@@ -11868,6 +11898,22 @@ void StageObject_UpdateCarLightFlagsAndGlows(Car *pCar)
                 colour.y = 0x9893;
                 colour.z = 0;
                 break;
+            }
+            // Record the light for the fog pass (video.fog_lights) with the same
+            // world position and tint the glow sprite uses (colour pre-intensity).
+            {   FixVector worldPos;
+                if (glow->pNode != NULL) {
+                    FixVector nodePos;
+                    FixMatrix_RotateVector(&worldPos, &glow->pos, &glow->pNode->world);
+                    FixMatrix_GetPosition(&nodePos, &glow->pNode->world);
+                    worldPos.x += nodePos.x;
+                    worldPos.y += nodePos.y;
+                    worldPos.z += nodePos.z;
+                } else {
+                    worldPos = glow->pos;
+                }
+                LightField_Add(&worldPos, intensity * 2 > 0x10000 ? 0x10000 : intensity * 2,
+                               colour.x, colour.y, colour.z);
             }
             FixVecScale(&colour, &colour, intensity);
             Glow_NoOpEntryCallback((BYTE)(INT_PTR)glow, (BYTE)colour.x, colour.y, colour.z);
@@ -14318,6 +14364,7 @@ void StageObject_UpdateListedCarPhysicsAndWeather(short *pOrder, short count)
     int i;
     Car *pCar;
 
+    LightField_Clear();   // the glow updates below re-record this step's lights
     for (i = 0; i < count; i++, pOrder++) {
         pCar = Car_Get(*pOrder);
         if (pCar->isGhost == 0) {

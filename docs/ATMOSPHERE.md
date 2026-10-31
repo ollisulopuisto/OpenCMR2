@@ -16,6 +16,16 @@ change. Both effects work on the SDL_GPU (Metal) and GL paths.
   It is screen-space glow in the fog pass, **not** occluded volumetric light
   shafts - geometry does not carve beams out of it. Existing god rays remain the
   occluded-shaft effect and stack on top.
+- **Fog light response** (`video.fog_lights`): head and rear lights cut the
+  fog. The per-step car-light update records each enabled car-light glow
+  (world position, intensity, tint - the same values the glow sprites use)
+  into a small light field (game/LightField.h); the per-frame view draw
+  projects up to 8 of them to the screen and the fog pass adds radial
+  in-scatter around each, coupled to the local fog density so only foggy air
+  lights up, tinted per light (warm headlights, red rear lights). A depth
+  gate keeps the glow off the car's own body (SDL_GPU path; the GL renderer
+  has no near/far recovery and keeps the glow unoccluded - documented
+  approximation). 0..200 percent, default 100.
 - **Air motes** (`video.air_motes`): small bug-like specks flying on their
   own around the viewed car, a new particle type in the existing plume pool.
   Base cap 48 billboards at 100 percent, 240 at 500. Each mote gets a

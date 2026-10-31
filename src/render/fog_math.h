@@ -88,6 +88,16 @@ inline float Fog_SunGlow(float dx, float dy, float strength) {
     if (g < 0.f) return 0.f;
     return strength * g * g * g;
 }
+// Car-light glow of the fog (video.fog_lights): quadratic radial falloff from the
+// light's projected position. dx/dy are aspect-corrected uv offsets; radius is the
+// reach in screen heights (0.18), intensity 0..1. The shader couples the result to
+// the local fog factor, so only foggy air lights up.
+inline float Fog_LightGlow(float dx, float dy, float intensity, float radius) {
+    if (!(intensity > 0.f) || !(radius > 0.f)) return 0.f;
+    float t = 1.f - (dx * dx + dy * dy) / (radius * radius);
+    if (t <= 0.f) return 0.f;
+    return intensity * t * t;
+}
 // Fog colour: cool grey-blue away from the sun, warm inside the glow. glow is Fog_SunGlow
 // clamped to 0..1 for the tint; the shader additionally brightens by 1 + glow * 0.6.
 inline void Fog_Color(float glow, float *r, float *g, float *b) {
