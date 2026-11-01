@@ -1,3 +1,42 @@
+# Adjustable Android touch controls (1 November 2026)
+
+Lane: feat/touch-controls-adjust, Android-only (android/), no game code,
+physics, originals or desktop files touched. Player-reported pain (upstream
+issue pablocpas/OpenCMR2#37, echoed on fork PR #239): pads held off the screen
+sides by display-cutout padding, buttons small, no customization.
+
+Adds a touch layout section to ControllerActivity: control size (0.8-1.6x),
+distance from screen edges and from the bottom (0-25% each), opacity
+(0.2-1.0), a camera/cutout keep-clear switch (default on, the original
+behavior) and reset. Settings live in the controllers SharedPreferences as
+plain values (touch_scale, touch_margin_x, touch_margin_y, touch_opacity,
+touch_avoid_cutout) so a future non-Android overlay can reuse the model.
+TouchControls applies them live via a preference listener; pads shrink before
+they would overlap on narrow screens. Cutout handling moved from whole-overlay
+padding to per-pad side margins, same effect at defaults.
+
+Design follows shipped precedents: Lemuroid (same RadialGamePad library:
+scale/margin/rotation settings), PPSSPP (layout editor, opacity) and the
+Android 48dp touch-target guidance. Per-button drag placement (PPSSPP-style)
+is NOT in this lane: it means replacing the RadialGamePad views with a custom
+overlay. No upstream submission. No WhatsNew/CHANGELOG entry, matching the
+earlier Android-only commits.
+
+Hit-area floor: exact geometry from the RadialGamePad 2.0.0 source (primary
+circle radius = (view - 16dp)/2.652; four buttons partition the whole circle
+into nearest-anchor touch wedges, so the real hit area is the wedge, not the
+visual circle). At the 0.8 minimum on a 1080p phone (2.625 density) the wedge
+is ~51dp - at/above the 48dp guidance; at 0.6 it fell to ~44dp, so 0.8 is the
+floor. Visual button diameter is ~36.5dp at the floor on 1080p phones: the
+radial four-in-circle layout cannot show 48dp visuals there at any reduced
+scale; the wedge, not the visual, is the target. Default geometry is
+bit-identical to the old code in landscape (view size and origins, any
+asymmetric cutout); portrait clamps differently by design (old code let the
+pads overlap; the game is landscape-locked so this is unreachable in-game).
+
+Native on-device appearance and usability remain UNVERIFIED: local
+Robolectric pixel renders only, no device or emulator run.
+
 # Integrated asset candidate (30 October 2026)
 
 Claim: feat/runtime-uprez-finland1, current main plus PR182 render-time drone fix.

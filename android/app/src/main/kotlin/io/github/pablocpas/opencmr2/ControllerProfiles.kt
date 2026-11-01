@@ -1,6 +1,7 @@
 package io.github.pablocpas.opencmr2
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -33,6 +34,35 @@ object ControllerProfiles {
     fun touchOnly(context: Context, value: Boolean) { prefs(context).edit { putBoolean("touch_only", value) } }
     fun showTouch(context: Context) = prefs(context).getBoolean("show_touch", false)
     fun showTouch(context: Context, value: Boolean) { prefs(context).edit { putBoolean("show_touch", value) } }
+
+    // Touch layout, adjustable in ControllerActivity: plain numbers so another
+    // platform's overlay can reuse the same model. Scale multiplies the pads;
+    // margins are 0..1 of a quarter of the screen; opacity 0.2..1.
+    fun touchScale(context: Context) = prefs(context).getFloat("touch_scale", 1f)
+    fun touchScale(context: Context, value: Float) { prefs(context).edit { putFloat("touch_scale", value) } }
+    fun touchMarginX(context: Context) = prefs(context).getFloat("touch_margin_x", 0f)
+    fun touchMarginX(context: Context, value: Float) { prefs(context).edit { putFloat("touch_margin_x", value) } }
+    fun touchMarginY(context: Context) = prefs(context).getFloat("touch_margin_y", 0f)
+    fun touchMarginY(context: Context, value: Float) { prefs(context).edit { putFloat("touch_margin_y", value) } }
+    fun touchOpacity(context: Context) = prefs(context).getFloat("touch_opacity", 1f)
+    fun touchOpacity(context: Context, value: Float) { prefs(context).edit { putFloat("touch_opacity", value) } }
+    fun touchAvoidCutout(context: Context) = prefs(context).getBoolean("touch_avoid_cutout", true)
+    fun touchAvoidCutout(context: Context, value: Boolean) { prefs(context).edit { putBoolean("touch_avoid_cutout", value) } }
+    fun resetTouchLayout(context: Context) {
+        prefs(context).edit {
+            remove("touch_scale")
+            remove("touch_margin_x")
+            remove("touch_margin_y")
+            remove("touch_opacity")
+            remove("touch_avoid_cutout")
+        }
+    }
+
+    /** Layout changes apply while the game runs: TouchControls listens. */
+    fun watch(context: Context, listener: SharedPreferences.OnSharedPreferenceChangeListener) =
+        prefs(context).registerOnSharedPreferenceChangeListener(listener)
+    fun unwatch(context: Context, listener: SharedPreferences.OnSharedPreferenceChangeListener) =
+        prefs(context).unregisterOnSharedPreferenceChangeListener(listener)
 
     // SDL's Android driver normalizes the device name for some models. Match
     // an exact name first, then VID/PID only when there is a single candidate.

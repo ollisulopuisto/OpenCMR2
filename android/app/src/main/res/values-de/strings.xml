@@ -45,4 +45,11 @@
     <string name="controllers_stick_right">Lenkung · Stick nach rechts bewegen</string>
     <string name="controllers_stick_down">Menüs · Stick nach unten bewegen</string>
     <string name="controllers_touch_only">Touch-Steuerung statt Controller verwenden</string>
+    <string name="touch_layout_title">Layout der Touch-Steuerung</string>
+    <string name="touch_size">Größe der Steuerelemente</string>
+    <string name="touch_edge">Abstand zum Bildschirmrand</string>
+    <string name="touch_height">Höhe über dem unteren Rand</string>
+    <string name="touch_opacity">Deckkraft</string>
+    <string name="touch_cutout">Kamera und Display-Aussparungen freihalten</string>
+    <string name="touch_reset">Layout zurücksetzen</string>
 </resources>

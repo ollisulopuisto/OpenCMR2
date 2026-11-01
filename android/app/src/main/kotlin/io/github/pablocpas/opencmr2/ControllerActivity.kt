@@ -32,6 +32,11 @@ class ControllerActivity : ComponentActivity(), InputManager.InputDeviceListener
     private var lastInput by mutableStateOf("")
     private var touch by mutableStateOf(false)
     private var touchOnly by mutableStateOf(false)
+    private var touchScale by mutableStateOf(1f)
+    private var touchMarginX by mutableStateOf(0f)
+    private var touchMarginY by mutableStateOf(0f)
+    private var touchOpacity by mutableStateOf(1f)
+    private var touchCutout by mutableStateOf(true)
     private val lastAxes = mutableMapOf<Pair<Int, Int>, Float>()
     private var baseline = emptyMap<Pair<Int, Int>, Float>()
     private val device get() = devices.firstOrNull { it.id == selected }
@@ -48,6 +53,11 @@ class ControllerActivity : ComponentActivity(), InputManager.InputDeviceListener
         enableEdgeToEdge()
         touch = ControllerProfiles.showTouch(this)
         touchOnly = ControllerProfiles.touchOnly(this)
+        touchScale = ControllerProfiles.touchScale(this)
+        touchMarginX = ControllerProfiles.touchMarginX(this)
+        touchMarginY = ControllerProfiles.touchMarginY(this)
+        touchOpacity = ControllerProfiles.touchOpacity(this)
+        touchCutout = ControllerProfiles.touchAvoidCutout(this)
         refresh()
         setContent {
             SetupTheme {
@@ -64,6 +74,28 @@ class ControllerActivity : ComponentActivity(), InputManager.InputDeviceListener
                             Switch(checked = touch, onCheckedChange = { touch = it; ControllerProfiles.showTouch(this@ControllerActivity, it) })
                             Text(stringResource(R.string.controllers_touch), Modifier.padding(start = 12.dp))
                         }
+                        Text(stringResource(R.string.touch_layout_title),
+                            style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
+                        SettingSlider(R.string.touch_size, touchScale, 0.8f..1.6f, { "%.0f%%".format(it * 100) }) {
+                            touchScale = it; ControllerProfiles.touchScale(this@ControllerActivity, it)
+                        }
+                        SettingSlider(R.string.touch_edge, touchMarginX, 0f..1f, { "%.0f%%".format(it * 100) }) {
+                            touchMarginX = it; ControllerProfiles.touchMarginX(this@ControllerActivity, it)
+                        }
+                        SettingSlider(R.string.touch_height, touchMarginY, 0f..1f, { "%.0f%%".format(it * 100) }) {
+                            touchMarginY = it; ControllerProfiles.touchMarginY(this@ControllerActivity, it)
+                        }
+                        SettingSlider(R.string.touch_opacity, touchOpacity, 0.2f..1f, { "%.0f%%".format(it * 100) }) {
+                            touchOpacity = it; ControllerProfiles.touchOpacity(this@ControllerActivity, it)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Switch(checked = touchCutout, onCheckedChange = { touchCutout = it; ControllerProfiles.touchAvoidCutout(this@ControllerActivity, it) })
+                            Text(stringResource(R.string.touch_cutout), Modifier.padding(start = 12.dp))
+                        }
+                        TextButton(onClick = {
+                            ControllerProfiles.resetTouchLayout(this@ControllerActivity)
+                            touchScale = 1f; touchMarginX = 0f; touchMarginY = 0f; touchOpacity = 1f; touchCutout = true
+                        }) { Text(stringResource(R.string.touch_reset)) }
                         if (devices.isEmpty()) Text(stringResource(R.string.controllers_connect))
                         for (pad in devices) {
                             OutlinedButton(onClick = { selected = pad.id; waiting = null; reload() }, modifier = Modifier.fillMaxWidth()) {
@@ -189,5 +221,15 @@ class ControllerActivity : ComponentActivity(), InputManager.InputDeviceListener
             "leftx" to R.string.controllers_stick_right, "lefty" to R.string.controllers_stick_down,
             "righttrigger" to R.string.touch_accelerate, "lefttrigger" to R.string.touch_brake,
         )
+    }
+}
+
+/** A labelled settings slider; the label shows the current value as text. */
+@Composable
+private fun SettingSlider(label: Int, value: Float, range: ClosedFloatingPointRange<Float>,
+    display: (Float) -> String, onChange: (Float) -> Unit) {
+    Column {
+        Text(stringResource(label) + " · " + display(value))
+        Slider(value = value, onValueChange = onChange, valueRange = range)
     }
 }

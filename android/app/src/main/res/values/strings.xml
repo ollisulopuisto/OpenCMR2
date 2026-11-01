@@ -46,4 +46,11 @@
     <string name="controllers_stick_right">Steering · Move stick right</string>
     <string name="controllers_stick_down">Menus · Move stick down</string>
     <string name="controllers_touch_only">Use touch controls instead of a controller</string>
+    <string name="touch_layout_title">Touch controls layout</string>
+    <string name="touch_size">Control size</string>
+    <string name="touch_edge">Distance from screen edges</string>
+    <string name="touch_height">Height from screen bottom</string>
+    <string name="touch_opacity">Opacity</string>
+    <string name="touch_cutout">Keep clear of camera and display cutouts</string>
+    <string name="touch_reset">Reset layout</string>
 </resources>

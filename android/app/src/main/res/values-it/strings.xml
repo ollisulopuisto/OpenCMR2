@@ -45,4 +45,11 @@
     <string name="controllers_stick_right">Sterzo · Muovi lo stick a destra</string>
     <string name="controllers_stick_down">Menu · Muovi lo stick in basso</string>
     <string name="controllers_touch_only">Usa i controlli touch al posto del controller</string>
+    <string name="touch_layout_title">Layout dei controlli touch</string>
+    <string name="touch_size">Dimensione dei controlli</string>
+    <string name="touch_edge">Distanza dai bordi dello schermo</string>
+    <string name="touch_height">Altezza dal bordo inferiore</string>
+    <string name="touch_opacity">Opacità</string>
+    <string name="touch_cutout">Mantieni liberi fotocamera e ritagli del display</string>
+    <string name="touch_reset">Reimposta layout</string>
 </resources>

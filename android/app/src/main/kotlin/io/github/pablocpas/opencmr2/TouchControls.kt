@@ -2,6 +2,8 @@ package io.github.pablocpas.opencmr2
 
 import android.app.Activity
 import android.content.Context
+import android.content.SharedPreferences
+import android.graphics.Rect
 import android.hardware.input.InputManager
 import android.os.Handler
 import android.os.Looper
@@ -41,6 +43,13 @@ class TouchControls(private val activity: Activity, parent: ViewGroup) : InputMa
     private val pressed = mutableSetOf<Int>()
     private val overlay = FrameLayout(activity)
 
+    // One pad per side; the boolean marks the left (steering) pad.
+    private val pads = mutableListOf<Pair<RadialGamePad, Boolean>>()
+    private val cutout = Rect()
+    private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key?.startsWith("touch_") == true) overlay.post { applySettings() }
+    }
+
     init {
         val theme = RadialGamePadTheme(
             normalColor = 0x50FFFFFF,
@@ -51,31 +60,58 @@ class TouchControls(private val activity: Activity, parent: ViewGroup) : InputMa
         )
         val left = RadialGamePad(leftConfig(theme), 8f, activity)
         val right = RadialGamePad(rightConfig(theme), 8f, activity)
-        for ((pad, gravity) in listOf(left to (Gravity.BOTTOM or Gravity.START), right to (Gravity.BOTTOM or Gravity.END))) {
-            overlay.addView(pad, FrameLayout.LayoutParams(0, 0, gravity))
+        for ((pad, isLeft) in listOf(left to true, right to false)) {
+            pads += pad to isLeft
+            overlay.addView(pad, FrameLayout.LayoutParams(0, 0,
+                Gravity.BOTTOM or if (isLeft) Gravity.START else Gravity.END))
             scope.launch { pad.events().collect(::handle) }
         }
-        // Each pad takes about half the screen height, clear of display cutouts.
-        overlay.addOnLayoutChangeListener { _, l, t, r, b, _, _, _, _ ->
-            val size = (minOf(r - l, b - t) * 0.55f).toInt()
-            for (pad in listOf(left, right)) {
-                val params = pad.layoutParams
-                if (params.width != size) {
-                    params.width = size
-                    params.height = size
-                    pad.post { pad.layoutParams = params }
-                }
-            }
-        }
+        overlay.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> applySettings() }
         ViewCompat.setOnApplyWindowInsetsListener(overlay) { view, insets ->
-            val cutout = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
-            view.setPadding(cutout.left, cutout.top, cutout.right, cutout.bottom)
+            val c = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
+            cutout.set(c.left, c.top, c.right, c.bottom)
+            view.post { applySettings() }
             insets
         }
         parent.addView(overlay, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
+        ControllerProfiles.watch(activity, prefListener)
+        applySettings()
+
         inputManager.registerInputDeviceListener(this, Handler(Looper.getMainLooper()))
         updateVisibility()
+    }
+
+    /**
+     * Sizes and places the pads from the touch layout settings (adjusted in
+     * ControllerActivity, applied live here). Base size and corner placement
+     * are the original fixed layout at scale 1 and zero margins; the edge
+     * and height sliders move the pads further out or up, and the cutout
+     * switch keeps them clear of the camera hole or lets them reach the
+     * screen sides. Margins win over size on narrow screens: the pads are
+     * shrunk before they would overlap.
+     */
+    private fun applySettings() {
+        val width = overlay.width
+        val height = overlay.height
+        if (width == 0 || height == 0) return
+        overlay.alpha = ControllerProfiles.touchOpacity(activity).coerceIn(0.2f, 1f)
+        val avoid = ControllerProfiles.touchAvoidCutout(activity)
+        val marginX = (width * 0.25f * ControllerProfiles.touchMarginX(activity).coerceIn(0f, 1f)).toInt()
+        val marginY = (height * 0.25f * ControllerProfiles.touchMarginY(activity).coerceIn(0f, 1f)).toInt()
+        var size = (minOf(width, height) * 0.55f * ControllerProfiles.touchScale(activity).coerceIn(0.8f, 1.6f)).toInt()
+        val half = (width - 2 * marginX) / 2
+        if (half > 0) size = minOf(size, half)
+        for ((pad, isLeft) in pads) {
+            val params = pad.layoutParams as FrameLayout.LayoutParams
+            val side = (if (isLeft) cutout.left else cutout.right).takeIf { avoid } ?: 0
+            params.width = size
+            params.height = size
+            params.leftMargin = if (isLeft) side + marginX else 0
+            params.rightMargin = if (isLeft) 0 else side + marginX
+            params.bottomMargin = (if (avoid) cutout.bottom else 0) + marginY
+            pad.post { pad.layoutParams = params }
+        }
     }
 
     private fun leftConfig(theme: RadialGamePadTheme) = RadialGamePadConfig(
@@ -191,6 +227,7 @@ class TouchControls(private val activity: Activity, parent: ViewGroup) : InputMa
 
     fun close() {
         releaseAll()
+        ControllerProfiles.unwatch(activity, prefListener)
         inputManager.unregisterInputDeviceListener(this)
         scope.cancel()
         (overlay.parent as? ViewGroup)?.removeView(overlay)
