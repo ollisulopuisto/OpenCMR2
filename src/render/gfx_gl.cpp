@@ -1325,11 +1325,18 @@ struct Executor : GfxExecutor {
                     effectsRaceFrame=c.raceWorld;
                     glCarFocusRaw=-1.0f;glCarDepth=0.0f;
                     glFogNearZ=0.0f;glFogFarZ=0.0f;
-                    if(c.raceWorld)for(const GfxCommand &oc:frame.commands)
-                        if(oc.type==GFX_CMD_DRAW&&oc.target==NULL){   // any main-pass draw carries the race camera projection
-                            const GfxDrawState &os=frame.states[oc.state];
-                            if(Projection_NearFar(os.projection._33,os.projection._34,os.projection._43,&glFogNearZ,&glFogFarZ))break;
-                        }
+                    if(c.raceWorld){   // same ambiguity rule as SDL_GPU's ResolveProjection: one distinct
+                        FogProjVote fogVotes[4]={};   // near/far pair among the depth writers, else raw ramp
+                        for(const GfxCommand &oc:frame.commands)
+                            if(oc.type==GFX_CMD_DRAW&&oc.target==NULL&&!oc.transformed){
+                                const GfxDrawState &os=frame.states[oc.state];
+                                if(!os.depthTest||!os.depthWrite)continue;
+                                float vn,vf;
+                                if(Projection_NearFar(os.projection._33,os.projection._34,os.projection._43,&vn,&vf))
+                                    Fog_VoteProjection(fogVotes,vn,vf);
+                            }
+                        Fog_ResolveProjectionVote(fogVotes,&glFogNearZ,&glFogFarZ);
+                    }
                     if(c.raceWorld&&c.playerObject!=0&&Sys_GetOption("video.dof_focus_car",0)!=0){   // same car-depth rule as SDL_GPU
                         DofFocusAccum acc;float vn=0,vf=0;bool haveProj=false;
                         for(const GfxCommand &oc:frame.commands)
