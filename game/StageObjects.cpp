@@ -9269,7 +9269,16 @@ void CarInterior_UpdateWiperSweep(int index)
             g_carWiperStates[index].step = rand() % 0xb + 0x2d;
         }
     } else {
-        g_carWiperStates[index].mode = 0;
+        // OpenCMR2: the blades also run dry ("make em work always") - a slow
+        // continuous sweep so they clear the dirt that builds without rain.
+        // Parking (mode 1) still finishes its sweep first and then restarts.
+        if (g_carWiperStates[index].mode == 0) {
+            g_carWiperStates[index].mode = 2;
+            g_carWiperStates[index].step = rand() % 0xb + 0x2d;
+        } else if (g_carWiperStates[index].mode == 3) {
+            g_carWiperStates[index].mode = 2;   // dry: never the fast rain step
+            g_carWiperStates[index].step = rand() % 0xb + 0x2d;
+        }
     }
     if (g_carWiperStates[index].mode != 0) {
         if (g_carWiperStates[index].sweepingForward != 0) {
@@ -13846,6 +13855,11 @@ void StageObject_LoadAndAttachCarInterior(BYTE record, BYTE car)
     g_carDriverRestPositions[car].y = pRow->driverPoseNode->current.position.y;
     g_carDriverRestPositions[car].z = pRow->driverPoseNode->current.position.z;
     StageObject_FindPlayerRevTextures(car);
+    // OpenCMR2: resolve this car's cockpit windshield glass (video.windshield_cracks)
+    // now that the interior nodes exist; a resolve failure just logs and keeps
+    // the feature off for the car.
+    if (Sys_GetOption("video.windshield_cracks", 1))
+        WindshieldGlass_SetupCar(car);
 }
 
 // --- CPU driver input (0x47b000-0x47c5ac) -----------------------------------

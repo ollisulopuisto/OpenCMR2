@@ -148,6 +148,17 @@ inline int Windshield_Wipe(WindshieldMap *m, float pivotU, float pivotV, float r
     return removed;
 }
 
+// Broken-glass overlay suppression (video.windshield_cracks): when the car's
+// resolved front glass is BROKEN (state 2), the dirt overlay hides so the
+// real swapped broken-glass texture shows without a dirt film floating over
+// its holes. Intact and damaged glass keep the full dirt/wiper behaviour.
+// Limitation: the fragments that remain in a broken windscreen also lose
+// their dirt until the overlay is anchored to the glass geometry.
+inline int Windshield_OverlayVisible(int glassState)
+{
+    return glassState != 2;
+}
+
 // Total dirt (for "is it worth drawing" and the F10 line).
 inline int Windshield_TotalDirt(const WindshieldMap *m)
 {

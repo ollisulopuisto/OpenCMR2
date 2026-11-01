@@ -10,14 +10,20 @@
 #include "port/gfx.h"
 #include "Graphics.h"
 #include "CarInterior.h"
+#include "CarParts.h"
 #include "StageBlock.h"
 #include "WindshieldDirt.h"
 #include "GraphicsOptions.h"
 #include "port/sys.h"
 
 WindshieldMap g_windshieldMaps[WINDSHIELD_MAX_VIEWS];
+// Per-view state of the resolved front glass (0 intact, 1 damaged, 2 broken,
+// -1 feature off): drives the broken-glass overlay suppression.
+static int g_windshieldGlassState[WINDSHIELD_MAX_VIEWS];
+
 
 int StageObject_GetViewWeatherField54(int index);
+CarPartSet *StageTiming_GetCarReplayRecord(int index);
 
 // Blade geometry in overlay uv: pivots below the dash line, a symmetric pair.
 // The models sweep their own nodes about their own pivots; this overlay
@@ -38,6 +44,27 @@ void Windshield_UpdateView(int view, int slot)
     int rain = StageObject_GetViewWeatherField54(slot);   // fixed, ~0..0x10000
     Windshield_UpdateWetness(m, rain * 255 / 0x8000);
     Windshield_Decay(m, frameCounter++);
+
+    // Damage-linked windshield glass (video.windshield_cracks): the cockpit's
+    // front interior glass follows the car's real damage appearance - the
+    // same texture the exterior model swaps to, applied by WindshieldGlass to
+    // the interior glass parts. The damage slot comes from the resolved front
+    // window (wiper-pivot classified), never a hardcoded part index; cars the
+    // resolve failed for keep their glass untouched. slot == local car index
+    // (same mapping the wiper state uses). Independent of the wiper toggle.
+    int glassState = -1;
+    if (Sys_GetOption("video.windshield_cracks", 1) != 0 && slot >= 0 && slot <= 1) {
+        int wslot = -1;
+        if (WindshieldGlass_GetInfo(slot, NULL, &wslot, NULL, NULL, NULL)) {
+            CarPartSet *parts = StageTiming_GetCarReplayRecord(slot);
+            if (parts != NULL) {
+                glassState = parts->partBroken[wslot] != 0 ? 2
+                           : parts->partDamaged[wslot] != 0 ? 1 : 0;
+                WindshieldGlass_ApplyDamageState(slot, glassState);
+            }
+        }
+    }
+    g_windshieldGlassState[view & (WINDSHIELD_MAX_VIEWS - 1)] = glassState;
 
     if (Sys_GetOption("video.windscreen_wipers", 1) == 0 || slot < 0 || slot > 1)
         return;   // option off: the model's blades park; glass keeps its dirt
@@ -74,6 +101,7 @@ void Windshield_AddDrivingSpatter(int view, int amount)
 
 static GfxTexture *g_windshieldTex;
 
+
 extern Graphics *g_pGraphics;
 
 // Draws the dirt map over the cockpit view. Called from the per-view race
@@ -82,6 +110,8 @@ extern Graphics *g_pGraphics;
 void Windshield_DrawOverlay(int view, int resX, int resY)
 {
     WindshieldMap *m = &g_windshieldMaps[view & (WINDSHIELD_MAX_VIEWS - 1)];
+    if (!Windshield_OverlayVisible(g_windshieldGlassState[view & (WINDSHIELD_MAX_VIEWS - 1)]))
+        return;   // broken glass: the real swapped texture shows, dirt film off
     if (Windshield_TotalDirt(m) == 0)
         return;
     if (g_windshieldTex == NULL) {
@@ -94,10 +124,10 @@ void Windshield_DrawOverlay(int view, int resX, int resY)
         BYTE *row = (BYTE *)lr.pixels + y * lr.pitch;
         for (int x = 0; x < WINDSHIELD_MAP_W; x++) {
             int d = m->dirt[y * WINDSHIELD_MAP_W + x];
-            row[x * 4 + 0] = 0x20;   // B
+            row[x * 4 + 0] = 0x20;   // B: the old tint's grime brown
             row[x * 4 + 1] = 0x28;   // G
             row[x * 4 + 2] = 0x30;   // R
-            row[x * 4 + 3] = (BYTE)(d > 224 ? 224 : d);
+            row[x * 4 + 3] = (BYTE)(d > 235 ? 235 : d);
         }
     }
     Gfx_UnlockTexture(g_windshieldTex, 0, 0);
@@ -124,6 +154,8 @@ void Windshield_DrawOverlay(int view, int resX, int resY)
 
 void Windshield_ResetAll(void)
 {
+    for (int i = 0; i < WINDSHIELD_MAX_VIEWS; i++)
+        g_windshieldGlassState[i] = -1;
     for (int i = 0; i < WINDSHIELD_MAX_VIEWS; i++)
         Windshield_Reset(&g_windshieldMaps[i], 0x51ed269bu + (uint32_t)i * 0x9e37u);
 }

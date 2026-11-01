@@ -329,6 +329,18 @@ void Windshield_UpdateView(int view, int slot);
 void Windshield_AddDrivingSpatter(int view, int amount);
 void Windshield_DrawOverlay(int view, int resX, int resY);
 void Windshield_ResetAll(void);
+// Cockpit windshield glass matching the car's real damage appearance
+// (video.windshield_cracks): per-car resolve of the front window quad, its
+// damage slot/material group and the exterior damaged/broken texture ids, and
+// the interior front-glass texture swap. Every failure path keeps the
+// feature off for that car. (game/WindshieldGlass.cpp)
+int WindshieldGlass_SetupCar(int car);
+int WindshieldGlass_ResolveForCar(int car);
+int WindshieldGlass_ApplyDamageState(int car, int state);
+int WindshieldGlass_GetInfo(int car, int *window, int *slot, unsigned *group,
+                            int *damagedTexture, int *brokenTexture);
+void WindshieldGlass_RestoreAll(void);
+void WindshieldGlass_ResetCache(void);
 
 // OpenCMR2: windscreen wipers. `video.windscreen_wipers` turns them on/off.
 // The wiper sweeps back and forth across the screen, clearing dirt as it

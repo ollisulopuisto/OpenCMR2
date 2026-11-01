@@ -69,6 +69,13 @@ int main()
     for (int f = 0; f < 64; f++) Windshield_Decay(&e, f);
     CHECK(Windshield_TotalDirt(&e) < t0);
 
+    // Broken-glass overlay suppression: the dirt overlay hides only when the
+    // resolved front glass is BROKEN; intact, damaged and feature-off keep it.
+    CHECK(Windshield_OverlayVisible(-1) == 1);
+    CHECK(Windshield_OverlayVisible(0) == 1);
+    CHECK(Windshield_OverlayVisible(1) == 1);
+    CHECK(Windshield_OverlayVisible(2) == 0);
+
     std::printf(fails ? "FAILED\n" : "windshield dirt ok\n");
     return fails ? 1 : 0;
 }
