@@ -11,7 +11,7 @@ struct WhatsNewLine { int revision; const char *text; };
 inline const WhatsNewLine *WhatsNew_Lines(int &count)
 {
     static const WhatsNewLine lines[] = {
-        {1, "Distance fog with sun glow; smaller, livelier drifting air motes"},
+        {17, "Distance fog with sun glow; drifting air motes, smaller in the cockpit"},
         {1, "God rays: sun shafts through the fog (atmosphere preset)"},
         {1, "Dynamic fog: clear pockets along the route, clearing trend"},
         {1, "Near-field fog clear distance around the car"},
@@ -29,7 +29,6 @@ inline const WhatsNewLine *WhatsNew_Lines(int &count)
         {14, "Fixes: replay chase arrows after the F10 panel; steady replay fog beams"},
         {15, "Tree wind now fades with distance, easing forest FPS."},
         {16, "What's new moved to the bottom of the Options menu; no popup"},
-        {17, "Air motes shrink in the cockpit view; size adjustable"},
     };
     count = (int)(sizeof(lines) / sizeof(*lines));
     return lines;
