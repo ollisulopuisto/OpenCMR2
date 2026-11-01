@@ -40,7 +40,7 @@ add_test(NAME movie_playback COMMAND movie_playback_test)
 
 add_executable(movie_render_state_test movie_render_state.cpp
     ${PROJECT_SOURCE_DIR}/src/diagnostics/observer.cpp
-    ${PROJECT_SOURCE_DIR}/src/video/movie.cpp ${PROJECT_SOURCE_DIR}/src/render/gfx_core.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay.cpp ${CMAKE_CURRENT_SOURCE_DIR}/touch_input_stub.cpp)
+    ${PROJECT_SOURCE_DIR}/src/video/movie.cpp ${PROJECT_SOURCE_DIR}/src/render/gfx_core.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay_shapes.cpp ${CMAKE_CURRENT_SOURCE_DIR}/touch_input_stub.cpp)
 target_link_libraries(movie_render_state_test PRIVATE opencmr2_bink SDL3::SDL3)
 add_test(NAME movie_render_state COMMAND movie_render_state_test)
 
@@ -132,7 +132,7 @@ target_include_directories(shadows_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
 add_test(NAME shadows COMMAND shadows_test)
 
 add_executable(render_stats_test render_stats.cpp
-    ${PROJECT_SOURCE_DIR}/src/render/gfx_core.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay.cpp ${CMAKE_CURRENT_SOURCE_DIR}/touch_input_stub.cpp
+    ${PROJECT_SOURCE_DIR}/src/render/gfx_core.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay_shapes.cpp ${CMAKE_CURRENT_SOURCE_DIR}/touch_input_stub.cpp
     ${PROJECT_SOURCE_DIR}/src/diagnostics/observer.cpp)
 target_include_directories(render_stats_test PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/game)
 target_link_libraries(render_stats_test PRIVATE SDL3::SDL3)
@@ -326,7 +326,7 @@ target_include_directories(snow_material_test PRIVATE ${PROJECT_SOURCE_DIR}/src 
 add_test(NAME snow_material COMMAND snow_material_test)
 
 add_executable(snow_vertex_channel_test snow_vertex_channel.cpp
-    ${PROJECT_SOURCE_DIR}/src/render/gfx_core.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay.cpp ${CMAKE_CURRENT_SOURCE_DIR}/touch_input_stub.cpp
+    ${PROJECT_SOURCE_DIR}/src/render/gfx_core.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay_shapes.cpp ${CMAKE_CURRENT_SOURCE_DIR}/touch_input_stub.cpp
     ${PROJECT_SOURCE_DIR}/src/diagnostics/observer.cpp)
 target_include_directories(snow_vertex_channel_test PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/game)
 target_link_libraries(snow_vertex_channel_test PRIVATE SDL3::SDL3)
@@ -473,7 +473,7 @@ add_executable(scenery_pack_format_test scenery_pack_format.cpp)
 target_include_directories(scenery_pack_format_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
 add_test(NAME scenery_pack_format COMMAND scenery_pack_format_test)
 add_executable(scenery_pack_runtime_test scenery_pack_runtime.cpp
- ${PROJECT_SOURCE_DIR}/game/SceneryPack.cpp ${PROJECT_SOURCE_DIR}/src/render/gfx_core.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay.cpp ${CMAKE_CURRENT_SOURCE_DIR}/touch_input_stub.cpp ${PROJECT_SOURCE_DIR}/src/diagnostics/observer.cpp)
+ ${PROJECT_SOURCE_DIR}/game/SceneryPack.cpp ${PROJECT_SOURCE_DIR}/src/render/gfx_core.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay_shapes.cpp ${CMAKE_CURRENT_SOURCE_DIR}/touch_input_stub.cpp ${PROJECT_SOURCE_DIR}/src/diagnostics/observer.cpp)
 target_include_directories(scenery_pack_runtime_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src)
 target_compile_options(scenery_pack_runtime_test PRIVATE "SHELL:-include ${PROJECT_SOURCE_DIR}/src/port/types.h" -fms-extensions)
 target_link_libraries(scenery_pack_runtime_test PRIVATE SDL3::SDL3)
@@ -517,7 +517,7 @@ if(OPENCMR2_TEST_ELF_WRAP)
  add_test(NAME world_dust_routing COMMAND world_dust_routing_test)
 endif()
 add_executable(dust_volume_recording_test dust_volume_recording.cpp
- ${PROJECT_SOURCE_DIR}/src/render/gfx_core.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay.cpp ${CMAKE_CURRENT_SOURCE_DIR}/touch_input_stub.cpp ${PROJECT_SOURCE_DIR}/src/diagnostics/observer.cpp)
+ ${PROJECT_SOURCE_DIR}/src/render/gfx_core.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay_shapes.cpp ${CMAKE_CURRENT_SOURCE_DIR}/touch_input_stub.cpp ${PROJECT_SOURCE_DIR}/src/diagnostics/observer.cpp)
 target_include_directories(dust_volume_recording_test PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/game)
 target_link_libraries(dust_volume_recording_test PRIVATE SDL3::SDL3)
 add_test(NAME dust_volume_recording COMMAND dust_volume_recording_test)
@@ -607,7 +607,7 @@ target_include_directories(camera_operator_runtime_test PRIVATE ${PROJECT_SOURCE
 target_compile_options(camera_operator_runtime_test PRIVATE "SHELL:-include ${PROJECT_SOURCE_DIR}/src/port/types.h" -fms-extensions)
 add_test(NAME camera_operator_runtime COMMAND camera_operator_runtime_test)
 add_executable(france1_textures_test france1_textures.cpp
- ${PROJECT_SOURCE_DIR}/game/France1Textures.cpp ${PROJECT_SOURCE_DIR}/src/render/gfx_core.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay.cpp ${CMAKE_CURRENT_SOURCE_DIR}/touch_input_stub.cpp ${PROJECT_SOURCE_DIR}/src/diagnostics/observer.cpp)
+ ${PROJECT_SOURCE_DIR}/game/France1Textures.cpp ${PROJECT_SOURCE_DIR}/src/render/gfx_core.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay_shapes.cpp ${CMAKE_CURRENT_SOURCE_DIR}/touch_input_stub.cpp ${PROJECT_SOURCE_DIR}/src/diagnostics/observer.cpp)
 target_include_directories(france1_textures_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src)
 target_compile_options(france1_textures_test PRIVATE "SHELL:-include ${PROJECT_SOURCE_DIR}/src/port/types.h" -fms-extensions)
 target_link_libraries(france1_textures_test PRIVATE SDL3::SDL3)
