@@ -7050,9 +7050,26 @@ void Graphics_DrawMeshLOD(Mesh *pMesh, int useParts, int clampTexture, int markT
 // qualified. Glass/frame atlases, wheels and unknown mod names stay clean.
 void Graphics_BindCarPaintDirt(Texture *texture){
  int car=CarBodyDirt::drawingCar;
- if(car>=0&&car<8&&texture&&CarBodyDirt::IsPaintAtlas(texture->name)&&Sys_GetOption("video.body_dirt",1)){
+ if(car>=0&&car<8&&texture&&CarBodyDirt::IsPaintAtlas(texture->name,Sys_GetOptionText("video.body_dirt_extra",""))&&Sys_GetOption("video.body_dirt",1)){
   const auto &d=CarBodyDirt::cars[car];Gfx_SetBodyDirt(d.amount,d.red,d.green,d.blue);
- }else Gfx_SetBodyDirt(0,0,0,0);
+ }else{
+  Gfx_SetBodyDirt(0,0,0,0);
+  // Name the textures a mod/overlay car body actually draws with, once each,
+  // so the next native log can feed video.body_dirt_extra (or the known
+  // list). Bounded: at most 16 unique stems per run, only while a car body
+  // is being drawn and dirt is on.
+  if(car>=0&&car<8&&texture&&Sys_GetOption("video.body_dirt",1)){
+   char stem[32];CarBodyDirt::StemOf(texture->name,stem);
+   if(stem[0]){
+    static char seen[16][32]={};static int seenCount=0;bool dup=false;
+    for(int i=0;i<seenCount;i++)if(std::strcmp(seen[i],stem)==0){dup=true;break;}
+    if(!dup){
+     if(seenCount<16){std::strncpy(seen[seenCount],stem,31);seen[seenCount][31]=0;seenCount++;
+      Sys_Log("body dirt: unbound car texture '%s' (car %d; add to video.body_dirt_extra to pigment)",stem,car);}
+    }
+   }
+  }
+ }
 }
 
 // video.cockpit_glass_fog (default on): a part of a mesh flagged

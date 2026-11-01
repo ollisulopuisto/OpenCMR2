@@ -14,14 +14,36 @@ inline Layer cars[8]={};
 inline int drawingCar=-1;
 // Evidence-backed original/mod body-atlas names. Unknown/custom names
 // deliberately stay clean, not inferred from hierarchy or broad substrings.
-inline bool IsPaintAtlas(const char *path){
- if(!path)return false;
+// Lowercased extension-less leaf of a texture path ("" when none).
+inline void StemOf(const char *path,char out[32]){
+ out[0]=0;if(!path)return;
  const char *name=path;for(const char*p=path;*p;p++)if(*p=='/'||*p=='\\')name=p+1;
- char stem[32]={};size_t n=0;
- while(name[n]&&name[n]!='.'&&n<sizeof(stem)-1){stem[n]=char(std::tolower((unsigned char)name[n]));n++;}
+ size_t n=0;while(name[n]&&name[n]!='.'&&n<31){out[n]=char(std::tolower((unsigned char)name[n]));n++;}
+ out[n]=0;
+}
+// Extra user/mod body-atlas stems: video.body_dirt_extra, comma-separated,
+// at most 4 stems of 31 chars. Parsed once per option read; unknown/custom
+// names still stay clean by default (PR #82 design), this is the explicit
+// opt-in for car-overlay paints whose stems the binary cannot know.
+inline bool IsExtraAtlas(const char *stem,const char *extra){
+ if(!extra||!*extra)return false;
+ int kept=0;const char*p=extra;
+ while(*p&&kept<4){
+  while(*p==' '||*p==',')p++;
+  char want[32]={};size_t n=0;
+  while(p[n]&&p[n]!=','&&n<31){want[n]=char(std::tolower((unsigned char)p[n]));n++;}
+  while(n>0&&want[n-1]==' ')want[--n]=0;
+  if(n>0){kept++;if(std::strcmp(stem,want)==0)return true;}
+  p+=n;while(*p&&*p!=',')p++;
+ }
+ return false;
+}
+inline bool IsPaintAtlas(const char *path,const char *extraStems){
+ if(!path)return false;
+ char stem[32];StemOf(path,stem);if(!stem[0])return false;
  static const char *known[]={"affdbodf","amldbodf","ap2dbodf","ap5dbodf","ascdbodf","asidbodf"};
  for(auto k:known)if(std::strcmp(stem,k)==0)return true;
- return false;
+ return IsExtraAtlas(stem,extraStems);
 }
 inline void Reset(){for(auto &c:cars)c={};drawingCar=-1;}
 inline void Deposit(int car,float exposure,float red,float green,float blue){
