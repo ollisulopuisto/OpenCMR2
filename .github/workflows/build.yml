@@ -120,7 +120,9 @@ jobs:
           APP="build/ios-sim/src/OpenCMR2.app"
           test -d "$APP" || { echo "app bundle missing at $APP"; find build -name '*.app' -maxdepth 4; exit 1; }
           RUNTIME=$(xcrun simctl list runtimes -j | jq -r '[.runtimes[] | select(.platform=="iOS" and .isAvailable==true)] | last | .identifier')
-          DTYPE=$(xcrun simctl list devicetypes -j | jq -r '[.devicetypes[] | select(.name | startswith("iPhone"))] | last | .identifier')
+          # Highest-numbered modern iPhone type: alphabetical "last" lands on
+          # iPhone-6s-Plus, which current runtimes refuse as incompatible.
+          DTYPE=$(xcrun simctl list devicetypes -j | jq -r '[.devicetypes[] | select(.identifier | test("SimDeviceType\\.iPhone-[0-9]+")) | {id: .identifier, n: (.identifier | capture("iPhone-(?<n>[0-9]+)").n | tonumber)}] | sort_by(.n) | last | .id')
           echo "runtime=$RUNTIME devicetype=$DTYPE"
           test -n "$RUNTIME" -a "$RUNTIME" != null
           UDID=$(xcrun simctl create cmr2smoke "$DTYPE" "$RUNTIME")
