@@ -1,9 +1,13 @@
 # WebAssembly / browser port feasibility
 
-Status: feasibility probe, not a runnable port. The full game compiles and
-links to WebAssembly today with the build-system deltas on the
-`wasm-feasibility` branch; the game's generated ES 3.00 shaders compile and
-link in a real WebGL2 context. No game code changes are needed for the build.
+Status: feasibility probe, not a runnable port. Observed so far: the full
+game compiles and links to WebAssembly with the build-system deltas on the
+`wasm-feasibility` branch (no game code changes needed for the build), and
+the generated ES 3.00 shader stages compile - and one program links - in a
+real WebGL2 context. Compilation is not validation of the render route:
+program links beyond the one tested, uniform/buffer bindings, draw and
+readback pixel correctness, the individual effect stages, and equivalence
+with the native renderers are all unverified.
 
 ## Build
 
@@ -75,8 +79,9 @@ Observed (headless Chrome + SwiftShader WebGL2):
   WebGL2 extension is widely available, but a port cannot rely on it
   everywhere.
 
-The GL renderer touches the missing pieces at exactly three sites in
-`src/render/gfx_gl.cpp`:
+The probe-identified gaps surface at three call sites this static pass found
+in `src/render/gfx_gl.cpp` (other desktop-GL dependencies may exist that were
+not enumerated):
 
 - line ~749 `gl.GetTexImage` (texture readback) -> attach the texture to an
   FBO and `glReadPixels` instead (probe-verified).
@@ -84,6 +89,18 @@ The GL renderer touches the missing pieces at exactly three sites in
 - line ~1409 `gl.DrawElementsBaseVertex` (main geometry draw) -> use
   `OES_draw_elements_base_vertex` where exposed, otherwise re-base the index
   stream or attribute offsets.
+
+## Observed vs unknown
+
+Observed: build completes; wasm links; WebGL2 context creation; 22/22 ES 3.00
+shader-stage compilations; one program link; clear + readback pixels; the
+three API gaps above.
+
+Unknown: every other program link; uniform/buffer/sampler binding behavior;
+actual rendered pixels per effect stage; effect stages using the handwritten
+330 sources; input/audio/save paths; performance; equivalence with the native
+GL/SDL_GPU renderers; the complete set of desktop-GL call sites needing
+adaptation.
 
 ## Known remaining gaps before a runnable game
 
