@@ -81,6 +81,7 @@ class SetupActivity : ComponentActivity() {
                 if (installed) LauncherScreen(
                     onStart = ::startGame,
                     onControls = { startActivity(Intent(this, ControllerActivity::class.java)) },
+                    onEffects = { startActivity(Intent(this, EffectsActivity::class.java)) },
                 ) else SetupScreen(state, onFolderChosen = model::import, onCancel = model::cancel)
             }
         }
@@ -221,13 +222,14 @@ private fun errorText(error: Throwable): String {
 }
 
 @Composable
-private fun LauncherScreen(onStart: () -> Unit, onControls: () -> Unit) {
+private fun LauncherScreen(onStart: () -> Unit, onControls: () -> Unit, onEffects: () -> Unit) {
     Box(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.Center) {
         Column(Modifier.widthIn(max = 560.dp).fillMaxWidth().padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Image(painterResource(R.drawable.logo), null, Modifier.size(96.dp).clip(RoundedCornerShape(24.dp)))
             Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineMedium)
             Button(onClick = onStart, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.launcher_start)) }
+            TextButton(onClick = onEffects) { Text(stringResource(R.string.effects_title)) }
             TextButton(onClick = onControls) { Text(stringResource(R.string.controllers_title)) }
         }
     }

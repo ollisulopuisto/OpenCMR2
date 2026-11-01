@@ -21,7 +21,8 @@ class GameActivity : SDLActivity() {
 
     override fun getLibraries() = arrayOf("SDL3", "main")
 
-    override fun getArguments() = arrayOf("--data", GameData.directory(this).absolutePath)
+    override fun getArguments() =
+        arrayOf("--data", GameData.directory(this).absolutePath) + EffectSettings.arguments(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
