@@ -5,7 +5,7 @@
 // FrontendScreens.cpp (PORT). Bump kWhatsNewRevision and add lines when
 // user-visible changes ship: the screen then shows once on the main menu
 // (tracked in ui.whatsnew_seen) and stays reachable from the Screen page.
-inline constexpr int kWhatsNewRevision = 12;
+inline constexpr int kWhatsNewRevision = 13;
 
 struct WhatsNewLine { int revision; const char *text; };
 inline const WhatsNewLine *WhatsNew_Lines(int &count)
@@ -29,6 +29,7 @@ inline const WhatsNewLine *WhatsNew_Lines(int &count)
         {10, "Greece 1 bush and tree cards gain relief with --textures uprez"},
         {11, "Fix: fog lights in bonnet view; cockpit glow gated off the dash"},
         {12, "Windscreen: dirt builds on the glass, wipers clear the sweep"},
+        {13, "Fix: replay chase arrows work after using the F10 panel."},
     };
     count = (int)(sizeof(lines) / sizeof(*lines));
     return lines;

@@ -6203,7 +6203,7 @@ void View_ReplayChaseFrame(unsigned,int,int,int,int,int);
 static const int kFreeCamKeys[] = {0x11, 0x1f, 0x1e, 0x20, 0x10, 0x12, 0x13, 0x2a, 0x36, 0xc8, 0xd0, 0xcb, 0xcd};
 bool ReplayControls_KeyIsFreeCamKey(int key)
 {
-    if (!ReplayControls_Active() || CGameInfo::IsInRaceMenuOpen() || TuningPanel_PreviewActive()) return false;
+    if (!ReplayControls_Active() || ReplayChaseOrbit::InputCaptured(CGameInfo::IsInRaceMenuOpen() != 0, TuningPanel_IsOpen())) return false;
     if(!View_FreeCamActive())return ReplayChaseOrbit::Chase(View_GetActiveCameraMode(0)) && ReplayChaseOrbit::Key(key);
     for (int k : kFreeCamKeys) if (k == key) return true;
     return false;
@@ -6222,7 +6222,7 @@ void ReplayControls_Update(void)
     if (ReplayKeyUsable(kReplayKeyFaster) && g_replayEdges.Edge(1, Input_IsKeyDown(kReplayKeyFaster) != 0)) g_replayControls.Faster();
     if (ReplayKeyUsable(kReplayKeyPause) && g_replayEdges.Edge(2, Input_IsKeyDown(kReplayKeyPause) != 0)) g_replayControls.TogglePause();
     if (ReplayKeyUsable(kReplayKeyCamera) && g_replayEdges.Edge(3, Input_IsKeyDown(kReplayKeyCamera) != 0)) ReplayControls_CycleCamera();
-    if(CGameInfo::IsInRaceMenuOpen() || TuningPanel_PreviewActive()){View_ReplayChaseFrame(0,0,0,0,0,0);return;}
+    if(ReplayChaseOrbit::InputCaptured(CGameInfo::IsInRaceMenuOpen() != 0, TuningPanel_IsOpen())){View_ReplayChaseFrame(0,0,0,0,0,0);return;}
     bool cameraReset=g_replayEdges.Edge(4,Input_IsKeyDown(0x13)!=0);
     if(!View_FreeCamActive())View_ReplayChaseFrame(0,Input_IsKeyDown(0xcb)!=0,Input_IsKeyDown(0xcd)!=0,Input_IsKeyDown(0xc8)!=0,Input_IsKeyDown(0xd0)!=0,cameraReset);
     if (View_FreeCamActive()) {   // arrows and WASD are free in replay: the recorded controls drive the car

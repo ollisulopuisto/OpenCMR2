@@ -4,6 +4,9 @@ All notable changes to OpenCMR2 are documented here.
 
 ## [Unreleased]
 ### Fixed
+- Replay chase camera orbit (arrow keys) no longer dies for the rest of the
+  session after the F10 tuning panel is used once: the input-capture gate now
+  follows the OPEN adjust panel instead of the sticky "engaged" preview flag.
 - Fog lights whose lamps sit at/behind the near plane (bonnet and bumper
   cameras) are no longer dropped: the wedge anchors at the near-plane
   crossing and the beam lights the fog ahead again.

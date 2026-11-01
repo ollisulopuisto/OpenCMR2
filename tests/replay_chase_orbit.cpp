@@ -10,5 +10,11 @@ int main(){
  double dot=0,rr=0,ff=0;for(int i=0;i<3;i++){dot+=r[i]*f[i];rr+=r[i]*r[i];ff+=f[i]*f[i];}CHECK(std::abs(dot)<1e-9&&std::abs(rr-1)<1e-9&&std::abs(ff-1)<1e-9);
  o.Reset();CHECK(o.yaw==0&&o.pitch==0);o.Step(true,true,true,true,.1);CHECK(o.yaw==0&&o.pitch==0);o.Step(false,true,false,false,100);CHECK(std::abs(o.yaw-.14)<1e-9);
  o.Reset();o.Step(false,true,false,false,.1);double p2[3]={0,0,-8},r2[3]={-1,0,0},u2[3]={0,1,0},f2[3]={0,0,1};o.Apply(p2,r2,u2,f2,8);CHECK(p2[0]>0); // screen-right orbit with reversed camera handedness
+ // Input capture policy: menu or the OPEN tuning adjust panel capture the
+ // arrows; the sticky "engaged" preview flag (first F10 press, stays set)
+ // must NOT capture them - that was the user-reported dead-arrows bug.
+ CHECK(ReplayChaseOrbit::InputCaptured(true,false));
+ CHECK(ReplayChaseOrbit::InputCaptured(false,true));
+ CHECK(!ReplayChaseOrbit::InputCaptured(false,false));
  puts("orbit geometry: chase4/5/6, aim/distance/orthonormality, identity/reset, clamp/opposite keys/handedness pass");
 }
