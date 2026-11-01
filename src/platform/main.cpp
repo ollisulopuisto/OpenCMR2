@@ -12,7 +12,12 @@
 #include "build_identity.h"
 
 // On Android, SDLActivity calls SDL_main, which SDL_main.h renames main to.
-#ifndef __ANDROID__
+// On iOS, SDL supplies the real main that bootstraps UIApplicationMain, so
+// SDL_MAIN_HANDLED must stay off there too.
+#if defined(__APPLE__)
+#include <TargetConditionals.h>
+#endif
+#if !defined(__ANDROID__) && !(defined(TARGET_OS_IOS) && TARGET_OS_IOS)
 #define SDL_MAIN_HANDLED
 #endif
 #include <SDL3/SDL_main.h>

@@ -1,3 +1,6 @@
+#if defined(__APPLE__)
+#include <TargetConditionals.h>
+#endif
 #include "platform/key_remapping.h"
 #include "CarDisplayNames.h"
 #include <fstream>
@@ -736,6 +739,9 @@ bool Platform_Init(int argc, char **argv)
     // keep the on-screen keyboard open. Back is the game's Escape (GameActivity).
     SDL_SetHint(SDL_HINT_ENABLE_SCREEN_KEYBOARD, "0");
     SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
+#elif defined(__APPLE__) && defined(TARGET_OS_IOS) && TARGET_OS_IOS
+    SDL_SetHint(SDL_HINT_ENABLE_SCREEN_KEYBOARD, "0");
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
 #endif
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
@@ -807,6 +813,17 @@ bool Platform_Init(int argc, char **argv)
     candidates.push_back("./Data");
     if (const char *base = SDL_GetBasePath())
         candidates.push_back(std::string(base) + "Data");
+#if defined(__APPLE__) && defined(TARGET_OS_IOS) && TARGET_OS_IOS
+    // UIFileSharingEnabled exposes the app's Documents in the Files app; a
+    // Data folder the user drops there is the owned CMR2 data. SDL's pref
+    // path sits under Library/Application Support, so reach Documents
+    // relative to it (no public SDL API names Documents directly).
+    if (char *pref = SDL_GetPrefPath("", "OpenCMR2")) {
+        std::string documents = std::string(pref) + "../../Documents/";
+        candidates.push_back(documents + "Data");
+        SDL_free(pref);
+    }
+#endif
     if (const char *setting = Platform_GetSetting("paths.data", NULL))
         candidates.push_back(setting);
     candidates.push_back(".");

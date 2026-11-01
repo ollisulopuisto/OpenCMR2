@@ -906,3 +906,18 @@ visible until the pads render.
   original. Uprez coverage: owned Finland1/France1/Greece1 archives only.
 - What's new (#247): no more main-menu popup; localized row at the bottom of
   the main Options menu (above Back); full log listed; rev 16.
+
+## iOS prep (branch poc/ios-sim-build, 1 Nov 2026)
+- ios-sim preset + CI job: compile-only simulator proof (run pending).
+- ios-device preset: unsigned arm64 .app (MACOSX_BUNDLE, static SDL3,
+  CODE_SIGNING_ALLOWED=NO) meant for sideload tools to sign with the user's
+  own Apple ID. res/Info-iOS.plist: landscape-only, UIFileSharingEnabled so
+  the owned CMR2 Data folder can be dropped into Documents via the Files app.
+- sys.cpp: iOS looks for game data in the app bundle and in
+  Documents/Data (reached as pref-path/../../Documents/Data). UNVERIFIED on
+  device; the relative-Documents path is device/OS-version sensitive.
+- main.cpp: SDL_MAIN_HANDLED now excluded on iOS, because SDL must supply
+  the UIApplicationMain bootstrap there; with it defined the app builds but
+  never launches. Compile-only CI would not catch this.
+- NOT done: signing, install, boot, rendering, touch. GL renderer cannot
+  run on iOS (no desktop GL); Metal/SDL_GPU is the only path.

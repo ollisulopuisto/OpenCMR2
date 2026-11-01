@@ -48,6 +48,30 @@
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" }
     },
     {
+      "name": "ios-sim",
+      "inherits": "base",
+      "displayName": "iOS Simulator, arm64 (compile PoC)",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "iOS",
+        "CMAKE_OSX_SYSROOT": "iphonesimulator",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "13.0"
+      },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" }
+    },
+    {
+      "name": "ios-device",
+      "inherits": "base",
+      "displayName": "iOS device, arm64 (unsigned .app for sideloading)",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "iOS",
+        "CMAKE_OSX_SYSROOT": "iphoneos",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "13.0"
+      },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" }
+    },
+    {
       "name": "windows-x64",
       "inherits": "base",
       "displayName": "Windows, x64 (clang++ from LLVM or Visual Studio, MSVC runtime)",
@@ -61,6 +85,8 @@
     { "name": "linux", "configurePreset": "linux" },
     { "name": "linux-debug", "configurePreset": "linux-debug" },
     { "name": "macos", "configurePreset": "macos" },
+    { "name": "ios-sim", "configurePreset": "ios-sim" },
+    { "name": "ios-device", "configurePreset": "ios-device" },
     { "name": "windows-x64", "configurePreset": "windows-x64" }
   ],
   "testPresets": [

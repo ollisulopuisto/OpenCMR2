@@ -77,6 +77,17 @@ if(ANDROID)
     # SDLActivity loads libmain.so and calls its SDL_main.
     add_library(opencmr2 SHARED platform/main.cpp)
     set_target_properties(opencmr2 PROPERTIES OUTPUT_NAME main)
+elseif(IOS)
+    # An unsigned .app a sideload tool (AltStore/SideStore) signs on the
+    # user's side with their own Apple ID. Static SDL3: no frameworks to
+    # sign. UIFileSharingEnabled exposes Documents for the owned game data.
+    add_executable(opencmr2 MACOSX_BUNDLE platform/main.cpp)
+    set_target_properties(opencmr2 PROPERTIES
+        MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/res/Info-iOS.plist
+        MACOSX_BUNDLE_BUNDLE_NAME OpenCMR2
+        MACOSX_BUNDLE_GUI_IDENTIFIER io.github.pablocpas.OpenCMR2
+        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER io.github.pablocpas.OpenCMR2
+        XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED NO)
 else()
     add_executable(opencmr2 platform/main.cpp)
 endif()
@@ -123,6 +134,7 @@ add_custom_command(TARGET opencmr2 POST_BUILD
         ${PROJECT_SOURCE_DIR}/tools/scenery-patch/export-evidence.py
         ${PROJECT_SOURCE_DIR}/tools/scenery-patch/road_contract.py
         $<TARGET_FILE_DIR:opencmr2>/enhancements/scenery-patch)
+endif() # NOT IOS
 
 if(WIN32)
     target_sources(opencmr2 PRIVATE ${PROJECT_SOURCE_DIR}/res/opencmr2.rc)
