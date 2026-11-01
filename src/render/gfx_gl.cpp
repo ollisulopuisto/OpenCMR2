@@ -572,7 +572,13 @@ struct Executor : GfxExecutor {
     }
     void SetFogLights(const GfxFogLight *lights, int count) override {
         fogLightCount = 0;
-        if (lights) for (int i = 0; i < count && i < 8; i++) { fogLights[i] = lights[i]; fogLightCount++; }
+        // GL maps NDC z [-1,1] into the buffer's [0,1], so a D3D-style game
+        // depthRef (near 0, far 1) lands at (d + 1) / 2 here; 0 stays 0 (gate off).
+        if (lights) for (int i = 0; i < count && i < 8; i++) {
+            fogLights[i] = lights[i];
+            fogLights[i].depthRef = lights[i].depthRef > 0.0f ? 0.5f + 0.5f * lights[i].depthRef : 0.0f;
+            fogLightCount++;
+        }
     }
     void SetSunScreenPosition(float x, float y, BOOL visible) override {
         sunX = x; sunY = y; sunVisible = visible && std::isfinite(x) && std::isfinite(y);

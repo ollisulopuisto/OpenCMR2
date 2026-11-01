@@ -4,6 +4,13 @@ All notable changes to OpenCMR2 are documented here.
 
 ## [Unreleased]
 ### Fixed
+- Fog lights whose lamps sit at/behind the near plane (bonnet and bumper
+  cameras) are no longer dropped: the wedge anchors at the near-plane
+  crossing and the beam lights the fog ahead again.
+- The fog light depth gate now uses a raw depth-buffer reference computed
+  from the game's own projection, so the lamp glow stays off the dashboard
+  in cockpit view on both renderers (the gate previously ran only on
+  SDL_GPU and only when the projection vote was unambiguous).
 - Fog light beams crossing the near plane (rear lamps in chase view,
   headlights in R look-back) no longer draw as a streak toward the
   upper-left corner; the beam wedge is clipped at the near plane and keeps
@@ -11,6 +18,13 @@ All notable changes to OpenCMR2 are documented here.
 
 
 ### Added
+- Windscreen dirt and wipers (cockpit view): dirt spatter from driving
+  builds up on the actual glass area instead of the old flat fullscreen
+  tint, rain wets it, and the 3D wiper blades now clear the dirt along
+  their real sweep, smearing it to the edge of the arc while wet. The old
+  white 2D wiper bar overlay is gone - the animated 3D blades are the
+  wipers. Dirt only decays slowly in dry weather, matching the parked
+  blades.
 
 - **Precipitation density dial** (`video.weather_particle_amount`, 0..300,
   default 200): rain and snow draw up to 3x the original particle count via a

@@ -107,7 +107,7 @@ int main(int argc, char **argv)
             // pointing down-screen. The wedge brightens the fogged scene along the
             // beam (strongest near the lamp, decaying along it), the 30% floor keeps
             // it visible on near-clean air, and headroom dims it on a bright scene.
-            GfxFogLight lamp={};lamp.x=0.5f;lamp.y=0.4f;lamp.viewZ=-1;lamp.intensity=1;
+            GfxFogLight lamp={};lamp.x=0.5f;lamp.y=0.4f;lamp.depthRef=-1;lamp.intensity=1;
             lamp.r=1;lamp.g=0.95f;lamp.b=0.85f;lamp.beamX=0.f;lamp.beamY=1.f;lamp.beamLen=0.4f;
             auto px=[&](const std::vector<unsigned char>&f,float uy){size_t i=((int)(h*uy)*w+w/2)*4;return int(f[i])+int(f[i+1])+int(f[i+2]);};
             e.SetPostFog(true,100,0);
@@ -176,7 +176,7 @@ int main(int argc, char **argv)
             std::vector<unsigned char> dark(ww*wh*4,32);
             auto upload=[&](){gl.BindTexture(GL_TEXTURE_2D,e.backColor);gl.TexSubImage2D(GL_TEXTURE_2D,0,0,0,ww,wh,GL_RGBA,GL_UNSIGNED_BYTE,dark.data());};
             auto lum=[&](float ux,float uy){std::vector<unsigned char> pix(ww*wh*4);gl.BindFramebuffer(GL_FRAMEBUFFER,e.backFramebuffer);gl.ReadPixels(0,0,ww,wh,GL_RGBA,GL_UNSIGNED_BYTE,pix.data());int x=int(ux*ww),y=int((1.0f-uy)*wh);size_t i=(size_t)(y*ww+x)*4;return int(pix[i])+int(pix[i+1])+int(pix[i+2]);};
-            GfxFogLight one={};one.x=0.25f;one.y=0.5f;one.viewZ=-1;one.intensity=1;one.r=1;one.g=0.95f;one.b=0.85f;
+            GfxFogLight one={};one.x=0.25f;one.y=0.5f;one.depthRef=-1;one.intensity=1;one.r=1;one.g=0.95f;one.b=0.85f;
             e.SetParticles(2,255);e.SetSunScreenPosition(0.5f,0.2f,false);
             e.weather.clear();
             e.weather.push_back({0.25f,0.5f,0,0,0.03f,0.05f,60});
@@ -340,7 +340,7 @@ int main(int argc, char **argv)
             {   // 4th frame: fog 100 with a headlight pair on the car, beams
                 // pointing up-road toward the horizon (screen-space wedge).
                 GfxFogLight pair[2]={};
-                for(int k=0;k<2;k++){pair[k].y=0.70f;pair[k].viewZ=-1;pair[k].intensity=1;
+                for(int k=0;k<2;k++){pair[k].y=0.70f;pair[k].depthRef=-1;pair[k].intensity=1;
                     pair[k].r=1;pair[k].g=0.95f;pair[k].b=0.85f;pair[k].beamX=0;pair[k].beamY=-1;pair[k].beamLen=0.55f;}
                 pair[0].x=0.44f;pair[1].x=0.56f;
                 gl.ActiveTexture(GL_TEXTURE0);gl.BindTexture(GL_TEXTURE_2D,e.backColor);gl.TexSubImage2D(GL_TEXTURE_2D,0,0,0,fw,fh,GL_RGBA,GL_UNSIGNED_BYTE,road.data());

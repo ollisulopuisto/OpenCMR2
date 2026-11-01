@@ -26,7 +26,7 @@ int main() {
     GfxFogLight lights[8];
     for (int i = 0; i < 8; i++) {
         lights[i].x = 0.10f + i; lights[i].y = 0.20f + i;
-        lights[i].viewZ = 30.0f + i; lights[i].intensity = 0.5f + i * 0.01f;
+        lights[i].depthRef = 0.30f + i * 0.01f; lights[i].intensity = 0.5f + i * 0.01f;
         lights[i].r = 0.9f; lights[i].g = 0.8f; lights[i].b = 0.7f;
         lights[i].beamX = 0.31f + i; lights[i].beamY = 0.41f + i; lights[i].beamLen = 0.51f + i;
     }
@@ -35,25 +35,27 @@ int main() {
     p.sunX = 0.4f; p.sunY = 0.3f; p.sunVisible = 1.0f; p.aspect = 1.6f;
     p.clearDistance = 60.0f; p.lightStrength = 1.0f;
 
-    FogUniforms_Pack(u, p, lights, 8, true);   // would SIGSEGV here on the old 92-float layout
+    FogUniforms_Pack(u, p, lights, 8);   // would SIGSEGV here on the old 92-float layout
     CHECK(u[0] == 0.03f && u[2] == 1.5f && u[3] == 900.0f);
     CHECK(u[104] == 0.31f + 7 && u[105] == 0.41f + 7 && u[106] == 0.51f + 7);   // beams[7] tail lanes
     CHECK(u[107] == 0.0f);
-    CHECK(u[12 + 7 * 4] == 0.10f + 7 && u[44 + 7 * 4] == 30.0f + 7);           // lights[7], viewZ
+    CHECK(u[12 + 7 * 4] == 0.10f + 7 && u[44 + 7 * 4] == 0.30f + 7 * 0.01f);     // lights[7], depthRef
     for (int i = 0; i < 12; i++) { /* header checked above */ }
     (void)0;
 
-    // GL shape: viewZ lane forced to 0 (no depth gate).
+    // depthRef 0: no depth gate.
     std::memset(u, 0xCD, kFogUniformFloats * sizeof(float));
-    FogUniforms_Pack(u, p, lights, 8, false);
+    lights[7].depthRef = 0.0f;
+    FogUniforms_Pack(u, p, lights, 8);
     CHECK(u[44 + 7 * 4] == 0.0f && u[44 + 7 * 4 + 1] == 0.9f);
+    lights[7].depthRef = 0.37f;
 
     // Oversized count clamps to the 8 shader lanes; fewer lights zero the rest.
-    FogUniforms_Pack(u, p, lights, 99, true);
+    FogUniforms_Pack(u, p, lights, 99);
     CHECK(u[104] == 0.31f + 7);
-    FogUniforms_Pack(u, p, lights, 2, true);
+    FogUniforms_Pack(u, p, lights, 2);
     CHECK(u[12 + 2 * 4] == 0.0f && u[76 + 2 * 4] == 0.0f && u[106] == 0.0f);
-    FogUniforms_Pack(u, p, nullptr, 0, true);
+    FogUniforms_Pack(u, p, nullptr, 0);
 
     munmap(base, span);
     std::printf(fails ? "FAILED\n" : "fog uniforms pack ok\n");

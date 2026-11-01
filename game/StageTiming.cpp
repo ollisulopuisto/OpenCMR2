@@ -1,4 +1,5 @@
 #include "DustPlume.h"
+#include "GraphicsOptions.h"
 #include "AirMote.h"
 #include "SnowGlint.h"
 #include "FogDynamics.h"
@@ -2007,6 +2008,7 @@ void StageObject_InitCarSceneTables(void)
     g_carInteriorModelBuffers[1] = NULL;
     *(short *)g_carSteeringBlendLastGears = 0;
     *(short *)g_carSteeringBlendFrames = 0x303;
+    Windshield_ResetAll();   // stages start with clean glass
     for (i = 0; i < 2; i++) {
         g_carDriverPoseStates[i].rotation.x = 0;
         g_carInteriorNodeRows[i].driverPoseNode = 0;

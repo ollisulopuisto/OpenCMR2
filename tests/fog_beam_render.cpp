@@ -15,6 +15,7 @@
 #include <cstdarg>
 #include <cstdlib>
 #include <cstring>
+#include <cstdlib>
 
 static SDL_Window *testWindow;
 extern "C" int Sys_GetOption(const char *, int fallback) { return fallback; }
@@ -120,13 +121,52 @@ int main(int argc, char **argv)
     FixVector lampPos = {-0x20000, 0, 0x80000};        // (-2, 0, 8)
     FixVector lampDir = {0, 0, -0x10000};              // backwards
     require(LightField_Add(&lampPos, &lampDir, 0x10000, 0x10000, 0x1200, 0) == 1, "light add");
+    // The harness scene quad lands at raw depth ~0.997 (GL buffer); the game
+    // projection handed to the projector gives the lamp a D3D-space depthRef
+    // 0.6667 - 0.3333/7 = 0.619, remapped by the GL executor to 0.809 - below
+    // the quad, so the gate passes and the beam stays visible.
     GfxFogLight lights[LIGHT_FIELD_MAX];
-    int n = FogBeam_ProjectLights(lights, LIGHT_FIELD_MAX, &view, (float)W, (float)H);
+    int n = FogBeam_ProjectLights(lights, LIGHT_FIELD_MAX, &view, (float)W, (float)H, 1.0f/1.5f, -0.5f/1.5f);
     require(n == 1, "one projected light");
     require(lights[0].x > 0.30f && lights[0].x < 0.45f, "lamp u");
     require(lights[0].y > 0.45f && lights[0].y < 0.55f, "lamp v");
     require(lights[0].beamX < -0.9f && lights[0].beamY > -0.05f && lights[0].beamY < 0.05f,
             "wedge direction horizontal-left, no upward drift");
+    require(lights[0].depthRef > 0.55f && lights[0].depthRef < 0.70f, "depth gate ref from the game projection");
+
+    // R look-back case (user screenshot: red glow by the left spoiler
+    // support): camera rotated 180 degrees, rear lamp ahead in view, beam
+    // pointing back toward/past the camera. The wedge must run from the lamp
+    // toward its true screen side (right, here) - the pre-clip sentinel put
+    // the endpoint at the upper-left, beside the left support.
+    static SceneNode lookback;
+    memset(&lookback, 0, sizeof lookback);
+    FixMatrix_Identity(&lookback.world);
+    lookback.world.right.x = -0x10000;   // 180 degrees about Y: x -> -x, z -> -z
+    lookback.world.forward.z = -0x10000;
+    LightField_Clear();
+    FixVector rlPos = {-0x20000, 0, -0x80000};        // world (-2, 0, -8): in view (2, 0, 8)
+    FixVector rlDir = {0, 0, 0x10000};                // world +Z: view -Z, toward the camera
+    require(LightField_Add(&rlPos, &rlDir, 0x10000, 0x10000, 0x1200, 0) == 1, "lookback light add");
+    GfxFogLight rlights[LIGHT_FIELD_MAX];
+    int rn = FogBeam_ProjectLights(rlights, LIGHT_FIELD_MAX, &lookback, (float)W, (float)H, 1.0f/1.5f, -0.5f/1.5f);
+    require(rn == 1, "look-back rear lamp survives");
+    require(rlights[0].x > 0.55f && rlights[0].x < 0.70f, "look-back lamp on its true screen side");
+    require(rlights[0].beamX > 0.9f && rlights[0].beamY > -0.05f && rlights[0].beamY < 0.05f,
+            "look-back wedge runs screen-right, no mirror to the upper-left");
+
+    // Bonnet/bumper case: lamp 0.5 units ahead of the camera (inside the
+    // near-plane threshold), beam 30 units forward into view. The light must
+    // survive with its anchor clipped to the near plane; before the fix the
+    // whole light was dropped (the missing bonnet-view lamps).
+    LightField_Clear();
+    FixVector blPos = {-0x20000, 0, 0x8000};          // (-2, 0, 0.5)
+    FixVector blDir = {0, 0, 0x10000};                // forward
+    require(LightField_Add(&blPos, &blDir, 0x10000, 0x10000, 0x1200, 0) == 1, "bonnet light add");
+    GfxFogLight blights[LIGHT_FIELD_MAX];
+    int bn = FogBeam_ProjectLights(blights, LIGHT_FIELD_MAX, &view, (float)W, (float)H, 1.0f/1.5f, -0.5f/1.5f);
+    require(bn == 1, "lamp inside the near plane keeps its light");
+    require(blights[0].depthRef == 0.0f, "near-plane anchor carries no depth gate");
 
     GfxViewport vp = { 0, 0, W, H, 0.f, 1.f };
     Gfx_SetViewport(&vp);
@@ -161,8 +201,31 @@ int main(int argc, char **argv)
     putQuad();
     drawAndRead(lit);
 
+    // 3. Depth gate: the same lamp with its depth reference moved BEHIND the
+    // scene quad (an occluder in front of the lamp, e.g. the dashboard) must
+    // leave the frame at the control level.
+    GfxFogLight occluded = lights[0];
+    occluded.depthRef = 0.9999f;   // GL remap -> 0.99995, past the quad's ~0.997
+    static DWORD gated[W * H];
+    Gfx_SetFogLights(&occluded, 1);
+    putQuad();
+    drawAndRead(gated);
+    // 4. Lamp inside the near plane (bonnet case): its clipped wedge must render.
+    static DWORD bonnet[W * H];
+    Gfx_SetFogLights(blights, bn);
+    putQuad();
+    drawAndRead(bonnet);
+    // 5. R look-back: the wedge brightens right of the lamp, never the upper-left.
+    static DWORD rlook[W * H];
+    Gfx_SetFogLights(rlights, rn);
+    putQuad();
+    drawAndRead(rlook);
+
     dumpPpm(prefix, "control", control);
     dumpPpm(prefix, "lit", lit);
+    dumpPpm(prefix, "gated", gated);
+    dumpPpm(prefix, "bonnet", bonnet);
+    dumpPpm(prefix, "lookback", rlook);
     require(memcmp(control, lit, sizeof control) != 0, "beam changes pixels");
     // The wedge runs horizontally LEFT from the lamp (lamp at px 36,32):
     // a pixel on the beam path brightens well beyond the control.
@@ -172,6 +235,15 @@ int main(int argc, char **argv)
     require(red(lit,12,8) <= red(control,12,8) + 8, "no upward drift above the beam");
     // No backward shine: right of the lamp stays at the control level.
     require(red(lit,84,32) <= red(control,84,32) + 8, "no backward shine");
+    // The gate must blank the whole light when the scene sits in front of it.
+    require(abs(red(gated,12,32) - red(control,12,32)) <= 8, "occluded lamp: beam path gated off");
+    require(abs(red(gated,36,32) - red(control,36,32)) <= 8, "occluded lamp: halo gated off");
+    // Bonnet case: the clipped wedge brightens the frame it would have missed.
+    require(red(bonnet,12,32) > red(control,12,32) + 24, "near-plane lamp: clipped wedge renders");
+    // Look-back: lamp at px ~60,32; the wedge runs RIGHT, the upper-left stays dark.
+    require(red(rlook,84,32) > red(control,84,32) + 24, "look-back: wedge brightens screen-right");
+    require(red(rlook,2,2) <= red(control,2,2) + 8, "look-back: no upper-left glow");
+    require(red(rlook,12,32) <= red(control,12,32) + 8, "look-back: no left-side spill");
     printf("fog_beam_render ok\n");
     return 0;
 }

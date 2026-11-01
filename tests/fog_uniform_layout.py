@@ -24,10 +24,10 @@ need(vec4s == cpu_vec4s, f"shader declares {vec4s} vec4, CPU constant says {cpu_
 
 gpu = (r / "src/render/gfx_gpu.cpp").read_text()
 gl = (r / "src/render/gl_effects_executor.h").read_text()
-need("FogUniforms_Pack(fogUniforms, fogP, fogLights, fogLightCount, true)" in gpu,
-     "SDL_GPU executor must pack via the shared packer with viewZ")
-need("FogUniforms_Pack(u, fogP, fogLights, fogLightCount, false)" in gl,
-     "GL executor must pack via the shared packer without viewZ")
+need("FogUniforms_Pack(fogUniforms, fogP, fogLights, fogLightCount)" in gpu,
+     "SDL_GPU executor must pack via the shared packer")
+need("FogUniforms_Pack(u, fogP, fogLights, fogLightCount)" in gl,
+     "GL executor must pack via the shared packer")
 need("fogUniforms[kFogUniformFloats]" in gpu and "u[kFogUniformFloats]" in gl,
      "both executors must size their arrays from kFogUniformFloats")
 print("fog uniform layout ok" if ok else "FAILED"); sys.exit(0 if ok else 1)
