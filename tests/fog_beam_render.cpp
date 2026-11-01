@@ -71,7 +71,7 @@ static void drawAndRead(DWORD *pixels)
     Gfx_SetTexture(0, whiteTex);
     Gfx_DrawPrimitiveVB(GFX_TRIANGLESTRIP, vb, 0, 4);
     Gfx_EndWorldEffects();   // emits the race-world command that runs the fog pass
-    DWORD dummy[4];
+    static DWORD dummy[W * H];
     (void)Gfx_ReadBackBuffer(0, 0, W, H, dummy);   // marks the request
     Gfx_Present(0);
     require(Gfx_ReadBackBuffer(0, 0, W, H, pixels), "readback");

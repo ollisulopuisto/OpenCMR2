@@ -40,4 +40,50 @@ class SceneryPackTest {
         assertEquals(listOf("../escape.tga", "/abs.tga", "C:\\win.tga"),
             SceneryPack.manifestReferences(manifest).sorted())
     }
+
+    @Test
+    fun manifestReferencesFlagNestedDotDot() {
+        val manifest = folder.newFile("manifest.tsv")
+        manifest.writeText(
+            "tree\tfin01hi.bfl\ttree01.dds\ttrees/a.obj\t\t5\n" +
+            "tree\tfin01hi.bfl\ttree01.dds\ttrees/../../escape.obj\t\t5\n" +
+            "tree\tfin01hi.bfl\ttree01.dds\ttrees/./a.obj\t\t5\n",
+        )
+        assertEquals(listOf("trees/../../escape.obj", "trees/./a.obj"),
+            SceneryPack.manifestReferences(manifest).sorted())
+    }
+
+    @Test
+    fun symlinksBelowFindsLinksOnly() {
+        val pack = folder.newFolder("pack")
+        File(pack, "real.tga").writeText("x")
+        java.nio.file.Files.createSymbolicLink(File(pack, "link.tga").toPath(), File("/etc/hostname").toPath())
+        assertEquals(listOf("link.tga"), SceneryPack.symlinksBelow(pack))
+    }
+
+    @Test
+    fun swapInRestoresInstalledPackWhenMoveFails() {
+        val target = folder.newFolder("scenery")
+        File(target, "manifest.tsv").writeText("tree\told\told\told.obj\t\t5\n")
+        val missing = File(folder.root, "does-not-exist")
+        try {
+            SceneryPack.swapIn(missing, target)
+            throw AssertionError("swapIn should have failed")
+        } catch (_: java.io.IOException) {
+            // expected
+        }
+        assertEquals("tree\told\told\told.obj\t\t5\n", File(target, "manifest.tsv").readText())
+    }
+
+    @Test
+    fun swapInReplacesInstalledPack() {
+        val target = folder.newFolder("scenery")
+        File(target, "old.txt").writeText("old")
+        val incoming = folder.newFolder("incoming")
+        File(incoming, "manifest.tsv").writeText("tree\tnew\tnew\tnew.obj\t\t5\n")
+        SceneryPack.swapIn(incoming, target)
+        assertEquals("tree\tnew\tnew\tnew.obj\t\t5\n", File(target, "manifest.tsv").readText())
+        assertEquals(false, File(target, "old.txt").exists())
+        assertEquals(false, incoming.exists())
+    }
 }

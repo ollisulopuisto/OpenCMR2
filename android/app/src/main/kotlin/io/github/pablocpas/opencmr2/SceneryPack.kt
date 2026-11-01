@@ -7,6 +7,7 @@ import android.provider.DocumentsContract
 import android.provider.DocumentsContract.Document
 import java.io.File
 import java.io.IOException
+import java.nio.file.Files
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 
@@ -56,6 +57,28 @@ object SceneryPack {
                 for (frame in columns[4].split(',')) if (unsafe(frame)) bad += frame
         }
         return bad
+    }
+
+    /** Symlinks below [root] (relative paths); the importer writes regular files only. */
+    internal fun symlinksBelow(root: File): List<String> {
+        if (!root.isDirectory) return emptyList()
+        return root.walkTopDown()
+            .filter { Files.isSymbolicLink(it.toPath()) }
+            .map { it.relativeTo(root).path }
+            .toList()
+    }
+
+    /** Replace [target] with [temporary]; on failure the previous pack is restored. */
+    internal fun swapIn(temporary: File, target: File) {
+        val backup = File(target.parentFile, target.name + ".replaced")
+        backup.deleteRecursively()
+        if (target.exists() && !target.renameTo(backup))
+            throw IOException("Cannot set aside the installed pack at $target")
+        if (!temporary.renameTo(target)) {
+            backup.renameTo(target)
+            throw IOException("Cannot move the copied files to $target")
+        }
+        backup.deleteRecursively()
     }
 
     /** manifest.tsv columns: kind source_archive source_texture asset frames ticks. */
@@ -137,9 +160,13 @@ object SceneryPack {
             // Runs before the swap, so a rejection keeps the installed pack.
             for (reference in manifestReferences(File(temporary, "manifest.tsv")))
                 throw ImportException.Unsafe(reference)
-            target.deleteRecursively()
-            if (!temporary.renameTo(target))
-                throw IOException("Cannot move the copied files to $target")
+            // The importer never writes links; one present anyway can point
+            // anywhere on the device, so it fails the import the same way.
+            for (link in symlinksBelow(temporary))
+                throw ImportException.Unsafe(link)
+            // Swap, never delete-then-move: a failed move restores the
+            // installed pack instead of leaving the game without it.
+            swapIn(temporary, target)
         } finally {
             temporary.deleteRecursively()
         }
