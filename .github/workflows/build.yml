@@ -117,7 +117,7 @@ jobs:
       - name: Boot smoke in iOS Simulator
         run: |
           set -u
-          APP="build/ios-sim/src/OpenCMR2.app"
+          APP="build/ios-sim/src/opencmr2.app"
           test -d "$APP" || { echo "app bundle missing at $APP"; find build -name '*.app' -maxdepth 4; exit 1; }
           RUNTIME=$(xcrun simctl list runtimes -j | jq -r '[.runtimes[] | select(.platform=="iOS" and .isAvailable==true)] | last | .identifier')
           # Highest-numbered modern iPhone type: alphabetical "last" lands on
