@@ -9269,7 +9269,16 @@ void CarInterior_UpdateWiperSweep(int index)
             g_carWiperStates[index].step = rand() % 0xb + 0x2d;
         }
     } else {
-        g_carWiperStates[index].mode = 0;
+        // OpenCMR2: the blades also run dry ("make em work always") - a slow
+        // continuous sweep so they clear the dirt that builds without rain.
+        // Parking (mode 1) still finishes its sweep first and then restarts.
+        if (g_carWiperStates[index].mode == 0) {
+            g_carWiperStates[index].mode = 2;
+            g_carWiperStates[index].step = rand() % 0xb + 0x2d;
+        } else if (g_carWiperStates[index].mode == 3) {
+            g_carWiperStates[index].mode = 2;   // dry: never the fast rain step
+            g_carWiperStates[index].step = rand() % 0xb + 0x2d;
+        }
     }
     if (g_carWiperStates[index].mode != 0) {
         if (g_carWiperStates[index].sweepingForward != 0) {

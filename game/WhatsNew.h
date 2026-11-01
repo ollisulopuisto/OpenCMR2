@@ -25,7 +25,7 @@ inline const WhatsNewLine *WhatsNew_Lines(int &count)
         {9, "Fix: fog light beams no longer streak the wrong way"},
         {10, "Greece 1 bush and tree cards gain relief with --textures uprez"},
         {11, "Fix: fog lights in bonnet view; cockpit glow gated off the dash"},
-        {18, "Windscreen: dirt, wipers clear it; broken glass shows inside"},
+        {18, "Windscreen: dirt, dry wipers clear it; broken glass inside"},
         {14, "Fixes: replay chase arrows after the F10 panel; steady replay fog beams"},
         {18, "Tree wind fades with distance; fullscreen startup fix"},
         {16, "What's new moved to the bottom of the Options menu; no popup"},
