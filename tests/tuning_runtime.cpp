@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <fstream>
 #include <chrono>
+#include <string>
 void TuningPanel_Update();bool TuningPanel_IsOpen();bool TuningPanel_InfoShown();bool TuningPanel_FpsOnly();bool TuningPanel_PreviewActive();
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line%d %s\n",__LINE__,#x);return 1;}}while(0)
 int main(){
