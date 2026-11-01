@@ -4,6 +4,7 @@
 #include "platform/testing.h"
 #include "port/input.h"
 #include "port/sys.h"
+#include "TouchLayout.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -77,6 +78,93 @@ bool AndroidTouchOnly()
 const BYTE *s_testKeyboard;
 bool s_heldBack[SDL_SCANCODE_COUNT];
 std::vector<SDL_JoystickID> s_openJoysticks;
+
+// The shared touch controls: one implementation for every SDL platform
+// (Android first, iPhone/iPad and a browser build later). Finger events
+// arrive through Input_TouchEvent from the platform event pump; the merged
+// driving inputs ride the keyboard state the game already polls, under the
+// default arrow/Space bindings, exactly like the Android overlay's key
+// injection. Enabled by input.touch_controls (auto/on/off; auto = a touch
+// device exists, except on Android where the Kotlin overlay owns the
+// screen until it is retired); the mode and handedness come from
+// input.touch_mode (floating/classic) and input.touch_handed
+// (right/left).
+TouchControls s_touchControls;
+bool s_touchEnabled;
+bool s_touchConfigLoaded;
+
+void LoadTouchConfig()
+{
+    TouchConfig config;
+    const char *mode = Platform_GetSetting("input.touch_mode", "floating");
+    config.mode = strcmp(mode, "classic") == 0 ? TOUCH_MODE_CLASSIC : TOUCH_MODE_FLOATING;
+    const char *hand = Platform_GetSetting("input.touch_handed", "right");
+    config.hand = strcmp(hand, "left") == 0 ? TOUCH_HAND_LEFT : TOUCH_HAND_RIGHT;
+    s_touchControls.SetConfig(config);
+    const char *enable = Platform_GetSetting("input.touch_controls", "auto");
+    if (strcmp(enable, "on") == 0) {
+        s_touchEnabled = true;
+    } else if (strcmp(enable, "off") == 0) {
+        s_touchEnabled = false;
+    } else {
+#ifdef __ANDROID__
+        // The Android app's Kotlin overlay injects the same keys today;
+        // reading raw fingers here too would double every input. Android
+        // moves to this shared layer when the overlay is retired.
+        s_touchEnabled = false;
+#else
+        int count = 0;
+        SDL_TouchID *devices = SDL_GetTouchDevices(&count);
+        s_touchEnabled = count > 0;
+        SDL_free(devices);
+#endif
+    }
+    s_touchConfigLoaded = true;
+}
+
+bool TouchActive()
+{
+    if (!s_touchConfigLoaded)
+        LoadTouchConfig();
+    return s_touchEnabled;
+}
+
+// A small deflection presses the key; finer analog grading needs the game's
+// joystick bindings, which the floating design has not settled. NOT settled:
+// this press threshold, like the TouchConfig geometry it derives from.
+const float kTouchPressThreshold = 0.05f;
+
+bool TouchKeyDown(int key)
+{
+    if (!TouchActive())
+        return false;
+    TouchInput in = s_touchControls.Input();
+    switch (key) {
+    case INPUT_KEY_LEFT: return in.steer < -kTouchPressThreshold;
+    case INPUT_KEY_RIGHT: return in.steer > kTouchPressThreshold;
+    case INPUT_KEY_UP: return in.accelerate > kTouchPressThreshold;
+    case INPUT_KEY_DOWN: return in.brake > kTouchPressThreshold;
+    case INPUT_KEY_SPACE: return in.handbrake;
+    default: return false;
+    }
+}
+
+void MergeTouchKeys(BYTE keys[256])
+{
+    if (!TouchActive())
+        return;
+    TouchInput in = s_touchControls.Input();
+    if (in.steer < -kTouchPressThreshold)
+        keys[INPUT_KEY_LEFT] |= 0x80;
+    if (in.steer > kTouchPressThreshold)
+        keys[INPUT_KEY_RIGHT] |= 0x80;
+    if (in.accelerate > kTouchPressThreshold)
+        keys[INPUT_KEY_UP] |= 0x80;
+    if (in.brake > kTouchPressThreshold)
+        keys[INPUT_KEY_DOWN] |= 0x80;
+    if (in.handbrake)
+        keys[INPUT_KEY_SPACE] |= 0x80;
+}
 
 void EnsureInit()
 {
@@ -570,6 +658,7 @@ extern "C" BOOL Input_ReadKeyboard(InputDevice *device, BYTE keys[256])
 {
     if (s_testKeyboard) {
         memcpy(keys, s_testKeyboard, 256);
+        MergeTouchKeys(keys);
         return TRUE;
     }
     int count = 0;
@@ -588,6 +677,7 @@ extern "C" BOOL Input_ReadKeyboard(InputDevice *device, BYTE keys[256])
                 keys[dik] = 0x80;
         }
     }
+    MergeTouchKeys(keys);
     return TRUE;
 }
 
@@ -650,10 +740,25 @@ extern "C" BOOL Input_ReadJoystick(InputDevice *device, InputJoystickState *stat
     return TRUE;
 }
 
+extern "C" void Input_TouchEvent(int type, long long fingerId, float x, float y)
+{
+    if (!TouchActive())
+        return;
+    int id = (int)(fingerId & 0x7fffffff);
+    if (type == 0)
+        s_touchControls.PointerDown(id, x, y);
+    else if (type == 1)
+        s_touchControls.PointerMove(id, x, y);
+    else if (type == 2)
+        s_touchControls.PointerUp(id);
+}
+
 extern "C" BOOL Input_IsKeyDown(int key)
 {
     if (s_testKeyboard)
-        return key >= 0 && key < 256 && (s_testKeyboard[key] & 0x80);
+        return (key >= 0 && key < 256 && (s_testKeyboard[key] & 0x80)) || TouchKeyDown(key);
+    if (TouchKeyDown(key))
+        return TRUE;
     int count = 0;
     const bool *state = SDL_GetKeyboardState(&count);
     SDL_Scancode scancode = Keys_ToScancode(key);

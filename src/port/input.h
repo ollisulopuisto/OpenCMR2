@@ -33,6 +33,13 @@ typedef struct InputEffect InputEffect;
 #define INPUT_OFFSET_POV(n) (0x20 + 4 * (n))
 #define INPUT_OFFSET_BUTTON(n) (0x30 + (n))
 
+/* Touch: the shared touch controls (src/input/TouchLayout.h). The platform
+   layer feeds SDL finger events in normalized window coordinates; the input
+   layer merges the resulting driving inputs into the keyboard state the game
+   already polls, under the default arrow/Space bindings. type: 0 down,
+   1 move, 2 up. */
+void Input_TouchEvent(int type, long long fingerId, float x, float y);
+
 /* Key codes: DirectInput scan codes (the ones the game names). */
 #define INPUT_KEY_ESCAPE 0x01
 #define INPUT_KEY_RETURN 0x1C

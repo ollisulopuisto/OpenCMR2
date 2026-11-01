@@ -78,6 +78,13 @@ add_test(NAME preview_cleanup COMMAND preview_cleanup_test)
 add_executable(service_park_weather_test service_park_weather.cpp)
 target_link_libraries(service_park_weather_test PRIVATE opencmr2_platform)
 add_test(NAME service_park_weather COMMAND service_park_weather_test)
+# The shared touch controls' settled semantics: floating circles, the
+# aggregate-brake invariant, direction reversal, handedness and the
+# retained classic pads. Pure logic, no SDL, no display needed.
+add_executable(touch_layout_test touch_layout.cpp ${PROJECT_SOURCE_DIR}/src/input/TouchLayout.cpp)
+target_include_directories(touch_layout_test PRIVATE ${PROJECT_SOURCE_DIR}/src/input)
+add_test(NAME touch_layout COMMAND touch_layout_test)
+
 add_executable(gamepad_layout_test gamepad_layout.cpp)
 target_include_directories(gamepad_layout_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
 target_link_libraries(gamepad_layout_test PRIVATE opencmr2_platform)

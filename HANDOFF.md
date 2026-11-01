@@ -865,3 +865,25 @@ the dust particles themselves are unlit.
   (Path(tmp).resolve()) because macOS runner TMPDIR lives under /var ->
   /private/var, and the prepare() symlink guard rejected the symlinked
   parents. Tamper/reuse coverage unchanged; 11/11 pass locally.
+## Shared SDL touch controls (branch feature/sdl-touch-controls, 1 Nov 2026)
+
+One touch implementation for every SDL platform (iPhone/iPad and a browser
+build first; Android migrates when its Kotlin overlay is retired).
+src/input/TouchLayout.* is the pure, SDL-free logic: floating circles
+(driving = steer+accel+brake; brake circle = brake/handbrake/both, neutral
+at touch-down, direction-based states with brake->handbrake reversal),
+aggregate brake across pointers (only the last release ends braking),
+handedness mirror, classic fixed pads as a selectable mode. Settled
+semantics come from the user's 2026-11-01 messages; every size/threshold in
+TouchConfig and the "most recent driving pointer steers" ownership rule are
+PROVISIONAL placeholders pending the user's design decisions.
+src/input/input_sdl.cpp feeds SDL finger events (routed from
+platform/sys.cpp) into it and merges the result into the keyboard state the
+game polls, under the default arrow/Space bindings, so no game-code changes
+are needed. input.touch_controls auto/on/off (auto = touch device exists,
+except Android where the Kotlin overlay owns the screen), input.touch_mode,
+input.touch_handed. tests/touch_layout.cpp covers the settled invariants
+(7 cases). NOT DONE: on-screen rendering of the pads (they are invisible
+until drawn), analog steering via joystick bindings, settings GUI entries,
+Android overlay retirement. No CHANGELOG/WhatsNew entry: nothing user-
+visible until the pads render.

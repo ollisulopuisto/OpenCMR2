@@ -8,6 +8,7 @@
 #include "platform/enhancements.h"
 #include "port/sys.h"
 #include "port/gfx.h"
+#include "port/input.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -1014,6 +1015,15 @@ bool Translate(const SDL_Event &e, SysEvent *out)
         out->key = Keys_FromScancode(e.key.scancode);
         out->repeat = e.key.repeat;
         return out->key != 0;
+    case SDL_EVENT_FINGER_DOWN:
+        Input_TouchEvent(0, (long long)e.tfinger.fingerID, e.tfinger.x, e.tfinger.y);
+        return false;
+    case SDL_EVENT_FINGER_MOTION:
+        Input_TouchEvent(1, (long long)e.tfinger.fingerID, e.tfinger.x, e.tfinger.y);
+        return false;
+    case SDL_EVENT_FINGER_UP:
+        Input_TouchEvent(2, (long long)e.tfinger.fingerID, e.tfinger.x, e.tfinger.y);
+        return false;
     case SDL_EVENT_TEXT_INPUT: {
         const char *text = e.text.text;
         Uint32 cp;

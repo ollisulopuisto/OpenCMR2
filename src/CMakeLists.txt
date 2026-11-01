@@ -316,6 +316,7 @@ target_sources(opencmr2_platform PRIVATE
     ${ICON_HEADER}
     audio/audio_sdl.cpp
     input/input_sdl.cpp
+    input/TouchLayout.cpp
     video/movie.cpp
     net/net_api.cpp)
 if(OPENCMR2_RENDERER_GL)
