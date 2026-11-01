@@ -67,12 +67,12 @@ class Tests(unittest.TestCase):
   with self.assertRaises(ValueError):u.encode(raw,row)
  def test_missing_archive_no_write(self):
   with tempfile.TemporaryDirectory()as tmp:
-   root=Path(tmp);(root/'game').mkdir()
+   root=Path(tmp).resolve();(root/'game').mkdir()
    with self.assertRaises(ValueError):u.prepare(root/'game',root/'cache')
    self.assertFalse((root/'cache').exists())
  def test_atomic_partial_countries_reuse_tamper(self):
   with tempfile.TemporaryDirectory()as tmp:
-   root=Path(tmp);data=root/'game';data.mkdir();(data/'finhit.bfl').write_bytes(b'fixture')
+   root=Path(tmp).resolve();data=root/'game';data.mkdir();(data/'finhit.bfl').write_bytes(b'fixture')
    row=dict(archive='finhit.bfl',member='ground.dds',output='ground.rgba',sha256='a'*64,output_sha256=hashlib.sha256(b'rgba').hexdigest())
    with patch.object(u,'INDEX',[row]),patch.object(u._export,'members',return_value=[('ground.dds',b'input')]),patch.object(u,'encode',return_value=b'rgba'):
     pack=u.prepare(data,root/'cache');self.assertEqual(pack,u.prepare(data,root/'cache'));(pack/'ground.rgba').write_bytes(b'tamper')

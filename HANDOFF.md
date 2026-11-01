@@ -855,3 +855,13 @@ glints, air motes. NO light response: rain streaks/splashes (flat grey),
 dust plumes, wheel spray, gravel/debris (fixed particle colour+shade). The
 praised reverse-lights-in-dust screenshot shows the fog/light overlay beams;
 the dust particles themselves are unlit.
+
+## CI test repairs (branch fix/ci-test-platform-repairs, 1 Nov 2026)
+- tests/fog_uniforms.cpp: guard-page allocation now uses VirtualAlloc/PAGE_NOACCESS
+  on Windows (was POSIX-only sys/mman.h; broke the windows-x64 build leg at
+  compile time after the fog-uniforms test merged). Same guard-page coverage
+  on both platforms.
+- tools/scenery-patch/test_uprez_prepare.py: temp roots resolved
+  (Path(tmp).resolve()) because macOS runner TMPDIR lives under /var ->
+  /private/var, and the prepare() symlink guard rejected the symlinked
+  parents. Tamper/reuse coverage unchanged; 11/11 pass locally.
