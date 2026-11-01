@@ -96,15 +96,16 @@ bool s_touchConfigLoaded;
 void LoadTouchConfig()
 {
     TouchConfig config;
+    // The frontend touch menu writes ints; the original strings stay accepted.
     const char *mode = Platform_GetSetting("input.touch_mode", "floating");
-    config.mode = strcmp(mode, "classic") == 0 ? TOUCH_MODE_CLASSIC : TOUCH_MODE_FLOATING;
+    config.mode = (strcmp(mode, "classic") == 0 || strcmp(mode, "1") == 0) ? TOUCH_MODE_CLASSIC : TOUCH_MODE_FLOATING;
     const char *hand = Platform_GetSetting("input.touch_handed", "right");
-    config.hand = strcmp(hand, "left") == 0 ? TOUCH_HAND_LEFT : TOUCH_HAND_RIGHT;
+    config.hand = (strcmp(hand, "left") == 0 || strcmp(hand, "1") == 0) ? TOUCH_HAND_LEFT : TOUCH_HAND_RIGHT;
     s_touchControls.SetConfig(config);
     const char *enable = Platform_GetSetting("input.touch_controls", "auto");
-    if (strcmp(enable, "on") == 0) {
+    if (strcmp(enable, "on") == 0 || strcmp(enable, "1") == 0) {
         s_touchEnabled = true;
-    } else if (strcmp(enable, "off") == 0) {
+    } else if (strcmp(enable, "off") == 0 || strcmp(enable, "2") == 0) {
         s_touchEnabled = false;
     } else {
 #ifdef __ANDROID__
@@ -132,6 +133,11 @@ bool TouchActive()
 int Input_TouchOverlayActive()
 {
     return TouchActive() ? 1 : 0;
+}
+
+void Input_ReloadTouchConfig()
+{
+    s_touchConfigLoaded = false;
 }
 
 static void FillPadView(const TouchPad &pad, float w, float h, float basis, int kind, TouchPadView *out)

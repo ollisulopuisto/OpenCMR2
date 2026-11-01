@@ -61,6 +61,12 @@ typedef struct TouchPadView {
  * input.touch_controls setting); the overlay draws only then. */
 int Input_TouchOverlayActive(void);
 
+/* Re-reads the input.touch_* settings (the frontend touch menu writes them
+ * as ints: mode 0 floating/1 classic, handed 0 right/1 left, controls
+ * 0 auto/1 on/2 off, bar policy 0 clamp/1 hide; the original string values
+ * stay accepted). */
+void Input_ReloadTouchConfig(void);
+
 /* Fills up to maxPads pad views and the drawable size they are scaled to,
  * and returns the view count: 2 floating pads (drive, brake circle) or the
  * 4 fixed classic regions (always active; pressed tracks held buttons).

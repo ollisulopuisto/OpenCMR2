@@ -105,7 +105,7 @@ void TouchOverlay_RecordFrame(int contentW, int contentH, bool stretch)
         // Provisional, configurable bar policy (touch_overlay.h): clamp the
         // visual to the picture edge, or hide the pad while in a bar.
         const char *policy = Platform_GetSetting("input.touch_bar_policy", "clamp");
-        bool hide = strcmp(policy, "hide") == 0;
+        bool hide = strcmp(policy, "hide") == 0 || strcmp(policy, "1") == 0; // menu writes ints
         float anchor[4], current[4];
         int anchorClamped =
             TouchOverlay_MapPadToContent(pad->anchorX, pad->anchorY, pad->radiusX, pad->radiusY, windowW,
