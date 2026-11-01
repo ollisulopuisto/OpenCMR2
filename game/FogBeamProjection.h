@@ -70,22 +70,46 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
         const float lampU = (float)(vOut.x >> 16) / resXf, lampV = (float)(vOut.y >> 16) / resYf;
         float endU = lampU, endV = lampV;
         if (hasBeam) {
-            if (endIn) {
-                FixMatrix_ProjectWorldPointToView((int *)&vOut, &beamEnd, view);
-                endU = (float)(vOut.x >> 16) / resXf; endV = (float)(vOut.y >> 16) / resYf;
-            } else if (vView.z - endView.z > 0) {   // lamp in front, end behind
-                // The beam crosses the near plane (rear lamps from a chase
-                // view): clip the lamp-to-end segment at the near plane in
-                // view space. Projecting the raw end yields the behind-camera
-                // sentinel (-100,-100 px), which mirrored the wedge toward the
-                // upper-left corner - the red streak up the left bank.
-                FixVector clip;
-                LightField_ClipBeamToNearPlane(&clip, &vView, &endView);
-                // Back to world, then through the standard projection
-                // (clip.z equals its in-front threshold, so it passes).
-                FixVector clipWorld;
-                FixMatrix_TransformPoint(&clipWorld, &clip, &view->world);
-                FixMatrix_ProjectWorldPointToView((int *)&vOut, &clipWorld, view);
+            // Ends behind the camera need near-plane clipping: the raw
+            // projection is the (-100,-100) sentinel, which mirrored the
+            // wedge toward the upper-left corner - the red streak up the
+            // left bank.
+            FixVector endPt = endView;
+            bool endOk = true;
+            if (!endIn) {
+                if (vView.z - endView.z > 0)   // lamp in front, end behind
+                    LightField_ClipBeamToNearPlane(&endPt, &vView, &endView);
+                else
+                    endOk = false;   // no crossing (lamp anchored at the plane): zero run
+            }
+            if (endOk) {
+                // Clamp the view-space run proportionally before projecting:
+                // the fixed-point projector wraps int32 past |x/z| ~ 20
+                // (px*65536 overflows), which flipped the wedge direction
+                // 180 degrees between adjacent frames for beams ending near
+                // the plane far off-axis (side view, car yaw +-10..15). A
+                // proportional clamp keeps the direction exact; the length
+                // only reads the run below the 0.6 screen cap, far inside
+                // the clamp, so it is unaffected.
+                // Reference is the projected ANCHOR: for a lamp behind the
+                // near plane (bonnet camera) that is the near-plane crossing,
+                // not the raw lamp view position.
+                const double lz = anchorView.z / 65536.0;
+                const double ez = endPt.z / 65536.0;
+                double dxs = endPt.x / 65536.0 / ez - anchorView.x / 65536.0 / lz;
+                double dys = endPt.y / 65536.0 / ez - anchorView.y / 65536.0 / lz;
+                const double m = fabs(dxs) > fabs(dys) ? fabs(dxs) : fabs(dys);
+                if (m > 4.0) {
+                    const double k = 4.0 / m;
+                    FixVector clamped;
+                    clamped.x = (int)((anchorView.x / 65536.0 / lz + dxs * k) * ez * 65536.0);
+                    clamped.y = (int)((anchorView.y / 65536.0 / lz + dys * k) * ez * 65536.0);
+                    clamped.z = endPt.z;
+                    endPt = clamped;
+                }
+                FixVector w;
+                FixMatrix_TransformPoint(&w, &endPt, &view->world);
+                FixMatrix_ProjectWorldPointToView((int *)&vOut, &w, view);
                 endU = (float)(vOut.x >> 16) / resXf; endV = (float)(vOut.y >> 16) / resYf;
             }
         }
@@ -122,20 +146,26 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
         fl->r = src->r / 65536.0f;
         fl->g = src->g / 65536.0f;
         fl->b = src->b / 65536.0f;
-        // Wedge = transverse view-space DIRECTION (continuous across
-        // near-plane crossings: the projected end's behind-camera position
-        // flips side as the beam sweeps past the camera, the transverse
-        // component does not) x TRUE foreshortened LENGTH from the projected
-        // beam end (endU/endV above, already clipped at the near plane, so
-        // the behind-camera sentinel can never reach here). The previous
-        // formula derived the length as transverse * (30/depth) * 0.5, which
-        // re-amplified any off-axis angle past ~2 degrees back to a
-        // full-length wedge pointing straight up/down/sideways - the
-        // 2026-11-01 "headlights pointing all over" driving-view report.
-        // Foreshortening supplies the stability: a beam swinging across the
-        // view axis shrinks to zero true length as it goes axial, so the
-        // transverse direction's sign ambiguity there is invisible; the
-        // extra fade band (below ~6 degrees off-axis) removes the rest.
+        // Wedge direction AND length both come from the projected lamp->end
+        // run (endU/endV above, already clipped at the near plane, so the
+        // behind-camera sentinel can never reach here and the run is
+        // continuous across near-plane crossings: the clip point slides
+        // along the plane as the beam sweeps). An earlier formula derived
+        // the LENGTH as transverse * (30/depth) * 0.5, which re-amplified
+        // any off-axis angle past ~2 degrees to a full-length wedge pointing
+        // straight up/down/sideways (the 2026-11-01 "headlights pointing all
+        // over" driving-view report); the follow-up took the DIRECTION from
+        // the view-space transverse component instead - but for a near-axial
+        // beam that component is a tiny, arbitrarily-angled residual of the
+        // camera pitch while the projected run is long (perspective
+        // convergence toward the vanishing point): rolled car-mounted views
+        // (2026-11-01 user screenshots, roll 90/180) got long wedges rotated
+        // 90-180 degrees off the beam's true screen axis - the detached
+        // vertical streaks. Foreshortening still supplies axial stability:
+        // the projected run of a truly axial beam collapses onto the lamp,
+        // and the extra fade band (below ~6 degrees off-axis) removes the
+        // rest, so the run direction is only read while it is long enough
+        // to be meaningful.
         // Beam depth ratio q = lamp view depth / end view depth, for every
         // beam (clipped or not). Two shader uses:
         // - Per-pixel segment gate: 1/z interpolates linearly in screen space
@@ -174,14 +204,12 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
                 }
             }
             float dx = (endU - lampU) * aspect, dy = endV - lampV;
-            float len = sqrtf(dx * dx + dy * dy);
-            if (len > 0.6f) len = 0.6f;   // screen-fraction cap
+            float run = sqrtf(dx * dx + dy * dy);
+            float len = run > 0.6f ? 0.6f : run;   // screen-fraction cap
             float band = transverse / 0.10f;
             len *= band > 1.0f ? 1.0f : band;
-            if (len > 1e-4f && (bdvx != 0.0f || bdvy != 0.0f)) {
-                float bx = bdvx * aspect, by = bdvy;
-                float bl = sqrtf(bx * bx + by * by);
-                fl->beamX = bx / bl; fl->beamY = by / bl; fl->beamLen = len;
+            if (len > 1e-4f && run > 1e-4f) {
+                fl->beamX = dx / run; fl->beamY = dy / run; fl->beamLen = len;
             } else { fl->beamX = 0.0f; fl->beamY = 0.0f; fl->beamLen = 0.0f; }
             fl->beamFade = fl->beamLen > 1e-4f ? beamQ : 1.0f;
         }

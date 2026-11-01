@@ -53,6 +53,22 @@ static void matFromYPR(FixMatrix *m, double px, double py, double pz, double yaw
     m->forward.x=(int)(sy*cp*65536); m->forward.y=(int)(-sp*65536); m->forward.z=(int)(cy*cp*65536);
     m->position.x=(int)(px*65536); m->position.y=(int)(py*65536); m->position.z=(int)(pz*65536);
 }
+// Roll-aware variant: roll rotates right/up about the (yaw,pitch) forward
+// axis, matching the car-mounted camera rolling with the car.
+static void matFromYPRR(FixMatrix *m, double px, double py, double pz, double yawDeg, double pitchDeg, double rollDeg) {
+    double cy=cos(yawDeg*M_PI/180), sy=sin(yawDeg*M_PI/180);
+    double cp=cos(pitchDeg*M_PI/180), sp=sin(pitchDeg*M_PI/180);
+    double cr=cos(rollDeg*M_PI/180), sr=sin(rollDeg*M_PI/180);
+    double rx=cy, ry=0, rz=-sy;
+    double ux=sy*sp, uy=cp, uz=cy*sp;
+    double fx=sy*cp, fy=-sp, fz=cy*cp;
+    double nrx=rx*cr+ux*sr, nry=ry*cr+uy*sr, nrz=rz*cr+uz*sr;
+    double nux=ux*cr-rx*sr, nuy=uy*cr-ry*sr, nuz=uz*cr-rz*sr;
+    m->right.x=(int)(nrx*65536); m->right.y=(int)(nry*65536); m->right.z=(int)(nrz*65536);
+    m->up.x=(int)(nux*65536); m->up.y=(int)(nuy*65536); m->up.z=(int)(nuz*65536);
+    m->forward.x=(int)(fx*65536); m->forward.y=(int)(fy*65536); m->forward.z=(int)(fz*65536);
+    m->position.x=(int)(px*65536); m->position.y=(int)(py*65536); m->position.z=(int)(pz*65536);
+}
 struct ViewDef { const char *name; double x,y,z,yaw,pitch; };
 static const ViewDef VIEWS[] = {
     {"cockpit", 0.0,1.05,0.35, 0,4}, {"bonnet", 0.0,0.95,1.75, 0,6},
@@ -64,6 +80,32 @@ static void fail(const char *view, double ang, bool isYaw, int li, const char *w
     printf("FAIL %-9s %s=%+.0f L%d %s (%.3f vs %.3f)\n", view, isYaw?"yaw":"pitch", ang, li, what, a, b);
     failures++;
 }
+// True screen-space beam axis from an independent projection of the matched
+// source's lamp and 30m beam end (aspect-corrected, normalized). A wedge
+// direction flip is only a failure when the true axis did not also flip: a
+// beam pivoting past pointing-at-the-camera flips physically, because its
+// projected end passes through the lamp position.
+static bool trueBeamAxis(const GfxFogLight &fl, SceneNode &view, double *ax, double *ay) {
+    float best = 1e9f; int bi = -1;
+    for (int j=0;j<g_fogLightSourceCount;j++) {
+        FixVector pv; FixMatrix_ProjectWorldPointToView((int*)&pv, &g_fogLightSources[j].pos, &view);
+        float du = (float)(pv.x>>16)/1920.0f - fl.x, dv = (float)(pv.y>>16)/1080.0f - fl.y;
+        float d = du*du+dv*dv;
+        if (d < best) { best = d; bi = j; }
+    }
+    if (bi < 0) return false;
+    FogLightSource *src = &g_fogLightSources[bi];
+    FixVector end = { src->pos.x + 30*src->dir.x, src->pos.y + 30*src->dir.y, src->pos.z + 30*src->dir.z };
+    FixVector p0, p1;
+    FixMatrix_ProjectWorldPointToView((int*)&p0, &src->pos, &view);
+    FixMatrix_ProjectWorldPointToView((int*)&p1, &end, &view);
+    double x = ((double)(p1.x>>16)-(double)(p0.x>>16))/1920.0*(1920.0/1080.0), y = ((double)(p1.y>>16)-(double)(p0.y>>16))/1080.0;
+    double l = sqrt(x*x+y*y);
+    if (l <= 1e-5) return false;
+    *ax = x/l; *ay = y/l; return true;
+}
+
+
 int main() {
     for (int n = 0, i = 8; n < 4096; n++, i += 16)
         g_sqrtTable[n] = (unsigned short)(int)(sqrt((double)i / 65536.0) * 65536.0 + 0.5);
@@ -82,6 +124,7 @@ int main() {
         for (int axis=0; axis<2; axis++) {
             double lo = axis==0 ? -40 : -12, hi = axis==0 ? 40 : 12, step = 1.0;
             GfxFogLight prev[LIGHT_FIELD_MAX]; int prevN = -1;
+            double ptax[LIGHT_FIELD_MAX] = {0}, ptay[LIGHT_FIELD_MAX] = {0};
             for (double a=lo; a<=hi+0.001; a+=step) {
                 FixMatrix car; matFromYPR(&car, 0,0,0, axis==0?a:0, axis==1?a:0);
                 LightField_Clear();
@@ -97,6 +140,8 @@ int main() {
                 }
                 GfxFogLight fl[LIGHT_FIELD_MAX];
                 int n = FogBeam_ProjectLights(fl, LIGHT_FIELD_MAX, &view, 1920.0f,1080.0f, (float)P33,(float)P43);
+                double tax[LIGHT_FIELD_MAX], tay[LIGHT_FIELD_MAX];
+                for (int i=0;i<n;i++) trueBeamAxis(fl[i], view, &tax[i], &tay[i]);
                 for (int i=0;i<n;i++) {
                     // sentinel check: the behind-camera projector returns exactly
                     // (-100 px, -100 px) -> (-100/1920, -100/1080); real off-screen
@@ -112,7 +157,8 @@ int main() {
                         // direction flip at visible length on BOTH samples
                         if (fl[i].beamLen > 0.05f && prev[i].beamLen > 0.05f) {
                             float dot = fl[i].beamX*prev[i].beamX + fl[i].beamY*prev[i].beamY;
-                            if (dot < 0.0f) fail(v.name,a,axis==0,i,"wedge direction flip at visible length", prev[i].beamLen, fl[i].beamLen);
+                            double tdot = tax[i]*ptax[i] + tay[i]*ptay[i];
+                            if (dot < 0.0f && tdot >= 0.0) fail(v.name,a,axis==0,i,"wedge direction flip at visible length", prev[i].beamLen, fl[i].beamLen);
                             if (fabsf(fl[i].beamLen - prev[i].beamLen) > 0.15f)
                                 fail(v.name,a,axis==0,i,"wedge length jump", prev[i].beamLen, fl[i].beamLen);
                         }
@@ -123,7 +169,7 @@ int main() {
                             fail(v.name,a,axis==0,i,"halo position jump on screen", prev[i].haloX, fl[i].haloX);
                     }
                 }
-                memcpy(prev, fl, sizeof fl); prevN = n;
+                memcpy(prev, fl, sizeof fl); memcpy(ptax, tax, sizeof tax); memcpy(ptay, tay, sizeof tay); prevN = n;
             }
         }
     }
@@ -162,6 +208,60 @@ int main() {
             GfxFogLight fl[LIGHT_FIELD_MAX];
             int n = FogBeam_ProjectLights(fl, LIGHT_FIELD_MAX, &view, 1920.0f,1080.0f, (float)P33,(float)P43);
             if (n != 1 || fl[0].beamLen != 0.0f) fail("scale",0,true,0,"tiny dir must give no beam", n?fl[0].beamLen:-1, 0); }
+    }
+    // Rolled views (2026-11-01 user screenshots: detached near-vertical
+    // streaks from a rolled car-mounted camera). The wedge direction must be
+    // the TRUE projected lamp->beam-end axis; the view-space transverse
+    // component used before is a tiny pitch residual for near-axial beams and
+    // pointed 90-180 degrees off under roll. Two camera families, roll swept
+    // 0..345 in 15 deg steps: (a) car-mounted offset rotated WITH the car,
+    // (b) the user's actual rolled cameras from the in-game debug overlays
+    // (side ~1.93, up ~0.5, dist ~2.0). Pins: wedge direction within 15 deg
+    // of the independently projected lamp->end axis at visible length
+    // (pre-fix measured 148 deg at roll180, 90 deg at the user cameras), and
+    // no direction flip between adjacent roll samples.
+    for (int fam=0; fam<2; fam++) {
+        GfxFogLight prev[LIGHT_FIELD_MAX]; int prevN = -1;
+        double ptax[LIGHT_FIELD_MAX] = {0}, ptay[LIGHT_FIELD_MAX] = {0};
+        for (double roll=0; roll<360; roll+=15) {
+            FixMatrix car; matFromYPRR(&car, 0,0,0, 0,0,roll);
+            LightField_Clear();
+            struct {double x,y,z,dx,dy,dz;} L[4] = {
+                {-lampXF,lampYF,lampZF, 0,0,1}, {lampXF,lampYF,lampZF, 0,0,1},
+                {-lampXR,lampYR,lampZR, 0,0,-1}, {lampXR,lampYR,lampZR, 0,0,-1}};
+            for (auto &l : L) {
+                FixVector lp={(int)(l.x*65536),(int)(l.y*65536),(int)(l.z*65536)};
+                FixVector ld={(int)(l.dx*65536),(int)(l.dy*65536),(int)(l.dz*65536)};
+                FixVector wp,wd; FixMatrix_RotateVector(&wp,&lp,&car); FixMatrix_RotateVector(&wd,&ld,&car);
+                LightField_Add(&wp,&wd,0x10000, 0x10000,0x10000,0x10000);
+            }
+            // camera offset in CAR space, rotated by the car matrix
+            double ox = fam==0 ? 0.0 : 1.93, oy = fam==0 ? 1.05 : 0.50, oz = fam==0 ? 0.35 : -1.99;
+            double cx = ox*car.right.x/65536.0 + oy*car.up.x/65536.0 + oz*car.forward.x/65536.0;
+            double cy = ox*car.right.y/65536.0 + oy*car.up.y/65536.0 + oz*car.forward.y/65536.0;
+            double cz = ox*car.right.z/65536.0 + oy*car.up.z/65536.0 + oz*car.forward.z/65536.0;
+            SceneNode view; memset(&view,0,sizeof view);
+            matFromYPRR(&view.world, cx,cy,cz, 0,4, roll);
+            GfxFogLight fl[LIGHT_FIELD_MAX];
+            int n = FogBeam_ProjectLights(fl, LIGHT_FIELD_MAX, &view, 1920.0f,1080.0f, (float)P33,(float)P43);
+            const char *famName = fam==0 ? "roll-carmount" : "roll-usercam";
+            double tax[LIGHT_FIELD_MAX], tay[LIGHT_FIELD_MAX];
+            for (int i=0;i<n;i++) trueBeamAxis(fl[i], view, &tax[i], &tay[i]);
+            for (int i=0;i<n;i++) {
+                if (fl[i].beamLen > 0.02f) {
+                    double dot = tax[i]*fl[i].beamX + tay[i]*fl[i].beamY;
+                    if (dot > 1.0) dot = 1.0; if (dot < -1.0) dot = -1.0;
+                    double ang = acos(dot)*180.0/M_PI;
+                    if (ang >= 15.0) { printf("FAIL %s roll=%.0f L%d wedge %.0f deg off the projected beam axis\n", famName, roll, i, ang); failures++; }
+                }
+                if (prevN == n && i < prevN && fl[i].beamLen > 0.05f && prev[i].beamLen > 0.05f) {
+                    float dot = fl[i].beamX*prev[i].beamX + fl[i].beamY*prev[i].beamY;
+                    double tdot = tax[i]*ptax[i] + tay[i]*ptay[i];
+                    if (dot < 0.0f && tdot >= 0.0) fail(famName,roll,true,i,"wedge direction flip across roll", prev[i].beamLen, fl[i].beamLen);
+                }
+            }
+            memcpy(prev, fl, sizeof fl); memcpy(ptax, tax, sizeof tax); memcpy(ptay, tay, sizeof tay); prevN = n;
+        }
     }
     printf(failures==0 ? "SWEEP CLEAN\n" : "SWEEP: %d failures\n", failures);
     return failures != 0;

@@ -185,6 +185,43 @@ static void measure(const char *name, const DWORD *control, const DWORD *lit) {
            name, lifted, W*H, 100.0*lifted/(W*H), leftLifted, maxLift, sumLift);
 }
 
+// Vanishing-point truth check: for each projected light, independently
+// project the lamp and its 30-unit beam end through the view matrix and
+// compare the true screen direction (aspect-corrected like the shader wedge)
+// against the projector's (beamX, beamY).
+static void truthCheck(const char *tag, SceneNode *view, const GfxFogLight *fl, int n, float fW, float fH) {
+    for (int i = 0; i < n; i++) {
+        float best = 1e9f; int bi = -1;
+        for (int j = 0; j < g_fogLightSourceCount; j++) {
+            FixVector pv; FixMatrix_ProjectWorldPointToView((int*)&pv, &g_fogLightSources[j].pos, view);
+            float pu = (float)(pv.x>>16)/fW, pvv = (float)(pv.y>>16)/fH;
+            float d = (pu-fl[i].x)*(pu-fl[i].x) + (pvv-fl[i].y)*(pvv-fl[i].y);
+            if (d < best) { best = d; bi = j; }
+        }
+        if (bi < 0 || best > 0.001f) { printf("  TRUTH %s L%d: no source match (best %.5f)\n", tag, i, best); continue; }
+        FogLightSource *src = &g_fogLightSources[bi];
+        FixVector end = { src->pos.x + 30*src->dir.x, src->pos.y + 30*src->dir.y, src->pos.z + 30*src->dir.z };
+        FixVector p0, p1;
+        FixMatrix_ProjectWorldPointToView((int*)&p0, &src->pos, view);
+        FixMatrix_ProjectWorldPointToView((int*)&p1, &end, view);
+        float du = ((float)(p1.x>>16) - (float)(p0.x>>16))/fW, dv = ((float)(p1.y>>16) - (float)(p0.y>>16))/fH;
+        float ax = du*(float)(fW/fH), ay = dv;
+        float al = sqrtf(ax*ax+ay*ay);
+        if (al < 1e-5f) { printf("  TRUTH %s L%d: beam end projects onto the lamp (axial)\n", tag, i); continue; }
+        ax/=al; ay/=al;
+        float dot = ax*fl[i].beamX + ay*fl[i].beamY;
+        float ang = acosf(dot > 1.f ? 1.f : (dot < -1.f ? -1.f : dot)) * 180.f/3.14159265f;
+        printf("  TRUTH %s L%d: true=(%+.3f,%+.3f) wedge=(%+.3f,%+.3f) angle=%.1f deg %s\n",
+               tag, i, ax, ay, fl[i].beamX, fl[i].beamY, ang, ang > 15.f ? "<<< MISMATCH" : "ok");
+        // Pin (2026-11-01 rolled-view direction fix): the wedge must follow
+        // the true projected lamp->end axis. Pre-fix these measured 148 deg
+        // (shot1 roll180), 41.6 (shot2 L1 roll90), 90.0 (shot5/6 user cams).
+        // 15 deg leaves llvmpipe/fixed-point slack; the failure mode being
+        // pinned is off by 40+.
+        if (fl[i].beamLen > 0.02f) require(ang < 15.f, "wedge direction must follow the projected beam axis");
+    }
+}
+
 int main(int argc, char **argv) {
     require(SDL_Init(SDL_INIT_VIDEO), SDL_GetError());
     Gfx_PrepareGlWindow();
@@ -247,6 +284,7 @@ int main(int argc, char **argv) {
       GfxFogLight fl[LIGHT_FIELD_MAX];
       int n = FogBeam_ProjectLights(fl, LIGHT_FIELD_MAX, &view, (float)W,(float)H, 1.0f/1.5f, -0.5f/1.5f);
       printf("shot1 lights=%d\n", n);
+      truthCheck("shot1", &view, fl, n, (float)W,(float)H);
       for (int i=0;i<n;i++) printf("  L%d uv=(%.3f,%.3f) beam=(%+.2f,%+.2f) len=%.3f ref=%.3f\n", i, fl[i].x, fl[i].y, fl[i].beamX, fl[i].beamY, fl[i].beamLen, fl[i].depthRef);
       if (getenv("FOG_NOQ")) for (int i=0;i<n;i++) fl[i].beamFade = 1.0f;
       if (getenv("FOG_NOSEG")) for (int i=0;i<n;i++) fl[i].beamEndRef = fl[i].depthRef;
@@ -259,11 +297,43 @@ int main(int argc, char **argv) {
       GfxFogLight fl[LIGHT_FIELD_MAX];
       int n = FogBeam_ProjectLights(fl, LIGHT_FIELD_MAX, &view, (float)W,(float)H, 1.0f/1.5f, -0.5f/1.5f);
       printf("shot2 lights=%d\n", n);
+      truthCheck("shot2", &view, fl, n, (float)W,(float)H);
       for (int i=0;i<n;i++) printf("  L%d uv=(%.3f,%.3f) beam=(%+.2f,%+.2f) len=%.3f ref=%.3f\n", i, fl[i].x, fl[i].y, fl[i].beamX, fl[i].beamY, fl[i].beamLen, fl[i].depthRef);
       if (getenv("FOG_NOQ")) for (int i=0;i<n;i++) fl[i].beamFade = 1.0f;
       if (getenv("FOG_NOSEG")) for (int i=0;i<n;i++) fl[i].beamEndRef = fl[i].depthRef;
       Gfx_SetFogLights(fl, n); putQuad(); drawAndRead(lit);
       measure("shot2 car-mounted roll90", control, lit); dumpPpm(prefix, "shot2", lit); }
+
+    // SHOT 5/6: the USER's actual rolled cameras from the 2026-11-01 debug
+    // overlays (shot2 roll90: side +1.92 up +0.46 dist 1.97; shot1 roll180:
+    // side +1.94 up +0.55 dist 2.01) - camera at the car-local offset, rolled
+    // WITH the car. Diagnostic prints only: is the projected wedge direction
+    // consistent with the beam's true screen axis under roll?
+    for (int shot = 5; shot <= 6; shot++) {
+        const double roll = shot == 5 ? 90.0 : 180.0;
+        const double side = shot == 5 ? 1.92 : 1.94, up = shot == 5 ? 0.46 : 0.55, dist = shot == 5 ? 1.97 : 2.01;
+        FixMatrix car; matFromYPR(&car, 0,0,0, 0,0,roll);
+        // camera position: car-local (side, up, -dist) rotated by the car's matrix
+        { double cx = side*car.right.x/65536.0 + up*car.up.x/65536.0 - dist*car.forward.x/65536.0;
+          double cy = side*car.right.y/65536.0 + up*car.up.y/65536.0 - dist*car.forward.y/65536.0;
+          double cz = side*car.right.z/65536.0 + up*car.up.z/65536.0 - dist*car.forward.z/65536.0;
+          SceneNode view; memset(&view,0,sizeof view);
+          matFromYPR(&view.world, cx,cy,cz, 0,4, roll);
+          addCarLights(0,0,roll, 1);
+          GfxFogLight fl[LIGHT_FIELD_MAX];
+          int n = FogBeam_ProjectLights(fl, LIGHT_FIELD_MAX, &view, (float)W,(float)H, 1.0f/1.5f, -0.5f/1.5f);
+          printf("shot%d USER-CAM roll%.0f cam(%.2f,%.2f,%.2f) lights=%d\n", shot, roll, cx,cy,cz, n);
+          truthCheck(shot==5?"shot5":"shot6", &view, fl, n, (float)W,(float)H);
+          for (int i=0;i<n;i++) {
+            // truth check: project the lamp and the 30-unit beam END through the
+            // view matrix; the wedge must point from one to the other.
+            printf("  L%d uv=(%.3f,%.3f) beam=(%+.3f,%+.3f) len=%.3f ref=%.3f q=%.2f\n",
+                   i, fl[i].x, fl[i].y, fl[i].beamX, fl[i].beamY, fl[i].beamLen, fl[i].depthRef, fl[i].beamFade);
+          }
+          Gfx_SetFogLights(fl, n); putQuad(); drawAndRead(lit);
+          char nm[32]; snprintf(nm, sizeof nm, "shot%d-usercam", shot);
+          measure(nm, control, lit); dumpPpm(prefix, nm, lit); }
+    }
 
     // SHOT4 (constructed discriminator): chase view, car yaw 50, FRONT lamps
     // only. Beam: lamp z~8.6 -> end z~28 (not clipped). Wall at world z=14
