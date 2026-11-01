@@ -53,7 +53,7 @@ int main() {
     float *u = (float *)(base + page - kFogUniformFloats * sizeof(float));
 #endif
 
-    GfxFogLight lights[8];
+    GfxFogLight lights[8] = {};   // zero-init: lanes the fixture does not set (beamFade, halos) must be deterministic, not stack garbage (CI linux leg flaked on u[107])
     for (int i = 0; i < 8; i++) {
         lights[i].x = 0.10f + i; lights[i].y = 0.20f + i;
         lights[i].depthRef = 0.30f + i * 0.01f; lights[i].intensity = 0.5f + i * 0.01f;
