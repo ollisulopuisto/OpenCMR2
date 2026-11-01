@@ -98,8 +98,10 @@ if [ "$UPDATE" = 1 ]; then
     fi
 fi
 if [ "$ALL_MODS" = 1 ] && [ -n "$TEXTURES_VALUE" ]; then
-    [ "$TEXTURES_VALUE" = uprez ] || die "--all-mods already includes texture uprez; it cannot be combined with --textures $TEXTURES_VALUE"
-    TEXTURES_VALUE=   # consistent duplicate: --all-mods bakes uprez in below
+    # An explicit --textures always wins over the preset's baked uprez:
+    # original opts out, france1 narrows to France1, uprez is the same choice.
+    ALL_MODS_TEXTURES="$TEXTURES_VALUE"
+    TEXTURES_VALUE=
 fi
 if [ "$ALL_MODS" = 1 ]; then
     [ "${#FLAGS[@]}" -eq 0 ] || die "--all-mods cannot be combined with individual asset/dependency options"
@@ -125,7 +127,6 @@ if [ "$ALL_MODS" = 1 ]; then
         "$MODS"
         --roads
         finland1
-        --textures=uprez
         --effect
         temporal_aa=off
         --effect
@@ -183,6 +184,10 @@ if [ "$ALL_MODS" = 1 ]; then
         --tunnel-lines
         1
     )
+    # Textures after the preset: explicit choice wins; default is uprez.
+    # "original" must be passed explicitly: the game's own --asset-upgrades
+    # sets uprez, and only a later explicit flag overrides it.
+    FLAGS+=(--textures="${ALL_MODS_TEXTURES:-uprez}")
 fi
 
 
