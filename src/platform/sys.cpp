@@ -815,14 +815,11 @@ bool Platform_Init(int argc, char **argv)
         candidates.push_back(std::string(base) + "Data");
 #if defined(__APPLE__) && defined(TARGET_OS_IOS) && TARGET_OS_IOS
     // UIFileSharingEnabled exposes the app's Documents in the Files app; a
-    // Data folder the user drops there is the owned CMR2 data. SDL's pref
-    // path sits under Library/Application Support, so reach Documents
-    // relative to it (no public SDL API names Documents directly).
-    if (char *pref = SDL_GetPrefPath("", "OpenCMR2")) {
-        std::string documents = std::string(pref) + "../../Documents/";
-        candidates.push_back(documents + "Data");
-        SDL_free(pref);
-    }
+    // Data folder the user drops there is the owned CMR2 data. The documented
+    // route is SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS), which resolves through
+    // NSDocumentDirectory on Cocoa (SDL 3.4 src/filesystem/cocoa).
+    if (const char *documents = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS))
+        candidates.push_back(std::string(documents) + "Data");
 #endif
     if (const char *setting = Platform_GetSetting("paths.data", NULL))
         candidates.push_back(setting);
