@@ -39,6 +39,28 @@ int main(){
         }
     }
     CHECK(Fog_ViewZGlBuffer(0.75f, 0.f, 0.f) == 0.f); // unknown projection stays off
+    // Projection voting (GL parity with the SDL_GPU ResolveProjection rule):
+    // exactly one distinct near/far pair among the depth writers resolves;
+    // a mixed-projection frame (e.g. the unsorted-node pass with its own far
+    // plane) is ambiguous and keeps the raw-depth fallback instead of guessing.
+    {
+        FogProjVote votes[4] = {};
+        float n = -1.f, f = -1.f;
+        CHECK(Fog_ResolveProjectionVote(votes, &n, &f) == 0);            // empty
+        for (int i = 0; i < 30; ++i) Fog_VoteProjection(votes, 0.1f, 150.f);
+        CHECK(Fog_ResolveProjectionVote(votes, &n, &f) == 1 && n == 0.1f && f == 150.f);
+        Fog_VoteProjection(votes, 0.1f, 100.f);                          // second distinct pair: ambiguous
+        n = f = -1.f;
+        CHECK(Fog_ResolveProjectionVote(votes, &n, &f) == 0);
+        FogProjVote near2[4] = {};
+        Fog_VoteProjection(near2, 0.1f, 150.f);
+        Fog_VoteProjection(near2, 0.1f * 1.0005f, 150.f);                // within 1e-3: same pair
+        CHECK(Fog_ResolveProjectionVote(near2, &n, &f) == 1);
+        FogProjVote full[4] = {};
+        for (int i = 0; i < 4; ++i) Fog_VoteProjection(full, 0.1f, 100.f + 50.f * i);
+        Fog_VoteProjection(full, 0.1f, 500.f);                           // fifth pair dropped, still ambiguous
+        CHECK(Fog_ResolveProjectionVote(full, &n, &f) == 0);
+    }
     // Raw-depth fallback: nothing below depth 0.990, heavier toward the far plane, zero density zero.
     CHECK(Fog_FactorRawDepth(0.989f, 0.03f) == 0.f);
     CHECK(Fog_FactorRawDepth(1.0f, 0.f) == 0.f);

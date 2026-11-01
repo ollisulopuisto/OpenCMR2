@@ -27,6 +27,31 @@ inline float Fog_ViewZ(float depth, float nearZ, float farZ) {
     if (denom < 1e-6f) denom = 1e-6f;
     return nearZ * farZ / denom;
 }
+// Projection voting for whole-frame depth recovery (mirrors the SDL_GPU
+// executor's ResolveProjection): a race frame can mix projections (the
+// unsorted-node pass uses its own far plane), and a single guessed near/far
+// then mis-recovers every pixel. Vote the distinct near/far pairs among the
+// draws that wrote the sampled depth; exactly one distinct pair means the
+// frame's depth is unambiguous, anything else keeps the raw-depth fallback.
+struct FogProjVote { float n, f; int count; };
+inline void Fog_VoteProjection(FogProjVote votes[4], float n, float f) {
+    for (int i = 0; i < 4; ++i)
+        if (votes[i].count && std::fabs(votes[i].n - n) < 1e-3f * n && std::fabs(votes[i].f - f) < 1e-3f * f) { votes[i].count++; return; }
+    for (int i = 0; i < 4; ++i)
+        if (!votes[i].count) { votes[i].n = n; votes[i].f = f; votes[i].count = 1; return; }
+}
+// Returns 1 and sets *outNear/*outFar when exactly one distinct pair voted;
+// 0 (leave the raw-depth fallback) when ambiguous or empty.
+inline int Fog_ResolveProjectionVote(const FogProjVote votes[4], float *outNear, float *outFar) {
+    int best = -1, distinct = 0;
+    for (int i = 0; i < 4; ++i) {
+        if (votes[i].count) distinct++;
+        if (votes[i].count && (best < 0 || votes[i].count > votes[best].count)) best = i;
+    }
+    if (distinct != 1 || best < 0) return 0;
+    *outNear = votes[best].n; *outFar = votes[best].f;
+    return 1;
+}
 // Same recovery when the buffer holds GL half-range depth: GL maps the game's
 // D3D-style NDC z [0,1] into buffer [0.5,1] (clip range [-1,1] clips nothing),
 // so d_game = 2*buffer - 1 before the hyperbolic recovery.
