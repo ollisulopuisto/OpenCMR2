@@ -7218,9 +7218,16 @@ void SnowGlint_Init(Particle *p, ParticleType *, void *)
     std::memcpy(p->pad0x5c, &peak, 4);
 }
 
-void AirMote_Update(Particle *p, ParticleType *, SceneNode *)
+void AttractCapture_ViewSignature(int view, int *type, int *drone);   // Car.cpp
+void AirMote_Update(Particle *p, ParticleType *type, SceneNode *)
 {
     AirMote_Step(*p, g_airMoteDrift);
+    // Cockpit-only size scale (AirMote.h); other views keep the spawn size.
+    if (p && type) {
+        int vt = 0, dr = 0;
+        AttractCapture_ViewSignature(0, &vt, &dr);
+        p->size = AirMote_CockpitSize(type->size, vt, Sys_GetOption("video.air_motes_cockpit_size", 50));
+    }
 }
 
 // Stamps the per-particle wander seed at spawn (see AirMote.h). callbackParam is unused;

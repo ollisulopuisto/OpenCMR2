@@ -5,13 +5,13 @@
 // its row at the bottom of the main Options menu in FrontendMenus.cpp (PORT).
 // Bump kWhatsNewRevision and add lines when user-visible changes ship; the
 // row always lists the whole log, newest last, capped at 18 lines.
-inline constexpr int kWhatsNewRevision = 16;
+inline constexpr int kWhatsNewRevision = 17;
 
 struct WhatsNewLine { int revision; const char *text; };
 inline const WhatsNewLine *WhatsNew_Lines(int &count)
 {
     static const WhatsNewLine lines[] = {
-        {1, "Distance fog with sun glow; smaller, livelier drifting air motes"},
+        {17, "Distance fog with sun glow; drifting air motes, smaller in the cockpit"},
         {1, "God rays: sun shafts through the fog (atmosphere preset)"},
         {1, "Dynamic fog: clear pockets along the route, clearing trend"},
         {1, "Near-field fog clear distance around the car"},
