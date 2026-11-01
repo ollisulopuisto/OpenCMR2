@@ -1,3 +1,37 @@
+# Fog-light beam/glow geometry repair (1 November 2026)
+
+Lane: fix/fog-beam-true-projection (PR #256), render-only (game/FogBeamProjection.h,
+game/LightField.h, tests/). No physics, gameplay, originals, assets or shader
+changes; the 35-vec4 FogUniforms layout is untouched.
+
+Player report with 8 screenshots: "headlights still pointing all over, as well
+as backlights" - glow bubbles floating above the car in chase view, detached
+glows mid-corner, red rear glows adrift, no beam in cockpit.
+
+Root causes (confirmed by an executed scene matrix driving the production
+projection with the real race FOV over 6 views x yaw -40..40 x pitch -12..12):
+the e65a48d wedge-length formula re-amplified any beam past ~2 degrees off the
+view axis to a full-screen wedge up/down/sideways; the 3-unit forward halo
+anchor put rear-lamp halos ~1 unit from the chase camera so the gate reference
+went negative and the shader silently disabled occlusion; the near-plane clip
+landed at exactly z=0x10000 and a 1-ulp round-trip loss turned bonnet/bumper
+lamp uv's into the (-100,-100) sentinel.
+
+Fix: wedge length is now the true foreshortened projected beam end (direction
+stays the continuous transverse component; ~6-degree axial fade band), halo
+anchors sit 1.25 units along the beam with view-depth clamping so the depth
+gate is always valid, and the clip margin is 0x10100. Regression coverage:
+tests/fog_beam_scene_matrix.cpp (CPU-only, in ctest) fails 508 checks on main,
+0 here; tests/fog_beam_render.cpp assertions re-derived from executed values.
+
+Verification state: CPU/synthetic scene geometry only - the shader math is
+unchanged but the NEW UNIFORMS have NOT been rendered natively; Metal and GL
+share only the CPU-side uniform computation, rendered equivalence is not
+verified. The GL pixel harness (fog_beam_render.py) needs a real SDL3/GL
+environment and is not wired into CI. Native visual acceptance on the user's
+Mac is OUTSTANDING - this is not a completed repair until the user confirms
+the look.
+
 # Adjustable Android touch controls (1 November 2026)
 
 Lane: feat/touch-controls-adjust, Android-only (android/), no game code,
