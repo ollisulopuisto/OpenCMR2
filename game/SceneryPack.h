@@ -12,6 +12,10 @@ bool SceneryPack_Draw(StageObject *object, const float *billboardMatrix);
 // OpenCMR2: between Begin and End, wind-animated tree draws are queued and their vertex math runs on worker
 // threads; recording still happens on the calling thread in draw order. Call FlushBatch before any other
 // draw that records, so order is kept. video.tree_threads=1 turns the workers off.
+// eye: camera position in world units; pass null to disable distance effects.
+// Batch callers must supply it so the tree wind distance falloff does not
+// depend on game globals (tests link SceneryPack.cpp standalone).
+void SceneryPack_BeginBatch(const float *eye);
 void SceneryPack_BeginBatch(void);
 void SceneryPack_FlushBatch(void);
 void SceneryPack_EndBatch(void);

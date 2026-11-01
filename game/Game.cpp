@@ -2301,7 +2301,17 @@ void Game_DrawDeferredObjects(void)
         }
         if (g_depthSortDrawLists != 0)
             qsort(sorted, CGame::m_deferredDrawCount, sizeof(sorted[0]), Game_CompareDeferredDistance);
-        SceneryPack_BeginBatch();
+        {
+            // Camera eye in world units for the tree wind distance falloff.
+            float packEye[3];const float *packEyePtr=nullptr;
+            if (g_viewNodes[0]) {
+                FixVector packEyeFix;
+                FixMatrix_GetPosition(&packEyeFix, &g_viewNodes[0]->world);
+                packEye[0]=packEyeFix.x/65536.f;packEye[1]=packEyeFix.y/65536.f;packEye[2]=packEyeFix.z/65536.f;
+                packEyePtr=packEye;
+            }
+            SceneryPack_BeginBatch(packEyePtr);
+        }
         for (i = 0; i < (unsigned int)CGame::m_deferredDrawCount; i++) {
             pObject = sorted[i].pObject;
             if (SceneryPack_Draw((StageObject *)pObject,pObject->matrix)) {

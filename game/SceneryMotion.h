@@ -87,7 +87,7 @@ inline WindVertex MakeWindVertex(float u,float v,float y,float bottom,float heig
  return o;
 }
 // Per tree and frame.
-struct WindFrame{float offset,gustAmp,s1,c1,s2,c2,s3,c3,s4,c4;};
+struct WindFrame{float ampScale=1.f;float offset,gustAmp,s1,c1,s2,c2,s3,c3,s4,c4;};
 inline WindFrame MakeWindFrame(float height,uint64_t ticks,uint32_t phase,float strength){
  WindFrame f;float time=float((ticks%(65536ull*25*3600))/65536.0/25.0),p=(phase%6283)*.001f;
  f.offset=std::sin(time*1.2f+p)*height*.045f;
@@ -98,9 +98,9 @@ inline WindFrame MakeWindFrame(float height,uint64_t ticks,uint32_t phase,float 
  return f;
 }
 inline void ApplyWind(const WindVertex&w,const WindFrame&f,float *dx,float *du,float *dv){
- *dx=f.offset*w.w2;*du=0;*dv=0;
- if(w.ce<=0||f.gustAmp<=0)return;
- float amp=f.gustAmp*w.ce;
+ *dx=f.offset*w.w2*f.ampScale;*du=0;*dv=0;
+ if(w.ce<=0||f.gustAmp<=0||f.ampScale<=0)return;
+ float amp=f.gustAmp*w.ce*f.ampScale;
  *du=amp*(.6f*(f.s1*w.c1+f.c1*w.s1)+.4f*(f.s2*w.c2+f.c2*w.s2));
  *dv=amp*(.6f*(f.s3*w.c3+f.c3*w.s3)+.4f*(f.s4*w.c4+f.c4*w.s4));
 }

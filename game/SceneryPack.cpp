@@ -4,6 +4,7 @@
 #include "OrderedBatch.h"
 #include "CrowdMesh.h"
 #include "SceneryPack.h"
+#include <cmath>
 #include "CrowdSelection.h"
 #include "ScenerySHA256.h"
 #include "SceneryPackFormat.h"
@@ -212,6 +213,7 @@ void SceneryPack_Clear(){pendingTrees.Clear();fixedParts.clear();crowdMeshes.cle
 void SceneryPack_Advance(int step){if(step>0)animationTime+=(unsigned)step;}
 void SceneryPack_SetReactionSource(int slot,int x,int z,int speed,bool valid){if(slot<0||slot>=8)return;reactCars[slot]={x/65536.f,z/65536.f,speed/65536.f,valid,animationTime};}
 static bool treeBatch=false;
+static float batchEye[4]={0,0,0,0}; // xyz + valid flag, set by SceneryPack_BeginBatch(eye)
 static void FlushTrees();
 static ParallelWork::Pool &treePool(){
     // video.tree_threads: 0 = automatic (cores, at most 8), 1 = no worker threads. Read once.
@@ -347,9 +349,26 @@ static bool DrawReplacement(StageObject *object,const float *billboard,unsigned 
         f.position.x/65536.f,f.position.y/65536.f,f.position.z/65536.f,1};
     if(!treeLogged){Sys_Log("options: tree sidecar active (source-fitted successful override draw)");treeLogged=true;}
     unsigned phase=((unsigned)object->position.x*1664525u)^(unsigned)object->position.z;
-    const bool windOn=Sys_GetOption("video.tree_wind",0)!=0;
+    // Distance falloff (video.tree_wind_radius, world units, default 150, 0 =
+    // unlimited): wind amplitude fades from full at 60% of the radius to zero
+    // at the radius, where the tree draws STATIC - the per-vertex wind math is
+    // skipped entirely. At forest depth most trees sit past the radius, which
+    // is where the user-visible 14-22 fps replays spent ~11 ms/frame of wind
+    // math (todo: rainy replay slowdown). The fade band avoids a sway pop.
+    float windScale=1.f;
+    if(batchEye[3]>0.5f){
+        int radius=Sys_GetOption("video.tree_wind_radius",150);
+        if(radius>0){
+            float dx=object->position.x/65536.f-batchEye[0],dy=object->position.y/65536.f-batchEye[1],dz=object->position.z/65536.f-batchEye[2];
+            float d=std::sqrt(dx*dx+dy*dy+dz*dz);
+            float full=radius*0.6f;
+            if(d>=radius)windScale=0.f;
+            else if(d>full)windScale=(radius-d)/(radius-full);
+        }
+    }
+    const bool windOn=Sys_GetOption("video.tree_wind",0)!=0&&windScale>0.005f;
     SceneryMotion::WindFrame windFrame={};
-    if(windOn){double t0=Sys_GetTicksPrecise();windFrame=SceneryMotion::MakeWindFrame(height,animationTime,phase,Sys_GetOption("video.tree_rustle",100)/100.f);timeWindMathNs+=(unsigned long long)((Sys_GetTicksPrecise()-t0)*1e6);}
+    if(windOn){double t0=Sys_GetTicksPrecise();windFrame=SceneryMotion::MakeWindFrame(height,animationTime,phase,Sys_GetOption("video.tree_rustle",100)/100.f);windFrame.ampScale=windScale;timeWindMathNs+=(unsigned long long)((Sys_GetTicksPrecise()-t0)*1e6);}
     if(!windOn){
         FlushTrees(); // keep the recorded order: anything deferred before this tree goes first
         State(m,true);
@@ -405,7 +424,12 @@ void FlushTrees(){
     if(replacementDepth==0)timeReplacementNs+=dt;
     if(drawDepth==0)timeOtherNs+=dt;
 }
-void SceneryPack_BeginBatch(){treeBatch=true;}
+void SceneryPack_BeginBatch(const float *eye){
+    treeBatch=true;
+    if(eye){batchEye[0]=eye[0];batchEye[1]=eye[1];batchEye[2]=eye[2];batchEye[3]=1.f;}
+    else batchEye[3]=0.f;
+}
+void SceneryPack_BeginBatch(){SceneryPack_BeginBatch(nullptr);}
 void SceneryPack_FlushBatch(){FlushTrees();}
 void SceneryPack_EndBatch(){
     FlushTrees();treeBatch=false;

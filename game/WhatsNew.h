@@ -5,7 +5,7 @@
 // FrontendScreens.cpp (PORT). Bump kWhatsNewRevision and add lines when
 // user-visible changes ship: the screen then shows once on the main menu
 // (tracked in ui.whatsnew_seen) and stays reachable from the Screen page.
-inline constexpr int kWhatsNewRevision = 14;
+inline constexpr int kWhatsNewRevision = 15;
 
 struct WhatsNewLine { int revision; const char *text; };
 inline const WhatsNewLine *WhatsNew_Lines(int &count)
@@ -20,7 +20,6 @@ inline const WhatsNewLine *WhatsNew_Lines(int &count)
         {2, "Fog responds to headlights and rear lights"},
         {2, "Snow glints: banks sparkle, flakes twinkle in sun and beams"},
         {2, "Falling snow and air motes respond to light"},
-        {5, "Tyre debris to 2000%, dust/snow plume to 300% - overdone, dial down"},
         {7, "Spray, exhaust, splash, backfire, motes, glints overdone"},
         {8, "Rain and snow amount to 300% (default 200%)"},
         {9, "Fix: fog light beams no longer streak the wrong way"},
@@ -29,6 +28,7 @@ inline const WhatsNewLine *WhatsNew_Lines(int &count)
         {12, "Windscreen: dirt builds on the glass, wipers clear the sweep"},
         {13, "Fix: replay chase arrows work after using the F10 panel."},
         {14, "Fix: steady fog light beams in replays; glow sits ahead of car"},
+        {15, "Tree wind now fades with distance, easing forest FPS."},
     };
     count = (int)(sizeof(lines) / sizeof(*lines));
     return lines;

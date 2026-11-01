@@ -3,6 +3,11 @@
 All notable changes to OpenCMR2 are documented here.
 
 ## [Unreleased]
+### Performance
+- Tree wind (sway and rustle) now fades out with distance and is skipped
+  entirely beyond a radius (video.tree_wind_radius, default 150 world units,
+  0 = unlimited). Dense forest views keep full near-tree motion while the
+  far treeline stops paying per-vertex wind math every frame.
 ### Fixed
 - Replay chase camera orbit (arrow keys) no longer dies for the rest of the
   session after the F10 tuning panel is used once: the input-capture gate now

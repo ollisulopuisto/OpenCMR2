@@ -732,3 +732,7 @@ add_test(NAME scenery_mip COMMAND scenery_mip_test)
 add_executable(windshield_dirt_test windshield_dirt.cpp)
 target_include_directories(windshield_dirt_test PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/game)
 add_test(NAME windshield_dirt COMMAND windshield_dirt_test)
+
+add_executable(tree_wind_radius tree_wind_radius.cpp)
+target_include_directories(tree_wind_radius PRIVATE ${PROJECT_SOURCE_DIR}/game)
+add_test(NAME tree_wind_radius COMMAND tree_wind_radius)
