@@ -124,6 +124,10 @@ android {
         localeFilters += listOf("en", "de", "es", "fr", "it", "pl")
     }
 
+    testOptions {
+        unitTests { isIncludeAndroidResources = true }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -156,4 +160,9 @@ dependencies {
         // Only its build used the old Android extensions plugin.
         exclude(group = "org.jetbrains.kotlin", module = "kotlin-android-extensions-runtime")
     }
+}
+
+dependencies {
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.15.1")
 }
