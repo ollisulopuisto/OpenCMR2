@@ -21,6 +21,7 @@ struct FogUniformParams {
     float aspect;         // backWidth / backHeight
     float clearDistance;  // world units, 0 = off
     float lightStrength;  // video.fog_lights 0..2
+    float depthHalfRange; // 1 = GL half-range depth buffer (un-remap d=2*depth-1 in the shader); 0 = full-range (SDL_GPU)
 };
 
 // Both executors pack each light's depthRef for the depth gate; the GL
@@ -34,7 +35,7 @@ inline void FogUniforms_Pack(float *out, const FogUniformParams &p,
             fprintf(stderr, "FOGDBG L%d ref=%.4f endRef=%.4f q=%.3f len=%.3f\n", i, lights[i].depthRef, lights[i].beamEndRef, lights[i].beamFade, lights[i].beamLen);
     }
     out[4] = p.sunX;           out[5] = p.sunY;        out[6] = p.sunVisible; out[7] = p.aspect;
-    out[8] = p.clearDistance;  out[9] = p.lightStrength; out[10] = 0.0f;      out[11] = 0.0f;
+    out[8] = p.clearDistance;  out[9] = p.lightStrength; out[10] = p.depthHalfRange; out[11] = 0.0f;
     for (int i = 0; i < 8; i++) {
         const bool on = i < lightCount && lights != nullptr;
         const GfxFogLight *L = on ? &lights[i] : nullptr;

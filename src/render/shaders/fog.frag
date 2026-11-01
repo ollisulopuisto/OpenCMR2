@@ -8,7 +8,7 @@ layout(set = 2, binding = 1) uniform sampler2D depthTex;
 layout(std140, set = 3, binding = 0) uniform FogUniforms {
     vec4 fog;   // x density per world unit, y glow strength 0..1, z near, w far (0 = projection unknown)
     vec4 sun;   // xy projected sun (uv, v downwards), z sun visible (0/1), w aspect ratio
-    vec4 extra; // x near-field clear distance in world units (0 = off), y car-light response 0..2, zw unused
+    vec4 extra; // x near-field clear distance in world units (0 = off), y car-light response 0..2, z depth-half-range flag (1 = GL), w unused
     vec4 lights[8];    // xy projected car light (uv, v downwards), z intensity 0..1, w unused
     vec4 lightInfo[8]; // x depth-buffer value 1 world unit in front of the lamp (<= 0: no depth gate), yzw tint
     vec4 beams[8];     // xy aspect-corrected unit screen beam direction, z wedge length, w energy ratio q = lampZ/endZ (1 = no thinning)
@@ -22,7 +22,10 @@ void main()
     float depth = texture(depthTex, uv).r;
     float viewZ = 0.0;
     if (fog.z > 0.0 && fog.w > fog.z) {
-        viewZ = fog.z * fog.w / max(fog.w - depth * (fog.w - fog.z), 1e-6);
+        // extra.z: 1 = GL half-range buffer (0.5+0.5*d_game) - un-remap before
+        // the hyperbolic recovery; 0 = full-range depth (SDL_GPU).
+        float d = extra.z > 0.5 ? depth * 2.0 - 1.0 : depth;
+        viewZ = fog.z * fog.w / max(fog.w - d * (fog.w - fog.z), 1e-6);
     } else {
         // Unknown projection: ramp over the top slice of the hyperbolic raw depth.
         float t = clamp((depth - 0.990) / 0.010, 0.0, 1.0);

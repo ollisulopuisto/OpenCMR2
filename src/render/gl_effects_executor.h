@@ -211,8 +211,9 @@ GLuint ApplyEffects()
     } else historyValid = false;
     if (grime[0] || grime[1] || grime[2]) run(4, 0, grime, sizeof(grime));
     // Atmosphere fog (video.fog): before DoF/rays so blur and shafts stack on the fogged
-    // scene. The GL path has no near/far recovery, so near/far are zero and the shader
-    // uses its raw-depth ramp (a stand-in curve, see render/fog_math.h).
+    // scene. Near/far come from the race camera's recorded projection (WORLD_END
+    // capture); the shader un-remaps the GL half-range buffer depth via extra.z.
+    // When recovery failed (nearZ/farZ stay 0) the shader keeps its raw-depth ramp.
     if (effectsRaceFrame && fogOn && fogAmount > 0) {
         // FogUniforms: packed by the single shared packer (render/fog_uniforms.h).
         // The depth gate is active here too: SetFogLights remaps each light's
@@ -220,12 +221,13 @@ GLuint ApplyEffects()
         FogUniformParams fogP;
         fogP.density = Fog_Density(fogAmount);
         fogP.glow = fogGlow / 100.0f;
-        fogP.nearZ = 0.0f; fogP.farZ = 0.0f;
+        fogP.nearZ = glFogNearZ; fogP.farZ = glFogFarZ;
         fogP.sunX = sunX; fogP.sunY = sunY;
         fogP.sunVisible = sunVisible ? 1.0f : 0.0f;
         fogP.aspect = backHeight ? (float)backWidth / (float)backHeight : 1.0f;
         fogP.clearDistance = (float)fogClearDistance;
         fogP.lightStrength = std::max(0, std::min(200, Sys_GetOption("video.fog_lights", 100))) / 100.0f;
+        fogP.depthHalfRange = 1.0f;   // the GL buffer holds 0.5+0.5*d_game
         float u[kFogUniformFloats];
         FogUniforms_Pack(u, fogP, fogLights, fogLightCount);
         run(12, backDepth, u, sizeof(u));

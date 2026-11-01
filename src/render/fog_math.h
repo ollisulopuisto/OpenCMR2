@@ -27,6 +27,12 @@ inline float Fog_ViewZ(float depth, float nearZ, float farZ) {
     if (denom < 1e-6f) denom = 1e-6f;
     return nearZ * farZ / denom;
 }
+// Same recovery when the buffer holds GL half-range depth: GL maps the game's
+// D3D-style NDC z [0,1] into buffer [0.5,1] (clip range [-1,1] clips nothing),
+// so d_game = 2*buffer - 1 before the hyperbolic recovery.
+inline float Fog_ViewZGlBuffer(float bufferDepth, float nearZ, float farZ) {
+    return Fog_ViewZ(bufferDepth * 2.f - 1.f, nearZ, farZ);
+}
 // Exponential distance fog on a real view distance.
 inline float Fog_Factor(float viewZ, float density) {
     if (!(viewZ > 0.f) || !(density > 0.f)) return 0.f;
