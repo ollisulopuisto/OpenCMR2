@@ -125,3 +125,13 @@ void SnowGlint_Step(int step16_16);
 void AirMote_LogStats(int stepsElapsed);
 void AirMote_GetStats(int *live, unsigned *drawn);
 #endif
+
+// video.air_motes_cockpit_size (percent of the normal speck, 25..100, default
+// 50): the 2026-11-01 native look found the floating specks too big in the
+// cockpit view - the driver sits inside the swarm, so the same world size
+// reads larger. Cockpit (view type 3) only; every other view keeps the
+// calibrated size exactly.
+inline int AirMote_CockpitSize(int baseSize, int viewType, int sizePercent) {
+    int p = sizePercent < 25 ? 25 : sizePercent > 100 ? 100 : sizePercent;
+    return viewType == 3 ? baseSize * p / 100 : baseSize;
+}

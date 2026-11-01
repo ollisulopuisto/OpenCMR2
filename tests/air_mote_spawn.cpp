@@ -11,6 +11,13 @@ static int fails;
 #define CHECK(c) do{ if(!(c)){ std::printf("FAIL %d: %s\n", __LINE__, #c); ++fails; } }while(0)
 int main(){
     // Cap and budget: base 48 at amount 100, up to 240 at 500, last 64 pool slots stay original-only.
+    CHECK(AirMote_CockpitSize(0x1000, 3, 50) == 0x800);   // cockpit: half size at the default
+    CHECK(AirMote_CockpitSize(0x1000, 0, 50) == 0x1000);  // other views: unchanged
+    CHECK(AirMote_CockpitSize(0x1000, 1, 50) == 0x1000);
+    CHECK(AirMote_CockpitSize(0x1000, 5, 50) == 0x1000);
+    CHECK(AirMote_CockpitSize(0x1000, 3, 100) == 0x1000); // full size opt-out
+    CHECK(AirMote_CockpitSize(0x1000, 3, 0) == 0x400);    // clamped to the 25% floor
+    CHECK(AirMote_CockpitSize(0x1000, 3, 999) == 0x1000); // clamped to 100%
     CHECK(AirMote_Cap(100) == 48);
     CHECK(AirMote_Cap(0) == 0);
     CHECK(AirMote_Cap(300) == 144);

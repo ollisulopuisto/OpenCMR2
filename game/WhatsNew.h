@@ -5,7 +5,7 @@
 // its row at the bottom of the main Options menu in FrontendMenus.cpp (PORT).
 // Bump kWhatsNewRevision and add lines when user-visible changes ship; the
 // row always lists the whole log, newest last, capped at 18 lines.
-inline constexpr int kWhatsNewRevision = 16;
+inline constexpr int kWhatsNewRevision = 17;
 
 struct WhatsNewLine { int revision; const char *text; };
 inline const WhatsNewLine *WhatsNew_Lines(int &count)
@@ -29,6 +29,7 @@ inline const WhatsNewLine *WhatsNew_Lines(int &count)
         {14, "Fixes: replay chase arrows after the F10 panel; steady replay fog beams"},
         {15, "Tree wind now fades with distance, easing forest FPS."},
         {16, "What's new moved to the bottom of the Options menu; no popup"},
+        {17, "Air motes shrink in the cockpit view; size adjustable"},
     };
     count = (int)(sizeof(lines) / sizeof(*lines));
     return lines;
