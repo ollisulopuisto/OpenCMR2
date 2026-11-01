@@ -1,4 +1,5 @@
 #include "render/dust_volume_math.h"
+#include "render/touch_overlay.h"
 // The renderer's front end: the gfx.h state machine, CPU copies of textures
 // and vertex buffers, and the recording of each frame for the executor.
 
@@ -680,6 +681,11 @@ extern "C" void Gfx_GetPresentTimeTotals(double *execMs,double *waitMs){if(execM
 static void Present(BOOL vsync, bool stretch)
 {
     s_presentCount++;
+    // Touch pads ride this frame's command stream, recorded last so they
+    // draw on top. s_raceWorld still holds THIS frame's world flag here;
+    // menus skip the overlay.
+    if (s_raceWorld)
+        TouchOverlay_RecordFrame();
     s_raceWorld=false;
     s_pendingDust.clear(); // never leak an unflushed view into a later frame
     if (FILE *trace = TraceFile())

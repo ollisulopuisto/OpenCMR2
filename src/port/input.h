@@ -40,6 +40,28 @@ typedef struct InputEffect InputEffect;
    1 move, 2 up. */
 void Input_TouchEvent(int type, long long fingerId, float x, float y);
 
+/* Visible touch pads: a pixel-space view of the shared touch layer's pad
+ * geometry for the on-screen overlay (src/render/touch_overlay.cpp).
+ * Positions and radii are in drawable pixels; the overlay maps them into the
+ * frame with Gfx_SetVirtualScreen. Radius uses the smaller window dimension,
+ * so radiusX == radiusY on square-pixel displays. */
+typedef struct TouchPadView {
+    int active;
+    float anchorX, anchorY;   /* pad anchor (where the thumb landed) */
+    float currentX, currentY; /* live finger position */
+    float radiusX, radiusY;   /* drawn circle radius */
+} TouchPadView;
+
+/* Nonzero when the shared touch layer feeds driving input (respects the
+ * input.touch_controls setting); the overlay draws only then. */
+int Input_TouchOverlayActive(void);
+
+/* Fills the drive/brake pad views and the drawable size they are scaled to.
+ * Returns the number of active pads. Classic mode has no geometry accessors
+ * in the merged foundation yet, so both views report inactive there - the
+ * fixed pads land with the classic-pad rendering step. */
+int Input_GetTouchPads(TouchPadView *drive, TouchPadView *brake, int *windowW, int *windowH);
+
 /* Key codes: DirectInput scan codes (the ones the game names). */
 #define INPUT_KEY_ESCAPE 0x01
 #define INPUT_KEY_RETURN 0x1C

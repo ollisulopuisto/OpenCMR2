@@ -129,6 +129,47 @@ bool TouchActive()
     return s_touchEnabled;
 }
 
+int Input_TouchOverlayActive()
+{
+    return TouchActive() ? 1 : 0;
+}
+
+static void FillPadView(const TouchPad &pad, float w, float h, float basis, TouchPadView *out)
+{
+    out->active = pad.active ? 1 : 0;
+    if (!pad.active)
+        return;
+    out->anchorX = pad.anchorX * w;
+    out->anchorY = pad.anchorY * h;
+    out->currentX = pad.currentX * w;
+    out->currentY = pad.currentY * h;
+    // TouchConfig radii are fractions of the smaller window dimension.
+    out->radiusX = pad.radius * basis;
+    out->radiusY = pad.radius * basis;
+}
+
+int Input_GetTouchPads(TouchPadView *drive, TouchPadView *brake, int *windowW, int *windowH)
+{
+    int w = 0, h = 0;
+    SDL_Window *window = Platform_GetWindow();
+    if (window != NULL)
+        SDL_GetWindowSizeInPixels(window, &w, &h);
+    if (windowW != NULL)
+        *windowW = w;
+    if (windowH != NULL)
+        *windowH = h;
+    if (drive == NULL || brake == NULL)
+        return 0;
+    drive->active = 0;
+    brake->active = 0;
+    if (!TouchActive() || w <= 0 || h <= 0)
+        return 0;
+    float basis = (float)(w < h ? w : h);
+    FillPadView(s_touchControls.DrivePad(), (float)w, (float)h, basis, drive);
+    FillPadView(s_touchControls.BrakePad(), (float)w, (float)h, basis, brake);
+    return drive->active + brake->active;
+}
+
 // A small deflection presses the key; finer analog grading needs the game's
 // joystick bindings, which the floating design has not settled. NOT settled:
 // this press threshold, like the TouchConfig geometry it derives from.

@@ -1,0 +1,105 @@
+#include "touch_overlay.h"
+
+#include "port/gfx.h"
+#include "port/input.h"
+
+#include <math.h>
+#include <string.h>
+
+// ---- recording -------------------------------------------------------------
+
+static GfxTexture *s_ring;
+static GfxTexture *s_dot;
+
+static GfxTexture *MakeTexture(void (*fill)(unsigned char *, int), int size)
+{
+    GfxTexture *texture = Gfx_CreateTexture(size, size, GFX_FORMAT_BGRA8, 1, 0);
+    if (texture == NULL)
+        return NULL;
+    unsigned char *contiguous = new unsigned char[size * size * 4];
+    fill(contiguous, size);
+    GfxLockedRect locked;
+    if (!Gfx_LockTexture(texture, 0, 0, &locked)) {
+        delete[] contiguous;
+        Gfx_DestroyTexture(texture);
+        return NULL;
+    }
+    for (int y = 0; y < size; y++)
+        memcpy((unsigned char *)locked.pixels + y * locked.pitch, contiguous + y * size * 4, size * 4);
+    Gfx_UnlockTexture(texture, 0, 0);
+    delete[] contiguous;
+    return texture;
+}
+
+static void DrawSpriteQuad(GfxTexture *texture, float cx, float cy, float rx, float ry, DWORD color)
+{
+    GfxTLVertex v[4];
+    const float uvs[4][2] = {{0, 0}, {1, 0}, {0, 1}, {1, 1}};
+    const float xs[4] = {cx - rx, cx + rx, cx - rx, cx + rx};
+    const float ys[4] = {cy - ry, cy - ry, cy + ry, cy + ry};
+    for (int i = 0; i < 4; i++) {
+        v[i].sx = xs[i];
+        v[i].sy = ys[i];
+        v[i].sz = 0.0f;
+        v[i].rhw = 1.0f;
+        v[i].color = color;
+        v[i].specular = 0;
+        v[i].tu = uvs[i][0];
+        v[i].tv = uvs[i][1];
+    }
+    const WORD indices[6] = {0, 1, 2, 2, 1, 3};
+    Gfx_SetTexture(0, texture);
+    Gfx_DrawIndexedPrimitiveTL(GFX_TRIANGLELIST, v, 4, indices, 6);
+}
+
+void TouchOverlay_RecordFrame()
+{
+    if (!Input_TouchOverlayActive())
+        return;
+    TouchPadView drive, brake;
+    int windowW = 0, windowH = 0;
+    if (Input_GetTouchPads(&drive, &brake, &windowW, &windowH) == 0)
+        return;
+    if (windowW <= 0 || windowH <= 0)
+        return;
+    if (s_ring == NULL)
+        s_ring = MakeTexture(TouchOverlay_FillRingBGRA, 128);
+    if (s_dot == NULL)
+        s_dot = MakeTexture(TouchOverlay_FillDotBGRA, 64);
+    if (s_ring == NULL || s_dot == NULL)
+        return;
+
+    // Pads are in drawable pixels; map them 1:1 over the back buffer.
+    Gfx_PushState();
+    Gfx_SetVirtualScreen(windowW, windowH);
+    Gfx_SetLighting(0);
+    Gfx_SetFog(0);
+    Gfx_SetDepthTest(0);
+    Gfx_SetDepthWrite(0);
+    Gfx_SetAlphaTest(0);
+    Gfx_SetAlphaBlend(1);
+    Gfx_SetSrcBlend(GFX_BLEND_SRCALPHA);
+    Gfx_SetDestBlend(GFX_BLEND_INVSRCALPHA);
+    Gfx_SetCullMode(GFX_CULL_NONE);
+    Gfx_SetStageColorOp(0, GFX_TOP_MODULATE);
+    Gfx_SetStageColorArg1(0, GFX_TA_TEXTURE);
+    Gfx_SetStageColorArg2(0, GFX_TA_DIFFUSE);
+    Gfx_SetStageAlphaOp(0, GFX_TOP_MODULATE);
+    Gfx_SetStageAlphaArg1(0, GFX_TA_TEXTURE);
+    Gfx_SetStageAlphaArg2(0, GFX_TA_DIFFUSE);
+    Gfx_SetStageMinFilter(0, GFX_FILTER_LINEAR);
+    Gfx_SetStageMagFilter(0, GFX_FILTER_LINEAR);
+
+    // Placeholder look (unsettled design): a faint rim at the anchor and a
+    // brighter thumb dot at the live finger position.
+    const TouchPadView *pads[2] = {&drive, &brake};
+    for (int i = 0; i < 2; i++) {
+        const TouchPadView *pad = pads[i];
+        if (!pad->active)
+            continue;
+        DrawSpriteQuad(s_ring, pad->anchorX, pad->anchorY, pad->radiusX, pad->radiusY, 0x50FFFFFF);
+        float dotRx = pad->radiusX * 0.4f, dotRy = pad->radiusY * 0.4f;
+        DrawSpriteQuad(s_dot, pad->currentX, pad->currentY, dotRx, dotRy, 0x90FFFFFF);
+    }
+    Gfx_PopState();
+}
