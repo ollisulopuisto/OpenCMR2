@@ -79,6 +79,13 @@ if(ANDROID)
     set_target_properties(opencmr2 PROPERTIES OUTPUT_NAME main)
 else()
     add_executable(opencmr2 platform/main.cpp)
+    if(EMSCRIPTEN)
+        # WebGL2 is the only GL the browser exposes; FULL_ES3 maps the desktop
+        # GL 3.3 calls the GL renderer uses onto WebGL2 where possible.
+        target_link_options(opencmr2 PRIVATE
+            -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sFULL_ES3=1
+            -sALLOW_MEMORY_GROWTH=1 -sSTACK_SIZE=4MB)
+    endif()
 endif()
 target_link_libraries(opencmr2 PRIVATE opencmr2_platform)
 # Source-only preparation helpers ship with desktop binaries. No game artwork.
@@ -138,8 +145,10 @@ elseif(OPENCMR2_BUILT_SDL AND NOT ANDROID)
     else()
         set_property(TARGET opencmr2 APPEND PROPERTY BUILD_RPATH "$ORIGIN")
     endif()
-    add_custom_command(TARGET opencmr2 POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_SONAME_FILE:SDL3::SDL3> $<TARGET_FILE_DIR:opencmr2>)
+    if(NOT EMSCRIPTEN)
+        add_custom_command(TARGET opencmr2 POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_SONAME_FILE:SDL3::SDL3> $<TARGET_FILE_DIR:opencmr2>)
+    endif()
 endif()
 
 # ---- shaders (GLSL -> SPIR-V, plus MSL for Metal and GLSL 330; embedded) ---------
@@ -219,9 +228,14 @@ foreach(shader IN LISTS SHADER_SOURCES)
         foreach(location RANGE 8)
             list(APPEND renames --rename-interface-variable ${interface} ${location} varying${location})
         endforeach()
+        if(EMSCRIPTEN)
+            set(spv_glsl_args --es --version 300 --flip-vert-y --fixup-clipspace)
+        else()
+            set(spv_glsl_args --version 330 --no-es --no-420pack-extension --flip-vert-y --fixup-clipspace)
+        endif()
         add_custom_command(
             OUTPUT ${glsl}
-            COMMAND ${SPIRV_CROSS} --version 330 --no-es --no-420pack-extension --flip-vert-y --fixup-clipspace
+            COMMAND ${SPIRV_CROSS} ${spv_glsl_args}
                 ${renames} --output ${glsl} ${output}
             DEPENDS ${output}
             COMMENT "Translating shader ${shader} to GLSL 330")
