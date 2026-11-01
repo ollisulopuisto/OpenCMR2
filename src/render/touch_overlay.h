@@ -17,9 +17,19 @@
 void TouchOverlay_FillRingBGRA(unsigned char *out, int size);
 void TouchOverlay_FillDotBGRA(unsigned char *out, int size);
 
+// Maps a pad from drawable window pixels into offscreen content space
+// through the same presentation rect the executor's final blit uses
+// (GetPresentationRect over the render size, window pixels, stretch flag).
+// Bar policy: a finger in the letterbox bars still controls - input reads
+// raw window coordinates - but its ring and dot are drawn clamped to the
+// nearest picture edge so the visuals stay on the picture. Radii scale
+// with the presentation. out = {cx, cy, radiusX, radiusY} in content space.
+void TouchOverlay_MapPadToContent(float px, float py, float rx, float ry, int winW, int winH, int contentW,
+                                  int contentH, bool stretch, float out[4]);
+
 // Records this frame's pads into the command stream. Called at the top of
 // Present() while the frame's race-world flag still says whether this was a
 // driving frame; no-op unless the shared touch layer is active.
-void TouchOverlay_RecordFrame();
+void TouchOverlay_RecordFrame(int contentW, int contentH, bool stretch);
 
 #endif // OPENCMR2_TOUCH_OVERLAY_H

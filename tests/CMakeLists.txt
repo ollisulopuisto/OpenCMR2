@@ -86,6 +86,7 @@ target_include_directories(touch_layout_test PRIVATE ${PROJECT_SOURCE_DIR}/src/i
 add_test(NAME touch_layout COMMAND touch_layout_test)
 
 add_executable(touch_overlay_test touch_overlay_texture.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay_shapes.cpp)
+target_include_directories(touch_overlay_test PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_include_directories(touch_overlay_test PRIVATE ${PROJECT_SOURCE_DIR}/src/render)
 add_test(NAME touch_overlay COMMAND touch_overlay_test)
 

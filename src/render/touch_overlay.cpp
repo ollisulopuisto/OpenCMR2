@@ -52,7 +52,7 @@ static void DrawSpriteQuad(GfxTexture *texture, float cx, float cy, float rx, fl
     Gfx_DrawIndexedPrimitiveTL(GFX_TRIANGLELIST, v, 4, indices, 6);
 }
 
-void TouchOverlay_RecordFrame()
+void TouchOverlay_RecordFrame(int contentW, int contentH, bool stretch)
 {
     if (!Input_TouchOverlayActive())
         return;
@@ -60,7 +60,7 @@ void TouchOverlay_RecordFrame()
     int windowW = 0, windowH = 0;
     if (Input_GetTouchPads(&drive, &brake, &windowW, &windowH) == 0)
         return;
-    if (windowW <= 0 || windowH <= 0)
+    if (windowW <= 0 || windowH <= 0 || contentW <= 0 || contentH <= 0)
         return;
     if (s_ring == NULL)
         s_ring = MakeTexture(TouchOverlay_FillRingBGRA, 128);
@@ -69,9 +69,12 @@ void TouchOverlay_RecordFrame()
     if (s_ring == NULL || s_dot == NULL)
         return;
 
-    // Pads are in drawable pixels; map them 1:1 over the back buffer.
+    // Pads arrive in drawable window pixels; the recorded frame lives in the
+    // offscreen content buffer and is letterboxed by the executor's final
+    // blit, so map through the same presentation rect (see the bar policy in
+    // touch_overlay.h) and draw in content space.
     Gfx_PushState();
-    Gfx_SetVirtualScreen(windowW, windowH);
+    Gfx_SetVirtualScreen(contentW, contentH);
     Gfx_SetLighting(0);
     Gfx_SetFog(0);
     Gfx_SetDepthTest(0);
@@ -97,9 +100,13 @@ void TouchOverlay_RecordFrame()
         const TouchPadView *pad = pads[i];
         if (!pad->active)
             continue;
-        DrawSpriteQuad(s_ring, pad->anchorX, pad->anchorY, pad->radiusX, pad->radiusY, 0x50FFFFFF);
-        float dotRx = pad->radiusX * 0.4f, dotRy = pad->radiusY * 0.4f;
-        DrawSpriteQuad(s_dot, pad->currentX, pad->currentY, dotRx, dotRy, 0x90FFFFFF);
+        float anchor[4], current[4];
+        TouchOverlay_MapPadToContent(pad->anchorX, pad->anchorY, pad->radiusX, pad->radiusY, windowW, windowH,
+                                     contentW, contentH, stretch, anchor);
+        TouchOverlay_MapPadToContent(pad->currentX, pad->currentY, pad->radiusX * 0.4f, pad->radiusY * 0.4f,
+                                     windowW, windowH, contentW, contentH, stretch, current);
+        DrawSpriteQuad(s_ring, anchor[0], anchor[1], anchor[2], anchor[3], 0x50FFFFFF);
+        DrawSpriteQuad(s_dot, current[0], current[1], current[2], current[3], 0x90FFFFFF);
     }
     Gfx_PopState();
 }

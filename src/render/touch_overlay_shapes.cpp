@@ -1,4 +1,5 @@
 #include "touch_overlay.h"
+#include "presentation.h"
 
 #include <math.h>
 
@@ -50,3 +51,31 @@ void TouchOverlay_FillDotBGRA(unsigned char *out, int size)
     }
 }
 
+
+static float ClampF(float v, float lo, float hi)
+{
+    return v < lo ? lo : v > hi ? hi : v;
+}
+
+void TouchOverlay_MapPadToContent(float px, float py, float rx, float ry, int winW, int winH, int contentW,
+                                  int contentH, bool stretch, float out[4])
+{
+    if (winW <= 0 || winH <= 0 || contentW <= 0 || contentH <= 0) {
+        out[0] = out[1] = out[2] = out[3] = 0.0f;
+        return;
+    }
+    PresentationRect rect = GetPresentationRect(contentW, contentH, winW, winH, stretch);
+    float kx = rect.width > 0 ? (float)contentW / rect.width : 1.0f;
+    float ky = rect.height > 0 ? (float)contentH / rect.height : 1.0f;
+    float halfX = rx * kx, halfY = ry * ky;
+    // Clamp the CENTER so the whole ring stays on the picture when it fits;
+    // an oversized pad clamps its center to the picture middle.
+    float loX = halfX < contentW * 0.5f ? halfX : contentW * 0.5f;
+    float hiX = contentW - loX;
+    float loY = halfY < contentH * 0.5f ? halfY : contentH * 0.5f;
+    float hiY = contentH - loY;
+    out[0] = ClampF((px - rect.x) * kx, loX, hiX);
+    out[1] = ClampF((py - rect.y) * ky, loY, hiY);
+    out[2] = halfX;
+    out[3] = halfY;
+}

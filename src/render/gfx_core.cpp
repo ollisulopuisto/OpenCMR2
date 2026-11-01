@@ -685,7 +685,7 @@ static void Present(BOOL vsync, bool stretch)
     // draw on top. s_raceWorld still holds THIS frame's world flag here;
     // menus skip the overlay.
     if (s_raceWorld)
-        TouchOverlay_RecordFrame();
+        TouchOverlay_RecordFrame(s_width, s_height, stretch);
     s_raceWorld=false;
     s_pendingDust.clear(); // never leak an unflushed view into a later frame
     if (FILE *trace = TraceFile())
