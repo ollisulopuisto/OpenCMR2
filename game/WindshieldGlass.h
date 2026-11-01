@@ -77,3 +77,67 @@ static inline int WindshieldGlass_Classify(const WgQuad quads[WG_WINDOWS],
 }
 
 #endif
+
+// ---- stable classification anchors -----------------------------------------
+// The windshield is semantically the glass the wipers wipe: classify by the
+// window quad nearest the wiper pivots (rest transforms, so head-look and
+// replay cameras cannot change the answer). Falls back to the eye ray only
+// when no pivots are available; a miss still returns -1.
+
+static inline WgVec3 WgQuadCentre(const WgQuad *q) {
+    WgVec3 c = {0.0f, 0.0f, 0.0f};
+    for (int j = 0; j < 4; j++) { c.x += q->v[j].x; c.y += q->v[j].y; c.z += q->v[j].z; }
+    c.x *= 0.25f; c.y *= 0.25f; c.z *= 0.25f;
+    return c;
+}
+
+static inline float WgDistSqPointQuad(WgVec3 p, const WgQuad *q) {
+    // Distance to the quad plane, plus a pull toward the centre so a point
+    // beside a coplanar pair still picks its own quad.
+    WgVec3 e1 = WgSub(q->v[1], q->v[0]), e2 = WgSub(q->v[3], q->v[0]);
+    WgVec3 n = WgCross(e1, e2);
+    float nl = WgDot(n, n);
+    if (nl < 1e-6f) return 1e30f;
+    WgVec3 d = WgSub(p, q->v[0]);
+    float plane = WgDot(d, n) / nl;            // |n| not normalised: plane*nl=dot
+    float planeDist2 = plane * plane * nl;     // (dot/|n|)^2
+    WgVec3 c = WgQuadCentre(q);
+    WgVec3 dc = WgSub(p, c);
+    float centreDist2 = WgDot(dc, dc);
+    return planeDist2 + 0.05f * centreDist2;   // plane dominates, centre breaks ties
+}
+
+static inline int WindshieldGlass_ClassifyByPivots(const WgQuad quads[WG_WINDOWS],
+                                                   const WgVec3 *pivots, int pivotCount) {
+    if (pivotCount <= 0) return -1;
+    int best = -1;
+    float bestDist = 0.0f;
+    for (int w = 0; w < WG_WINDOWS; w++) {
+        for (int p = 0; p < pivotCount; p++) {
+            float d = WgDistSqPointQuad(pivots[p], &quads[w]);
+            if (best < 0 || d < bestDist) { best = w; bestDist = d; }
+        }
+    }
+    return best;
+}
+
+// Window index -> damage break slot, mirroring Car_QueueWindowBreak's
+// breakPartIndex table: slot 0 breaks window 0, slot 1 window 1, slot 2
+// windows 2+3, slot 3 windows 4+5. -1 for out-of-range input.
+static inline int WindshieldGlass_SlotForWindow(int window) {
+    if (window < 0 || window >= WG_WINDOWS) return -1;
+    return window <= 1 ? window : window <= 3 ? 2 : 3;
+}
+
+// Damage break slot -> exterior triangle group mask, mirroring the
+// StageObject_SetModelSubmeshVisibility switch (slots 0-3 on the
+// node-type-7 mesh). 0 for out-of-range input (matches nothing).
+static inline unsigned WindshieldGlass_GroupForSlot(int slot) {
+    switch (slot) {
+    case 0: return 0x100u;
+    case 1: return 0x20u;
+    case 2: return 0x40u;
+    case 3: return 0x80u;
+    }
+    return 0;
+}
