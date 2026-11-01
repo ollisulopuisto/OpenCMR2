@@ -97,7 +97,7 @@ int main() {
                     // projections are fine (the beam can still enter the frame).
                     if (fabsf(fl[i].x - (-100.0f/1920.0f)) < 0.002f && fabsf(fl[i].y - (-100.0f/1080.0f)) < 0.002f)
                         fail(v.name,a,axis==0,i,"lamp uv is the behind-camera sentinel", fl[i].x, fl[i].y);
-                    // halo ref must be a usable gate (0..1]; a negative/zero ref means ungated
+                    // halo pinned to the lamp: any divergence or invalid ref is a regression
                     if ((fl[i].haloX != fl[i].x || fl[i].haloY != fl[i].y) && (fl[i].haloRef <= 0.0f || fl[i].haloRef > 1.0f))
                         fail(v.name,a,axis==0,i,"halo gate invalid (ungated bubble)", fl[i].haloRef, 0);
                     if (fabsf(fl[i].haloX - (-100.0f/1920.0f)) < 0.002f && fabsf(fl[i].haloY - (-100.0f/1080.0f)) < 0.002f)

@@ -1,5 +1,17 @@
 # Fog-light beam/glow geometry repair (1 November 2026)
 
+Update (1 Nov 2026, later): glow bubbles REMOVED on user steering
+("keep just the beams"; native screenshots showed the lamp glows still read
+as silly bubbles). The fog shader drops the halo term entirely; the wedge
+owns the beam from the lamp (0.01 onset ramp replacing the 0.05 halo-owned
+gap). CPU-side, halo uniform slots are pinned to the lamp anchor with the
+lamp's own gate - layout unchanged for both render paths (single fog.frag
+feeds SPIR-V and MSL via spirv-cross). Scene-matrix sweep still CLEAN;
+render-test bubble pixel assertions removed with the effect. Native visual
+acceptance of beams-only remains OUTSTANDING. Lens flares were raised by the
+user as a possible separate optional effect - NOT in this lane.
+
+
 Lane: fix/fog-beam-true-projection (PR #256), render-only (game/FogBeamProjection.h,
 game/LightField.h, tests/). No physics, gameplay, originals, assets or shader
 changes; the 35-vec4 FogUniforms layout is untouched.

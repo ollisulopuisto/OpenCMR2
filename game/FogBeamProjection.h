@@ -136,52 +136,11 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
                 fl->beamX = bx / bl; fl->beamY = by / bl; fl->beamLen = len;
             } else { fl->beamX = 0.0f; fl->beamY = 0.0f; fl->beamLen = 0.0f; }
         }
-        // Halo anchor a few units forward along the beam: the bubble floats
-        // in the lit air IN FRONT of the car instead of painting over the
-        // bodywork (user request), and its depth reference lets the bonnet
-        // and dash occlude it. Beams without a direction keep the lamp anchor.
+        // Glow bubbles removed (user steering, 1 Nov 2026: "keep just the
+        // beams"). The halo slots stay in the uniform layout (both render
+        // paths share it) but are pinned to the lamp anchor with the lamp's
+        // own depth gate; the fog shader no longer reads them.
         fl->haloX = lampU; fl->haloY = lampV; fl->haloRef = fl->depthRef;
-        if (hasBeam) {
-            // Anchor 1.25 units along the beam: just off the lamp surface, so
-            // the bubble reads as lit air at the lamp instead of a glow
-            // detached from the car. The anchor must keep >= 2.5 units of
-            // view depth: the gate reference sits 1 unit nearer than the
-            // anchor, and below 1.5 units of zGate the depth-buffer value
-            // turns negative (gate silently OFF in the shader - the rear
-            // lamps' unoccluded red bubbles from the chase camera). When the
-            // beam recedes, extend the anchor along it until 2.5 units deep;
-            // when it approaches and even 1.25 lands too near, keep the lamp
-            // anchor (its gate is always valid).
-            int anchorDist = 0x14000;   // 1.25
-            FixVector lampViewDir;
-            FixMatrix_RotateVector(&lampViewDir, (FixVector *)&src->dir, &invView);
-            const int lampViewZ = vView.z;   // TRUE lamp depth, not the clipped anchor
-            if (lampViewDir.z > 0) {
-                int need = 0x28f5c - lampViewZ;              // 2.56 - lamp depth (margin over the 2.5 test: FixMul truncation)
-                if (need > 0) {
-                    int t = (int)(((long long)need << 16) / lampViewDir.z);
-                    if (t > anchorDist) anchorDist = t > 0x60000 ? 0x60000 : t;   // cap 6
-                }
-            } else if (lampViewDir.z < 0 && lampViewZ + FixMul(lampViewDir.z, anchorDist) < 0x28000) {
-                anchorDist = 0;   // too close even unextended: lamp anchor
-            }
-            FixVector hw;
-            hw.x = src->pos.x + FixMul(src->dir.x, anchorDist);
-            hw.y = src->pos.y + FixMul(src->dir.y, anchorDist);
-            hw.z = src->pos.z + FixMul(src->dir.z, anchorDist);
-            FixVector hv;
-            FixMatrix_TransformPoint(&hv, &hw, &invView);
-            if (anchorDist != 0 && hv.z >= 0x28000) {   // below 2.5 the gate ref can go negative: lamp anchor
-                FixMatrix_ProjectWorldPointToView((int *)&vOut, &hw, view);
-                const float hu = (float)(vOut.x >> 16) / resXf, hvv = (float)(vOut.y >> 16) / resYf;
-                if (hu > -0.25f && hu < 1.25f && hvv > -0.25f && hvv < 1.25f) {
-                    fl->haloX = hu; fl->haloY = hvv;
-                    float zGate = hv.z / 65536.0f - 1.0f;   // bodywork at the lamp depth is nearer: gated
-                    float d = (zGate > 0.0f && proj43 < 0.0f) ? proj33 + proj43 / zGate : 0.0f;
-                    fl->haloRef = d > 1.0f ? 1.0f : d;
-                }
-            }
-        }
     }
     return fogLightTotal;
 }
