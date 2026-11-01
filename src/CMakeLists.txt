@@ -93,6 +93,7 @@ else()
 endif()
 target_link_libraries(opencmr2 PRIVATE opencmr2_platform)
 # Source-only preparation helpers ship with desktop binaries. No game artwork.
+if(NOT IOS)
 set_property(TARGET opencmr2 APPEND PROPERTY LINK_DEPENDS
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/prepare.py
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/convert.py
