@@ -7,6 +7,12 @@ struct ReplayChaseOrbit {
     double yaw=0, pitch=0;
     void Reset(){yaw=pitch=0;}
     static bool Chase(int mode){return mode>=4 && mode<=6;}
+    // When are the orbit keys captured by something else? Only while the race
+    // menu or the tuning ADJUST panel is open. The tuning "engaged" preview
+    // flag is sticky after the first F10 press, so gating on it killed the
+    // arrows for the rest of the session (user report: replay chase arrows
+    // dead while the camera readout was on screen).
+    static bool InputCaptured(bool menuOpen, bool tuningPanelOpen){return menuOpen||tuningPanelOpen;}
     static bool Key(int key){return key==0xc8||key==0xd0||key==0xcb||key==0xcd||key==0x13;}
     void Step(bool left,bool right,bool up,bool down,double dt){
         if(!(dt>0)||!std::isfinite(dt))return;
