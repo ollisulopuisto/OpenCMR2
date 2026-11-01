@@ -5,6 +5,7 @@
 #include "GameInfo.h"
 #include "NetPlayers.h"
 #include "high_address.h"
+#include <string>
 
 #include <chrono>
 #include <cstdio>

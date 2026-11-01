@@ -270,13 +270,18 @@ add_custom_command(
 
 # Applications menu entry: on its own, as it includes the real <windows.h>
 # that port/compat replaces for the game.
+add_library(opencmr2_procmem STATIC platform/process_memory.cpp)
+if(WIN32)
+    target_link_libraries(opencmr2_procmem PRIVATE psapi)
+endif()
+
 add_library(opencmr2_shortcut STATIC platform/menu_shortcut.cpp ${ICON_HEADER})
 target_include_directories(opencmr2_shortcut PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/generated)
 target_link_libraries(opencmr2_shortcut PUBLIC SDL3::SDL3)
 if(WIN32)
     target_link_libraries(opencmr2_shortcut PRIVATE ole32 uuid shell32)
 endif()
-target_link_libraries(opencmr2_platform PUBLIC opencmr2_shortcut)
+target_link_libraries(opencmr2_platform PUBLIC opencmr2_shortcut opencmr2_procmem)
 
 # ---- network (UDP with ENet, third_party/enet) -------------------------------------
 set(ENET_DIR ${PROJECT_SOURCE_DIR}/third_party/enet)
