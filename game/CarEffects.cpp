@@ -2053,3 +2053,21 @@ void AirMotes_Step(int step16_16)
     if (carry > 4.f) carry = 4.f;
     AirMote_LogStats(step16_16);
 }
+
+// PORT: read-only views of the per-car window layout for the cockpit
+// windshield glass wiring (WindshieldGlass.cpp); the table itself stays here.
+const FixVector *CarEffects_CarWindowVertices(int car)
+{
+    if (car < 0 || car >= 8)
+        return NULL;
+    return g_carWindowVerts[car];
+}
+
+void CarEffects_GetWindowLayout(unsigned char vertex[6][4], int mirrorZ[6][4])
+{
+    for (int w = 0; w < 6; w++)
+        for (int j = 0; j < 4; j++) {
+            vertex[w][j] = g_carWindows[w].vertex[j];
+            mirrorZ[w][j] = g_carWindows[w].mirrorZ[j];
+        }
+}

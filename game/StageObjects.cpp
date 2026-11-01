@@ -13846,6 +13846,11 @@ void StageObject_LoadAndAttachCarInterior(BYTE record, BYTE car)
     g_carDriverRestPositions[car].y = pRow->driverPoseNode->current.position.y;
     g_carDriverRestPositions[car].z = pRow->driverPoseNode->current.position.z;
     StageObject_FindPlayerRevTextures(car);
+    // OpenCMR2: resolve this car's cockpit windshield glass (video.windshield_cracks)
+    // now that the interior nodes exist; a resolve failure just logs and keeps
+    // the feature off for the car.
+    if (Sys_GetOption("video.windshield_cracks", 1))
+        WindshieldGlass_SetupCar(car);
 }
 
 // --- CPU driver input (0x47b000-0x47c5ac) -----------------------------------

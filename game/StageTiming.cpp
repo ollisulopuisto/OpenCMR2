@@ -2009,6 +2009,7 @@ void StageObject_InitCarSceneTables(void)
     *(short *)g_carSteeringBlendLastGears = 0;
     *(short *)g_carSteeringBlendFrames = 0x303;
     Windshield_ResetAll();   // stages start with clean glass
+    WindshieldGlass_ResetCache();   // drop patched interior glass textures
     for (i = 0; i < 2; i++) {
         g_carDriverPoseStates[i].rotation.x = 0;
         g_carInteriorNodeRows[i].driverPoseNode = 0;
