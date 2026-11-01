@@ -76,6 +76,46 @@ static void test_edge(void) {
     CHECK(hit != 0);   // may hit a side panel, never the front windshield
 }
 
+static void test_pivots_pick_front(void) {
+    WgQuad q[WG_WINDOWS];
+    WindshieldGlass_BuildQuads(kVerts, kDesc, kMirror, q);
+    // Wiper pivots at the base of the front windshield, one per side.
+    WgVec3 pivots[2] = {{78.0f, 30.0f, 20.0f}, {78.0f, 30.0f, -20.0f}};
+    CHECK(WindshieldGlass_ClassifyByPivots(q, pivots, 2) == 0);
+}
+
+static void test_pivots_rear_pick_rear(void) {
+    WgQuad q[WG_WINDOWS];
+    WindshieldGlass_BuildQuads(kVerts, kDesc, kMirror, q);
+    WgVec3 pivots[1] = {{-58.0f, 30.0f, 0.0f}};
+    int hit = WindshieldGlass_ClassifyByPivots(q, pivots, 1);
+    CHECK(hit == 1 || hit == 4 || hit == 5);   // rear glass, never front
+    CHECK(hit != 0);
+}
+
+static void test_no_pivots_misses_safely(void) {
+    WgQuad q[WG_WINDOWS];
+    WindshieldGlass_BuildQuads(kVerts, kDesc, kMirror, q);
+    CHECK(WindshieldGlass_ClassifyByPivots(q, 0, 0) == -1);
+}
+
+static void test_window_slot_mapping(void) {
+    CHECK(WindshieldGlass_SlotForWindow(0) == 0);
+    CHECK(WindshieldGlass_SlotForWindow(1) == 1);
+    CHECK(WindshieldGlass_SlotForWindow(2) == 2);
+    CHECK(WindshieldGlass_SlotForWindow(3) == 2);
+    CHECK(WindshieldGlass_SlotForWindow(4) == 3);
+    CHECK(WindshieldGlass_SlotForWindow(5) == 3);
+    CHECK(WindshieldGlass_SlotForWindow(6) == -1);
+    CHECK(WindshieldGlass_SlotForWindow(-1) == -1);
+    CHECK(WindshieldGlass_GroupForSlot(0) == 0x100u);
+    CHECK(WindshieldGlass_GroupForSlot(1) == 0x20u);
+    CHECK(WindshieldGlass_GroupForSlot(2) == 0x40u);
+    CHECK(WindshieldGlass_GroupForSlot(3) == 0x80u);
+    CHECK(WindshieldGlass_GroupForSlot(4) == 0);
+    CHECK(WindshieldGlass_GroupForSlot(-1) == 0);
+}
+
 int main()
 {
     test_mirror();
@@ -83,6 +123,10 @@ int main()
     test_rear();
     test_roof();
     test_edge();
+    test_pivots_pick_front();
+    test_pivots_rear_pick_rear();
+    test_no_pivots_misses_safely();
+    test_window_slot_mapping();
     if (fails) { std::printf("%d failures\n", fails); return 1; }
     std::printf("windshield_glass ok\n");
     return 0;
