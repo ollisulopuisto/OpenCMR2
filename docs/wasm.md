@@ -58,6 +58,33 @@ Observed on headless Chrome (SwiftShader WebGL2), 2026-11-01:
   - OK: glGenSamplers, glMapBufferRange, glBlitFramebuffer,
     glCompressedTexImage2D, glGenVertexArrays, glCopyTexSubImage2D.
 
+## Probe 2: full shader matrix + GL surface (2026-11-01)
+
+`tools/wasm-probe/probe2.cpp` compiles every generated ES 3.00 shader stage in
+the same real WebGL2 context and exercises the GL calls the renderer needs.
+
+Observed (headless Chrome + SwiftShader WebGL2):
+
+- **All 22 generated shader stages compile, 0 failures** (5 vertex, 17
+  fragment; clear shaders need none).
+- `glClearDepthf` (the ES alias for glClearDepth) works.
+- FBO clear + `glReadPixels` readback verified (51,102,153,255 round-trip),
+  confirming the replacement path for `glGetTexImage`.
+- `OES_draw_elements_base_vertex`: NOT exposed in this probe environment, so
+  `glDrawElementsBaseVertex` is unavailable here. On real desktop GPUs the
+  WebGL2 extension is widely available, but a port cannot rely on it
+  everywhere.
+
+The GL renderer touches the missing pieces at exactly three sites in
+`src/render/gfx_gl.cpp`:
+
+- line ~749 `gl.GetTexImage` (texture readback) -> attach the texture to an
+  FBO and `glReadPixels` instead (probe-verified).
+- line ~1273 `gl.ClearDepth` -> `glClearDepthf`.
+- line ~1409 `gl.DrawElementsBaseVertex` (main geometry draw) -> use
+  `OES_draw_elements_base_vertex` where exposed, otherwise re-base the index
+  stream or attribute offsets.
+
 ## Known remaining gaps before a runnable game
 
 - `src/render/gl_effects_sources.h` holds hand-written `#version 330` shaders
