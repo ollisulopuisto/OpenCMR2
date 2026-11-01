@@ -62,6 +62,11 @@ int main()
     // the mapped point proportionally, content size unchanged.
     TouchOverlay_MapPadToContent(2000.0f, 1000.0f, 100.0f, 100.0f, 4000, 2000, 720, 540, false, m);
     CHECK(m[0] > 359.0f && m[0] < 361.0f && m[1] > 269.0f && m[1] < 271.0f);
+    // The clamp flag reports bar fingers so the "hide" policy can skip them.
+    int cl = TouchOverlay_MapPadToContent(0.0f, 500.0f, 100.0f, 100.0f, 2000, 1000, 720, 540, false, m);
+    CHECK(cl != 0);
+    cl = TouchOverlay_MapPadToContent(1000.0f, 500.0f, 100.0f, 100.0f, 2000, 1000, 720, 540, false, m);
+    CHECK(cl == 0);
     // Degenerate sizes yield zeros, never NaN.
     TouchOverlay_MapPadToContent(1.0f, 1.0f, 1.0f, 1.0f, 0, 0, 720, 540, false, m);
     CHECK(m[0] == 0.0f && m[2] == 0.0f);

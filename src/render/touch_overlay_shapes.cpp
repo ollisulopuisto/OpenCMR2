@@ -57,12 +57,12 @@ static float ClampF(float v, float lo, float hi)
     return v < lo ? lo : v > hi ? hi : v;
 }
 
-void TouchOverlay_MapPadToContent(float px, float py, float rx, float ry, int winW, int winH, int contentW,
-                                  int contentH, bool stretch, float out[4])
+int TouchOverlay_MapPadToContent(float px, float py, float rx, float ry, int winW, int winH, int contentW,
+                                 int contentH, bool stretch, float out[4])
 {
     if (winW <= 0 || winH <= 0 || contentW <= 0 || contentH <= 0) {
         out[0] = out[1] = out[2] = out[3] = 0.0f;
-        return;
+        return 1;
     }
     PresentationRect rect = GetPresentationRect(contentW, contentH, winW, winH, stretch);
     float kx = rect.width > 0 ? (float)contentW / rect.width : 1.0f;
@@ -74,8 +74,11 @@ void TouchOverlay_MapPadToContent(float px, float py, float rx, float ry, int wi
     float hiX = contentW - loX;
     float loY = halfY < contentH * 0.5f ? halfY : contentH * 0.5f;
     float hiY = contentH - loY;
-    out[0] = ClampF((px - rect.x) * kx, loX, hiX);
-    out[1] = ClampF((py - rect.y) * ky, loY, hiY);
+    float mx = (px - rect.x) * kx, my = (py - rect.y) * ky;
+    int clamped = mx < loX || mx > hiX || my < loY || my > hiY;
+    out[0] = ClampF(mx, loX, hiX);
+    out[1] = ClampF(my, loY, hiY);
     out[2] = halfX;
     out[3] = halfY;
+    return clamped;
 }

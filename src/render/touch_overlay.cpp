@@ -1,9 +1,11 @@
 #include "touch_overlay.h"
 
+#include "platform/platform.h"
 #include "port/gfx.h"
 #include "port/input.h"
 
 #include <math.h>
+#include <string.h>
 #include <string.h>
 
 // ---- recording -------------------------------------------------------------
@@ -100,11 +102,19 @@ void TouchOverlay_RecordFrame(int contentW, int contentH, bool stretch)
         const TouchPadView *pad = pads[i];
         if (!pad->active)
             continue;
+        // Provisional, configurable bar policy (touch_overlay.h): clamp the
+        // visual to the picture edge, or hide the pad while in a bar.
+        const char *policy = Platform_GetSetting("input.touch_bar_policy", "clamp");
+        bool hide = strcmp(policy, "hide") == 0;
         float anchor[4], current[4];
-        TouchOverlay_MapPadToContent(pad->anchorX, pad->anchorY, pad->radiusX, pad->radiusY, windowW, windowH,
-                                     contentW, contentH, stretch, anchor);
-        TouchOverlay_MapPadToContent(pad->currentX, pad->currentY, pad->radiusX * 0.4f, pad->radiusY * 0.4f,
-                                     windowW, windowH, contentW, contentH, stretch, current);
+        int anchorClamped =
+            TouchOverlay_MapPadToContent(pad->anchorX, pad->anchorY, pad->radiusX, pad->radiusY, windowW,
+                                         windowH, contentW, contentH, stretch, anchor);
+        int currentClamped =
+            TouchOverlay_MapPadToContent(pad->currentX, pad->currentY, pad->radiusX * 0.4f, pad->radiusY * 0.4f,
+                                         windowW, windowH, contentW, contentH, stretch, current);
+        if (hide && (anchorClamped || currentClamped))
+            continue;
         DrawSpriteQuad(s_ring, anchor[0], anchor[1], anchor[2], anchor[3], 0x50FFFFFF);
         DrawSpriteQuad(s_dot, current[0], current[1], current[2], current[3], 0x90FFFFFF);
     }
