@@ -93,6 +93,19 @@ public:
     TouchPad DrivePad() const;
     TouchPad BrakePad() const;
 
+    // Fixed classic-mode regions in normalized window coordinates (already
+    // mirrored for the configured hand), each with its pressed state and
+    // the pressing pointer's live position when held. Placeholder geometry
+    // pending the settled design. Returns the region count (4) or 0 in
+    // floating mode.
+    struct TouchRegion {
+        float x0 = 0.0f, y0 = 0.0f, x1 = 0.0f, y1 = 0.0f;
+        int role = 0; // matches the input roles: 1 steering pad, 3 accelerate, 4 brake, 5 handbrake
+        bool pressed = false;
+        float pressX = 0.0f, pressY = 0.0f;
+    };
+    int ClassicRegions(TouchRegion out[4]) const;
+
 private:
     enum Role {
         ROLE_NONE,

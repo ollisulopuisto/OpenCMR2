@@ -96,15 +96,16 @@ bool s_touchConfigLoaded;
 void LoadTouchConfig()
 {
     TouchConfig config;
+    // The frontend touch menu writes ints; the original strings stay accepted.
     const char *mode = Platform_GetSetting("input.touch_mode", "floating");
-    config.mode = strcmp(mode, "classic") == 0 ? TOUCH_MODE_CLASSIC : TOUCH_MODE_FLOATING;
+    config.mode = (strcmp(mode, "classic") == 0 || strcmp(mode, "1") == 0) ? TOUCH_MODE_CLASSIC : TOUCH_MODE_FLOATING;
     const char *hand = Platform_GetSetting("input.touch_handed", "right");
-    config.hand = strcmp(hand, "left") == 0 ? TOUCH_HAND_LEFT : TOUCH_HAND_RIGHT;
+    config.hand = (strcmp(hand, "left") == 0 || strcmp(hand, "1") == 0) ? TOUCH_HAND_LEFT : TOUCH_HAND_RIGHT;
     s_touchControls.SetConfig(config);
     const char *enable = Platform_GetSetting("input.touch_controls", "auto");
-    if (strcmp(enable, "on") == 0) {
+    if (strcmp(enable, "on") == 0 || strcmp(enable, "1") == 0) {
         s_touchEnabled = true;
-    } else if (strcmp(enable, "off") == 0) {
+    } else if (strcmp(enable, "off") == 0 || strcmp(enable, "2") == 0) {
         s_touchEnabled = false;
     } else {
 #ifdef __ANDROID__
@@ -127,6 +128,79 @@ bool TouchActive()
     if (!s_touchConfigLoaded)
         LoadTouchConfig();
     return s_touchEnabled;
+}
+
+int Input_TouchOverlayActive()
+{
+    return TouchActive() ? 1 : 0;
+}
+
+void Input_ReloadTouchConfig()
+{
+    s_touchConfigLoaded = false;
+}
+
+static void FillPadView(const TouchPad &pad, float w, float h, float basis, int kind, TouchPadView *out)
+{
+    out->active = pad.active ? 1 : 0;
+    out->pressed = pad.active ? 1 : 0; // floating pads exist only while held
+    out->kind = kind;
+    if (!pad.active)
+        return;
+    out->anchorX = pad.anchorX * w;
+    out->anchorY = pad.anchorY * h;
+    out->currentX = pad.currentX * w;
+    out->currentY = pad.currentY * h;
+    // TouchConfig radii are fractions of the smaller window dimension.
+    out->radiusX = pad.radius * basis;
+    out->radiusY = pad.radius * basis;
+}
+
+static void FillRegionView(const TouchControls::TouchRegion &r, float w, float h, TouchPadView *out)
+{
+    out->active = 1; // fixed classic pads are always shown
+    out->pressed = r.pressed ? 1 : 0;
+    out->kind = r.role + 1; // input role 1 -> view kind 2 (classic steering)
+    float cx = (r.x0 + r.x1) * 0.5f * w, cy = (r.y0 + r.y1) * 0.5f * h;
+    out->anchorX = cx;
+    out->anchorY = cy;
+    out->currentX = r.pressed ? r.pressX * w : cx;
+    out->currentY = r.pressed ? r.pressY * h : cy;
+    // Ring inscribed in the region (placeholder geometry).
+    float rx = (r.x1 - r.x0) * 0.5f * w, ry = (r.y1 - r.y0) * 0.5f * h;
+    out->radiusX = out->radiusY = rx < ry ? rx : ry;
+}
+
+int Input_GetTouchPads(TouchPadView *pads, int maxPads, int *windowW, int *windowH)
+{
+    int w = 0, h = 0;
+    SDL_Window *window = Platform_GetWindow();
+    if (window != NULL)
+        SDL_GetWindowSizeInPixels(window, &w, &h);
+    if (windowW != NULL)
+        *windowW = w;
+    if (windowH != NULL)
+        *windowH = h;
+    if (pads == NULL || maxPads <= 0)
+        return 0;
+    if (!TouchActive() || w <= 0 || h <= 0)
+        return 0;
+    float basis = (float)(w < h ? w : h);
+    if (s_touchControls.Config().mode == TOUCH_MODE_CLASSIC) {
+        TouchControls::TouchRegion regions[4];
+        int n = s_touchControls.ClassicRegions(regions);
+        if (n > maxPads)
+            n = maxPads;
+        for (int i = 0; i < n; i++)
+            FillRegionView(regions[i], (float)w, (float)h, &pads[i]);
+        return n;
+    }
+    int n = 0;
+    if (maxPads > 0)
+        FillPadView(s_touchControls.DrivePad(), (float)w, (float)h, basis, 0, &pads[n++]);
+    if (maxPads > 1)
+        FillPadView(s_touchControls.BrakePad(), (float)w, (float)h, basis, 1, &pads[n++]);
+    return n;
 }
 
 // A small deflection presses the key; finer analog grading needs the game's

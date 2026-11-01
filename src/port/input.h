@@ -40,6 +40,40 @@ typedef struct InputEffect InputEffect;
    1 move, 2 up. */
 void Input_TouchEvent(int type, long long fingerId, float x, float y);
 
+/* Visible touch pads: a pixel-space view of the shared touch layer's pad
+ * geometry for the on-screen overlay (src/render/touch_overlay.cpp).
+ * Positions and radii are in drawable pixels; the overlay maps them into the
+ * frame with Gfx_SetVirtualScreen. Radius uses the smaller window dimension,
+ * so radiusX == radiusY on square-pixel displays. */
+typedef struct TouchPadView {
+    int active;
+    int pressed;              /* a live pointer holds this pad */
+    int kind;                 /* 0 floating drive, 1 floating brake circle,
+                                 2 classic steering pad, 3 classic accelerate,
+                                 4 classic brake, 5 classic handbrake */
+    float anchorX, anchorY;   /* pad anchor (where the thumb landed); the
+                                 region center for the fixed classic pads */
+    float currentX, currentY; /* live finger position (center when idle) */
+    float radiusX, radiusY;   /* drawn circle radius */
+} TouchPadView;
+
+/* Nonzero when the shared touch layer feeds driving input (respects the
+ * input.touch_controls setting); the overlay draws only then. */
+int Input_TouchOverlayActive(void);
+
+/* Re-reads the input.touch_* settings (the frontend touch menu writes them
+ * as ints: mode 0 floating/1 classic, handed 0 right/1 left, controls
+ * 0 auto/1 on/2 off, bar policy 0 clamp/1 hide; the original string values
+ * stay accepted). */
+void Input_ReloadTouchConfig(void);
+
+/* Fills up to maxPads pad views and the drawable size they are scaled to,
+ * and returns the view count: 2 floating pads (drive, brake circle) or the
+ * 4 fixed classic regions (always active; pressed tracks held buttons).
+ * Classic rings inscribe their region; every size is placeholder geometry
+ * pending the settled design. */
+int Input_GetTouchPads(TouchPadView *pads, int maxPads, int *windowW, int *windowH);
+
 /* Key codes: DirectInput scan codes (the ones the game names). */
 #define INPUT_KEY_ESCAPE 0x01
 #define INPUT_KEY_RETURN 0x1C

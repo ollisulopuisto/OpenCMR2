@@ -1947,6 +1947,9 @@ void FrontendMenu_BuildRallyProfile(void)
 
 void FrontendMenu_OpenWhatsNew(Menu *, MenuItem *);
 char *FrontendMenu_WhatsNewText(void);
+void FrontendMenu_BuildTouchControls(void);
+char *FrontendMenu_TouchControlsText(void);
+extern Menu g_menuTouchControls; // PORT: touch controls settings submenu
 void FrontendMenu_EnterOptions(Menu *pMenu, int param);
 void FrontendMenu_DrawOptions(Menu *pMenu);
 void FrontendMenu_EnterCheats(Menu *pMenu, int param);
@@ -1969,6 +1972,11 @@ void FrontendMenu_BuildOptions(void)
     Menu_AddItemType2(&g_menu0x0081f118, 0, 0x148, &g_menu0x0081be78, 0, 1000);
     // PORT: changelog entry point, at the bottom of the main Options menu
     // (id -1 draws the literal text). No more main-menu popup.
+    // PORT: touch controls settings (pad style, handedness, on/off, bar policy).
+    // Sits ABOVE the What's new row: the changelog keeps the bottom spot
+    // directly above Back (user's requested placement).
+    Menu_AddItemType2(&g_menu0x0081f118, FrontendMenu_TouchControlsText(), -1, &g_menuTouchControls, 0, -1);
+    FrontendMenu_BuildTouchControls();
     Menu_AddItemType1(&g_menu0x0081f118, FrontendMenu_WhatsNewText(), -1, (MenuItemAction)FrontendMenu_OpenWhatsNew, -1);
     Menu_AddItemType1(&g_menu0x0081f118, 0, 0x67, 0, -1);
     Menu_SetCallbacks(&g_menu0x0081f118, (MenuCallback)FrontendMenu_EnterOptions, (MenuCallback)FrontendScroller_UpdateMain,
