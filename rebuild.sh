@@ -15,9 +15,10 @@
 #   --trees crossed|shell       3D tree replacements (experimental, three verified tree cards)
 #   --spectators animated       Articulated spectator poses
 #   --textures original|france1|uprez
-#                               Exact-source 2x ground texture filtering (no new detail). uprez is the DEFAULT when
-#                               --data is given: it covers the owned Finland1/France1/Greece1 stages; france1 filters
-#                               France1 only; original opts out (unfiltered originals)
+#                               Exact-source 2x ground texture filtering (no new detail). uprez is the DEFAULT on
+#                               runs that prepare or launch with a data folder configured (--data or CMR2_DATA):
+#                               it covers the owned Finland1/France1/Greece1 stages; france1 filters France1 only;
+#                               original opts out (unfiltered originals). Bare build-only runs stay build-only.
 #   --roads curved              Experimental Ballon curved road
 #   --driver-names real         Real driver names (display only)
 #   --install-enhancement-deps  Allow uv to set up an isolated Python with Pillow/numpy (network); default is no downloads
@@ -195,13 +196,14 @@ fi
 [ -z "$TEXTURES_VALUE" ] || [ "$TEXTURES_VALUE" = original ] || FLAGS+=(--textures "$TEXTURES_VALUE")
 
 # Default: exact-source uprez ground textures for the owned Finland/France/Greece
-# stages, when a data folder is there to build them from. --textures original
-# (or france1) overrides the default. Skipped loudly without --data.
+# stages, on runs that prepare or launch (--run or an asset option) with a data
+# folder to build them from. --textures original (or france1) overrides the
+# default. A bare build-only run stays build-only, even with CMR2_DATA set.
 if [ "$ALL_MODS" = 0 ] && [ -z "$TEXTURES_VALUE" ]; then
-    if [ -n "$DATA" ] && [ -d "$DATA" ]; then
+    if [ -n "$DATA" ] && [ -d "$DATA" ] && { [ "$RUN" = 1 ] || [ "${#FLAGS[@]}" -gt 0 ]; }; then
         FLAGS+=(--textures uprez)
         echo "==> Default: texture uprez on (exact-source 2x filter, owned Finland/France/Greece stages; opt out: --textures original)"
-    else
+    elif [ "$RUN" = 1 ] || [ "${#FLAGS[@]}" -gt 0 ]; then
         echo "==> Note: no --data folder; default texture uprez skipped, build only"
     fi
 fi
@@ -225,12 +227,6 @@ if [ "$PREPARE" = 1 ]; then
     [ -d "$DATA" ] || die "game data folder not found: $DATA"
     if [ "$ALL_MODS" = 0 ]; then
     case " ${FLAGS[*]} " in
-        *" --textures france1"*) n=$(find "$DATA" -iname frahit.bfl 2>/dev/null | wc -l | tr -d ' ')
-            [ "$n" = 1 ] || die "--textures france1 needs exactly one frahit.bfl under $DATA, found $n" ;;
-        *" --textures uprez"*) n=$(find "$DATA" -iname frahit.bfl -o -iname finhit.bfl -o -iname grehit.bfl 2>/dev/null | wc -l | tr -d ' ')
-            [ "$n" -ge 1 ] || die "texture uprez needs at least one owned stage archive (frahit/finhit/grehit.bfl) under $DATA, found none" ;;
-    esac
-    case " ${FLAGS[*]} " in
         *" --roads "*) n=$(find "$DATA" -iname fra01hi.bfl 2>/dev/null | wc -l | tr -d ' ')
             [ "$n" = 1 ] || die "--roads curved needs exactly one fra01hi.bfl (Ballon) under $DATA, found $n" ;;
     esac
@@ -240,6 +236,14 @@ if [ "$PREPARE" = 1 ]; then
                 n=$(find "$DATA" -iname "$b" 2>/dev/null | wc -l | tr -d ' ')
                 [ "$n" = 1 ] || die "need exactly one $b under $DATA, found $n (trees and spectators are fitted to the original release)"
             done ;;
+    esac
+    # Textures last: an explicit asset option names its own archive first, then
+    # the (possibly defaulted) texture choice checks its sources.
+    case " ${FLAGS[*]} " in
+        *" --textures france1"*) n=$(find "$DATA" -iname frahit.bfl 2>/dev/null | wc -l | tr -d ' ')
+            [ "$n" = 1 ] || die "--textures france1 needs exactly one frahit.bfl under $DATA, found $n" ;;
+        *" --textures uprez"*) n=$(find "$DATA" -iname frahit.bfl -o -iname finhit.bfl -o -iname grehit.bfl 2>/dev/null | wc -l | tr -d ' ')
+            [ "$n" -ge 1 ] || die "texture uprez needs at least one owned stage archive (frahit/finhit/grehit.bfl) under $DATA, found none (opt out: --textures original)" ;;
     esac
     fi
 fi

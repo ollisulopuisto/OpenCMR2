@@ -27,7 +27,7 @@ fi
  p=run(repo,'--all-mods','--run','--dry-run',env=env);assert p.returncode==0,p.stderr;assert not log.exists() and not (t/'build.log').exists();assert '--prepare-only' in p.stdout and 'run:' in p.stdout
  # Default unchanged: builds, no preparation or game, no fetch/switch.
  p=run(repo,env=env);assert p.returncode==0,p.stderr;assert not log.exists()
- p=run(repo,'--all-mods','--run',env=env);assert p.returncode==0,p.stderr;calls=[json.loads(x) for x in log.read_text().splitlines()];assert len(calls)==2;assert calls[0][-1]=='--prepare-only';assert calls[0][:-1]==calls[1];assert calls[1][:2]==['--data',str(data)];assert calls[1][calls[1].index('--mods-dir')+1]==str(mods);assert '--textures=uprez' in calls[1] and calls[1][-2:]==['--tunnel-lines','1']
+ p=run(repo,'--all-mods','--run',env=env);assert p.returncode==0,p.stderr;calls=[json.loads(x) for x in log.read_text().splitlines()];assert len(calls)==2;assert calls[0][-1]=='--prepare-only';assert calls[0][:-1]==calls[1];assert calls[1][:2]==['--data',str(data)];assert calls[1][calls[1].index('--mods-dir')+1]==str(mods);assert '--textures=uprez' in calls[1] and calls[1].index('--textures=uprez')>calls[1].index('--tunnel-lines')
  # Ignore build output, as real checkout does; untracked/modified input must block update.
  (repo/'.git/info/exclude').write_text('build/\n');(repo/'dirty').write_text('do not lose');before=git(repo,'rev-parse','HEAD');p=run(repo,'--update','--dry-run',env=env);assert p.returncode==2 and 'clean' in p.stderr;assert git(repo,'rev-parse','HEAD')==before;(repo/'dirty').unlink()
  with (repo/'rebuild.sh').open('a') as f:f.write('\n# local edit\n')
