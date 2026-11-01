@@ -20,7 +20,6 @@ inline const WhatsNewLine *WhatsNew_Lines(int &count)
         {2, "Fog responds to headlights and rear lights"},
         {2, "Snow glints: banks sparkle, flakes twinkle in sun and beams"},
         {2, "Falling snow and air motes respond to light"},
-        {2, "Snow ground lighting prototype (off: --snow-material 100 to try)"},
         {4, "Drone tuning: spring 5%, distance 300%, height/spring 400%, drop 500%"},
         {5, "Tyre debris to 2000%, dust/snow plume to 300% - overdone, dial down"},
         {7, "Spray, exhaust, splash, backfire, motes, glints overdone"},
