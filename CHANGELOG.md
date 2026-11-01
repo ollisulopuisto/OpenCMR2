@@ -3,6 +3,10 @@
 All notable changes to OpenCMR2 are documented here.
 
 ## [Unreleased]
+### Changed
+- The "What's new" changelog no longer pops up over the main menu (its OK
+  row could sit on top of the menu behind it). It opens from a "What's
+  new..." row at the bottom of the main Options menu instead.
 ### Performance
 - Tree wind (sway and rustle) now fades out with distance and is skipped
   entirely beyond a radius (video.tree_wind_radius, default 150 world units,

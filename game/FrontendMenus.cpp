@@ -1945,6 +1945,8 @@ void FrontendMenu_BuildRallyProfile(void)
     Menu_ValidateCursor(&g_menu0x008212d8, 0);
 }
 
+void FrontendMenu_OpenWhatsNew(Menu *, MenuItem *);
+char *FrontendMenu_WhatsNewText(void);
 void FrontendMenu_EnterOptions(Menu *pMenu, int param);
 void FrontendMenu_DrawOptions(Menu *pMenu);
 void FrontendMenu_EnterCheats(Menu *pMenu, int param);
@@ -1953,7 +1955,7 @@ void FrontendMenu_LeaveCheats(Menu *pMenu, char back);
 void FrontendMenu_ReturnToParent(Menu *pMenu, int param);
 
 // Options menu: game, sound, graphics, controls, language (not in regions
-// 2/3), cheats (id 1000) and back.
+// 2/3), cheats (id 1000), the What's new changelog row (PORT) and back.
 // FUNCTION: CMR2 0x004f5eb0
 void FrontendMenu_BuildOptions(void)
 {
@@ -1965,6 +1967,9 @@ void FrontendMenu_BuildOptions(void)
     if (CGameInfo::GetGameRegion() != 3 && CGameInfo::GetGameRegion() != 2)
         Menu_AddItemType2(&g_menu0x0081f118, 0, 0x19, &g_menu0x008221d8, 0, 0);
     Menu_AddItemType2(&g_menu0x0081f118, 0, 0x148, &g_menu0x0081be78, 0, 1000);
+    // PORT: changelog entry point, at the bottom of the main Options menu
+    // (id -1 draws the literal text). No more main-menu popup.
+    Menu_AddItemType1(&g_menu0x0081f118, FrontendMenu_WhatsNewText(), -1, (MenuItemAction)FrontendMenu_OpenWhatsNew, -1);
     Menu_AddItemType1(&g_menu0x0081f118, 0, 0x67, 0, -1);
     Menu_SetCallbacks(&g_menu0x0081f118, (MenuCallback)FrontendMenu_EnterOptions, (MenuCallback)FrontendScroller_UpdateMain,
                       (MenuCallback)FrontendMenu_DrawOptions, NULL);

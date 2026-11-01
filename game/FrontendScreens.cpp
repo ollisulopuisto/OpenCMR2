@@ -1015,7 +1015,6 @@ void *FrontendCredits_GetRoleTable(void);
 int FrontendCredits_GetStartTime(void);
 
 // PORT: "what's new" changelog (implementation with the screen options below).
-void WhatsNew_MaybeAutoShow(void);
 void FrontendMenu_BuildWhatsNew(void);
 void FrontendMenu_OpenWhatsNew(Menu *, MenuItem *);
 
@@ -5464,7 +5463,6 @@ void FrontendMenu_EnterMain(Menu *pMenu, int param)
     p->startTime = CFrontend::GetFrontendTimestamp();
     p->pMenu = pMenu;
     CGameInfo::SetGameModeOptionBit19(0);
-    WhatsNew_MaybeAutoShow();   // PORT: once per changelog revision
 }
 
 // Update callback of the main menu: scroller, animation, and the attract
@@ -12438,7 +12436,6 @@ enum ScreenOptionsItem {
     SCREEN_ITEM_MENU,
     SCREEN_ITEM_VSYNC,
     SCREEN_ITEM_FULLSCREEN,
-    SCREEN_ITEM_WHATS_NEW = 0xf,
     SCREEN_ITEM_OK = 0xe
 };
 
@@ -12476,6 +12473,13 @@ static char *ScreenOptions_Text(int text)
     if (language > 5)
         language = 0;
     return (char *)g_screenOptionsText[language][text];
+}
+
+// Localized "What's new..." label for the row at the bottom of the main
+// Options menu (the changelog moved out of this page there).
+char *FrontendMenu_WhatsNewText(void)
+{
+    return ScreenOptions_Text(SCREEN_TEXT_WHATS_NEW);
 }
 
 // The sizes on offer and the one of a percentage (the nearest).
@@ -12614,10 +12618,6 @@ void FrontendMenu_DrawScreenOptions(Menu *pMenu)
                               (int *)(pItem->max == j ? pSelColour : pUnselColour), 0x11);
             }
             break;
-        case SCREEN_ITEM_WHATS_NEW:
-            strcpy(CFrontend::m_stringDest, ScreenOptions_Text(SCREEN_TEXT_WHATS_NEW));
-            Font_DrawText(1, CFrontend::m_stringDest, x, textY, (int *)pColour, 0x11);
-            break;
         default:
             Font_DrawText(1, CFrontend::GetTextString(pItem->id), x, textY, (int *)pColour, 0x11);
             break;
@@ -12648,7 +12648,6 @@ void FrontendMenu_BuildScreenOptions(void)
                       SCREEN_ITEM_MENU);
     Menu_AddItemType3(&g_screenOptionsMenu, 0, -1, 2, 0, 0, 0, 0, SCREEN_ITEM_VSYNC);
     Menu_AddItemType3(&g_screenOptionsMenu, 0, -1, 2, 0, 0, 0, 0, SCREEN_ITEM_FULLSCREEN);
-    Menu_AddItemType1(&g_screenOptionsMenu, 0, -1, (MenuItemAction)FrontendMenu_OpenWhatsNew, SCREEN_ITEM_WHATS_NEW);
     Menu_AddItemType1(&g_screenOptionsMenu, 0, 0x67, (MenuItemAction)FrontendMenu_ApplyScreenOptions, SCREEN_ITEM_OK);
     Menu_SetCallbacks(&g_screenOptionsMenu, FrontendMenu_EnterScreenOptions, NULL,
                       (MenuCallback)FrontendMenu_DrawScreenOptions, NULL);
