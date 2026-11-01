@@ -11,7 +11,7 @@ layout(std140, set = 3, binding = 0) uniform FogUniforms {
     vec4 extra; // x near-field clear distance in world units (0 = off), y car-light response 0..2, zw unused
     vec4 lights[8];    // xy projected car light (uv, v downwards), z intensity 0..1, w unused
     vec4 lightInfo[8]; // x depth-buffer value 1 world unit in front of the lamp (<= 0: no depth gate), yzw tint
-    vec4 beams[8];     // xy aspect-corrected unit screen beam direction, z wedge length, w unused
+    vec4 beams[8];     // xy aspect-corrected unit screen beam direction, z wedge length, w energy ratio q = lampZ/endZ (1 = no thinning)
     vec4 halos[8];     // xy glow anchor (a few units forward along the beam), z halo depth ref (<= 0: no gate), w unused
 };
 void main()
@@ -77,7 +77,16 @@ void main()
                 // lamp - no backward shine. The wedge owns the whole beam now
                 // that the glow bubble is gone (it used to own the first 0.05).
                 float axial = a <= 0.0 ? 0.0 : min(a / 0.01, 1.0);
-                wedge = axial * lateral * lateral / (1.0 + 6.0 * max(a, 0.0) / blen);
+                // Energy-conserving thinning: a beam clipped at the near
+                // plane spears close past the camera and perspective spreads
+                // it over a large screen area (the 2026-11-01 rear-wash /
+                // rolled-view report). The beam's view depth runs from the
+                // lamp depth to the clip depth along the wedge; spreading the
+                // same energy over q times the area means q times dimmer:
+                // intensity ~ z(a)/zLamp = 1/(1 + (q-1)*t). Beams ending in
+                // front of the near plane carry q = 1 and keep the full wedge.
+                float t = clamp(a / blen, 0.0, 1.0);
+                wedge = axial * lateral * lateral / (1.0 + 6.0 * max(a, 0.0) / blen) / (1.0 + (beams[i].w - 1.0) * t);
             }
             float gate = 1.0;
             if (lightInfo[i].x > 0.0)

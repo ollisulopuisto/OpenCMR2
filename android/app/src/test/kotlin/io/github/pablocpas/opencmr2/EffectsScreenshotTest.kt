@@ -46,7 +46,10 @@ class EffectsScreenshotTest {
     @Test
     fun scrolledStateShowsFogAndDone() {
         rule.waitForIdle()
-        rule.onNodeWithText("Fog").performScrollTo()
+        // Scroll the Done button into view: the Fog row then sits above it,
+        // so one capture covers both. Scrolling to "Fog" alone leaves the
+        // label at the frame's bottom edge with the group and Done below it.
+        rule.onNodeWithText("Done").performScrollTo()
         rule.waitForIdle()
         capture("effects-scrolled.png")
     }
