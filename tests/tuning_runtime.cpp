@@ -4,10 +4,11 @@
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
+#include <chrono>
 void TuningPanel_Update();bool TuningPanel_IsOpen();bool TuningPanel_InfoShown();bool TuningPanel_FpsOnly();bool TuningPanel_PreviewActive();
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line%d %s\n",__LINE__,#x);return 1;}}while(0)
 int main(){
- auto old=std::filesystem::current_path();auto tmp=std::filesystem::temp_directory_path()/"opencmr-tuning-runtime";
+ auto old=std::filesystem::current_path();auto tmp=std::filesystem::temp_directory_path()/("opencmr-tuning-runtime-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
  std::filesystem::create_directories(tmp);std::filesystem::current_path(tmp);std::ofstream("opencmr2.ini")<<"[video]\n";
  BYTE keys[256]={};Platform_SetTestKeyboard(keys);TuningPanel_Update();
  CHECK(TuningPanel_InfoShown()&&!TuningPanel_IsOpen()&&!TuningPanel_FpsOnly());
@@ -24,7 +25,7 @@ int main(){
  press(5);CHECK(Sys_GetOption("video.drone_distance",60)==65);
  press(2);press(5); // lock row -> save and lock
  CHECK(Sys_GetOption("video.drone_locked",0)==1);
- std::ifstream stored("opencmr2.ini");std::string ini((std::istreambuf_iterator<char>(stored)),{});
+ std::string ini;{std::ifstream stored("opencmr2.ini");ini.assign((std::istreambuf_iterator<char>(stored)),{});} // handle closed before later saves/cleanup: Windows rename/remove fail on open files
  CHECK(ini.find("drone_distance")!=std::string::npos);
  Sys_SetOptionTemporary("video.drone_distance",50);CHECK(Sys_GetOption("video.drone_distance",60)==65); // stale launch override cannot bypass saved lock
  Sys_SetOptionTemporary("video.drone_distance",65);

@@ -2,7 +2,7 @@
 """Replay controls: clock hook, update/draw sites and key filter exist and are replay-only. Source wiring only, not a native check."""
 import pathlib, sys
 r = pathlib.Path(__file__).resolve().parents[1]
-rd = lambda p: (r / p).read_text()
+rd = lambda p: (r / p).read_text(encoding="utf-8")  # README carries UTF-8 punctuation; Windows default cp1252 decode fails
 ok = True
 def need(c, m):
     global ok
