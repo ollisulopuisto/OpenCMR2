@@ -5714,6 +5714,33 @@ void Particle_DrawAll(SceneNode *pCamera, BYTE view)
             def.b = DRAW_PARTICLE.colour[2];
             def.a = DRAW_PARTICLE.type0x53;
             if(pType==&g_particleTypes[DUST_PLUME_TYPE])def.a=(BYTE)Effect_Scale(def.a,Sys_GetOption("video.dust_amount",100));
+            // Wheel-thrown dust/chip specks (0x10..0x17): rotate and stretch
+            // the quad along its screen-space motion so the specks read as
+            // soft wedges thrown off the wheels, not separate round blobs
+            // (video.dust_speck_streak, default 1). One step of motion is
+            // sourceVector - vector0x10 (previous position).
+            if (pCamera != NULL && g_particleTypeCount > 0x17 &&
+                pType >= &g_particleTypes[0x10] && pType <= &g_particleTypes[0x17] &&
+                Sys_GetOption("video.dust_speck_streak", 1) != 0) {
+                const FixMatrix &sm = pCamera->world;
+                float mdx = (DRAW_PARTICLE.sourceVector.x - DRAW_PARTICLE.vector0x10.x) / 65536.f;
+                float mdy = (DRAW_PARTICLE.sourceVector.y - DRAW_PARTICLE.vector0x10.y) / 65536.f;
+                float mdz = (DRAW_PARTICLE.sourceVector.z - DRAW_PARTICLE.vector0x10.z) / 65536.f;
+                float sRight = (mdx * sm.right.x + mdy * sm.right.y + mdz * sm.right.z) / 65536.f;
+                float sUp = (mdx * sm.up.x + mdy * sm.up.y + mdz * sm.up.z) / 65536.f;
+                // depth of the speck itself, so wedges behind the camera keep the round quad
+                float pdx = (def.pos.x - sm.position.x) / 65536.f;
+                float pdy = (def.pos.y - sm.position.y) / 65536.f;
+                float pdz = (def.pos.z - sm.position.z) / 65536.f;
+                float speckDepth = (pdx * sm.forward.x + pdy * sm.forward.y + pdz * sm.forward.z) / 65536.f;
+                int speckAngle; float speckLen, speckAlpha;
+                if (WheelSpeck_StreakParams(sRight, sUp, speckDepth, 100, &speckAngle, &speckLen, &speckAlpha)) {
+                    def.field_0x20 = (short)speckAngle;
+                    def.left = (int)(def.left * speckLen);
+                    def.right = (int)(def.right * speckLen);
+                    def.a = (BYTE)(def.a * speckAlpha);
+                }
+            }
             def.shade = DRAW_PARTICLE.field0x54;
             if (g_particleTypeCount > SPEED_MOTE_TYPE && pType == &g_particleTypes[SPEED_MOTE_TYPE])
                 SpeedMote_ApplyStreak(&def, pCamera);
