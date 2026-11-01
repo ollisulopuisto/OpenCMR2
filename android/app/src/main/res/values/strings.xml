@@ -60,6 +60,15 @@
     <string name="effects_lines">Radial lines in the tunnel zone</string>
     <string name="effects_trails">Vapor trails behind the car</string>
     <string name="effects_fog">Fog</string>
+    <string name="effects_scenery_title">3D trees and animated spectators</string>
+    <string name="effects_scenery_none">No pack imported - trees and spectators render as the originals. Prepare a pack with the desktop build, copy the folder to this device, then import it here.</string>
+    <string name="effects_scenery_installed">Pack imported: %1$d mappings</string>
+    <string name="effects_scenery_import">Import scenery pack</string>
+    <string name="effects_scenery_remove">Remove pack</string>
+    <string name="effects_scenery_searching">Looking for the pack\u2026</string>
+    <string name="effects_scenery_copying">Copying pack\u2026 %1$d / %2$d MB</string>
+    <string name="effects_scenery_no_manifest">No scenery pack found in the chosen folder (manifest.tsv missing)</string>
+    <string name="effects_scenery_ambiguous">More than one scenery pack found: %1$s</string>
     <string name="effects_state_default">Default</string>
     <string name="effects_on">On</string>
     <string name="effects_off">Off</string>

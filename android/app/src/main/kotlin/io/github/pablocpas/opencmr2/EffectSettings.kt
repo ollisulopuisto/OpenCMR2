@@ -12,11 +12,10 @@ import android.content.Context
  * next time the game starts - which is every launch, since the launcher
  * reopens when the game exits.
  *
- * 3D trees and animated spectators are deliberately NOT here: they need a
- * prepared scenery pack, and preparing one requires the desktop build
- * (src/platform/sys.cpp runs Python tooling for it). Passing --trees
- * without a pack stops the game from starting, so those stay desktop-only
- * until a pack delivery route exists on Android.
+ * 3D trees and animated spectators are deliberately NOT here: they ride the
+ * scenery-pack import on the effects screen (SceneryPack.kt). Packs are
+ * prepared with the desktop build and read through --scenery-dir; the
+ * automatic --trees/--spectators preparation flags stay desktop-only.
  */
 object EffectSettings {
     /** Tri-state toggle values. DEFAULT passes no flag. */
