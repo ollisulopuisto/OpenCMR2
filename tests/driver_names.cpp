@@ -3,6 +3,7 @@
 #include "GameInfo.h"
 #include <cstdio>
 #include <cstring>
+#include <string>
 extern char g_aiNames[15][20];
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line%d: %s\n",__LINE__,#x);return 1;}}while(0)
 int main(){

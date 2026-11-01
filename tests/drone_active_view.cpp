@@ -2,6 +2,7 @@
 #include "CameraRecord.h"
 #include "port/sys.h"
 #include <cstdio>
+#include <string>
 #include <filesystem>
 #include <fstream>
 #include <chrono>
