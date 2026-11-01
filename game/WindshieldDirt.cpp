@@ -41,16 +41,23 @@ void Windshield_UpdateView(int view, int slot)
     Windshield_UpdateWetness(m, rain * 255 / 0x8000);
     Windshield_Decay(m, frameCounter++);
 
-    // Damage-linked cracks (video.windshield_cracks): follow the car's real
-    // windscreen break state, so the cockpit glass shows what the exterior
-    // model already shows. slot == local car index (same mapping the wiper
-    // state uses). Break slot 0 is the first window in the CIN glass list;
-    // front-vs-rear order of slots 0/1 is a documented assumption pending
-    // native confirmation. Independent of the wiper toggle.
+    // Damage-linked windshield glass (video.windshield_cracks): the cockpit's
+    // front interior glass follows the car's real damage appearance - the
+    // same texture the exterior model swaps to, applied by WindshieldGlass to
+    // the interior glass parts. The damage slot comes from the resolved front
+    // window (wiper-pivot classified), never a hardcoded part index; cars the
+    // resolve failed for keep their glass untouched. slot == local car index
+    // (same mapping the wiper state uses). Independent of the wiper toggle.
     if (Sys_GetOption("video.windshield_cracks", 1) != 0 && slot >= 0 && slot <= 1) {
-        CarPartSet *parts = StageTiming_GetCarReplayRecord(slot);
-        if (parts != NULL && (parts->partBroken[0] != 0 || parts->partDamaged[0] != 0))
-            Windshield_StampCracks(m, parts->partBroken[0] != 0);
+        int wslot = -1;
+        if (WindshieldGlass_GetInfo(slot, NULL, &wslot, NULL, NULL, NULL)) {
+            CarPartSet *parts = StageTiming_GetCarReplayRecord(slot);
+            if (parts != NULL) {
+                int state = parts->partBroken[wslot] != 0 ? 2
+                          : parts->partDamaged[wslot] != 0 ? 1 : 0;
+                WindshieldGlass_ApplyDamageState(slot, state);
+            }
+        }
     }
 
     if (Sys_GetOption("video.windscreen_wipers", 1) == 0 || slot < 0 || slot > 1)
