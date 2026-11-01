@@ -110,7 +110,11 @@ int WindshieldGlass_ResolveForCar(int car)
 
     const FixVector *verts = CarEffects_CarWindowVertices(car);
     if (verts == NULL) {
-        Sys_Log("windshield glass: car %d has no glass profile, feature off", car);
+        // Transient: the CIN glass profile can load after the first interior
+        // attach. Leave resolved at 0 so the next setup retries instead of
+        // latching the feature off for the whole stage.
+        Sys_Log("windshield glass: car %d has no glass profile yet, will retry", car);
+        info->resolved = 0;
         return -1;
     }
     unsigned char desc[6][4];
@@ -330,6 +334,63 @@ static void WgCollectInteriorGlass(SceneNode *node, SceneNode *bodyNode, int car
     }
 }
 
+// Failure-path diagnostics: when no interior part survives the glass
+// predicate + front-quad test, report what WAS there so a native log says
+// exactly which condition excluded the real asset. Runs only on the failure
+// path (feature would otherwise silently stay off).
+static void WgDiagnoseInterior(SceneNode *node, SceneNode *bodyNode, int car,
+                               const WgQuad *frontQuad, int *stats)
+{
+    for (SceneNode *p = node; p != NULL; p = p->pNext) {
+        if (p->type == SCENE_NODE_MESH && p->pObject != NULL) {
+            FixMatrix acc;
+            FixMatrix_Identity(&acc);
+            int reached = 0;
+            for (SceneNode *q = p; q != NULL; q = q->pParent) {
+                FixMatrix next;
+                FixMatrix_Multiply(&next, &q->local, &acc);
+                acc = next;
+                if (q == bodyNode) { reached = 1; break; }
+            }
+            Mesh *pMesh = (Mesh *)p->pObject;
+            int lods = pMesh->lodCount > 0 ? pMesh->lodCount : 1;
+            for (int l = 0; l < lods; l++) {
+                Mesh *pLod = (Mesh *)((BYTE *)pMesh + l * offsetof(Mesh, field_0x108));
+                stats[0]++;                                   // mesh-lods visited
+                if (reached) stats[1]++;                      // under the body node
+                if ((pLod->flags & 0x8u) != 0) stats[2]++;    // alpha-blend meshes
+                for (int pi = 0; pi < pLod->partCount && pi < 50; pi++) {
+                    MeshPart *pPart = pLod->pParts[pi];
+                    if (pPart == NULL || pPart->pData == NULL || pPart->indexCount <= 0 ||
+                        pLod->pVertexData == NULL)
+                        continue;
+                    const MeshVertexF *verts = (const MeshVertexF *)pLod->pVertexData;
+                    int semi = 0;
+                    for (int i = 0; i < pPart->indexCount; i++) {
+                        unsigned a = (unsigned)(verts[pPart->minIndex + pPart->pData[i]].diffuseColour >> 24);
+                        if (a > 0 && a < 250) { semi = 1; break; }
+                    }
+                    if (!semi)
+                        continue;
+                    stats[3]++;                               // semi-transparent parts (any mesh flags)
+                    WgVec3 local;
+                    if (!WgPartCentroid(pLod, pPart, &local))
+                        continue;
+                    FixVector fx = {(int)(local.x * 65536.0f), (int)(local.y * 65536.0f),
+                                    (int)(local.z * 65536.0f)}, fw;
+                    FixMatrix_TransformPoint(&fw, &fx, &acc);
+                    WgVec3 carSpace = {fw.x / 65536.0f, fw.y / 65536.0f, fw.z / 65536.0f};
+                    Sys_Log("windshield glass: diag car %d semi-part meshFlags=%x reached=%d centroid %.3f %.3f %.3f onQuad=%d",
+                            car, pLod->flags, reached, carSpace.x, carSpace.y, carSpace.z,
+                            reached ? WgCentroidOnFrontQuad(carSpace, frontQuad) : -1);
+                }
+            }
+        }
+        if (p->pFirstChild != NULL)
+            WgDiagnoseInterior(p->pFirstChild, bodyNode, car, frontQuad, stats);
+    }
+}
+
 // Restores every patched part (stage unload / cache reset).
 void WindshieldGlass_RestoreAll(void)
 {
@@ -397,6 +458,13 @@ int WindshieldGlass_SetupCar(int car)
     WgCollectInteriorGlass(g_carInteriorRoots[car], pCar->pBodyNode, car, &front);
     if (g_wgGlassPartCount[car] == 0) {
         Sys_Log("windshield glass: car %d front interior glass not found, feature off", car);
+        Sys_Log("windshield glass: diag car %d front quad (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f)",
+                car, front.v[0].x, front.v[0].y, front.v[0].z, front.v[1].x, front.v[1].y, front.v[1].z,
+                front.v[2].x, front.v[2].y, front.v[2].z, front.v[3].x, front.v[3].y, front.v[3].z);
+        int stats[4] = {0, 0, 0, 0};
+        WgDiagnoseInterior(g_carInteriorRoots[car], pCar->pBodyNode, car, &front, stats);
+        Sys_Log("windshield glass: diag car %d lods=%d underBody=%d blendMeshes=%d semiParts=%d",
+                car, stats[0], stats[1], stats[2], stats[3]);
         g_wgInfo[car].resolved = -1;
         return -1;
     }
