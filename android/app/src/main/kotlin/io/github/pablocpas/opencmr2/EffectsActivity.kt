@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 /** Launch-time graphics effects, passed to the game as flags (EffectSettings). */
 class EffectsActivity : ComponentActivity() {
     private var tunnel by mutableStateOf<Int?>(null)
+    private var speedFov by mutableStateOf<Int?>(null)
     private var lines by mutableStateOf(EffectSettings.DEFAULT)
     private var trails by mutableStateOf(EffectSettings.DEFAULT)
     private var fog by mutableStateOf(EffectSettings.DEFAULT)
@@ -25,6 +26,7 @@ class EffectsActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         tunnel = EffectSettings.tunnelVision(this)
+        speedFov = EffectSettings.speedFov(this)
         lines = EffectSettings.tunnelLines(this)
         trails = EffectSettings.vaporTrails(this)
         fog = EffectSettings.fog(this)
@@ -35,26 +37,11 @@ class EffectsActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text(stringResource(R.string.effects_title), style = MaterialTheme.typography.headlineMedium)
                         Text(stringResource(R.string.effects_intro))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Switch(checked = tunnel != null, onCheckedChange = {
-                                tunnel = if (it) 130 else null
-                                EffectSettings.tunnelVision(this@EffectsActivity, tunnel)
-                            })
-                            Text(
-                                stringResource(R.string.effects_tunnel) + " · " +
-                                    (tunnel?.toString() ?: stringResource(R.string.effects_state_default)),
-                                Modifier.padding(start = 12.dp),
-                            )
+                        SliderOverride(R.string.effects_tunnel, tunnel, 130, 0f..200f) {
+                            tunnel = it; EffectSettings.tunnelVision(this@EffectsActivity, it)
                         }
-                        tunnel?.let { value ->
-                            Slider(
-                                value = value.toFloat(),
-                                onValueChange = {
-                                    tunnel = it.toInt()
-                                    EffectSettings.tunnelVision(this@EffectsActivity, tunnel)
-                                },
-                                valueRange = 0f..200f,
-                            )
+                        SliderOverride(R.string.effects_speed_fov, speedFov, 40, 0f..100f) {
+                            speedFov = it; EffectSettings.speedFov(this@EffectsActivity, it)
                         }
                         EffectToggle(R.string.effects_lines, lines) {
                             lines = it; EffectSettings.tunnelLines(this@EffectsActivity, it)
@@ -70,6 +57,21 @@ class EffectsActivity : ComponentActivity() {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SliderOverride(label: Int, value: Int?, defaultOnEnable: Int,
+    range: ClosedFloatingPointRange<Float>, onChange: (Int?) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Switch(checked = value != null, onCheckedChange = { onChange(if (it) defaultOnEnable else null) })
+        Text(
+            stringResource(label) + " · " + (value?.toString() ?: stringResource(R.string.effects_state_default)),
+            Modifier.padding(start = 12.dp),
+        )
+    }
+    value?.let {
+        Slider(value = it.toFloat(), onValueChange = { v -> onChange(v.toInt()) }, valueRange = range)
     }
 }
 

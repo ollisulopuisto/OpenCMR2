@@ -115,6 +115,11 @@ android {
         compose = true
     }
 
+    testOptions {
+        // Robolectric screenshot test reads the real resources.
+        unitTests.isIncludeAndroidResources = true
+    }
+
     // The app follows the system language, and Android 13+ lists these
     // languages in its per-app language settings (from res/values-*).
     // Library strings in other languages are left out, so a screen never
@@ -153,6 +158,9 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.kotlinx.coroutines.android)
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
     implementation(libs.radialgamepad) {
         // Only its build used the old Android extensions plugin.
         exclude(group = "org.jetbrains.kotlin", module = "kotlin-android-extensions-runtime")

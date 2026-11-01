@@ -8,7 +8,7 @@ class EffectSettingsTest {
     fun defaultsPassNoFlags() {
         assertEquals(
             emptyList<String>(),
-            EffectSettings.arguments(null, EffectSettings.DEFAULT, EffectSettings.DEFAULT, EffectSettings.DEFAULT),
+            EffectSettings.arguments(null, null, EffectSettings.DEFAULT, EffectSettings.DEFAULT, EffectSettings.DEFAULT),
         )
     }
 
@@ -16,7 +16,7 @@ class EffectSettingsTest {
     fun tunnelVisionOverride() {
         assertEquals(
             listOf("--tunnel-vision", "170"),
-            EffectSettings.arguments(170, EffectSettings.DEFAULT, EffectSettings.DEFAULT, EffectSettings.DEFAULT),
+            EffectSettings.arguments(170, null, EffectSettings.DEFAULT, EffectSettings.DEFAULT, EffectSettings.DEFAULT),
         )
     }
 
@@ -24,15 +24,15 @@ class EffectSettingsTest {
     fun tunnelVisionZeroIsAValueNotDefault() {
         assertEquals(
             listOf("--tunnel-vision", "0"),
-            EffectSettings.arguments(0, EffectSettings.DEFAULT, EffectSettings.DEFAULT, EffectSettings.DEFAULT),
+            EffectSettings.arguments(0, null, EffectSettings.DEFAULT, EffectSettings.DEFAULT, EffectSettings.DEFAULT),
         )
     }
 
     @Test
     fun togglesMapToFlags() {
         assertEquals(
-            listOf("--tunnel-lines", "1", "--effect", "vapor_trails=off", "--effect", "fog=on"),
-            EffectSettings.arguments(null, EffectSettings.ON, EffectSettings.OFF, EffectSettings.ON),
+            listOf("--speed-fov", "40", "--tunnel-lines", "1", "--effect", "vapor_trails=off", "--effect", "fog=on"),
+            EffectSettings.arguments(null, 40, EffectSettings.ON, EffectSettings.OFF, EffectSettings.ON),
         )
     }
 }

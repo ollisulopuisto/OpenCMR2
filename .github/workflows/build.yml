@@ -222,6 +222,12 @@ jobs:
           OPENCMR2_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           OPENCMR2_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: ./gradlew assembleRelease testDebugUnitTest
+      - name: UI screenshot artifact (Robolectric render of the effects screen)
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenCMR2-Android-UI
+          path: android/app/screenshots/*.png
+          if-no-files-found: error
       - name: Package
         run: |
           mkdir -p dist

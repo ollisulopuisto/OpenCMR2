@@ -28,6 +28,7 @@ object EffectSettings {
     private const val KEY_TUNNEL_VISION = "tunnel_vision"
     private const val KEY_TUNNEL_LINES = "tunnel_lines"
     private const val KEY_VAPOR_TRAILS = "vapor_trails"
+    private const val KEY_SPEED_FOV = "speed_fov"
     private const val KEY_FOG = "fog"
     private const val UNSET = -1
 
@@ -39,6 +40,14 @@ object EffectSettings {
 
     fun tunnelVision(context: Context, value: Int?) {
         prefs(context).edit().putInt(KEY_TUNNEL_VISION, value?.coerceIn(0, 200) ?: UNSET).apply()
+    }
+
+    /** Speed-linked FOV widening 0..100 (the flag accepts 0..500), or null for the game default. */
+    fun speedFov(context: Context): Int? =
+        prefs(context).getInt(KEY_SPEED_FOV, UNSET).takeIf { it in 0..100 }
+
+    fun speedFov(context: Context, value: Int?) {
+        prefs(context).edit().putInt(KEY_SPEED_FOV, value?.coerceIn(0, 100) ?: UNSET).apply()
     }
 
     private fun toggle(context: Context, key: String): Int =
@@ -59,9 +68,10 @@ object EffectSettings {
      * The game flags for the given values, in the syntax parsed by
      * src/platform/enhancements.h. Pure, so unit tests need no Android runtime.
      */
-    fun arguments(tunnelVision: Int?, tunnelLines: Int, vaporTrails: Int, fog: Int): List<String> {
+    fun arguments(tunnelVision: Int?, speedFov: Int?, tunnelLines: Int, vaporTrails: Int, fog: Int): List<String> {
         val args = mutableListOf<String>()
         tunnelVision?.let { args += listOf("--tunnel-vision", it.toString()) }
+        speedFov?.let { args += listOf("--speed-fov", it.toString()) }
         when (tunnelLines) {
             ON -> args += listOf("--tunnel-lines", "1")
             OFF -> args += listOf("--tunnel-lines", "0")
@@ -78,5 +88,5 @@ object EffectSettings {
     }
 
     fun arguments(context: Context): List<String> =
-        arguments(tunnelVision(context), tunnelLines(context), vaporTrails(context), fog(context))
+        arguments(tunnelVision(context), speedFov(context), tunnelLines(context), vaporTrails(context), fog(context))
 }
