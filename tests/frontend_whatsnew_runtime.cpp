@@ -1,5 +1,5 @@
 // Drives the real What's New screen (game/FrontendWhatsNew.cpp) through the
-// real menu machine (game/Menu.cpp): build, auto-show queue from the main
+// real menu machine (game/Menu.cpp): build, manual open from the Options
 // menu, enter, dismissal (OK and Back), seen persistence, no re-show, and a
 // pixel dump of the real draw callback with block glyphs.
 #include "port/types.h"
@@ -64,7 +64,6 @@ void Font_DrawText(BYTE font, char *text, short x, short y, int *pColour, unsign
 
 extern Menu *FrontendMenu_GetWhatsNew(void);
 extern void FrontendMenu_BuildWhatsNew(void);
-extern void WhatsNew_MaybeAutoShow(void);
 extern void FrontendMenu_OpenWhatsNew(Menu *, MenuItem *);
 extern void FrontendMenu_DrawWhatsNew(Menu *);
 
@@ -87,11 +86,13 @@ int main(int argc, char **argv)
     g_activeMenu = &g_testMainMenu;
     FrontendMenu_BuildWhatsNew();
 
-    // Fresh install (no ini): entering the main menu queues the screen.
-    WhatsNew_MaybeAutoShow();
+    // No more main-menu popup: the screen opens only from its Options row.
     Menu *next = Menu_Update(&g_testMainMenu, 0);
+    CHECK(next == NULL);
+    FrontendMenu_OpenWhatsNew(NULL, NULL);
+    next = Menu_Update(&g_testMainMenu, 0);
     CHECK(next == FrontendMenu_GetWhatsNew());
-    CHECK(Sys_GetOption("ui.whatsnew_seen", -1) == -1);   // queued != acknowledged
+    CHECK(Sys_GetOption("ui.whatsnew_seen", -1) == -1);   // opened != acknowledged
 
     // The screen's first update fires its enter callback; parent is the main menu.
     Menu *screen = next;
@@ -99,7 +100,7 @@ int main(int argc, char **argv)
     CHECK(screen->pParent == &g_testMainMenu);
     CHECK(Sys_GetOption("ui.whatsnew_seen", -1) == -1);   // still not acknowledged on show
 
-    // Pixel dump of the real draw: auto-show lists unseen lines only (all at rev 1).
+    // Pixel dump of the real draw: the Options row lists the whole log.
     std::memset(fb, 16, sizeof fb);
     g_drawn.clear();
     FrontendMenu_DrawWhatsNew(screen);
@@ -119,9 +120,8 @@ int main(int argc, char **argv)
         if (std::strcmp(l.text, "OK") == 0) okRow++;
     }
     int content; WhatsNew_Lines(content);
-    int freshUnseen = WhatsNew_UnseenCount(kWhatsNewRevision - 1);   // fresh install: current revision only
     CHECK(g_drawn.size() >= 2 && g_drawn[0].font == 2);   // title first
-    CHECK(lines == freshUnseen);                          // every unseen line drawn once
+    CHECK(lines == content);                              // the row lists the whole log
     CHECK(okRow == 1);
     CHECK(ordered && maxY + 10 <= H);                     // top to bottom, nothing off-frame
     CHECK(g_drawn.back().y >= (int)(H * 420) / 480);      // OK anchored at the bottom
@@ -131,12 +131,11 @@ int main(int argc, char **argv)
     CHECK(next == &g_testMainMenu);
     CHECK(Sys_GetOption("ui.whatsnew_seen", 0) == kWhatsNewRevision);
 
-    // Re-entering the main menu does not re-show.
+    // Re-entering the main menu still does not queue anything.
     Menu_Update(&g_testMainMenu, 0);   // pending enter of main
-    WhatsNew_MaybeAutoShow();
     CHECK(Menu_Update(&g_testMainMenu, 0) == NULL);
 
-    // Manual open from the Screen page shows everything again...
+    // Manual open from the Options row shows everything again...
     FrontendMenu_OpenWhatsNew(NULL, NULL);
     next = Menu_Update(&g_testMainMenu, 0);
     CHECK(next == screen);

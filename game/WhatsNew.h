@@ -1,11 +1,11 @@
 #ifndef OPENCMR2_WHATS_NEW_H
 #define OPENCMR2_WHATS_NEW_H
 // "What's new" changelog: curated, truthful highlights of shipped changes.
-// Pure data and counting logic; the screen and its wiring live in
-// FrontendScreens.cpp (PORT). Bump kWhatsNewRevision and add lines when
-// user-visible changes ship: the screen then shows once on the main menu
-// (tracked in ui.whatsnew_seen) and stays reachable from the Screen page.
-inline constexpr int kWhatsNewRevision = 15;
+// Pure data and counting logic; the screen lives in FrontendWhatsNew.cpp and
+// its row at the bottom of the main Options menu in FrontendMenus.cpp (PORT).
+// Bump kWhatsNewRevision and add lines when user-visible changes ship; the
+// row always lists the whole log, newest last, capped at 18 lines.
+inline constexpr int kWhatsNewRevision = 16;
 
 struct WhatsNewLine { int revision; const char *text; };
 inline const WhatsNewLine *WhatsNew_Lines(int &count)
@@ -26,9 +26,9 @@ inline const WhatsNewLine *WhatsNew_Lines(int &count)
         {10, "Greece 1 bush and tree cards gain relief with --textures uprez"},
         {11, "Fix: fog lights in bonnet view; cockpit glow gated off the dash"},
         {12, "Windscreen: dirt builds on the glass, wipers clear the sweep"},
-        {13, "Fix: replay chase arrows work after using the F10 panel."},
-        {14, "Fix: steady fog light beams in replays; glow sits ahead of car"},
+        {14, "Fixes: replay chase arrows after the F10 panel; steady replay fog beams"},
         {15, "Tree wind now fades with distance, easing forest FPS."},
+        {16, "What's new moved to the bottom of the Options menu; no popup"},
     };
     count = (int)(sizeof(lines) / sizeof(*lines));
     return lines;

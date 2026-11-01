@@ -1,8 +1,10 @@
 // PORT: "What's new" changelog screen, in its own unit so the runtime test
 // can link and pixel-dump the real draw and transitions. Content lives in
 // game/WhatsNew.h: bump kWhatsNewRevision and add lines when user-visible
-// changes ship. The screen appears once per revision on the main menu
-// (ui.whatsnew_seen) and stays reachable from the Screen options page.
+// changes ship. The screen opens from the "What's new..." row at the bottom
+// of the main Options menu; it no longer pops up over the main menu (the OK
+// row could sit on top of the menu behind it). ui.whatsnew_seen still tracks
+// the last acknowledged revision.
 #include "port/types.h"
 #include "Menu.h"
 #include "Graphics.h"
@@ -17,18 +19,11 @@ extern Menu *FrontendMenu_GetActiveMenu(void);
 
 Menu g_menuWhatsNew;
 Menu *g_whatsNewReturn;
-static int g_whatsNewSeenAtOpen;
-static bool g_whatsNewShowAll;
 
 void FrontendMenu_EnterWhatsNew(Menu *m, int)
 {
     if (g_whatsNewReturn != NULL)
         m->pParent = g_whatsNewReturn;
-    // Fresh install (no key at all): show the current revision's notes, not
-    // the whole history - "what's new since your upgrade" is version-aware.
-    g_whatsNewSeenAtOpen = Sys_GetOption("ui.whatsnew_seen", -1);
-    if (g_whatsNewSeenAtOpen < 0)
-        g_whatsNewSeenAtOpen = kWhatsNewRevision - 1;
 }
 
 // Seen is recorded on dismissal, not when the screen is queued: notes the
@@ -51,10 +46,7 @@ void FrontendMenu_DrawWhatsNew(Menu *)
     // Adaptive spacing: at most 13 lines fit at the full 24-unit step above the
     // OK row at 420; beyond that the step tightens (floored at 18, font 1's line
     // height at 480p) so the show-all screen stays on-frame as the log grows.
-    int drawable = 0;
-    for (int i = 0; i < n; i++)
-        if (g_whatsNewShowAll || lines[i].revision > g_whatsNewSeenAtOpen)
-            drawable++;
+    int drawable = n;
     int step = (int)(g_pGraphics->resY * 24) / 480;
     if (drawable > 0) {
         int fit = ((int)(g_pGraphics->resY * 420) / 480 - y) / drawable;
@@ -63,8 +55,6 @@ void FrontendMenu_DrawWhatsNew(Menu *)
         if (step < floorStep) step = floorStep;
     }
     for (int i = 0; i < n; i++) {
-        if (!g_whatsNewShowAll && lines[i].revision <= g_whatsNewSeenAtOpen)
-            continue;   // auto-show after an upgrade lists only what is new
         Font_DrawText(1, (char *)lines[i].text, x, y, (int *)g_colourText0x0052496c, 0x11);
         y += step;
     }
@@ -86,23 +76,10 @@ Menu *FrontendMenu_GetWhatsNew(void)
 void FrontendMenu_OpenWhatsNew(Menu *, MenuItem *)
 {
     g_whatsNewReturn = FrontendMenu_GetActiveMenu();
-    g_whatsNewShowAll = true;
     Menu_SetNextAction(FrontendMenu_GetWhatsNew());
 }
 
 void FrontendMenu_BuildWhatsNew(void)
 {
     (void)FrontendMenu_GetWhatsNew();
-}
-
-// Auto-show once per changelog revision when the main menu is entered; the
-// Screen page row reopens it any time.
-void WhatsNew_MaybeAutoShow(void)
-{
-    int seen = Sys_GetOption("ui.whatsnew_seen", -1);
-    if (seen >= kWhatsNewRevision)
-        return;
-    g_whatsNewReturn = NULL;   // keep the built parent: the main menu
-    g_whatsNewShowAll = false;
-    Menu_SetNextAction(FrontendMenu_GetWhatsNew());
 }
