@@ -11,6 +11,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 /**
  * Renders the effects screen under Robolectric's native graphics and saves a
@@ -18,7 +19,8 @@ import org.robolectric.annotation.Config
  * as pixels, not just compiled. Not a substitute for on-device rendering.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35], graphicsMode = Config.GraphicsMode.Mode.NATIVE)
+@Config(sdk = [35])
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class EffectsScreenshotTest {
     @get:Rule
     val rule = createAndroidComposeRule<EffectsActivity>()
