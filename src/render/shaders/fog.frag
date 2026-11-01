@@ -67,9 +67,18 @@ void main()
             vec2 bdir = beams[i].xy;
             float blen = max(beams[i].z, 0.05);
             float wedge = 0.0;
+            float tAxial = 0.0;
             if (dot(bdir, bdir) > 1e-6) {
                 float a = dot(dl, bdir);
                 float l = dl.x * bdir.y - dl.y * bdir.x;
+                // NOTE (2026-11-01 investigation): a perspective-correct width
+                // scales with 1/zSeg(t) = (1+(q-1)t)/zLamp AND the transverse
+                // fraction (sin of the beam/view angle); applying the z-scale
+                // without the transverse term over-widens near-axial beams
+                // (shot3 wash regressed 12.4% -> 13.7% coverage, left-half
+                // 5.7k -> 16k) and narrows transverse ones. The calibrated
+                // 0.015 + 0.35a linear form stays until the full form lands.
+                float t0 = clamp(a / blen, 0.0, 1.0);
                 float width = 0.015 + max(a, 0.0) * 0.35;
                 float lat = clamp(l / width, -1.0, 1.0);
                 float lateral = 1.0 - lat * lat;
@@ -85,12 +94,21 @@ void main()
                 // same energy over q times the area means q times dimmer:
                 // intensity ~ z(a)/zLamp = 1/(1 + (q-1)*t). Beams ending in
                 // front of the near plane carry q = 1 and keep the full wedge.
-                float t = clamp(a / blen, 0.0, 1.0);
-                wedge = axial * lateral * lateral / (1.0 + 6.0 * max(a, 0.0) / blen) / (1.0 + (beams[i].w - 1.0) * t);
+                tAxial = t0;
+                wedge = axial * lateral * lateral / (1.0 + 6.0 * max(a, 0.0) / blen) / (1.0 + (max(beams[i].w, 1.0) - 1.0) * tAxial);
             }
             float gate = 1.0;
-            if (lightInfo[i].x > 0.0)
-                gate = step(lightInfo[i].x, depth);
+            if (lightInfo[i].x > 0.0) {
+                // Per-pixel segment depth, not lamp depth: a wall behind the
+                // lamp but in front of the beam's far segments must block
+                // their light. 1/viewZ interpolates linearly in screen space
+                // along the projected beam and the raw depth ref is affine in
+                // 1/viewZ, so the raw segment ref is exactly linear in t:
+                // lerp the lamp ref toward the beam-end ref (halos[i].w,
+                // <= 0 = unknown projection: keep the constant lamp gate).
+                float segRef = halos[i].w > 0.0 ? mix(lightInfo[i].x, halos[i].w, tAxial) : lightInfo[i].x;
+                gate = step(segRef, depth);
+            }
             // Beams only: the glow bubble was removed (user steering,
             // 2026-11-01 - "keep just the beams"). halos[] stays in the
             // uniform layout, pinned to the lamp CPU-side, but is unread here.

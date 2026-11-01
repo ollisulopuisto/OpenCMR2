@@ -109,6 +109,15 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
         {   float zGate = anchorView.z / 65536.0f + 0.5f;
             float d = (proj43 < 0.0f) ? proj33 + proj43 / zGate : 0.0f;
             fl->depthRef = d > 1.0f ? 1.0f : d; }
+        // Raw depth of the beam's far end (near-plane-clamped), same
+        // convention: the shader lerps depthRef -> beamEndRef along the wedge
+        // for a per-segment gate (1/z is linear in screen space, and the
+        // game's raw depth is proj33 + proj43/z, so the raw ref is exactly
+        // linear along the wedge). 0 when the projection is unknown.
+        {   float endZ = endView.z / 65536.0f;
+            if (endZ < 1.0039f) endZ = 1.0039f;   // LightField_ClipBeamToNearPlane's plane
+            float d = (proj43 < 0.0f && hasBeam && lampIn) ? proj33 + proj43 / endZ : 0.0f;
+            fl->beamEndRef = (d > 1.0f ? 1.0f : (d < 0.0f ? 0.0f : d)); }
         fl->intensity = src->intensity / 65536.0f;
         fl->r = src->r / 65536.0f;
         fl->g = src->g / 65536.0f;
@@ -127,20 +136,30 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
         // view axis shrinks to zero true length as it goes axial, so the
         // transverse direction's sign ambiguity there is invisible; the
         // extra fade band (below ~6 degrees off-axis) removes the rest.
-        // Perspective energy ratio: when the beam's 30-unit end is clipped at
-        // the near plane, the beam spears close past the camera; perspective
-        // spreads the same beam energy over a large screen area (the capped
-        // 0.6-length wash). Pass q = lamp depth / clip depth (>= 1) so the
-        // shader thins the wedge as the beam approaches: intensity z(a)/zLamp,
-        // i.e. energy-conserving spread, not a flat-opacity trim. Unclipped
-        // beams (end in front of the near plane) carry q = 1 - no change.
+        // Beam depth ratio q = lamp view depth / end view depth, for every
+        // beam (clipped or not). Two shader uses:
+        // - Per-pixel segment gate: 1/z interpolates linearly in screen space
+        //   along the projected beam, so the contributing segment's view depth
+        //   at wedge fraction t is zLamp / (1 + (q-1)*t); a wall behind the
+        //   lamp but in front of far segments must block their light (the
+        //   2026-11-01 occluder experiment: the lamp-anchored gate painted
+        //   13k pixels of a mid-depth wall with light from segments behind it).
+        // - Energy ratio for near-plane-clipped beams only (q > 1): the beam
+        //   spears close past the camera; perspective spreads the same beam
+        //   energy over a large screen area (the capped 0.6-length wash), so
+        //   the shader thins the wedge as the beam approaches: intensity
+        //   z(a)/zLamp, i.e. energy-conserving spread, not a flat-opacity
+        //   trim. The shader clamps q to >= 1 for this use, so unclipped
+        //   beams keep their previous energy exactly.
         float beamQ = 1.0f;
-        if (hasBeam && lampIn && !endIn && vView.z - endView.z > 0) {
+        if (hasBeam && lampIn) {
             const double lampZ = vView.z / 65536.0;
+            double endZ = endView.z / 65536.0;
             const double clipZ = 1.0039;   // LightField_ClipBeamToNearPlane's plane (0x10100)
-            if (lampZ > clipZ) {
-                double q = lampZ / clipZ;
-                beamQ = (float)(q > 16.0 ? 16.0 : q);
+            if (endZ < clipZ) endZ = clipZ;   // clipped/camera-crossing: end at the near plane
+            if (lampZ > 0.0) {
+                double q = lampZ / endZ;
+                beamQ = (float)(q < 0.05 ? 0.05 : (q > 16.0 ? 16.0 : q));
             }
         }
         {   float transverse = 0.0f, bdvx = 0.0f, bdvy = 0.0f;

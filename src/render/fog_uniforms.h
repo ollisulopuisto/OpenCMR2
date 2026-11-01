@@ -9,6 +9,8 @@
 // reliance - so the pushed block never carries stale or unwritten lanes.
 #include "port/gfx.h"
 #include "render/fog_math.h"
+#include <cstdio>
+#include <cstdlib>
 
 struct FogUniformParams {
     float density;        // Fog_Density(amount)
@@ -26,6 +28,11 @@ struct FogUniformParams {
 inline void FogUniforms_Pack(float *out, const FogUniformParams &p,
                              const GfxFogLight *lights, int lightCount) {
     out[0] = p.density;        out[1] = p.glow;        out[2] = p.nearZ;      out[3] = p.farZ;
+    if (getenv("FOG_DEBUG")) {
+        fprintf(stderr, "FOGDBG nearZ=%.4f farZ=%.4f aspect=%.3f strength=%.2f\n", p.nearZ, p.farZ, p.aspect, p.lightStrength);
+        for (int i = 0; i < lightCount && i < 8; i++)
+            fprintf(stderr, "FOGDBG L%d ref=%.4f endRef=%.4f q=%.3f len=%.3f\n", i, lights[i].depthRef, lights[i].beamEndRef, lights[i].beamFade, lights[i].beamLen);
+    }
     out[4] = p.sunX;           out[5] = p.sunY;        out[6] = p.sunVisible; out[7] = p.aspect;
     out[8] = p.clearDistance;  out[9] = p.lightStrength; out[10] = 0.0f;      out[11] = 0.0f;
     for (int i = 0; i < 8; i++) {
@@ -46,7 +53,7 @@ inline void FogUniforms_Pack(float *out, const FogUniformParams &p,
         out[108 + i*4 + 0] = on ? L->haloX : 0.0f;
         out[108 + i*4 + 1] = on ? L->haloY : 0.0f;
         out[108 + i*4 + 2] = on ? L->haloRef : 0.0f;
-        out[108 + i*4 + 3] = 0.0f;
+        out[108 + i*4 + 3] = on ? L->beamEndRef : 0.0f;   // beam-end depth ref for the segment gate
     }
 }
 #endif
