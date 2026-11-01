@@ -18,7 +18,7 @@ import org.robolectric.annotation.Config
  * as pixels, not just compiled. Not a substitute for on-device rendering.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35], graphicsMode = Config.GraphicsMode.NATIVE)
+@Config(sdk = [35], graphicsMode = Config.GraphicsMode.Mode.NATIVE)
 class EffectsScreenshotTest {
     @get:Rule
     val rule = createAndroidComposeRule<EffectsActivity>()
