@@ -99,7 +99,7 @@ class TouchControls(private val activity: Activity, parent: ViewGroup) : InputMa
         val avoid = ControllerProfiles.touchAvoidCutout(activity)
         val marginX = (width * 0.25f * ControllerProfiles.touchMarginX(activity).coerceIn(0f, 1f)).toInt()
         val marginY = (height * 0.25f * ControllerProfiles.touchMarginY(activity).coerceIn(0f, 1f)).toInt()
-        var size = (minOf(width, height) * 0.55f * ControllerProfiles.touchScale(activity).coerceIn(0.6f, 1.6f)).toInt()
+        var size = (minOf(width, height) * 0.55f * ControllerProfiles.touchScale(activity).coerceIn(0.8f, 1.6f)).toInt()
         val half = (width - 2 * marginX) / 2
         if (half > 0) size = minOf(size, half)
         for ((pad, isLeft) in pads) {

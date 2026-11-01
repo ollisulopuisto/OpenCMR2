@@ -76,7 +76,7 @@ class ControllerActivity : ComponentActivity(), InputManager.InputDeviceListener
                         }
                         Text(stringResource(R.string.touch_layout_title),
                             style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
-                        SettingSlider(R.string.touch_size, touchScale, 0.6f..1.6f, { "%.0f%%".format(it * 100) }) {
+                        SettingSlider(R.string.touch_size, touchScale, 0.8f..1.6f, { "%.0f%%".format(it * 100) }) {
                             touchScale = it; ControllerProfiles.touchScale(this@ControllerActivity, it)
                         }
                         SettingSlider(R.string.touch_edge, touchMarginX, 0f..1f, { "%.0f%%".format(it * 100) }) {
