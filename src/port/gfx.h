@@ -313,6 +313,7 @@ struct GfxFogLight {
     float beamLen;      // wedge length in the same units (foreshortened ~0 head-on)
     float haloX, haloY; // screen uv of the glow anchor, a few units forward along the beam (the lit air in front of the car)
     float haloRef;      // depth-buffer value for the halo gate; <= 0 disables it
+    float beamFade;     // perspective energy ratio q = lamp depth / beam-end (clip) depth, >= 1; 1 = no thinning (beam end in front of the near plane)
 };
 // Up to 8 car lights for the fog pass; count 0 clears. Called per view per frame.
 void Gfx_SetFogLights(const GfxFogLight *lights, int count);

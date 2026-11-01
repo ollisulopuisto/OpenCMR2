@@ -127,6 +127,22 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
         // view axis shrinks to zero true length as it goes axial, so the
         // transverse direction's sign ambiguity there is invisible; the
         // extra fade band (below ~6 degrees off-axis) removes the rest.
+        // Perspective energy ratio: when the beam's 30-unit end is clipped at
+        // the near plane, the beam spears close past the camera; perspective
+        // spreads the same beam energy over a large screen area (the capped
+        // 0.6-length wash). Pass q = lamp depth / clip depth (>= 1) so the
+        // shader thins the wedge as the beam approaches: intensity z(a)/zLamp,
+        // i.e. energy-conserving spread, not a flat-opacity trim. Unclipped
+        // beams (end in front of the near plane) carry q = 1 - no change.
+        float beamQ = 1.0f;
+        if (hasBeam && lampIn && !endIn && vView.z - endView.z > 0) {
+            const double lampZ = vView.z / 65536.0;
+            const double clipZ = 1.0039;   // LightField_ClipBeamToNearPlane's plane (0x10100)
+            if (lampZ > clipZ) {
+                double q = lampZ / clipZ;
+                beamQ = (float)(q > 16.0 ? 16.0 : q);
+            }
+        }
         {   float transverse = 0.0f, bdvx = 0.0f, bdvy = 0.0f;
             if (hasBeam) {
                 FixVector bd;
@@ -148,6 +164,7 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
                 float bl = sqrtf(bx * bx + by * by);
                 fl->beamX = bx / bl; fl->beamY = by / bl; fl->beamLen = len;
             } else { fl->beamX = 0.0f; fl->beamY = 0.0f; fl->beamLen = 0.0f; }
+            fl->beamFade = fl->beamLen > 1e-4f ? beamQ : 1.0f;
         }
         // Glow bubbles removed (user steering, 1 Nov 2026: "keep just the
         // beams"). The halo slots stay in the uniform layout (both render

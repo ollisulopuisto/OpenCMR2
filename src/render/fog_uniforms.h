@@ -42,7 +42,7 @@ inline void FogUniforms_Pack(float *out, const FogUniformParams &p,
         out[76 + i*4 + 0] = on ? L->beamX : 0.0f;
         out[76 + i*4 + 1] = on ? L->beamY : 0.0f;
         out[76 + i*4 + 2] = on ? L->beamLen : 0.0f;
-        out[76 + i*4 + 3] = 0.0f;
+        out[76 + i*4 + 3] = on ? L->beamFade : 1.0f;
         out[108 + i*4 + 0] = on ? L->haloX : 0.0f;
         out[108 + i*4 + 1] = on ? L->haloY : 0.0f;
         out[108 + i*4 + 2] = on ? L->haloRef : 0.0f;
