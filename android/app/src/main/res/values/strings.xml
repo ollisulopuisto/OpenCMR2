@@ -54,7 +54,7 @@
     <string name="touch_cutout">Keep clear of camera and display cutouts</string>
     <string name="touch_reset">Reset layout</string>
     <string name="effects_title">Effects</string>
-    <string name="effects_intro">Passed to the game as launch options the next time it starts. Default keeps the game's own setting and passes nothing.</string>
+    <string name="effects_intro">Passed to the game as launch options the next time it starts. Default keeps the game\'s own setting and passes nothing.</string>
     <string name="effects_tunnel">Tunnel vision strength</string>
     <string name="effects_speed_fov">Speed FOV widening (camera angle)</string>
     <string name="effects_lines">Radial lines in the tunnel zone</string>
