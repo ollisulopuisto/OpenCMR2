@@ -152,6 +152,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.kotlinx.coroutines.android)
+    testImplementation(libs.junit)
     implementation(libs.radialgamepad) {
         // Only its build used the old Android extensions plugin.
         exclude(group = "org.jetbrains.kotlin", module = "kotlin-android-extensions-runtime")

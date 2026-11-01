@@ -1,3 +1,38 @@
+# Android effects screen (1 November 2026)
+
+Lane: feat/android-effects-gui, Android-only (android/) plus one workflow
+change, no game code, physics, originals or desktop files touched. User
+request (voice, 31 October): expose the enhancements in the Android GUI,
+prioritising tunnel vision/speed lines, car air trails, camera-angle
+changes, and "definitely 3D trees and animated spectators"; fog tentative.
+
+Design: a launcher Effects screen (EffectsActivity + EffectSettings) stores
+tri-state choices (Default/On/Off, Default passes nothing) in their own
+SharedPreferences and hands them to the game as launch flags in
+GameActivity.getArguments. CLI flags win over opencmr2.ini by design
+(Sys_GetOption), so the ini and the desktop GUI are untouched and every
+change applies on the next game start, which is every launch from the
+launcher. v1 rows: tunnel vision strength 0..200 (off = game default 130),
+radial tunnel lines, vapor trails, fog. Flag syntax matches
+src/platform/enhancements.h exactly; the pure argument builder has JVM unit
+tests (first Android-side tests; junit added as a test dependency).
+
+NOT in v1, deliberately: 3D trees and animated spectators need a prepared
+scenery pack, and preparing one requires the desktop build (the platform
+layer runs Python tooling; without a pack the game refuses to start), so
+exposing those toggles on Android would break launch until a pack delivery
+route exists. Camera-angle changes were an ambiguous transcript item and
+stay out until the user confirms which cameras. F10 assessment: the tuning
+panel is keyboard-driven and unreachable on touch-only Android; the
+launcher screen supersedes it there, so nothing is removed.
+
+CI: the Android leg now also runs on pull requests that touch android/**
+(new android-changes gate job; other PRs skip it, so no extra build time),
+and the leg runs the new unit tests. Before this, Kotlin changes were first
+compiled after merge. Kotlin was NOT compiled locally (no SDK in the
+authoring environment); the PR's android leg is the first compile. Native
+on-device appearance and effect behaviour remain UNVERIFIED.
+
 # Fog-light beam/glow geometry repair (1 November 2026)
 
 Update (1 Nov 2026, later): glow bubbles REMOVED on user steering

@@ -160,8 +160,34 @@ jobs:
           path: dist/*
           if-no-files-found: error
 
+  # Pull requests only pay for the Android build when they touch the app;
+  # every other event always builds it.
+  android-changes:
+    timeout-minutes: 5
+    runs-on: ubuntu-24.04
+    outputs:
+      android: ${{ steps.diff.outputs.android }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: diff
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch --quiet origin "${{ github.base_ref }}"
+            if git diff --name-only "origin/${{ github.base_ref }}...HEAD" | grep -q '^android/'; then
+              echo 'android=true' >> "$GITHUB_OUTPUT"
+            else
+              echo 'android=false' >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo 'android=true' >> "$GITHUB_OUTPUT"
+          fi
+
   android:
-    if: github.event_name != 'pull_request'
+    needs: android-changes
+    if: needs.android-changes.outputs.android == 'true'
     timeout-minutes: 90
     runs-on: ubuntu-24.04
     steps:
@@ -195,7 +221,7 @@ jobs:
           OPENCMR2_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           OPENCMR2_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           OPENCMR2_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleRelease testDebugUnitTest
       - name: Package
         run: |
           mkdir -p dist
