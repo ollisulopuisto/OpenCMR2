@@ -97,6 +97,21 @@ jobs:
           path: dist/*
           if-no-files-found: error
 
+  ios-sim:
+    # Compile-only PoC: does the tree build for the iOS Simulator SDK (no app
+    # bundle, signing, boot, or pixel claims yet). Same gating as macos.
+    if: github.event_name != 'pull_request'
+    timeout-minutes: 60
+    runs-on: macos-14
+    steps:
+      - run: brew install ninja glslang spirv-cross
+      - uses: actions/checkout@v4
+      - run: python3 -m venv .ci-python
+      - run: .ci-python/bin/python -m pip install -r tools/scenery-patch/requirements.txt
+      - run: echo "$GITHUB_WORKSPACE/.ci-python/bin" >> "$GITHUB_PATH"
+      - run: cmake --preset ios-sim -DOPENCMR2_VENDORED_SDL=ON -DOPENCMR2_METALFX=OFF
+      - run: cmake --build --preset ios-sim
+
   macos:
     if: github.event_name != 'pull_request'
     timeout-minutes: 60
