@@ -135,9 +135,9 @@ int main(int argc, char **argv)
     require(lights[0].y > 0.45f && lights[0].y < 0.55f, "lamp v");
     require(lights[0].beamLen < 0.02f, "axial beam: wedge collapses to the halo (no flip-prone direction)");
     require(lights[0].depthRef > 0.626f && lights[0].depthRef < 0.629f, "self-occlusion bias: ref half a unit behind the lamp");
-    require(lights[0].haloX > 0.27f && lights[0].haloX < 0.33f && lights[0].haloY > 0.45f && lights[0].haloY < 0.55f,
-            "halo anchor 3 units in front of the lamp");
-    require(lights[0].haloRef > 0.57f && lights[0].haloRef < 0.60f, "halo gate ref at its forward anchor");
+    require(lights[0].haloX > 0.32f && lights[0].haloX < 0.36f && lights[0].haloY > 0.45f && lights[0].haloY < 0.55f,
+            "halo anchor 1.25 units in front of the lamp");
+    require(lights[0].haloRef > 0.60f && lights[0].haloRef < 0.62f, "halo gate ref at its forward anchor");
 
     // Same lamp, beam yawed 20 degrees toward -X (transverse fraction 0.34):
     // the accepted chase look - a real wedge running screen-left, no flip.
@@ -198,9 +198,9 @@ int main(int argc, char **argv)
     int bn = FogBeam_ProjectLights(blights, LIGHT_FIELD_MAX, &view, (float)W, (float)H, 1.0f/1.5f, -0.5f/1.5f);
     require(bn == 1, "lamp inside the near plane keeps its light");
     require(blights[0].depthRef > 0.43f && blights[0].depthRef < 0.46f, "clipped anchor gated at 1.5 units out");
-    require(blights[0].haloX > 0.18f && blights[0].haloX < 0.25f && blights[0].haloY > 0.45f && blights[0].haloY < 0.55f,
-            "bonnet halo anchor forward, on screen");
-    require(blights[0].haloRef > 0.52f && blights[0].haloRef < 0.55f, "bonnet halo gate ref");
+    require(blights[0].haloX > 0.08f && blights[0].haloX < 0.15f && blights[0].haloY > 0.45f && blights[0].haloY < 0.55f,
+            "bonnet halo anchor forward (depth-clamped to 2.56 units), on screen");
+    require(blights[0].haloRef > 0.44f && blights[0].haloRef < 0.47f, "bonnet halo gate ref");
 
     GfxViewport vp = { 0, 0, W, H, 0.f, 1.f };
     Gfx_SetViewport(&vp);
@@ -245,7 +245,8 @@ int main(int argc, char **argv)
     Gfx_SetFogLights(&occluded, 1);
     putQuad();
     drawAndRead(gated);
-    // 4. Lamp inside the near plane (bonnet case): its clipped wedge must render.
+    // 4. Lamp inside the near plane (bonnet case): its clipped light must render
+    // (the forward-anchored halo; the near-axial wedge collapses to it).
     static DWORD bonnet[W * H];
     Gfx_SetFogLights(blights, bn);
     putQuad();
@@ -270,7 +271,7 @@ int main(int argc, char **argv)
     require(memcmp(control, lit, sizeof control) != 0, "beam changes pixels");
     // Axial beam: the halo glows at its forward anchor (px ~29,32) and no
     // long wedge reaches 24px from the lamp.
-    require(red(lit,29,32) > red(control,29,32) + 24, "axial beam: forward halo glows");
+    require(red(lit,33,32) > red(control,33,32) + 24, "axial beam: forward halo glows (px ~33)");
     require(red(lit,12,32) <= red(control,12,32) + 8, "axial beam: no long wedge");
     // Yawed beam: the wedge path brightens well beyond the control.
     require(red(yawed,12,32) > red(control,12,32) + 24, "yawed beam: wedge path brightens");
@@ -284,9 +285,9 @@ int main(int argc, char **argv)
     require(abs(red(gated,12,32) - red(control,12,32)) <= 8, "occluded lamp: beam path gated off");
     require(abs(red(gated,36,32) - red(control,36,32)) <= 8, "occluded lamp: halo gated off");
     // Bonnet case: the forward halo brightens the frame it would have missed.
-    require(red(bonnet,20,32) > red(control,20,32) + 24, "near-plane lamp: forward halo renders");
+    require(red(bonnet,10,32) > red(control,10,32) + 24, "near-plane lamp: forward halo renders (px ~10)");
     // Look-back: the halo glows at the lamp (px ~60,32); no wedge, no upper-left.
-    require(red(rlook,67,32) > red(control,67,32) + 24, "look-back: halo at its forward anchor (px ~67)");
+    require(red(rlook,62,32) > red(control,62,32) + 24, "look-back: halo at its forward anchor (px ~62)");
     require(red(rlook,84,32) <= red(control,84,32) + 8, "look-back: no right-side wedge");
     require(red(rlook,2,2) <= red(control,2,2) + 8, "look-back: no upper-left glow");
     require(red(rlook,12,32) <= red(control,12,32) + 8, "look-back: no left-side spill");
