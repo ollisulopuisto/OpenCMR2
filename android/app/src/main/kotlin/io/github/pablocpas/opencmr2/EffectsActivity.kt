@@ -69,7 +69,7 @@ class EffectsActivity : ComponentActivity() {
                             error = sceneryError,
                             onImport = { tree -> importScenery(tree) },
                             onRemove = {
-                                SceneryPack.remove(this)
+                                SceneryPack.remove(this@EffectsActivity)
                                 sceneryMappings = 0
                                 sceneryError = null
                             },
