@@ -28,6 +28,17 @@ int main(){
     }
     CHECK(Fog_ViewZ(0.5f, 0.f, 0.f) == 0.f);          // unknown projection
     CHECK(Fog_ViewZ(0.5f, 2.f, 1.f) == 0.f);          // far <= near rejected
+    // GL half-range buffer: the same distances survive the 0.5+0.5*d packing the
+    // GL depth buffer applies to the game's D3D-style NDC z.
+    for (float nearZ : {0.1f, 0.5f, 1.0f}) for (float farZ : {150.f, 400.f}) {
+        for (float z = nearZ * 1.01f; z < farZ; z *= 1.7f) {
+            float depth = farZ / (farZ - nearZ) * (1.f - nearZ / z);
+            float glBuffer = 0.5f + 0.5f * depth;
+            float got = Fog_ViewZGlBuffer(glBuffer, nearZ, farZ);
+            CHECK(std::fabs(got - z) / z < 0.001f);
+        }
+    }
+    CHECK(Fog_ViewZGlBuffer(0.75f, 0.f, 0.f) == 0.f); // unknown projection stays off
     // Raw-depth fallback: nothing below depth 0.990, heavier toward the far plane, zero density zero.
     CHECK(Fog_FactorRawDepth(0.989f, 0.03f) == 0.f);
     CHECK(Fog_FactorRawDepth(1.0f, 0.f) == 0.f);

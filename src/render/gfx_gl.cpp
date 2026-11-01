@@ -291,6 +291,7 @@ struct Executor : GfxExecutor {
     float speedFocusTarget = 0.0f, speedFocusSmooth = 0.0f; std::chrono::steady_clock::time_point speedFocusTime{}; bool speedFocusTimed = false; // tunnel vision, same easing as SDL_GPU
     float speedStreakTarget = 0.0f, speedStreakSmooth = 0.0f, speedStreakClock = 0.0f; std::chrono::steady_clock::time_point speedStreakTime{}; bool speedStreakTimed = false;
     float glCarFocusRaw = -1.0f, glCarDepth = 0.0f;   // dof_focus_car: raw GL depth of the followed car this frame (-1 none)
+    float glFogNearZ = 0.0f, glFogFarZ = 0.0f;   // race-camera projection recovery for the GL fog pass (0 = unknown)
     bool effectsRaceFrame = true; // set per frame before ApplyEffects: depth blur is a race effect, never run on menu/preview frames
     int motionMix = 0, bloomAmount = 0, dofFocus = 50, dofRange = 30, dofBlur = 0, raysAmount = 0, fogAmount = 100, fogGlow = 60, fogClearDistance = 0;
     float grade[4] = {0, 0, 1, 1}, grime[4] = {};
@@ -1323,6 +1324,12 @@ struct Executor : GfxExecutor {
                     else {weather.clear();weatherTicks=0;weatherCarry=0;historyValid=false;}
                     effectsRaceFrame=c.raceWorld;
                     glCarFocusRaw=-1.0f;glCarDepth=0.0f;
+                    glFogNearZ=0.0f;glFogFarZ=0.0f;
+                    if(c.raceWorld)for(const GfxCommand &oc:frame.commands)
+                        if(oc.type==GFX_CMD_DRAW&&oc.target==NULL){   // any main-pass draw carries the race camera projection
+                            const GfxDrawState &os=frame.states[oc.state];
+                            if(Projection_NearFar(os.projection._33,os.projection._34,os.projection._43,&glFogNearZ,&glFogFarZ))break;
+                        }
                     if(c.raceWorld&&c.playerObject!=0&&Sys_GetOption("video.dof_focus_car",0)!=0){   // same car-depth rule as SDL_GPU
                         DofFocusAccum acc;float vn=0,vf=0;bool haveProj=false;
                         for(const GfxCommand &oc:frame.commands)

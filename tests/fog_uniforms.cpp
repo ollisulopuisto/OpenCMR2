@@ -64,9 +64,11 @@ int main() {
     p.density = 0.03f; p.glow = 1.0f; p.nearZ = 1.5f; p.farZ = 900.0f;
     p.sunX = 0.4f; p.sunY = 0.3f; p.sunVisible = 1.0f; p.aspect = 1.6f;
     p.clearDistance = 60.0f; p.lightStrength = 1.0f;
+    p.depthHalfRange = 1.0f;
 
     FogUniforms_Pack(u, p, lights, 8);   // overran the old 92-float layout
     CHECK(u[0] == 0.03f && u[2] == 1.5f && u[3] == 900.0f);
+    CHECK(u[8] == 60.0f && u[9] == 1.0f && u[10] == 1.0f && u[11] == 0.0f);   // extra: clear, strength, half-range flag
     CHECK(u[104] == 0.31f + 7 && u[105] == 0.41f + 7 && u[106] == 0.51f + 7);   // beams[7] tail lanes
     CHECK(u[107] == 0.0f);
     CHECK(u[12 + 7 * 4] == 0.10f + 7 && u[44 + 7 * 4] == 0.30f + 7 * 0.01f);     // lights[7], depthRef
