@@ -53,18 +53,33 @@ void Windshield_UpdateView(int view, int slot)
     // resolve failed for keep their glass untouched. slot == local car index
     // (same mapping the wiper state uses). Independent of the wiper toggle.
     int glassState = -1;
+    int diagWslot = -1, diagDamaged = -1, diagBroken = -1;
     if (Sys_GetOption("video.windshield_cracks", 1) != 0 && slot >= 0 && slot <= 1) {
         int wslot = -1;
         if (WindshieldGlass_GetInfo(slot, NULL, &wslot, NULL, NULL, NULL)) {
             CarPartSet *parts = StageTiming_GetCarReplayRecord(slot);
             if (parts != NULL) {
-                glassState = parts->partBroken[wslot] != 0 ? 2
-                           : parts->partDamaged[wslot] != 0 ? 1 : 0;
+                diagWslot = wslot;
+                diagBroken = parts->partBroken[wslot] != 0;
+                diagDamaged = parts->partDamaged[wslot] != 0;
+                glassState = diagBroken ? 2 : diagDamaged ? 1 : 0;
                 WindshieldGlass_ApplyDamageState(slot, glassState);
             }
         }
     }
-    g_windshieldGlassState[view & (WINDSHIELD_MAX_VIEWS - 1)] = glassState;
+    int mview = view & (WINDSHIELD_MAX_VIEWS - 1);
+    if (g_windshieldGlassState[mview] != glassState) {
+        // State-change diagnostics (low volume, transitions only): separates
+        // "no cracks/dirt because the resolved window is already broken"
+        // from selection and accumulation problems in native run logs.
+        static const char *const kStateNames[4] = { "intact", "damaged", "broken", "off/unresolved" };
+        int prev = g_windshieldGlassState[mview];
+        Sys_Log("windshield glass: view %d slot %d state %s (was %s); wslot %d damaged %d broken %d; dirt total %d; video.windscreen_dirt %d",
+                view, slot, kStateNames[glassState < 0 ? 3 : glassState],
+                kStateNames[prev < 0 ? 3 : prev], diagWslot, diagDamaged, diagBroken,
+                Windshield_TotalDirt(m), Sys_GetOption("video.windscreen_dirt", 40));
+        g_windshieldGlassState[mview] = glassState;
+    }
 
     if (Sys_GetOption("video.windscreen_wipers", 1) == 0 || slot < 0 || slot > 1)
         return;   // option off: the model's blades park; glass keeps its dirt
@@ -110,9 +125,20 @@ extern Graphics *g_pGraphics;
 void Windshield_DrawOverlay(int view, int resX, int resY)
 {
     WindshieldMap *m = &g_windshieldMaps[view & (WINDSHIELD_MAX_VIEWS - 1)];
-    if (!Windshield_OverlayVisible(g_windshieldGlassState[view & (WINDSHIELD_MAX_VIEWS - 1)]))
-        return;   // broken glass: the real swapped texture shows, dirt film off
-    if (Windshield_TotalDirt(m) == 0)
+    int mview = view & (WINDSHIELD_MAX_VIEWS - 1);
+    // Draw-gating diagnostics (low volume, transitions only): why the dirt
+    // overlay is not on screen - broken glass suppresses it, no dirt means
+    // the accumulation sources never landed.
+    int reason = !Windshield_OverlayVisible(g_windshieldGlassState[mview]) ? 1
+               : Windshield_TotalDirt(m) == 0 ? 2 : 0;
+    static int s_lastDrawReason[WINDSHIELD_MAX_VIEWS] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+    if (s_lastDrawReason[mview] != reason) {
+        static const char *const kReasons[3] = { "drawing", "skipped: broken glass", "skipped: no dirt" };
+        Sys_Log("windshield dirt overlay: view %d %s (glass state %d, dirt total %d)",
+                view, kReasons[reason], g_windshieldGlassState[mview], Windshield_TotalDirt(m));
+        s_lastDrawReason[mview] = reason;
+    }
+    if (reason != 0)
         return;
     if (g_windshieldTex == NULL) {
         g_windshieldTex = Gfx_CreateTexture(WINDSHIELD_MAP_W, WINDSHIELD_MAP_H, GFX_FORMAT_BGRA8, 1, 0);
