@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstring>
 #ifdef _WIN32
+#include <intrin.h>  // before windows.h: clang-MSVC declares _Interlocked* as builtins; including intrin.h first avoids conflicting winnt.h declarations
 #include <windows.h>
 #else
 #include <sys/mman.h>
