@@ -105,6 +105,8 @@ class EffectsActivity : ComponentActivity() {
                         getString(R.string.effects_scenery_no_manifest)
                     is SceneryPack.ImportException.Ambiguous ->
                         getString(R.string.effects_scenery_ambiguous, e.folders.joinToString())
+                    is SceneryPack.ImportException.Unsafe ->
+                        getString(R.string.effects_scenery_unsafe, e.reference)
                     is SceneryPack.ImportException.NoSpace ->
                         getString(R.string.setup_no_space,
                             Formatter.formatShortFileSize(this@EffectsActivity, e.needed),
