@@ -45,7 +45,7 @@ struct Menu {
     char cursor;            // 0x7
     Menu *pParent;          // 0x8  -1 passed to Menu_Init means none
     char defaultCursor;     // 0xc
-    BYTE layout;            // 0xd  1 = horizontal (prev/next on bits 2/3)
+    BYTE layout;            // 0xd  1 = cursor on the Up/Down bits, value adjust on Left/Right; 0 swaps the pairs
     BYTE flag0 : 1;         // 0xe  bit0 prev/next, bit1 left/right, bit2 select, bit3 back, bit4 wrap
     BYTE flag1 : 1;
     BYTE flag2 : 1;
@@ -53,7 +53,7 @@ struct Menu {
     BYTE flag4 : 1;
     BYTE flag5 : 1;
     BYTE flag6 : 1;         // userData == -1
-    BYTE flag7 : 1;
+    BYTE flag7 : 1;         // both arrow pairs move the cursor (menus without adjustable values)
     BYTE moveFlags;         // 0xf  bit0 last move was up, bit1 last change was right
     BYTE value;             // 0x10 7-bit shared value of type 6 items; bit 7 kept by Menu_Init
     BYTE field_0x11[3];

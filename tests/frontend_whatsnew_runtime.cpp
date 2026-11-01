@@ -181,29 +181,61 @@ int main(int argc, char **argv)
         g_activeMenu = &g_testMainMenu;
     }
 
-    // ---- Quit confirmation: Up/Down must reach Yes ------------------------
-    // Mirrors FrontendMenu_BuildQuitConfirmation (game/FrontendMenus.cpp):
-    // vertical layout. With the original horizontal layout the Up/Down bits
-    // were read as value adjustment, so the cursor could never leave No
-    // (native report: arrows dead, Yes unselectable). Left/Right was the
-    // original escape hatch; vertical is what every other menu uses.
+    // ---- Quit confirmation: every arrow must reach Yes -------------------
+    // Mirrors FrontendMenu_BuildQuitConfirmation (game/FrontendMenus.cpp),
+    // driving Menu_Update with the production MENU_INPUT_* bits (game/Input.h)
+    // - the same word the dispatcher feeds in from DeviceInfo field_0x8. The
+    // bits are physical arrows: LEFT=0x01, RIGHT=0x02, UP=0x04, DOWN=0x08.
+    // The dialog opts into both-pairs navigation (flag7) because it has no
+    // adjustable values: whichever pair the layout maps to value adjustment
+    // would otherwise be dead (native reports: Up/Down dead in the original
+    // layout, only Left/Right after the layout swap). Safe default stays No.
     {
         g_quitCancelStub = 0;
         Menu quit, quitTarget;
         Menu_Init(&quitTarget, 0, -1, 0, NULL, NULL, 1, 0, 0);
-        Menu_Init(&quit, 0, 3, 0, &g_testMainMenu, NULL, 1, 1, 0);   // layout 0 = vertical
+        Menu_Init(&quit, 0, 3, 0, &g_testMainMenu, NULL, 1, 1, 0);   // layout 0
+        quit.flag7 = 1;                    // both arrow pairs navigate
         Menu_AddItemType2(&quit, 0, 5, &quitTarget, 0, 0);           // Yes -> quit transition
         Menu_AddItemType1(&quit, 0, 4, (MenuItemAction)QuitCancelStub, 0);  // No
         quit.cursor = 1;                // EnterQuitConfirmation forces No
         Menu_Update(&quit, 0);
-        CHECK(Menu_Update(&quit, 0x01) == NULL);            // Up
-        CHECK(quit.cursor == 0);                            // Yes highlighted
-        CHECK(Menu_Update(&quit, 0x02) == NULL);            // Down
-        CHECK(quit.cursor == 1);                            // back on No
-        CHECK(Menu_Update(&quit, 0x01) == NULL);            // Up again
+        CHECK(quit.cursor == 1);                            // safe default: No
+        CHECK(Menu_Update(&quit, MENU_INPUT_UP) == NULL);   // Up reaches Yes
         CHECK(quit.cursor == 0);
-        CHECK(Menu_Update(&quit, 0x10) == &quitTarget);     // select Yes: transition
+        CHECK(Menu_Update(&quit, MENU_INPUT_DOWN) == NULL); // Down back to No
+        CHECK(quit.cursor == 1);
+        CHECK(Menu_Update(&quit, MENU_INPUT_LEFT) == NULL); // Left reaches Yes
+        CHECK(quit.cursor == 0);
+        CHECK(Menu_Update(&quit, MENU_INPUT_RIGHT) == NULL);// Right back to No
+        CHECK(quit.cursor == 1);
+        CHECK(Menu_Update(&quit, MENU_INPUT_UP) == NULL);
+        CHECK(quit.cursor == 0);
+        CHECK(Menu_Update(&quit, MENU_INPUT_SELECT) == &quitTarget);  // select Yes: transition
         CHECK(g_quitCancelStub == 0);
+    }
+
+    // ---- Menu machine regression: the bit mapping itself ------------------
+    // Without flag7 the pairs still swap with the layout: layout 1 navigates
+    // with Up/Down (Left/Right adjust values, dead on type-1/2 items),
+    // layout 0 navigates with Left/Right.
+    {
+        Menu probe, probeTarget;
+        Menu_Init(&probeTarget, 0, -1, 0, NULL, NULL, 1, 0, 0);
+        Menu_Init(&probe, 0, 3, 0, &g_testMainMenu, NULL, 1, 1, 1);   // layout 1
+        Menu_AddItemType2(&probe, 0, 5, &probeTarget, 0, 0);
+        Menu_AddItemType1(&probe, 0, 4, (MenuItemAction)QuitCancelStub, 0);
+        probe.cursor = 1;
+        Menu_Update(&probe, 0);
+        CHECK(Menu_Update(&probe, MENU_INPUT_LEFT) == NULL);  // value adjust: dead
+        CHECK(probe.cursor == 1);
+        CHECK(Menu_Update(&probe, MENU_INPUT_UP) == NULL);    // prev
+        CHECK(probe.cursor == 0);
+        probe.layout = 0;
+        CHECK(Menu_Update(&probe, MENU_INPUT_UP) == NULL);    // now value adjust: dead
+        CHECK(probe.cursor == 0);
+        CHECK(Menu_Update(&probe, MENU_INPUT_RIGHT) == NULL); // next
+        CHECK(probe.cursor == 1);
     }
 
     std::filesystem::current_path(old);
