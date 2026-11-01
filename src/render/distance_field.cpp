@@ -6,18 +6,23 @@
 
 namespace DistanceField {
 // Squared Euclidean distance transform (Felzenszwalb and Huttenlocher).
+// Bolt optimization: precompute f[q] + q*q, convert division by 2*(q-p) to
+// multiplication by 0.5f / (q-p), and use single-precision float for
+// intersection boundaries z. This avoids expensive double-precision conversions
+// and repeated float divisions in the inner loop.
 static void DistanceTransform1D(const float *f, float *d, int n, int *v,
-                                double *z) {
+                                float *z) {
   int k = 0;
   v[0] = 0;
-  z[0] = -1e30;
-  z[1] = 1e30;
+  z[0] = -1e30f;
+  z[1] = 1e30f;
   for (int q = 1; q < n; q++) {
-    double s;
+    float fq_plus_qq = f[q] + (float)(q * q);
+    float s;
     for (;;) {
       int p = v[k];
-      s = (((double)f[q] + (double)q * q) - ((double)f[p] + (double)p * p)) /
-          (2.0 * (q - p));
+      float inv_denom = 0.5f / (float)(q - p);
+      s = (fq_plus_qq - (f[p] + (float)(p * p))) * inv_denom;
       if (s > z[k])
         break;
       k--;
@@ -25,14 +30,14 @@ static void DistanceTransform1D(const float *f, float *d, int n, int *v,
     k++;
     v[k] = q;
     z[k] = s;
-    z[k + 1] = 1e30;
+    z[k + 1] = 1e30f;
   }
   k = 0;
   for (int q = 0; q < n; q++) {
     while (z[k + 1] < q)
       k++;
-    double dq = q - v[k];
-    d[q] = (float)std::min(dq * dq + f[v[k]], 1e20);
+    float dq = (float)(q - v[k]);
+    d[q] = std::min(dq * dq + f[v[k]], 1e20f);
   }
 }
 
@@ -40,7 +45,7 @@ static void DistanceTransform1D(const float *f, float *d, int n, int *v,
 // redundant vector allocations between the inside and outside distance passes.
 static void DistanceTransform(std::vector<float> &grid, int w, int h,
                               std::vector<float> &f, std::vector<float> &d,
-                              std::vector<double> &z, std::vector<int> &v) {
+                              std::vector<float> &z, std::vector<int> &v) {
   for (int x = 0; x < w; x++) {
     for (int y = 0; y < h; y++)
       f[y] = grid[(size_t)y * w + x];
@@ -71,7 +76,7 @@ std::vector<float> FromCoverage(const std::vector<float> &coverage, int w,
   // rasterization.
   const int n = std::max(w, h);
   std::vector<float> f(n), d(n);
-  std::vector<double> z(n + 1);
+  std::vector<float> z(n + 1);
   std::vector<int> v(n);
 
   DistanceTransform(toInside, w, h, f, d, z, v);
