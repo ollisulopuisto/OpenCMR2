@@ -17,6 +17,10 @@
 #include "port/sys.h"
 
 WindshieldMap g_windshieldMaps[WINDSHIELD_MAX_VIEWS];
+// Per-view state of the resolved front glass (0 intact, 1 damaged, 2 broken,
+// -1 feature off): drives the broken-glass overlay suppression.
+static int g_windshieldGlassState[WINDSHIELD_MAX_VIEWS];
+
 
 int StageObject_GetViewWeatherField54(int index);
 CarPartSet *StageTiming_GetCarReplayRecord(int index);
@@ -48,17 +52,19 @@ void Windshield_UpdateView(int view, int slot)
     // window (wiper-pivot classified), never a hardcoded part index; cars the
     // resolve failed for keep their glass untouched. slot == local car index
     // (same mapping the wiper state uses). Independent of the wiper toggle.
+    int glassState = -1;
     if (Sys_GetOption("video.windshield_cracks", 1) != 0 && slot >= 0 && slot <= 1) {
         int wslot = -1;
         if (WindshieldGlass_GetInfo(slot, NULL, &wslot, NULL, NULL, NULL)) {
             CarPartSet *parts = StageTiming_GetCarReplayRecord(slot);
             if (parts != NULL) {
-                int state = parts->partBroken[wslot] != 0 ? 2
-                          : parts->partDamaged[wslot] != 0 ? 1 : 0;
-                WindshieldGlass_ApplyDamageState(slot, state);
+                glassState = parts->partBroken[wslot] != 0 ? 2
+                           : parts->partDamaged[wslot] != 0 ? 1 : 0;
+                WindshieldGlass_ApplyDamageState(slot, glassState);
             }
         }
     }
+    g_windshieldGlassState[view & (WINDSHIELD_MAX_VIEWS - 1)] = glassState;
 
     if (Sys_GetOption("video.windscreen_wipers", 1) == 0 || slot < 0 || slot > 1)
         return;   // option off: the model's blades park; glass keeps its dirt
@@ -95,6 +101,7 @@ void Windshield_AddDrivingSpatter(int view, int amount)
 
 static GfxTexture *g_windshieldTex;
 
+
 extern Graphics *g_pGraphics;
 
 // Draws the dirt map over the cockpit view. Called from the per-view race
@@ -103,7 +110,9 @@ extern Graphics *g_pGraphics;
 void Windshield_DrawOverlay(int view, int resX, int resY)
 {
     WindshieldMap *m = &g_windshieldMaps[view & (WINDSHIELD_MAX_VIEWS - 1)];
-    if (Windshield_TotalDirt(m) == 0 && Windshield_TotalCracks(m) == 0)
+    if (!Windshield_OverlayVisible(g_windshieldGlassState[view & (WINDSHIELD_MAX_VIEWS - 1)]))
+        return;   // broken glass: the real swapped texture shows, dirt film off
+    if (Windshield_TotalDirt(m) == 0)
         return;
     if (g_windshieldTex == NULL) {
         g_windshieldTex = Gfx_CreateTexture(WINDSHIELD_MAP_W, WINDSHIELD_MAP_H, GFX_FORMAT_BGRA8, 1, 0);
@@ -115,14 +124,10 @@ void Windshield_DrawOverlay(int view, int resX, int resY)
         BYTE *row = (BYTE *)lr.pixels + y * lr.pitch;
         for (int x = 0; x < WINDSHIELD_MAP_W; x++) {
             int d = m->dirt[y * WINDSHIELD_MAP_W + x];
-            int c = m->crack[y * WINDSHIELD_MAP_W + x];
-            // Cracks catch the light: lerp the grime toward bright glass by
-            // the crack mark, alpha combines both layers (standard over).
-            row[x * 4 + 0] = (BYTE)(0x20 + (0xe0 - 0x20) * c / 255);   // B
-            row[x * 4 + 1] = (BYTE)(0x28 + (0xe8 - 0x28) * c / 255);   // G
-            row[x * 4 + 2] = (BYTE)(0x30 + (0xf0 - 0x30) * c / 255);   // R
-            int a = 255 - (255 - (d > 224 ? 224 : d)) * (255 - c) / 255;
-            row[x * 4 + 3] = (BYTE)(a > 235 ? 235 : a);
+            row[x * 4 + 0] = 0x20;   // B: the old tint's grime brown
+            row[x * 4 + 1] = 0x28;   // G
+            row[x * 4 + 2] = 0x30;   // R
+            row[x * 4 + 3] = (BYTE)(d > 235 ? 235 : d);
         }
     }
     Gfx_UnlockTexture(g_windshieldTex, 0, 0);
@@ -149,6 +154,8 @@ void Windshield_DrawOverlay(int view, int resX, int resY)
 
 void Windshield_ResetAll(void)
 {
+    for (int i = 0; i < WINDSHIELD_MAX_VIEWS; i++)
+        g_windshieldGlassState[i] = -1;
     for (int i = 0; i < WINDSHIELD_MAX_VIEWS; i++)
         Windshield_Reset(&g_windshieldMaps[i], 0x51ed269bu + (uint32_t)i * 0x9e37u);
 }
