@@ -45,4 +45,11 @@
     <string name="controllers_stick_right">Direction · Déplacer le stick à droite</string>
     <string name="controllers_stick_down">Menus · Déplacer le stick vers le bas</string>
     <string name="controllers_touch_only">Utiliser les commandes tactiles à la place de la manette</string>
+    <string name="touch_layout_title">Disposition des commandes tactiles</string>
+    <string name="touch_size">Taille des commandes</string>
+    <string name="touch_edge">Distance des bords de l’écran</string>
+    <string name="touch_height">Hauteur depuis le bas de l’écran</string>
+    <string name="touch_opacity">Opacité</string>
+    <string name="touch_cutout">Éviter la caméra et les découpes de l’écran</string>
+    <string name="touch_reset">Réinitialiser la disposition</string>
 </resources>

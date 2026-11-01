@@ -1,3 +1,28 @@
+# Adjustable Android touch controls (1 November 2026)
+
+Lane: feat/touch-controls-adjust, Android-only (android/), no game code,
+physics, originals or desktop files touched. Player-reported pain (upstream
+issue pablocpas/OpenCMR2#37, echoed on fork PR #239): pads held off the screen
+sides by display-cutout padding, buttons small, no customization.
+
+Adds a touch layout section to ControllerActivity: control size (0.6-1.6x),
+distance from screen edges and from the bottom (0-25% each), opacity
+(0.2-1.0), a camera/cutout keep-clear switch (default on, the original
+behavior) and reset. Settings live in the controllers SharedPreferences as
+plain values (touch_scale, touch_margin_x, touch_margin_y, touch_opacity,
+touch_avoid_cutout) so a future non-Android overlay can reuse the model.
+TouchControls applies them live via a preference listener; pads shrink before
+they would overlap on narrow screens. Cutout handling moved from whole-overlay
+padding to per-pad side margins, same effect at defaults.
+
+Design follows shipped precedents: Lemuroid (same RadialGamePad library:
+scale/margin/rotation settings), PPSSPP (layout editor, opacity) and the
+Android 48dp touch-target guidance. Per-button drag placement (PPSSPP-style)
+is NOT in this lane: it means replacing the RadialGamePad views with a custom
+overlay. No upstream submission. No WhatsNew/CHANGELOG entry, matching the
+earlier Android-only commits. Native on-device appearance and usability are
+UNVERIFIED: compile-level verification only, no device or emulator run.
+
 # Integrated asset candidate (30 October 2026)
 
 Claim: feat/runtime-uprez-finland1, current main plus PR182 render-time drone fix.

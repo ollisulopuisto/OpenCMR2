@@ -45,4 +45,11 @@
     <string name="controllers_stick_right">Kierowanie · Porusz drążkiem w prawo</string>
     <string name="controllers_stick_down">Menu · Porusz drążkiem w dół</string>
     <string name="controllers_touch_only">Używaj sterowania dotykowego zamiast kontrolera</string>
+    <string name="touch_layout_title">Układ sterowania dotykowego</string>
+    <string name="touch_size">Rozmiar elementów</string>
+    <string name="touch_edge">Odległość od krawędzi ekranu</string>
+    <string name="touch_height">Wysokość od dolnej krawędzi</string>
+    <string name="touch_opacity">Krycie</string>
+    <string name="touch_cutout">Omijaj aparat i wycięcia ekranu</string>
+    <string name="touch_reset">Przywróć układ</string>
 </resources>
