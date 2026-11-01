@@ -98,8 +98,11 @@ jobs:
           if-no-files-found: error
 
   ios-sim:
-    # Compile-only PoC: does the tree build for the iOS Simulator SDK (no app
-    # bundle, signing, boot, or pixel claims yet). Same gating as macos.
+    # Stage 2 PoC: build the unsigned simulator .app and boot it in the iOS
+    # Simulator. Pass = the process launches, prints its build marker, and
+    # either keeps running (terminated by us) or exits on its own without a
+    # crash signature. No Data ships in CI, so this is a boot smoke only: no
+    # menu, gameplay, or pixel claims. Same gating as macos.
     if: github.event_name != 'pull_request'
     timeout-minutes: 60
     runs-on: macos-14
@@ -111,6 +114,40 @@ jobs:
       - run: echo "$GITHUB_WORKSPACE/.ci-python/bin" >> "$GITHUB_PATH"
       - run: cmake --preset ios-sim -DOPENCMR2_VENDORED_SDL=ON -DOPENCMR2_METALFX=OFF
       - run: cmake --build --preset ios-sim
+      - name: Boot smoke in iOS Simulator
+        run: |
+          set -u
+          APP="build/ios-sim/src/OpenCMR2.app"
+          test -d "$APP" || { echo "app bundle missing at $APP"; find build -name '*.app' -maxdepth 4; exit 1; }
+          RUNTIME=$(xcrun simctl list runtimes -j | jq -r '[.runtimes[] | select(.platform=="iOS" and .isAvailable==true)] | last | .identifier')
+          DTYPE=$(xcrun simctl list devicetypes -j | jq -r '[.devicetypes[] | select(.name | startswith("iPhone"))] | last | .identifier')
+          echo "runtime=$RUNTIME devicetype=$DTYPE"
+          test -n "$RUNTIME" -a "$RUNTIME" != null
+          UDID=$(xcrun simctl create cmr2smoke "$DTYPE" "$RUNTIME")
+          echo "udid=$UDID"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl install "$UDID" "$APP"
+          xcrun simctl launch --console-pty "$UDID" io.github.pablocpas.OpenCMR2 > sim-console.txt 2>&1 &
+          LAUNCH_PID=$!
+          ALIVE=0
+          for i in $(seq 1 30); do
+            sleep 1
+            if xcrun simctl spawn "$UDID" launchctl list 2>/dev/null | grep -q OpenCMR2; then ALIVE=1; fi
+            if [ "$ALIVE" = 1 ] && [ "$i" -ge 15 ]; then break; fi
+            if ! kill -0 $LAUNCH_PID 2>/dev/null; then break; fi
+          done
+          xcrun simctl terminate "$UDID" io.github.pablocpas.OpenCMR2 2>/dev/null || true
+          sleep 2
+          kill $LAUNCH_PID 2>/dev/null || true
+          echo "---- simulator console ----"
+          cat sim-console.txt || true
+          echo "---------------------------"
+          grep -q "OpenCMR2 build:" sim-console.txt || { echo "FAIL: build marker missing - app never reached main()"; exit 1; }
+          if grep -iE "exited due to|SIGSEGV|SIGABRT|SIGILL|SIGTRAP|crashed" sim-console.txt; then
+            echo "FAIL: crash signature in console"; exit 1
+          fi
+          echo "PASS: boot smoke - process launched, reached main(), no crash signature"
 
   macos:
     if: github.event_name != 'pull_request'
