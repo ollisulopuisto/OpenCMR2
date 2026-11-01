@@ -66,6 +66,10 @@ extern Menu *FrontendMenu_GetWhatsNew(void);
 extern void FrontendMenu_BuildWhatsNew(void);
 extern void FrontendMenu_OpenWhatsNew(Menu *, MenuItem *);
 extern void FrontendMenu_DrawWhatsNew(Menu *);
+extern Menu *g_whatsNewReturn;
+char *FrontendMenu_WhatsNewText(void) { static char t[] = "What's new"; return t; }
+static int g_quitCancelStub;
+static void QuitCancelStub(Menu *, MenuItem *) { g_quitCancelStub = 1; }
 
 #define CHECK(c) do{ if(!(c)){ std::printf("FAIL %d: %s\n", __LINE__, #c); ++fails; } }while(0)
 static int fails;
@@ -154,6 +158,53 @@ int main(int argc, char **argv)
     // the screen and lists only the newer lines. (Simulated via the logic.)
     CHECK(WhatsNew_UnseenCount(kWhatsNewRevision) == 0);
     CHECK(WhatsNew_UnseenCount(0) == content);
+
+    // ---- Options row select must open the screen --------------------------
+    // Mirrors the real Options build line (game/FrontendMenus.cpp). The row
+    // is type 2 with the screen as submenu: a type 1 selection runs the
+    // action and then takes Menu.cpp's back path, which overwrites
+    // g_menuNextAction with the parent - the old type-1 row made the screen
+    // unreachable from the menu and dumped the user back out of Options
+    // (native report: "what's new item isn't working and messed up the menu").
+    {
+        Menu options;
+        Menu_Init(&options, (char *)"options", 0, 0, &g_testMainMenu, NULL, 1, 0, 0);
+        Menu_AddItemType2(&options, FrontendMenu_WhatsNewText(), -1, FrontendMenu_GetWhatsNew(),
+                          (MenuItemAction)FrontendMenu_OpenWhatsNew, -1);
+        Menu_ValidateCursor(&options, 0);
+        g_activeMenu = &options;
+        Menu *sel = Menu_Update(&options, 0x10);            // select the row
+        CHECK(sel == FrontendMenu_GetWhatsNew());           // opens the screen
+        CHECK(g_whatsNewReturn == &options);                // return target captured
+        Menu_Update(sel, 0);                                // screen enter
+        CHECK(Menu_Update(sel, 0x20) == &options);          // Back returns to Options
+        g_activeMenu = &g_testMainMenu;
+    }
+
+    // ---- Quit confirmation: Up/Down must reach Yes ------------------------
+    // Mirrors FrontendMenu_BuildQuitConfirmation (game/FrontendMenus.cpp):
+    // vertical layout. With the original horizontal layout the Up/Down bits
+    // were read as value adjustment, so the cursor could never leave No
+    // (native report: arrows dead, Yes unselectable). Left/Right was the
+    // original escape hatch; vertical is what every other menu uses.
+    {
+        g_quitCancelStub = 0;
+        Menu quit, quitTarget;
+        Menu_Init(&quitTarget, 0, -1, 0, NULL, NULL, 1, 0, 0);
+        Menu_Init(&quit, 0, 3, 0, &g_testMainMenu, NULL, 1, 1, 0);   // layout 0 = vertical
+        Menu_AddItemType2(&quit, 0, 5, &quitTarget, 0, 0);           // Yes -> quit transition
+        Menu_AddItemType1(&quit, 0, 4, (MenuItemAction)QuitCancelStub, 0);  // No
+        quit.cursor = 1;                // EnterQuitConfirmation forces No
+        Menu_Update(&quit, 0);
+        CHECK(Menu_Update(&quit, 0x01) == NULL);            // Up
+        CHECK(quit.cursor == 0);                            // Yes highlighted
+        CHECK(Menu_Update(&quit, 0x02) == NULL);            // Down
+        CHECK(quit.cursor == 1);                            // back on No
+        CHECK(Menu_Update(&quit, 0x01) == NULL);            // Up again
+        CHECK(quit.cursor == 0);
+        CHECK(Menu_Update(&quit, 0x10) == &quitTarget);     // select Yes: transition
+        CHECK(g_quitCancelStub == 0);
+    }
 
     std::filesystem::current_path(old);
     std::filesystem::remove_all(tmp);

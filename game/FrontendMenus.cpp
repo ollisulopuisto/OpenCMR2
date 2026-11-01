@@ -1946,6 +1946,7 @@ void FrontendMenu_BuildRallyProfile(void)
 }
 
 void FrontendMenu_OpenWhatsNew(Menu *, MenuItem *);
+Menu *FrontendMenu_GetWhatsNew(void);
 char *FrontendMenu_WhatsNewText(void);
 void FrontendMenu_BuildTouchControls(void);
 char *FrontendMenu_TouchControlsText(void);
@@ -1977,7 +1978,12 @@ void FrontendMenu_BuildOptions(void)
     // directly above Back (user's requested placement).
     Menu_AddItemType2(&g_menu0x0081f118, FrontendMenu_TouchControlsText(), -1, &g_menuTouchControls, 0, -1);
     FrontendMenu_BuildTouchControls();
-    Menu_AddItemType1(&g_menu0x0081f118, FrontendMenu_WhatsNewText(), -1, (MenuItemAction)FrontendMenu_OpenWhatsNew, -1);
+    // Type 2 with the screen as submenu: a type-1 select runs the action and
+    // then takes Menu_Update's back path, which overwrites g_menuNextAction
+    // with the parent - the screen never opened and the user was dumped out
+    // of Options. The action still runs first and captures the return menu.
+    Menu_AddItemType2(&g_menu0x0081f118, FrontendMenu_WhatsNewText(), -1, FrontendMenu_GetWhatsNew(),
+                      (MenuItemAction)FrontendMenu_OpenWhatsNew, -1);
     Menu_AddItemType1(&g_menu0x0081f118, 0, 0x67, 0, -1);
     Menu_SetCallbacks(&g_menu0x0081f118, (MenuCallback)FrontendMenu_EnterOptions, (MenuCallback)FrontendScroller_UpdateMain,
                       (MenuCallback)FrontendMenu_DrawOptions, NULL);
@@ -2841,7 +2847,10 @@ void FrontendMenu_BuildCredits(void)
 // FUNCTION: CMR2 0x004f6dd0
 void FrontendMenu_BuildQuitConfirmation(void)
 {
-    Menu_Init(&g_menu0x00823df8, 0, 3, 0, &g_menu0x0081d6d8, NULL, 1, 1, 1);
+    // Vertical layout: the original horizontal layout read the Up/Down bits
+    // as value adjustment, so the cursor could never leave No (native report:
+    // arrows dead, Yes unselectable). Every other menu navigates vertically.
+    Menu_Init(&g_menu0x00823df8, 0, 3, 0, &g_menu0x0081d6d8, NULL, 1, 1, 0);
     Menu_AddItemType2(&g_menu0x00823df8, 0, 5, &g_menu0x00820798, 0, 0);
     Menu_AddItemType1(&g_menu0x00823df8, 0, 4, (MenuItemAction)FrontendMenu_CancelQuit, 0);
     Menu_SetCallbacks(&g_menu0x00823df8, FrontendMenu_EnterQuitConfirmation, (MenuCallback)FrontendScroller_UpdateMain, (MenuCallback)FrontendMenu_DrawQuitConfirmation, (MenuCallback)FrontendMenu_LeaveQuitConfirmation);
