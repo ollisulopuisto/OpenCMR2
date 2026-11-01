@@ -151,6 +151,35 @@ jobs:
           fi
           echo "PASS: boot smoke - process launched, reached main(), no crash signature"
 
+  ios-device:
+    # Device-preset compile check: proves the unsigned arm64 .app bundle
+    # builds for a real iPad (the artifact a sideload tool would sign). No
+    # signing, install, or boot - a device is not available in CI.
+    if: github.event_name != 'pull_request'
+    timeout-minutes: 60
+    runs-on: macos-14
+    steps:
+      - run: brew install ninja glslang spirv-cross
+      - uses: actions/checkout@v4
+      - run: python3 -m venv .ci-python
+      - run: .ci-python/bin/python -m pip install -r tools/scenery-patch/requirements.txt
+      - run: echo "$GITHUB_WORKSPACE/.ci-python/bin" >> "$GITHUB_PATH"
+      - run: cmake --preset ios-device -DOPENCMR2_VENDORED_SDL=ON -DOPENCMR2_METALFX=OFF
+      - run: cmake --build --preset ios-device
+      - name: Check unsigned device bundle
+        run: |
+          set -u
+          APP="build/ios-device/src/opencmr2.app"
+          test -x "$APP/opencmr2" || { echo "FAIL: executable missing at $APP/opencmr2"; find build -name '*.app' -maxdepth 4; exit 1; }
+          file "$APP/opencmr2"
+          /usr/bin/codesign -dv "$APP" 2>&1 || true
+          echo "unsigned device .app present: $APP"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenCMR2-iOS-device-unsigned
+          path: build/ios-device/src/opencmr2.app
+          if-no-files-found: error
+
   macos:
     if: github.event_name != 'pull_request'
     timeout-minutes: 60
