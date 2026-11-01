@@ -2660,10 +2660,6 @@ void FrontendMenu_BuildAdvancedGraphicsOptions(void)
     // ([video] video.windscreen_dirt).
     Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 101, 0, 0, 0, 0, 0x17);
     Menu_GetItem(&g_menu0x0081cd78, 0x17)->text = (char *)"Windscreen Dirt";
-    // OpenCMR2: windshield cracks — the cockpit glass follows the car's
-    // windscreen damage ([video] video.windshield_cracks).
-    Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x1d);
-    Menu_GetItem(&g_menu0x0081cd78, 0x1d)->text = (char *)"Windshield Cracks";
     // OpenCMR2: depth of field — blur based on distance from focal plane
     // ([video] video.depth_of_field).
     Menu_AddItemType3(&g_menu0x0081cd78, 0, -1, 2, 0, 0, 0, 0, 0x18);
