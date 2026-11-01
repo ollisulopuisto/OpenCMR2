@@ -27,6 +27,15 @@ All notable changes to OpenCMR2 are documented here.
   along the beam - it floats in the lit air in front of the car, and the
   bonnet/dash occlude it via the depth gate instead of being painted over.
 
+- Greece1 roadside brush walls (the flat bsh_sh1 cards near checkpoints)
+  get optional draw-time depth (video.brush_relief, default 100): the flat
+  quad gains interior alpha relief plus a taller, darkened back layer from
+  the same verified cutout sheet, so the straight card silhouette breaks and
+  the wall has parallax. Exact-source gated (verified gre01 part identity +
+  cutout); originals, contact and collision are untouched. Note: alpha-driven
+  displacement is an artistic heuristic (cutout coverage, not recovered
+  geometry); the back layer is derived, not original, artwork.
+
 ### Added
 - Windscreen dirt and wipers (cockpit view): dirt spatter from driving
   builds up on the actual glass area instead of the old flat fullscreen

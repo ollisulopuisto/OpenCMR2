@@ -169,3 +169,4 @@ if(argc<2)return 0;base=argv[1];legacy=argc>2&&!strcmp(argv[2],"legacy");separat
 }
 
 bool France1Textures_IsVerifiedCutout(Texture*){return false;}
+bool France1Textures_CutoutAlpha(Texture*,const unsigned char**,int*,int*){return false;}
