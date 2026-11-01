@@ -45,10 +45,14 @@ inline int LightField_Add(const FixVector *pos, const FixVector *dir, int intens
 // beams toward the upper-left corner. 16.16 fixed point, 64-bit intermediates.
 inline void LightField_ClipBeamToNearPlane(FixVector *out, const FixVector *lampView, const FixVector *endView) {
     int dz = lampView->z - endView->z;      // > 0: lamp in front, end behind
-    int num = lampView->z - 0x10000;
+    int num = lampView->z - 0x10100;
     out->x = lampView->x + (int)(((__int64)(endView->x - lampView->x) * num) / dz);
     out->y = lampView->y + (int)(((__int64)(endView->y - lampView->y) * num) / dz);
-    out->z = 0x10000;
+    // 0x10100, not 0x10000: the anchor's view->world->view round trip through
+    // FixMul loses ~1 ulp, and exactly-0x10000 comes back below the in-front
+    // threshold - the re-projection then returns the (-100,-100) sentinel as
+    // the lamp uv (executed-scene-matrix finding, bonnet/bumper lamps).
+    out->z = 0x10100;
 }
 
 #endif

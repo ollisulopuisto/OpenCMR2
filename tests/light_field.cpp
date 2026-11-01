@@ -23,16 +23,16 @@ int main(){
         FixVector end  = {-0x60000, 0x70000, -0x80000}; // 8 behind, mirrored x/y
         FixVector clip;
         LightField_ClipBeamToNearPlane(&clip, &lamp, &end);
-        CHECK(clip.z == 0x10000);
+        CHECK(clip.z == 0x10100);
         // t = (8-1)/(8+8) = 7/16 along lamp->end
-        CHECK(clip.x == 0x20000 + (int)(((long long)(-0x60000 - 0x20000) * (0x80000 - 0x10000)) / 0x100000));
-        CHECK(clip.y == 0x30000 + (int)(((long long)(0x70000 - 0x30000) * (0x80000 - 0x10000)) / 0x100000));
+        CHECK(clip.x == 0x20000 + (int)(((long long)(-0x60000 - 0x20000) * (0x80000 - 0x10100)) / 0x100000));
+        CHECK(clip.y == 0x30000 + (int)(((long long)(0x70000 - 0x30000) * (0x80000 - 0x10100)) / 0x100000));
         // Straight-ahead beam ending just behind the camera clips to the axis:
         // the wedge collapses toward the screen centre, never to a corner.
         FixVector lamp2 = {0, 0, 0x18000};
         FixVector end2 = {0, 0, -0x8000};
         LightField_ClipBeamToNearPlane(&clip, &lamp2, &end2);
-        CHECK(clip.x == 0 && clip.y == 0 && clip.z == 0x10000);
+        CHECK(clip.x == 0 && clip.y == 0 && clip.z == 0x10100);
         // Wide lateral offsets survive clipping with correct sign (no mirroring):
         // end up-left behind the camera keeps the clipped point up-left.
         FixVector lamp3 = {0, 0, 0x40000};

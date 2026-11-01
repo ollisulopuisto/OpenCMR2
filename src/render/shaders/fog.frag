@@ -73,25 +73,19 @@ void main()
                 float width = 0.015 + max(a, 0.0) * 0.35;
                 float lat = clamp(l / width, -1.0, 1.0);
                 float lateral = 1.0 - lat * lat;
-                // Ramps in over the first 0.05 of the beam (where the halo owns
-                // the glow); zero behind the lamp - no backward shine.
-                float axial = a <= 0.0 ? 0.0 : min(a / 0.05, 1.0);
+                // Short ramp at the lamp avoids a hard edge; zero behind the
+                // lamp - no backward shine. The wedge owns the whole beam now
+                // that the glow bubble is gone (it used to own the first 0.05).
+                float axial = a <= 0.0 ? 0.0 : min(a / 0.01, 1.0);
                 wedge = axial * lateral * lateral / (1.0 + 6.0 * max(a, 0.0) / blen);
             }
             float gate = 1.0;
             if (lightInfo[i].x > 0.0)
                 gate = step(lightInfo[i].x, depth);
-            // The glow bubble anchors in the lit air a few units ahead of the
-            // lamp, with its own depth gate, so it floats in front of the car
-            // and the bodywork occludes it instead of being painted over.
-            vec2 dh = uv - halos[i].xy;
-            dh.x *= sun.w;
-            float th = 1.0 - dot(dh, dh) / (0.05 * 0.05);
-            float haloF = th > 0.0 ? th * th : 0.0;
-            float gateH = 1.0;
-            if (halos[i].z > 0.0)
-                gateH = step(halos[i].z, depth);
-            lightSum += lightInfo[i].yzw * (li * (wedge * gate + haloF * gateH));
+            // Beams only: the glow bubble was removed (user steering,
+            // 2026-11-01 - "keep just the beams"). halos[] stays in the
+            // uniform layout, pinned to the lamp CPU-side, but is unread here.
+            lightSum += lightInfo[i].yzw * (li * wedge * gate);
         }
         lightSum *= extra.y * mix(0.30, 1.0, factor);
     }

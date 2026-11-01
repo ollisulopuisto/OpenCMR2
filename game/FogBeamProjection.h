@@ -27,14 +27,27 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
         FogLightSource *src = &g_fogLightSources[li];
         FixVector vView;
         FixMatrix_TransformPoint(&vView, &src->pos, &invView);
+        // Normalize the beam direction before extending it: the beam-end
+        // projection below assumes a unit vector, and the asset data feeding
+        // this lives outside the repo, so enforce the prerequisite here
+        // instead of trusting it. Zero vectors and dirs whose length rounds
+        // to zero (tiny vectors) fall back to no beam; FixVecLength /
+        // FixVecScaleRecip use 64-bit intermediates. The classic glow path
+        // keeps its own convention and is untouched.
+        FixVector dirN = src->dir;
+        bool hasBeam = src->dir.x != 0 || src->dir.y != 0 || src->dir.z != 0;
+        if (hasBeam) {
+            int dl = FixVecLength(&dirN);
+            if (dl <= 0) { hasBeam = false; dirN.x = dirN.y = dirN.z = 0; }
+            else FixVecScaleRecip(&dirN, &dirN, dl);
+        }
         // The beam's screen wedge: project a point 30 world units along the
         // beam. Off-screen lamps stay: their wedge can still cross the frame
         // (the cockpit's own lamps sit below the windscreen line).
         FixVector beamEnd;
-        beamEnd.x = src->pos.x + FixMul(src->dir.x, 0x1e0000);
-        beamEnd.y = src->pos.y + FixMul(src->dir.y, 0x1e0000);
-        beamEnd.z = src->pos.z + FixMul(src->dir.z, 0x1e0000);
-        const bool hasBeam = src->dir.x != 0 || src->dir.y != 0 || src->dir.z != 0;
+        beamEnd.x = src->pos.x + FixMul(dirN.x, 0x1e0000);
+        beamEnd.y = src->pos.y + FixMul(dirN.y, 0x1e0000);
+        beamEnd.z = src->pos.z + FixMul(dirN.z, 0x1e0000);
         FixVector endView = {0, 0, 0};
         if (hasBeam)
             FixMatrix_TransformPoint(&endView, &beamEnd, &invView);
@@ -76,26 +89,6 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
                 endU = (float)(vOut.x >> 16) / resXf; endV = (float)(vOut.y >> 16) / resYf;
             }
         }
-        // Axial fade (2026-11-01 replay report "lights jump all over, pointing
-        // up one second and down the next"): a beam pointing near the view
-        // axis foreshortens; its projected end can land anywhere around the
-        // frame and flips side with sub-degree angle changes, so the wedge
-        // direction is noise. Fade the wedge by the beam's transverse
-        // fraction - near-axial beams keep the lamp halo (their true look)
-        // and transverse beams keep the full wedge (the accepted side-view
-        // look). The halo and forward illumination are NOT suppressed.
-        float transverse = 0.0f;
-        float bdvx = 0.0f, bdvy = 0.0f;
-        if (hasBeam) {
-            FixVector bd;
-            FixMatrix_RotateVector(&bd, (FixVector *)&src->dir, &invView);
-            const double bx = bd.x, by = bd.y, bz = bd.z;
-            const double bl = sqrt(bx * bx + by * by + bz * bz);
-            if (bl > 0.0) {
-                transverse = (float)(sqrt(bx * bx + by * by) / bl);
-                bdvx = (float)(bx / bl); bdvy = (float)(by / bl);
-            }
-        }
         // Drop only when the whole beam (lamp to end, with wedge margin) is off screen.
         float u0 = lampU < endU ? lampU : endU, u1 = lampU > endU ? lampU : endU;
         float v0 = lampV < endV ? lampV : endV, v1 = lampV > endV ? lampV : endV;
@@ -120,45 +113,47 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
         fl->r = src->r / 65536.0f;
         fl->g = src->g / 65536.0f;
         fl->b = src->b / 65536.0f;
-        // Wedge direction and length from the beam's TRANSVERSE view-space
-        // component - continuous across near-plane crossings (the projected
-        // end's behind-camera sentinel flipped the wedge side frame to frame:
-        // the replay "lights jump all over" report). Side views keep the full
-        // lateral wedge; beams coming at the camera keep their visible shaft
-        // toward the closest-approach side (the praised reverse-lights-in-
-        // dust look) with length bounded by the foreshortened world length at
-        // the lamp's depth, so no sky-crossing cones; exactly axial beams
-        // collapse to the halo. Forward illumination is never suppressed.
-        float wlen = transverse * (30.0f / (anchorView.z / 65536.0f)) * 0.5f;
-        if (wlen > 0.6f) wlen = 0.6f;   // screen-fraction cap
-        if (wlen > 1e-4f) {
-            float bx = bdvx * aspect, by = bdvy;
-            float bl = sqrtf(bx * bx + by * by);
-            fl->beamX = bx / bl; fl->beamY = by / bl; fl->beamLen = wlen;
-        } else { fl->beamX = 0.0f; fl->beamY = 0.0f; fl->beamLen = 0.0f; }
-        // Halo anchor a few units forward along the beam: the bubble floats
-        // in the lit air IN FRONT of the car instead of painting over the
-        // bodywork (user request), and its depth reference lets the bonnet
-        // and dash occlude it. Beams without a direction keep the lamp anchor.
-        fl->haloX = lampU; fl->haloY = lampV; fl->haloRef = fl->depthRef;
-        if (hasBeam) {
-            FixVector hw;
-            hw.x = src->pos.x + FixMul(src->dir.x, 0x30000);
-            hw.y = src->pos.y + FixMul(src->dir.y, 0x30000);
-            hw.z = src->pos.z + FixMul(src->dir.z, 0x30000);
-            FixVector hv;
-            FixMatrix_TransformPoint(&hv, &hw, &invView);
-            if (hv.z >= 0x10000) {
-                FixMatrix_ProjectWorldPointToView((int *)&vOut, &hw, view);
-                const float hu = (float)(vOut.x >> 16) / resXf, hvv = (float)(vOut.y >> 16) / resYf;
-                if (hu > -0.25f && hu < 1.25f && hvv > -0.25f && hvv < 1.25f) {
-                    fl->haloX = hu; fl->haloY = hvv;
-                    float zGate = hv.z / 65536.0f - 1.0f;   // bodywork at the lamp depth is nearer: gated
-                    float d = (zGate > 0.0f && proj43 < 0.0f) ? proj33 + proj43 / zGate : 0.0f;
-                    fl->haloRef = d > 1.0f ? 1.0f : d;
+        // Wedge = transverse view-space DIRECTION (continuous across
+        // near-plane crossings: the projected end's behind-camera position
+        // flips side as the beam sweeps past the camera, the transverse
+        // component does not) x TRUE foreshortened LENGTH from the projected
+        // beam end (endU/endV above, already clipped at the near plane, so
+        // the behind-camera sentinel can never reach here). The previous
+        // formula derived the length as transverse * (30/depth) * 0.5, which
+        // re-amplified any off-axis angle past ~2 degrees back to a
+        // full-length wedge pointing straight up/down/sideways - the
+        // 2026-11-01 "headlights pointing all over" driving-view report.
+        // Foreshortening supplies the stability: a beam swinging across the
+        // view axis shrinks to zero true length as it goes axial, so the
+        // transverse direction's sign ambiguity there is invisible; the
+        // extra fade band (below ~6 degrees off-axis) removes the rest.
+        {   float transverse = 0.0f, bdvx = 0.0f, bdvy = 0.0f;
+            if (hasBeam) {
+                FixVector bd;
+                FixMatrix_RotateVector(&bd, &dirN, &invView);
+                const double bx = bd.x, by = bd.y, bz = bd.z;
+                const double bl = sqrt(bx * bx + by * by + bz * bz);
+                if (bl > 0.0) {
+                    transverse = (float)(sqrt(bx * bx + by * by) / bl);
+                    bdvx = (float)(bx / bl); bdvy = (float)(by / bl);
                 }
             }
+            float dx = (endU - lampU) * aspect, dy = endV - lampV;
+            float len = sqrtf(dx * dx + dy * dy);
+            if (len > 0.6f) len = 0.6f;   // screen-fraction cap
+            float band = transverse / 0.10f;
+            len *= band > 1.0f ? 1.0f : band;
+            if (len > 1e-4f && (bdvx != 0.0f || bdvy != 0.0f)) {
+                float bx = bdvx * aspect, by = bdvy;
+                float bl = sqrtf(bx * bx + by * by);
+                fl->beamX = bx / bl; fl->beamY = by / bl; fl->beamLen = len;
+            } else { fl->beamX = 0.0f; fl->beamY = 0.0f; fl->beamLen = 0.0f; }
         }
+        // Glow bubbles removed (user steering, 1 Nov 2026: "keep just the
+        // beams"). The halo slots stay in the uniform layout (both render
+        // paths share it) but are pinned to the lamp anchor with the lamp's
+        // own depth gate; the fog shader no longer reads them.
+        fl->haloX = lampU; fl->haloY = lampV; fl->haloRef = fl->depthRef;
     }
     return fogLightTotal;
 }
