@@ -69,6 +69,7 @@
     <string name="effects_scenery_copying">Copying pack\u2026 %1$d / %2$d MB</string>
     <string name="effects_scenery_no_manifest">No scenery pack found in the chosen folder (manifest.tsv missing)</string>
     <string name="effects_scenery_ambiguous">More than one scenery pack found: %1$s</string>
+    <string name="effects_scenery_unsafe">Pack references a file outside itself: %1$s</string>
     <string name="effects_state_default">Default</string>
     <string name="effects_on">On</string>
     <string name="effects_off">Off</string>

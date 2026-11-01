@@ -38,6 +38,26 @@ object SceneryPack {
         directory(context).deleteRecursively()
     }
 
+    /** References in [manifest] that escape the pack; empty when all stay inside. */
+    internal fun manifestReferences(manifest: File): List<String> {
+        fun unsafe(path: String): Boolean {
+            if (path.isEmpty() || path.startsWith('/') || path.contains('\\') ||
+                path.contains(':') || path.endsWith('/')) return true
+            return path.split('/').any { it.isEmpty() || it == "." || it == ".." }
+        }
+        if (!manifest.isFile) return emptyList()
+        val bad = mutableListOf<String>()
+        for (line in manifest.readLines()) {
+            if (line.isBlank()) continue
+            val columns = line.split('\t')
+            if (columns.size != 6) continue
+            if (unsafe(columns[3])) bad += columns[3]
+            if (columns[4].isNotEmpty())
+                for (frame in columns[4].split(',')) if (unsafe(frame)) bad += frame
+        }
+        return bad
+    }
+
     /** manifest.tsv columns: kind source_archive source_texture asset frames ticks. */
     internal fun parseManifest(manifest: File): Int {
         if (!manifest.isFile || manifest.length() > 16L shl 20) return 0
@@ -59,6 +79,7 @@ object SceneryPack {
         class NotFound : ImportException("No scenery pack found")
         class Ambiguous(val folders: List<String>) : ImportException("More than one scenery pack found")
         class NoSpace(val needed: Long, val available: Long) : ImportException("Not enough space")
+        class Unsafe(val reference: String) : ImportException("Pack references a file outside itself")
     }
 
     suspend fun import(context: Context, tree: Uri, onProgress: (Progress) -> Unit) {
@@ -76,8 +97,11 @@ object SceneryPack {
         val target = directory(context)
         val temporary = File(storage(context), "scenery.import")
         temporary.deleteRecursively()
-        // The space of an earlier copy is freed when this one replaces it.
-        val available = StatFs(storage(context).path).availableBytes + target.walkBottomUp().sumOf { it.length() }
+        // Peak usage holds the old pack and the full new copy at once; the old
+        // pack's bytes are freed only after the copy completes, so they do not
+        // count toward what the copy may use. (Packs are small; GameData's
+        // looser replacement credit exists for gigabyte game installs.)
+        val available = StatFs(storage(context).path).availableBytes
         val margin = 64L shl 20
         if (available < total + margin)
             throw ImportException.NoSpace(total + margin, available)
@@ -107,6 +131,12 @@ object SceneryPack {
                 }
             }
             onProgress(Progress.Copying(total, total))
+            // Every manifest reference must resolve inside the pack: the
+            // native loader enforces this at read time too, but a bad pack
+            // should fail the import, not silently render original assets.
+            // Runs before the swap, so a rejection keeps the installed pack.
+            for (reference in manifestReferences(File(temporary, "manifest.tsv")))
+                throw ImportException.Unsafe(reference)
             target.deleteRecursively()
             if (!temporary.renameTo(target))
                 throw IOException("Cannot move the copied files to $target")

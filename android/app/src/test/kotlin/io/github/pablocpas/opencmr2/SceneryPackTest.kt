@@ -26,4 +26,18 @@ class SceneryPackTest {
     fun parseManifestMissingFileIsZero() {
         assertEquals(0, SceneryPack.parseManifest(File(folder.root, "absent.tsv")))
     }
+
+    @Test
+    fun manifestReferencesFlagEscapesOnly() {
+        val manifest = folder.newFile("manifest.tsv")
+        manifest.writeText(
+            "tree\tfin01hi.bfl\ttree01.dds\ttrees/a.obj\t\t5\n" +
+            "spectator\tfin01hi.bfl\tspec.tga\tspec/a.tga\ta1.tga,a2.tga\t10\n" +
+            "spectator\tfin01hi.bfl\tspec.tga\t../escape.tga\ta.tga\t10\n" +
+            "spectator\tfin01hi.bfl\tspec.tga\tspec/a.tga\t/abs.tga\t10\n" +
+            "spectator\tfin01hi.bfl\tspec.tga\tspec/a.tga\tC:\\win.tga\t10\n",
+        )
+        assertEquals(listOf("../escape.tga", "/abs.tga", "C:\\win.tga"),
+            SceneryPack.manifestReferences(manifest).sorted())
+    }
 }
