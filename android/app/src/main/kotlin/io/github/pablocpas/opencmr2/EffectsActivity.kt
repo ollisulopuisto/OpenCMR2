@@ -2,6 +2,13 @@ package io.github.pablocpas.opencmr2
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.lifecycleScope
+import android.text.format.Formatter
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
@@ -21,6 +28,9 @@ class EffectsActivity : ComponentActivity() {
     private var lines by mutableStateOf(EffectSettings.DEFAULT)
     private var trails by mutableStateOf(EffectSettings.DEFAULT)
     private var fog by mutableStateOf(EffectSettings.DEFAULT)
+    private var sceneryMappings by mutableStateOf(0)
+    private var sceneryWorking by mutableStateOf<String?>(null)
+    private var sceneryError by mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,6 +40,7 @@ class EffectsActivity : ComponentActivity() {
         lines = EffectSettings.tunnelLines(this)
         trails = EffectSettings.vaporTrails(this)
         fog = EffectSettings.fog(this)
+        sceneryMappings = SceneryPack.mappings(this)
         setContent {
             SetupTheme {
                 Box(Modifier.fillMaxSize()) {
@@ -52,11 +63,84 @@ class EffectsActivity : ComponentActivity() {
                         EffectToggle(R.string.effects_fog, fog) {
                             fog = it; EffectSettings.fog(this@EffectsActivity, it)
                         }
+                        ScenerySection(
+                            mappings = sceneryMappings,
+                            working = sceneryWorking,
+                            error = sceneryError,
+                            onImport = { tree -> importScenery(tree) },
+                            onRemove = {
+                                SceneryPack.remove(this)
+                                sceneryMappings = 0
+                                sceneryError = null
+                            },
+                        )
                         Button(onClick = { finish() }) { Text(stringResource(R.string.controllers_done)) }
                     }
                 }
             }
         }
+    }
+    private fun importScenery(tree: android.net.Uri) {
+        if (sceneryWorking != null) return
+        sceneryError = null
+        lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    SceneryPack.import(this@EffectsActivity, tree) { progress ->
+                        sceneryWorking = when (progress) {
+                            is SceneryPack.Progress.Searching ->
+                                getString(R.string.effects_scenery_searching)
+                            is SceneryPack.Progress.Copying ->
+                                getString(R.string.effects_scenery_copying,
+                                    progress.copied shr 20, progress.total shr 20)
+                        }
+                    }
+                }
+                sceneryMappings = SceneryPack.mappings(this@EffectsActivity)
+                sceneryWorking = null
+            } catch (e: Exception) {
+                sceneryWorking = null
+                sceneryError = when (e) {
+                    is SceneryPack.ImportException.NotFound ->
+                        getString(R.string.effects_scenery_no_manifest)
+                    is SceneryPack.ImportException.Ambiguous ->
+                        getString(R.string.effects_scenery_ambiguous, e.folders.joinToString())
+                    is SceneryPack.ImportException.NoSpace ->
+                        getString(R.string.setup_no_space,
+                            Formatter.formatShortFileSize(this@EffectsActivity, e.needed),
+                            Formatter.formatShortFileSize(this@EffectsActivity, e.available))
+                    else -> getString(R.string.setup_failed, e.localizedMessage ?: e.toString())
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScenerySection(mappings: Int, working: String?, error: String?,
+    onImport: (android.net.Uri) -> Unit, onRemove: () -> Unit) {
+    val chooser = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) onImport(uri)
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.effects_scenery_title))
+        Text(
+            if (mappings > 0) stringResource(R.string.effects_scenery_installed, mappings)
+            else stringResource(R.string.effects_scenery_none),
+            style = MaterialTheme.typography.bodySmall,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = { chooser.launch(null) }, enabled = working == null) {
+                Text(stringResource(R.string.effects_scenery_import))
+            }
+            if (mappings > 0) {
+                OutlinedButton(onClick = onRemove, enabled = working == null) {
+                    Text(stringResource(R.string.effects_scenery_remove))
+                }
+            }
+        }
+        working?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
     }
 }
 

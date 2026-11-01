@@ -29,7 +29,11 @@ NOT in v1, deliberately: 3D trees and animated spectators need a prepared
 scenery pack, and preparing one requires the desktop build (the platform
 layer runs Python tooling; without a pack the game refuses to start), so
 exposing those toggles on Android would break launch until a pack delivery
-route exists. Camera-angle changes were an ambiguous transcript item and
+route exists. That route is now the scenery-pack import on the effects screen
+(lane feat/android-scenery-import): the user prepares the pack with the
+desktop build, copies the folder to the device, imports it in the launcher,
+and GameActivity passes --scenery-dir. Read-only, save-independent, never
+combined with the automatic preparation flags. Camera-angle changes were an ambiguous transcript item and
 stay out until the user confirms which cameras. F10 assessment: the tuning
 panel is keyboard-driven and unreachable on touch-only Android. Nothing is
 removed: launch flags and live tuning are different things - these rows set

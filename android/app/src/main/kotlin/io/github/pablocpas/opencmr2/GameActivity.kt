@@ -22,7 +22,10 @@ class GameActivity : SDLActivity() {
     override fun getLibraries() = arrayOf("SDL3", "main")
 
     override fun getArguments() =
-        arrayOf("--data", GameData.directory(this).absolutePath) + EffectSettings.arguments(this)
+        arrayOf("--data", GameData.directory(this).absolutePath) + EffectSettings.arguments(this) +
+            if (SceneryPack.isInstalled(this))
+                arrayOf("--scenery-dir", SceneryPack.directory(this).absolutePath)
+            else emptyArray()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
