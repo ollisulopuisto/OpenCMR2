@@ -27,12 +27,12 @@
 #include "opencmr2_icon.h"
 #endif
 
-// Process-memory probe headers (Sys_GetProcessMemoryBytes, file end).
-#if defined(_WIN32)
-#include <psapi.h>
-#elif defined(__APPLE__)
+// Process-memory probe headers (Sys_GetProcessMemoryBytes, file end). The
+// Windows branch lives in process_memory.cpp: the real <windows.h>/<psapi.h>
+// clash with port/types.h here (same split as menu_shortcut.cpp).
+#if defined(__APPLE__)
 #include <mach/mach.h>
-#else
+#elif !defined(_WIN32)
 #include <unistd.h>
 #endif
 
@@ -1432,14 +1432,11 @@ const char *Sys_GetCarDisplayName(int archiveSlot, BOOL brief)
 
 // Process resident memory in bytes for the diagnostics overlay (0 when the
 // platform query fails). Read-only probe: no allocations, safe per frame.
+// The Windows definition lives in process_memory.cpp (needs the real SDK).
+#ifndef _WIN32
 extern "C" unsigned long long Sys_GetProcessMemoryBytes(void)
 {
-#if defined(_WIN32)
-    PROCESS_MEMORY_COUNTERS_EX counters;
-    if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS *)&counters, sizeof(counters)))
-        return (unsigned long long)counters.WorkingSetSize;
-    return 0;
-#elif defined(__APPLE__)
+#if defined(__APPLE__)
     // phys_footprint is the number Activity Monitor shows as "Memory": it
     // counts compressed and GPU-backed pages the resident_size misses. They
     // can differ by gigabytes on Apple Silicon; neither proves or rules out a
@@ -1463,3 +1460,4 @@ extern "C" unsigned long long Sys_GetProcessMemoryBytes(void)
     return (unsigned long long)resident * (unsigned long long)sysconf(_SC_PAGESIZE);
 #endif
 }
+#endif // !_WIN32
