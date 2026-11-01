@@ -13,7 +13,7 @@ static int fails = 0;
 #define CHECK(c) do{ if(!(c)){ std::printf("FAIL %d: %s\n", __LINE__, #c); ++fails; } }while(0)
 
 int main() {
-    CHECK(kFogUniformFloats == 108);
+    CHECK(kFogUniformFloats == 140);
     long page = sysconf(_SC_PAGESIZE);
     size_t span = (size_t)page * 2;
     unsigned char *base = (unsigned char *)mmap(nullptr, span, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);

@@ -76,6 +76,26 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
                 endU = (float)(vOut.x >> 16) / resXf; endV = (float)(vOut.y >> 16) / resYf;
             }
         }
+        // Axial fade (2026-11-01 replay report "lights jump all over, pointing
+        // up one second and down the next"): a beam pointing near the view
+        // axis foreshortens; its projected end can land anywhere around the
+        // frame and flips side with sub-degree angle changes, so the wedge
+        // direction is noise. Fade the wedge by the beam's transverse
+        // fraction - near-axial beams keep the lamp halo (their true look)
+        // and transverse beams keep the full wedge (the accepted side-view
+        // look). The halo and forward illumination are NOT suppressed.
+        float transverse = 0.0f;
+        float bdvx = 0.0f, bdvy = 0.0f;
+        if (hasBeam) {
+            FixVector bd;
+            FixMatrix_RotateVector(&bd, (FixVector *)&src->dir, &invView);
+            const double bx = bd.x, by = bd.y, bz = bd.z;
+            const double bl = sqrt(bx * bx + by * by + bz * bz);
+            if (bl > 0.0) {
+                transverse = (float)(sqrt(bx * bx + by * by) / bl);
+                bdvx = (float)(bx / bl); bdvy = (float)(by / bl);
+            }
+        }
         // Drop only when the whole beam (lamp to end, with wedge margin) is off screen.
         float u0 = lampU < endU ? lampU : endU, u1 = lampU > endU ? lampU : endU;
         float v0 = lampV < endV ? lampV : endV, v1 = lampV > endV ? lampV : endV;
@@ -84,22 +104,61 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
         GfxFogLight *fl = &fogLights[fogLightTotal++];
         fl->x = lampU;
         fl->y = lampV;
-        // Depth gate in depth-buffer space: the raw depth of a point 1 world
-        // unit in front of the anchor, from the game's own projection - valid
-        // on both renderers even when the renderer's near/far vote is
-        // ambiguous. An anchor clipped to the near plane (zGate <= 0) or an
-        // unknown projection (proj43 >= 0) carries no gate.
-        {   float zGate = anchorView.z / 65536.0f - 1.0f;
-            float d = (zGate > 0.0f && proj43 < 0.0f) ? proj33 + proj43 / zGate : 0.0f;
+        // Depth gate in depth-buffer space: the raw depth of a point half a
+        // world unit BEHIND the anchor, from the game's own projection -
+        // valid on both renderers even when the renderer's near/far vote is
+        // ambiguous. The half-unit self-occlusion bias makes the car's own
+        // bodywork around the lamp (within ~+-1 unit of it: the bonnet and
+        // dash panels the halo would paint over) fail the gate, while the
+        // fog over the open road - all farther than the lamp - still passes
+        // (user: "the light bubble should appear in FRONT of the car").
+        // Only an unknown projection (proj43 >= 0) carries no gate.
+        {   float zGate = anchorView.z / 65536.0f + 0.5f;
+            float d = (proj43 < 0.0f) ? proj33 + proj43 / zGate : 0.0f;
             fl->depthRef = d > 1.0f ? 1.0f : d; }
         fl->intensity = src->intensity / 65536.0f;
         fl->r = src->r / 65536.0f;
         fl->g = src->g / 65536.0f;
         fl->b = src->b / 65536.0f;
-        float dx = (endU - lampU) * aspect, dy = endV - lampV;
-        float len = sqrtf(dx * dx + dy * dy);
-        if (len > 1e-4f) { fl->beamX = dx / len; fl->beamY = dy / len; fl->beamLen = len; }
-        else { fl->beamX = 0.0f; fl->beamY = 0.0f; fl->beamLen = 0.0f; }
+        // Wedge direction and length from the beam's TRANSVERSE view-space
+        // component - continuous across near-plane crossings (the projected
+        // end's behind-camera sentinel flipped the wedge side frame to frame:
+        // the replay "lights jump all over" report). Side views keep the full
+        // lateral wedge; beams coming at the camera keep their visible shaft
+        // toward the closest-approach side (the praised reverse-lights-in-
+        // dust look) with length bounded by the foreshortened world length at
+        // the lamp's depth, so no sky-crossing cones; exactly axial beams
+        // collapse to the halo. Forward illumination is never suppressed.
+        float wlen = transverse * (30.0f / (anchorView.z / 65536.0f)) * 0.5f;
+        if (wlen > 0.6f) wlen = 0.6f;   // screen-fraction cap
+        if (wlen > 1e-4f) {
+            float bx = bdvx * aspect, by = bdvy;
+            float bl = sqrtf(bx * bx + by * by);
+            fl->beamX = bx / bl; fl->beamY = by / bl; fl->beamLen = wlen;
+        } else { fl->beamX = 0.0f; fl->beamY = 0.0f; fl->beamLen = 0.0f; }
+        // Halo anchor a few units forward along the beam: the bubble floats
+        // in the lit air IN FRONT of the car instead of painting over the
+        // bodywork (user request), and its depth reference lets the bonnet
+        // and dash occlude it. Beams without a direction keep the lamp anchor.
+        fl->haloX = lampU; fl->haloY = lampV; fl->haloRef = fl->depthRef;
+        if (hasBeam) {
+            FixVector hw;
+            hw.x = src->pos.x + FixMul(src->dir.x, 0x30000);
+            hw.y = src->pos.y + FixMul(src->dir.y, 0x30000);
+            hw.z = src->pos.z + FixMul(src->dir.z, 0x30000);
+            FixVector hv;
+            FixMatrix_TransformPoint(&hv, &hw, &invView);
+            if (hv.z >= 0x10000) {
+                FixMatrix_ProjectWorldPointToView((int *)&vOut, &hw, view);
+                const float hu = (float)(vOut.x >> 16) / resXf, hvv = (float)(vOut.y >> 16) / resYf;
+                if (hu > -0.25f && hu < 1.25f && hvv > -0.25f && hvv < 1.25f) {
+                    fl->haloX = hu; fl->haloY = hvv;
+                    float zGate = hv.z / 65536.0f - 1.0f;   // bodywork at the lamp depth is nearer: gated
+                    float d = (zGate > 0.0f && proj43 < 0.0f) ? proj33 + proj43 / zGate : 0.0f;
+                    fl->haloRef = d > 1.0f ? 1.0f : d;
+                }
+            }
+        }
     }
     return fogLightTotal;
 }

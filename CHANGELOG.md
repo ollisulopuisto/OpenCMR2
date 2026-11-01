@@ -19,6 +19,13 @@ All notable changes to OpenCMR2 are documented here.
   upper-left corner; the beam wedge is clipped at the near plane and keeps
   its true direction. Beam appearance and intensity are unchanged.
 
+- Fog light beams no longer jump direction frame to frame in replays:
+  the wedge now follows the beam's transverse view direction (continuous
+  across near-plane crossings) with its length bounded by the foreshortened
+  beam, so near-axial beams read as a glow at the lamp instead of a cone
+  flipping across the sky. The lamp glow bubble anchors a few units forward
+  along the beam - it floats in the lit air in front of the car, and the
+  bonnet/dash occlude it via the depth gate instead of being painted over.
 
 ### Added
 - Windscreen dirt and wipers (cockpit view): dirt spatter from driving

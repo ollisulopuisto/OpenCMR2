@@ -11,7 +11,8 @@ layout(std140, set = 3, binding = 0) uniform FogUniforms {
     vec4 extra; // x near-field clear distance in world units (0 = off), y car-light response 0..2, zw unused
     vec4 lights[8];    // xy projected car light (uv, v downwards), z intensity 0..1, w unused
     vec4 lightInfo[8]; // x depth-buffer value 1 world unit in front of the lamp (<= 0: no depth gate), yzw tint
-    vec4 beams[8];     // xy aspect-corrected unit screen beam direction, z projected beam length, w unused
+    vec4 beams[8];     // xy aspect-corrected unit screen beam direction, z wedge length, w unused
+    vec4 halos[8];     // xy glow anchor (a few units forward along the beam), z halo depth ref (<= 0: no gate), w unused
 };
 void main()
 {
@@ -77,12 +78,20 @@ void main()
                 float axial = a <= 0.0 ? 0.0 : min(a / 0.05, 1.0);
                 wedge = axial * lateral * lateral / (1.0 + 6.0 * max(a, 0.0) / blen);
             }
-            float t = 1.0 - dot(dl, dl) / (0.05 * 0.05);   // foreshortened-lamp halo
-            float halo = t > 0.0 ? t * t : 0.0;
             float gate = 1.0;
             if (lightInfo[i].x > 0.0)
                 gate = step(lightInfo[i].x, depth);
-            lightSum += lightInfo[i].yzw * (li * (wedge + halo) * gate);
+            // The glow bubble anchors in the lit air a few units ahead of the
+            // lamp, with its own depth gate, so it floats in front of the car
+            // and the bodywork occludes it instead of being painted over.
+            vec2 dh = uv - halos[i].xy;
+            dh.x *= sun.w;
+            float th = 1.0 - dot(dh, dh) / (0.05 * 0.05);
+            float haloF = th > 0.0 ? th * th : 0.0;
+            float gateH = 1.0;
+            if (halos[i].z > 0.0)
+                gateH = step(halos[i].z, depth);
+            lightSum += lightInfo[i].yzw * (li * (wedge * gate + haloF * gateH));
         }
         lightSum *= extra.y * mix(0.30, 1.0, factor);
     }

@@ -130,3 +130,13 @@ void FixMatrix_ProjectWorldPointToView(int *pOut, FixVector *pPoint, SceneNode *
     pOut[1] += (int)FTOI(__int64, X87S_MUL((g_pGraphics->resY / 2), CGraphics::m_65536));
 }
 
+// out = v.x * right + v.y * up + v.z * forward (local -> parent space).
+// FUNCTION: CMR2 0x004b9c20 (moved unchanged from FixedPoint.cpp so the
+// rendered-beam harness can exercise the production projection path).
+int FixMatrix_RotateVector(FixVector *pOut, FixVector *pV, FixMatrix *pM)
+{
+    pOut->x = FixMul(pM->right.x, pV->x) + FixMul(pM->up.x, pV->y) + FixMul(pM->forward.x, pV->z);
+    pOut->y = FixMul(pM->right.y, pV->x) + FixMul(pM->up.y, pV->y) + FixMul(pM->forward.y, pV->z);
+    pOut->z = FixMul(pM->right.z, pV->x) + FixMul(pM->up.z, pV->y) + FixMul(pM->forward.z, pV->z);
+    return 1;
+}
