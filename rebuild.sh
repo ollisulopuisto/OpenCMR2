@@ -4,7 +4,7 @@
 #
 # No options: wipes build/macos/, reconfigures with the "macos" CMake preset, builds everything (game + tests). Same as before.
 #
-# Asset options (all opt-in; none is on by default). They run the game binary's own helper with --prepare-only after the build, so the
+# Asset options. They run the game binary's own helper with --prepare-only after the build, so the
 # private pack is made the same way as at launch: originals are verified by hash and never written, the cache lives under enhancements/ in your
 # profile, an old cache is never overwritten, nothing is downloaded (unless you add --install-enhancement-deps), no selection is saved to the INI.
 #   --update                    Fast-forward origin/main first (clean checkout only); never resets/stashes
@@ -14,7 +14,10 @@
 #   --data DIR                  Your owned game data folder (or set CMR2_DATA). Required with any asset option.
 #   --trees crossed|shell       3D tree replacements (experimental, three verified tree cards)
 #   --spectators animated       Articulated spectator poses
-#   --textures france1          France1 road 2x filtered textures (no restored detail)
+#   --textures original|france1|uprez
+#                               Exact-source 2x ground texture filtering (no new detail). uprez is the DEFAULT when
+#                               --data is given: it covers the owned Finland1/France1/Greece1 stages; france1 filters
+#                               France1 only; original opts out (unfiltered originals)
 #   --roads curved              Experimental Ballon curved road
 #   --driver-names real         Real driver names (display only)
 #   --install-enhancement-deps  Allow uv to set up an isolated Python with Pillow/numpy (network); default is no downloads
@@ -48,6 +51,7 @@ RUN=0
 REEXEC_ARGS=()
 for arg in "$@"; do [ "$arg" = --update ] || REEXEC_ARGS+=("$arg"); done
 DRY=0
+TEXTURES_VALUE=
 ASSETS_ONLY=0
 FLAGS=()
 TUNING=()
@@ -63,7 +67,7 @@ while [ "$#" -gt 0 ]; do
         --data) need_value "$@"; DATA="$2"; shift 2 ;;
         --trees) need_value "$@"; case "$2" in crossed|shell) ;; *) die "--trees takes crossed or shell, got '$2'" ;; esac; FLAGS+=(--trees "$2"); shift 2 ;;
         --spectators) need_value "$@"; [ "$2" = animated ] || die "--spectators takes animated, got '$2'"; FLAGS+=(--spectators "$2"); shift 2 ;;
-        --textures) need_value "$@"; [ "$2" = france1 ] || die "--textures takes france1, got '$2'"; FLAGS+=(--textures "$2"); shift 2 ;;
+        --textures) need_value "$@"; case "$2" in original|france1|uprez) ;; *) die "--textures takes original, france1 or uprez, got '$2'" ;; esac; TEXTURES_VALUE="$2"; shift 2 ;;
         --roads) need_value "$@"; [ "$2" = curved ] || die "--roads takes curved, got '$2'"; FLAGS+=(--roads "$2"); shift 2 ;;
         --driver-names) need_value "$@"; [ "$2" = real ] || die "--driver-names takes real, got '$2'"; FLAGS+=(--driver-names "$2"); shift 2 ;;
         --install-enhancement-deps) FLAGS+=(--install-enhancement-deps); shift ;;
@@ -92,6 +96,10 @@ if [ "$UPDATE" = 1 ]; then
         git merge --ff-only origin/main
         exec bash ./rebuild.sh "${REEXEC_ARGS[@]+"${REEXEC_ARGS[@]}"}"
     fi
+fi
+if [ "$ALL_MODS" = 1 ] && [ -n "$TEXTURES_VALUE" ]; then
+    [ "$TEXTURES_VALUE" = uprez ] || die "--all-mods already includes texture uprez; it cannot be combined with --textures $TEXTURES_VALUE"
+    TEXTURES_VALUE=   # consistent duplicate: --all-mods bakes uprez in below
 fi
 if [ "$ALL_MODS" = 1 ]; then
     [ "${#FLAGS[@]}" -eq 0 ] || die "--all-mods cannot be combined with individual asset/dependency options"
@@ -178,6 +186,21 @@ if [ "$ALL_MODS" = 1 ]; then
 fi
 
 
+# An explicit non-original choice becomes a real flag here (all-mods handled above).
+[ -z "$TEXTURES_VALUE" ] || [ "$TEXTURES_VALUE" = original ] || FLAGS+=(--textures "$TEXTURES_VALUE")
+
+# Default: exact-source uprez ground textures for the owned Finland/France/Greece
+# stages, when a data folder is there to build them from. --textures original
+# (or france1) overrides the default. Skipped loudly without --data.
+if [ "$ALL_MODS" = 0 ] && [ -z "$TEXTURES_VALUE" ]; then
+    if [ -n "$DATA" ] && [ -d "$DATA" ]; then
+        FLAGS+=(--textures uprez)
+        echo "==> Default: texture uprez on (exact-source 2x filter, owned Finland/France/Greece stages; opt out: --textures original)"
+    else
+        echo "==> Note: no --data folder; default texture uprez skipped, build only"
+    fi
+fi
+
 PREPARE=0
 for f in "${FLAGS[@]+"${FLAGS[@]}"}"; do case "$f" in --trees|--spectators|--textures|--roads|--driver-names) PREPARE=1 ;; esac; done
 [ "$ALL_MODS" = 0 ] || PREPARE=1
@@ -197,8 +220,10 @@ if [ "$PREPARE" = 1 ]; then
     [ -d "$DATA" ] || die "game data folder not found: $DATA"
     if [ "$ALL_MODS" = 0 ]; then
     case " ${FLAGS[*]} " in
-        *" --textures "*) n=$(find "$DATA" -iname frahit.bfl 2>/dev/null | wc -l | tr -d ' ')
+        *" --textures france1"*) n=$(find "$DATA" -iname frahit.bfl 2>/dev/null | wc -l | tr -d ' ')
             [ "$n" = 1 ] || die "--textures france1 needs exactly one frahit.bfl under $DATA, found $n" ;;
+        *" --textures uprez"*) n=$(find "$DATA" -iname frahit.bfl -o -iname finhit.bfl -o -iname grehit.bfl 2>/dev/null | wc -l | tr -d ' ')
+            [ "$n" -ge 1 ] || die "texture uprez needs at least one owned stage archive (frahit/finhit/grehit.bfl) under $DATA, found none" ;;
     esac
     case " ${FLAGS[*]} " in
         *" --roads "*) n=$(find "$DATA" -iname fra01hi.bfl 2>/dev/null | wc -l | tr -d ' ')
