@@ -94,6 +94,30 @@ inline bool SpeedMote_SpawnOffset(float hx, float hz, float speedPerStep, float 
     *dz = hz * ahead + rz * side;
     return true;
 }
+// Wheel-thrown dust/chip specks (particle types 0x10..0x17): stretch the
+// billboard along its screen-space motion so a speck reads as a soft wedge
+// thrown off the wheel instead of a separate round blob (user: "make em more
+// cloudlike, triangular? not separate blobs"). Pure maths, see
+// tests/wheel_speck_streak.cpp. dr/du/dd is one simulation step of motion in
+// the camera basis (world units); dd <= 0 means at/behind the camera plane.
+// Returns false when the speck keeps its original round quad.
+inline bool WheelSpeck_StreakParams(float dr, float du, float dd, int stretchPercent,
+                                    int *angle12, float *lengthMul, float *alphaMul) {
+    if (stretchPercent <= 0 || dd <= 0.f) return false;
+    if (stretchPercent > 100) stretchPercent = 100;
+    float len2 = dr * dr + du * du;
+    if (len2 < 1e-8f) return false;   // no screen motion: nothing to align to
+    const float tau = 6.2831853f;
+    float turns = std::atan2(du, dr) / tau;
+    if (turns < 0.f) turns += 1.f;
+    *angle12 = (int)std::floor(turns * 4096.f + 0.5f) & 0xfff;
+    float len = std::sqrt(len2);
+    float f = len / 2.0f;             // full stretch at 2 world units per step
+    if (f > 1.f) f = 1.f;
+    *lengthMul = 1.f + (stretchPercent / 100.f) * (0.5f + 2.5f * f);   // 1.5x..4x at 100
+    *alphaMul = 0.85f;                // stretched specks soften a touch
+    return true;
+}
 void SpeedMote_Update(Particle *, ParticleType *, SceneNode *);
 void SpeedMote_Spawn(FixVector *world);
 struct BillboardDef; struct SceneNode;
