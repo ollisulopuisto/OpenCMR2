@@ -1007,7 +1007,9 @@ bool CGameInfo::LoadGameInfo(void) {
     g_pGraphics->resY = m_gameInfo.screenHeight;
     g_pGraphics->depth = m_gameInfo.screenColourDepth;
 
-    g_pGraphics->isFullscreen = IsFullscreen() & 0xff;
+    // PORT: opencmr2.ini's video.fullscreen owns the mode (Alt+Enter and the
+    // menu write it); the saved game's stale byte dropped the window out of
+    // fullscreen at every boot.
 
     graphicsOptions = m_gameInfo.graphicsOptions & 6;
     if (graphicsOptions == 2) {
