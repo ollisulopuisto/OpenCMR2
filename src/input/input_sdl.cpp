@@ -130,6 +130,8 @@ bool TouchActive()
     return s_touchEnabled;
 }
 
+
+} // namespace (the Input_* exports below need external C linkage)
 int Input_TouchOverlayActive()
 {
     return TouchActive() ? 1 : 0;
@@ -202,6 +204,8 @@ int Input_GetTouchPads(TouchPadView *pads, int maxPads, int *windowW, int *windo
         FillPadView(s_touchControls.BrakePad(), (float)w, (float)h, basis, 1, &pads[n++]);
     return n;
 }
+
+namespace {
 
 // A small deflection presses the key; finer analog grading needs the game's
 // joystick bindings, which the floating design has not settled. NOT settled:
