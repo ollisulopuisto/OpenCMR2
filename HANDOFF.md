@@ -887,3 +887,22 @@ input.touch_handed. tests/touch_layout.cpp covers the settled invariants
 until drawn), analog steering via joystick bindings, settings GUI entries,
 Android overlay retirement. No CHANGELOG/WhatsNew entry: nothing user-
 visible until the pads render.
+## Merge state + follow-ups (1 Nov 2026, late morning)
+- #243 (SDL touch foundation) and #244 (CI repairs) are MERGED (main e0a7710).
+  #244 landed at 1a692b0; its final two windows test fixes are in #245
+  (fix/test-leg-followups): replay_controls_wiring reads UTF-8 (README gained
+  curly quotes in 73fc51f; Windows cp1252 default) and tuning_runtime closes
+  its ini readback handle before later saves/cleanup (Windows: rename over an
+  open file is denied, remove_all then throws -> abort 0xc0000409; Linux
+  unlinks open files, hence windows-only) + explicit <string> for libc++.
+- iOS PoC (poc/ios-sim-build): Stage 1 compile green; Stage 2 = unsigned sim
+  .app boot smoke in CI (marker from main() + no crash signature; no Data in
+  CI, so process-start only, no menu/gameplay claims) + documented Documents
+  route via SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS) (NSDocumentDirectory on
+  Cocoa). First smoke run failed on device-type pick (iPhone-6s-Plus is
+  refused by current runtimes; now highest-numbered iPhone type).
+- rebuild.sh: --textures accepts original|france1|uprez (game vocabulary) and
+  uprez is the default when --data is given (#246); opt-out --textures
+  original. Uprez coverage: owned Finland1/France1/Greece1 archives only.
+- What's new (#247): no more main-menu popup; localized row at the bottom of
+  the main Options menu (above Back); full log listed; rev 16.
