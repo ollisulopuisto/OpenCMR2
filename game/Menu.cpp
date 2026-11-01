@@ -44,6 +44,7 @@ void Menu_Init(Menu *pMenu, char *text, short param3, int param4, Menu *pParent,
     pMenu->flag4 = flag4;
     pMenu->flag5 = 1;
     pMenu->flag6 = pParent == (Menu *)-1;
+    pMenu->flag7 = 0;   // builders opt into both-pairs navigation explicitly
     pMenu->value &= 0x80;
     pMenu->pItemCallbacks = pItemCallbacks;
 }
@@ -320,20 +321,25 @@ Menu *Menu_Update(Menu *pMenu, unsigned int input)
     if (g_menuNextAction == 0) {
         flags = MENU_FLAGS(pMenu);
         if (flags & 4)
-            bSelect = (input >> 4) & 1;
+            bSelect = (input & MENU_INPUT_SELECT) ? 1 : 0;
         else
             bSelect = 0;
         if (flags & 8)
-            bBack = (input >> 5) & 1;
+            bBack = (input & MENU_INPUT_BACK) ? 1 : 0;
         else
             bBack = 0;
+        // The two directional pairs swap roles with the layout (the bits are
+        // physical arrows, see MENU_INPUT_*): layout 1 moves the cursor with
+        // Up/Down and adjusts values with Left/Right; layout 0 is the
+        // reverse. Items without a value (types other than 3/6) ignore value
+        // adjustment, so their layout's adjust pair is dead.
         if (flags & 2) {
             if (pMenu->layout == 1) {
-                bLeft = input & 1;
-                bRight = (input >> 1) & 1;
+                bLeft = (input & MENU_INPUT_LEFT) ? 1 : 0;
+                bRight = (input & MENU_INPUT_RIGHT) ? 1 : 0;
             } else {
-                bLeft = (input >> 2) & 1;
-                bRight = (input >> 3) & 1;
+                bLeft = (input & MENU_INPUT_UP) ? 1 : 0;
+                bRight = (input & MENU_INPUT_DOWN) ? 1 : 0;
             }
             if (bLeft && bRight)
                 bLeft = 0;
@@ -343,17 +349,30 @@ Menu *Menu_Update(Menu *pMenu, unsigned int input)
         }
         if ((flags & 1) && !bLeft && !bRight) {
             if (pMenu->layout == 1) {
-                bPrev = (input >> 2) & 1;
-                bNext = (input >> 3) & 1;
+                bPrev = (input & MENU_INPUT_UP) ? 1 : 0;
+                bNext = (input & MENU_INPUT_DOWN) ? 1 : 0;
             } else {
-                bPrev = input & 1;
-                bNext = (input >> 1) & 1;
+                bPrev = (input & MENU_INPUT_LEFT) ? 1 : 0;
+                bNext = (input & MENU_INPUT_RIGHT) ? 1 : 0;
             }
             if (bPrev && bNext)
                 bPrev = 0;
         } else {
             bPrev = 0;
             bNext = 0;
+        }
+        if (pMenu->flag7 && (flags & 1)) {
+            // Both-pairs navigation for menus with no adjustable values (the
+            // quit confirmation opts in): either arrow pair moves the cursor.
+            // Native reports 2026-11-01/02: Up/Down dead in the original
+            // horizontal layout, only Left/Right in the vertical one - users
+            // expect both pairs to work on a Yes/No dialog.
+            bPrev = (input & (MENU_INPUT_LEFT | MENU_INPUT_UP)) ? 1 : 0;
+            bNext = (input & (MENU_INPUT_RIGHT | MENU_INPUT_DOWN)) ? 1 : 0;
+            if (bPrev && bNext)
+                bPrev = 0;
+            bLeft = 0;
+            bRight = 0;
         }
 
         count = pMenu->itemCount;

@@ -2847,10 +2847,12 @@ void FrontendMenu_BuildCredits(void)
 // FUNCTION: CMR2 0x004f6dd0
 void FrontendMenu_BuildQuitConfirmation(void)
 {
-    // Vertical layout: the original horizontal layout read the Up/Down bits
-    // as value adjustment, so the cursor could never leave No (native report:
-    // arrows dead, Yes unselectable). Every other menu navigates vertically.
+    // Both arrow pairs navigate (flag7): the layout picks which pair the menu
+    // machine maps to prev/next, and this dialog has no adjustable values, so
+    // the other pair would be dead. Native reports: Up/Down did not reach Yes
+    // in the original layout, only Left/Right did after the layout swap.
     Menu_Init(&g_menu0x00823df8, 0, 3, 0, &g_menu0x0081d6d8, NULL, 1, 1, 0);
+    g_menu0x00823df8.flag7 = 1;   // Yes/No answers Up/Down and Left/Right alike
     Menu_AddItemType2(&g_menu0x00823df8, 0, 5, &g_menu0x00820798, 0, 0);
     Menu_AddItemType1(&g_menu0x00823df8, 0, 4, (MenuItemAction)FrontendMenu_CancelQuit, 0);
     Menu_SetCallbacks(&g_menu0x00823df8, FrontendMenu_EnterQuitConfirmation, (MenuCallback)FrontendScroller_UpdateMain, (MenuCallback)FrontendMenu_DrawQuitConfirmation, (MenuCallback)FrontendMenu_LeaveQuitConfirmation);

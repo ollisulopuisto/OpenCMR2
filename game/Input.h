@@ -9,6 +9,19 @@
 #endif
 #include "port/input.h"
 
+// Menu input word bits (DeviceInfo field_0x8, edge-detected). These are the
+// PHYSICAL arrow directions on every device path: keyboard fixed table
+// (LEFT=0x1, RIGHT=0x2, UP=0x4, DOWN=0x8), keyboard rebindable table (DIK
+// 0xCB/0xCD/0xC8/0xD0 in action slots 0-3), joystick stick and POV, and the
+// pedal translator's one-shot up/down presses (bits 2 and 3). Menu_Update
+// consumes this word; keep the bit meaning in sync with Input.cpp.
+#define MENU_INPUT_LEFT   0x01
+#define MENU_INPUT_RIGHT  0x02
+#define MENU_INPUT_UP     0x04
+#define MENU_INPUT_DOWN   0x08
+#define MENU_INPUT_SELECT 0x10
+#define MENU_INPUT_BACK   0x20
+
 // One of the eight axes of a joystick (x, y, z, rx, ry, rz, two sliders).
 struct JoystickBinding {
     BOOL present;       // 0x00 the device reports a range for the axis
