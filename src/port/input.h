@@ -47,8 +47,13 @@ void Input_TouchEvent(int type, long long fingerId, float x, float y);
  * so radiusX == radiusY on square-pixel displays. */
 typedef struct TouchPadView {
     int active;
-    float anchorX, anchorY;   /* pad anchor (where the thumb landed) */
-    float currentX, currentY; /* live finger position */
+    int pressed;              /* a live pointer holds this pad */
+    int kind;                 /* 0 floating drive, 1 floating brake circle,
+                                 2 classic steering pad, 3 classic accelerate,
+                                 4 classic brake, 5 classic handbrake */
+    float anchorX, anchorY;   /* pad anchor (where the thumb landed); the
+                                 region center for the fixed classic pads */
+    float currentX, currentY; /* live finger position (center when idle) */
     float radiusX, radiusY;   /* drawn circle radius */
 } TouchPadView;
 
@@ -56,11 +61,12 @@ typedef struct TouchPadView {
  * input.touch_controls setting); the overlay draws only then. */
 int Input_TouchOverlayActive(void);
 
-/* Fills the drive/brake pad views and the drawable size they are scaled to.
- * Returns the number of active pads. Classic mode has no geometry accessors
- * in the merged foundation yet, so both views report inactive there - the
- * fixed pads land with the classic-pad rendering step. */
-int Input_GetTouchPads(TouchPadView *drive, TouchPadView *brake, int *windowW, int *windowH);
+/* Fills up to maxPads pad views and the drawable size they are scaled to,
+ * and returns the view count: 2 floating pads (drive, brake circle) or the
+ * 4 fixed classic regions (always active; pressed tracks held buttons).
+ * Classic rings inscribe their region; every size is placeholder geometry
+ * pending the settled design. */
+int Input_GetTouchPads(TouchPadView *pads, int maxPads, int *windowW, int *windowH);
 
 /* Key codes: DirectInput scan codes (the ones the game names). */
 #define INPUT_KEY_ESCAPE 0x01

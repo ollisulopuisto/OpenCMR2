@@ -134,9 +134,11 @@ int Input_TouchOverlayActive()
     return TouchActive() ? 1 : 0;
 }
 
-static void FillPadView(const TouchPad &pad, float w, float h, float basis, TouchPadView *out)
+static void FillPadView(const TouchPad &pad, float w, float h, float basis, int kind, TouchPadView *out)
 {
     out->active = pad.active ? 1 : 0;
+    out->pressed = pad.active ? 1 : 0; // floating pads exist only while held
+    out->kind = kind;
     if (!pad.active)
         return;
     out->anchorX = pad.anchorX * w;
@@ -148,7 +150,22 @@ static void FillPadView(const TouchPad &pad, float w, float h, float basis, Touc
     out->radiusY = pad.radius * basis;
 }
 
-int Input_GetTouchPads(TouchPadView *drive, TouchPadView *brake, int *windowW, int *windowH)
+static void FillRegionView(const TouchControls::TouchRegion &r, float w, float h, TouchPadView *out)
+{
+    out->active = 1; // fixed classic pads are always shown
+    out->pressed = r.pressed ? 1 : 0;
+    out->kind = r.role + 1; // input role 1 -> view kind 2 (classic steering)
+    float cx = (r.x0 + r.x1) * 0.5f * w, cy = (r.y0 + r.y1) * 0.5f * h;
+    out->anchorX = cx;
+    out->anchorY = cy;
+    out->currentX = r.pressed ? r.pressX * w : cx;
+    out->currentY = r.pressed ? r.pressY * h : cy;
+    // Ring inscribed in the region (placeholder geometry).
+    float rx = (r.x1 - r.x0) * 0.5f * w, ry = (r.y1 - r.y0) * 0.5f * h;
+    out->radiusX = out->radiusY = rx < ry ? rx : ry;
+}
+
+int Input_GetTouchPads(TouchPadView *pads, int maxPads, int *windowW, int *windowH)
 {
     int w = 0, h = 0;
     SDL_Window *window = Platform_GetWindow();
@@ -158,16 +175,26 @@ int Input_GetTouchPads(TouchPadView *drive, TouchPadView *brake, int *windowW, i
         *windowW = w;
     if (windowH != NULL)
         *windowH = h;
-    if (drive == NULL || brake == NULL)
+    if (pads == NULL || maxPads <= 0)
         return 0;
-    drive->active = 0;
-    brake->active = 0;
     if (!TouchActive() || w <= 0 || h <= 0)
         return 0;
     float basis = (float)(w < h ? w : h);
-    FillPadView(s_touchControls.DrivePad(), (float)w, (float)h, basis, drive);
-    FillPadView(s_touchControls.BrakePad(), (float)w, (float)h, basis, brake);
-    return drive->active + brake->active;
+    if (s_touchControls.Config().mode == TOUCH_MODE_CLASSIC) {
+        TouchControls::TouchRegion regions[4];
+        int n = s_touchControls.ClassicRegions(regions);
+        if (n > maxPads)
+            n = maxPads;
+        for (int i = 0; i < n; i++)
+            FillRegionView(regions[i], (float)w, (float)h, &pads[i]);
+        return n;
+    }
+    int n = 0;
+    if (maxPads > 0)
+        FillPadView(s_touchControls.DrivePad(), (float)w, (float)h, basis, 0, &pads[n++]);
+    if (maxPads > 1)
+        FillPadView(s_touchControls.BrakePad(), (float)w, (float)h, basis, 1, &pads[n++]);
+    return n;
 }
 
 // A small deflection presses the key; finer analog grading needs the game's

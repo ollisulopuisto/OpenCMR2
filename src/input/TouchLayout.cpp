@@ -31,18 +31,44 @@ TouchControls::Role TouchControls::RoleFor(float x, float y) const
     // Classic fixed pads (placeholder regions pending the settled design):
     // steering pad on the driving side's lower half, accelerate/brake/
     // handbrake buttons on the other side, mirrored by handedness.
-    bool leftHalf = x < 0.5f;
-    if (m_config.hand == TOUCH_HAND_LEFT)
-        leftHalf = !leftHalf;
-    if (leftHalf)
-        return InRect(x, y, 0.0f, 0.5f, 0.5f, 1.0f) ? ROLE_DRIVE : ROLE_NONE;
-    if (InRect(x, y, 0.5f, 0.08f, 1.0f, 0.38f))
-        return ROLE_BUTTON_ACCEL;
-    if (InRect(x, y, 0.66f, 0.42f, 1.0f, 0.72f))
-        return ROLE_BUTTON_BRAKE;
-    if (InRect(x, y, 0.5f, 0.42f, 0.66f, 0.72f))
-        return ROLE_BUTTON_HANDBRAKE;
+    TouchRegion regions[4];
+    ClassicRegions(regions);
+    for (const TouchRegion &r : regions)
+        if (InRect(x, y, r.x0, r.y0, r.x1, r.y1))
+            return (Role)r.role;
     return ROLE_NONE;
+}
+
+// Right-handed fixed layout; left-handed mirrors x. The ordering matches
+// Role: steering pad, accelerate, brake, handbrake.
+static const TouchControls::TouchRegion kClassicRight[4] = {
+    {0.0f, 0.5f, 0.5f, 1.0f, 1, false, 0.0f, 0.0f},
+    {0.5f, 0.08f, 1.0f, 0.38f, 3, false, 0.0f, 0.0f},
+    {0.66f, 0.42f, 1.0f, 0.72f, 4, false, 0.0f, 0.0f},
+    {0.5f, 0.42f, 0.66f, 0.72f, 5, false, 0.0f, 0.0f},
+};
+
+int TouchControls::ClassicRegions(TouchRegion out[4]) const
+{
+    if (m_config.mode != TOUCH_MODE_CLASSIC || out == NULL)
+        return 0;
+    bool mirror = m_config.hand == TOUCH_HAND_LEFT;
+    for (int i = 0; i < 4; i++) {
+        TouchRegion r = kClassicRight[i];
+        if (mirror) {
+            float x0 = r.x0;
+            r.x0 = 1.0f - r.x1;
+            r.x1 = 1.0f - x0;
+        }
+        const Pointer *p = Newest((Role)r.role);
+        if (p != NULL) {
+            r.pressed = true;
+            r.pressX = p->x;
+            r.pressY = p->y;
+        }
+        out[i] = r;
+    }
+    return 4;
 }
 
 void TouchControls::PointerDown(int id, float x, float y)

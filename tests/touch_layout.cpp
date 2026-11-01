@@ -127,6 +127,54 @@ int ClassicModeStaysAvailable()
     return 0;
 }
 
+int LeftHandedClassicMirrorsRegions()
+{
+    TouchConfig cfg;
+    cfg.mode = TOUCH_MODE_CLASSIC;
+    cfg.hand = TOUCH_HAND_LEFT;
+    TouchControls t(cfg);
+    t.PointerDown(1, 0.75f, 0.8f);            // mirrored steering pad (right side)
+    t.PointerMove(1, 0.70f, 0.8f);
+    CHECK(t.Input().steer < 0.0f);
+    CHECK(Near(t.Input().accelerate, 0.0f));
+    t.PointerDown(2, 0.25f, 0.2f);            // mirrored accelerate button (left side)
+    CHECK(Near(t.Input().accelerate, 1.0f));
+    t.PointerDown(3, 0.2f, 0.55f);            // mirrored brake button
+    CHECK(Near(t.Input().brake, 1.0f));
+    t.PointerDown(4, 0.42f, 0.55f);           // mirrored handbrake button
+    CHECK(t.Input().handbrake);
+    return 0;
+}
+
+int ClassicRegionsExposeGeometry()
+{
+    TouchConfig cfg;
+    cfg.mode = TOUCH_MODE_CLASSIC;
+    TouchControls t(cfg);
+    TouchControls::TouchRegion r[4];
+    CHECK(t.ClassicRegions(r) == 4);
+    CHECK(r[0].role == 1 && Near(r[0].x0, 0.0f) && Near(r[0].x1, 0.5f)); // steering pad, right-handed
+    CHECK(r[1].role == 3 && Near(r[1].x0, 0.5f));                        // accelerate, right side
+    CHECK(!r[1].pressed);
+    t.PointerDown(7, 0.75f, 0.2f);                                       // hold accelerate
+    CHECK(t.ClassicRegions(r) == 4);
+    CHECK(r[1].pressed && Near(r[1].pressX, 0.75f) && Near(r[1].pressY, 0.2f));
+    t.PointerUp(7);
+    CHECK(t.ClassicRegions(r) == 4 && !r[1].pressed);
+
+    TouchConfig left = cfg;
+    left.hand = TOUCH_HAND_LEFT;
+    TouchControls tl(left);
+    CHECK(tl.ClassicRegions(r) == 4);
+    CHECK(r[0].role == 1 && Near(r[0].x0, 0.5f) && Near(r[0].x1, 1.0f)); // steering mirrored right
+    CHECK(r[1].role == 3 && Near(r[1].x0, 0.0f) && Near(r[1].x1, 0.5f)); // accelerate mirrored left
+
+    // Floating mode exposes no fixed regions.
+    TouchControls tf{TouchConfig()};
+    CHECK(tf.ClassicRegions(r) == 0);
+    return 0;
+}
+
 } // namespace
 
 int main()
@@ -138,6 +186,8 @@ int main()
     if (int r = AllFourInputsCombine()) return r;
     if (int r = HandednessMirrors()) return r;
     if (int r = ClassicModeStaysAvailable()) return r;
+    if (int r = LeftHandedClassicMirrorsRegions()) return r;
+    if (int r = ClassicRegionsExposeGeometry()) return r;
     printf("touch layout ok\n");
     return 0;
 }

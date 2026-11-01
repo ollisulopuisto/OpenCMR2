@@ -58,9 +58,10 @@ void TouchOverlay_RecordFrame(int contentW, int contentH, bool stretch)
 {
     if (!Input_TouchOverlayActive())
         return;
-    TouchPadView drive, brake;
+    TouchPadView views[4];
     int windowW = 0, windowH = 0;
-    if (Input_GetTouchPads(&drive, &brake, &windowW, &windowH) == 0)
+    int padCount = Input_GetTouchPads(views, 4, &windowW, &windowH);
+    if (padCount == 0)
         return;
     if (windowW <= 0 || windowH <= 0 || contentW <= 0 || contentH <= 0)
         return;
@@ -97,9 +98,8 @@ void TouchOverlay_RecordFrame(int contentW, int contentH, bool stretch)
 
     // Placeholder look (unsettled design): a faint rim at the anchor and a
     // brighter thumb dot at the live finger position.
-    const TouchPadView *pads[2] = {&drive, &brake};
-    for (int i = 0; i < 2; i++) {
-        const TouchPadView *pad = pads[i];
+    for (int i = 0; i < padCount; i++) {
+        const TouchPadView *pad = &views[i];
         if (!pad->active)
             continue;
         // Provisional, configurable bar policy (touch_overlay.h): clamp the
@@ -115,8 +115,12 @@ void TouchOverlay_RecordFrame(int contentW, int contentH, bool stretch)
                                          windowW, windowH, contentW, contentH, stretch, current);
         if (hide && (anchorClamped || currentClamped))
             continue;
-        DrawSpriteQuad(s_ring, anchor[0], anchor[1], anchor[2], anchor[3], 0x50FFFFFF);
-        DrawSpriteQuad(s_dot, current[0], current[1], current[2], current[3], 0x90FFFFFF);
+        // Fixed classic pads idle at their region center; the thumb dot only
+        // appears while the pad is actually held.
+        bool held = pad->pressed != 0;
+        DrawSpriteQuad(s_ring, anchor[0], anchor[1], anchor[2], anchor[3], held ? 0x70FFFFFF : 0x40FFFFFF);
+        if (held)
+            DrawSpriteQuad(s_dot, current[0], current[1], current[2], current[3], 0x90FFFFFF);
     }
     Gfx_PopState();
 }
