@@ -30,6 +30,10 @@
 
 FogLightSource g_fogLightSources[LIGHT_FIELD_MAX];
 int g_fogLightSourceCount = 0;
+// Defined in game/SceneNode.cpp in production; the beam-direction
+// normalization uses FixVecLength, which reads this table. Fill it exactly
+// as Scene_InitTables does (sqrt of (8+16n)/65536 in 16.16).
+unsigned short g_sqrtTable[4096];
 
 // Test-scoped definitions of the globals/functions the compiled game TUs
 // reference outside the projection path under test (View_* helpers pulled in
@@ -61,6 +65,8 @@ static void fail(const char *view, double ang, bool isYaw, int li, const char *w
     failures++;
 }
 int main() {
+    for (int n = 0, i = 8; n < 4096; n++, i += 16)
+        g_sqrtTable[n] = (unsigned short)(int)(sqrt((double)i / 65536.0) * 65536.0 + 0.5);
     memset(&g_gfx,0,sizeof g_gfx); g_gfx.resX=1920; g_gfx.resY=1080; g_pGraphics=&g_gfx;
     memset(&g_texManager,0,sizeof g_texManager);
     g_texManager.fixedProjection[0]=(int)(2.33711243*0.5*65536.0);
@@ -120,6 +126,42 @@ int main() {
                 memcpy(prev, fl, sizeof fl); prevN = n;
             }
         }
+    }
+
+    // Direction-length robustness: the beam direction is normalized before the
+    // 30-unit beam-end extension, so scaled/short dirs must give the SAME beam
+    // as the unit dir, and zero/tiny dirs must give no beam (never a crash).
+    {
+        SceneNode view; memset(&view,0,sizeof view);
+        matFromYPR(&view.world, 10,0,0, -90,0);   // side view: fully transverse
+        const int scales[] = {0x10000, 0x18000, 0x8000, 0x100};
+        float refX=0, refLen=-1;
+        for (int si=0; si<4; si++) {
+            LightField_Clear();
+            FixVector lp={0,0,0};
+            FixVector ld={0,0,scales[si]};        // (0,0,k) - same axis, k from 1/256 to 1.5
+            LightField_Add(&lp,&ld,0x10000, 0x10000,0x10000,0x10000);
+            GfxFogLight fl[LIGHT_FIELD_MAX];
+            int n = FogBeam_ProjectLights(fl, LIGHT_FIELD_MAX, &view, 1920.0f,1080.0f, (float)P33,(float)P43);
+            if (n != 1) { fail("scale",si,true,0,"light count", n, 1); continue; }
+            if (si == 0) { refX = fl[0].beamX; refLen = fl[0].beamLen; }
+            else {
+                if (fabsf(fl[0].beamX - refX) > 0.001f || fabsf(fl[0].beamLen - refLen) > 0.001f)
+                    fail("scale",si,true,0,"scaled dir changes the beam", fl[0].beamLen, refLen);
+            }
+        }
+        {   LightField_Clear();   // zero dir: no beam
+            FixVector lp={0,0,0}, ld={0,0,0};
+            LightField_Add(&lp,&ld,0x10000, 0x10000,0x10000,0x10000);
+            GfxFogLight fl[LIGHT_FIELD_MAX];
+            int n = FogBeam_ProjectLights(fl, LIGHT_FIELD_MAX, &view, 1920.0f,1080.0f, (float)P33,(float)P43);
+            if (n != 1 || fl[0].beamLen != 0.0f) fail("scale",0,true,0,"zero dir must give no beam", n?fl[0].beamLen:-1, 0); }
+        {   LightField_Clear();   // tiny dir (1,0,0): length rounds to zero - no beam, no div-by-zero
+            FixVector lp={0,0,0}, ld={1,0,0};
+            LightField_Add(&lp,&ld,0x10000, 0x10000,0x10000,0x10000);
+            GfxFogLight fl[LIGHT_FIELD_MAX];
+            int n = FogBeam_ProjectLights(fl, LIGHT_FIELD_MAX, &view, 1920.0f,1080.0f, (float)P33,(float)P43);
+            if (n != 1 || fl[0].beamLen != 0.0f) fail("scale",0,true,0,"tiny dir must give no beam", n?fl[0].beamLen:-1, 0); }
     }
     printf(failures==0 ? "SWEEP CLEAN\n" : "SWEEP: %d failures\n", failures);
     return failures != 0;

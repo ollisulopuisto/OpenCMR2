@@ -27,14 +27,27 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
         FogLightSource *src = &g_fogLightSources[li];
         FixVector vView;
         FixMatrix_TransformPoint(&vView, &src->pos, &invView);
+        // Normalize the beam direction before extending it: the beam-end
+        // projection below assumes a unit vector, and the asset data feeding
+        // this lives outside the repo, so enforce the prerequisite here
+        // instead of trusting it. Zero vectors and dirs whose length rounds
+        // to zero (tiny vectors) fall back to no beam; FixVecLength /
+        // FixVecScaleRecip use 64-bit intermediates. The classic glow path
+        // keeps its own convention and is untouched.
+        FixVector dirN = src->dir;
+        bool hasBeam = src->dir.x != 0 || src->dir.y != 0 || src->dir.z != 0;
+        if (hasBeam) {
+            int dl = FixVecLength(&dirN);
+            if (dl <= 0) { hasBeam = false; dirN.x = dirN.y = dirN.z = 0; }
+            else FixVecScaleRecip(&dirN, &dirN, dl);
+        }
         // The beam's screen wedge: project a point 30 world units along the
         // beam. Off-screen lamps stay: their wedge can still cross the frame
         // (the cockpit's own lamps sit below the windscreen line).
         FixVector beamEnd;
-        beamEnd.x = src->pos.x + FixMul(src->dir.x, 0x1e0000);
-        beamEnd.y = src->pos.y + FixMul(src->dir.y, 0x1e0000);
-        beamEnd.z = src->pos.z + FixMul(src->dir.z, 0x1e0000);
-        const bool hasBeam = src->dir.x != 0 || src->dir.y != 0 || src->dir.z != 0;
+        beamEnd.x = src->pos.x + FixMul(dirN.x, 0x1e0000);
+        beamEnd.y = src->pos.y + FixMul(dirN.y, 0x1e0000);
+        beamEnd.z = src->pos.z + FixMul(dirN.z, 0x1e0000);
         FixVector endView = {0, 0, 0};
         if (hasBeam)
             FixMatrix_TransformPoint(&endView, &beamEnd, &invView);
@@ -117,7 +130,7 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
         {   float transverse = 0.0f, bdvx = 0.0f, bdvy = 0.0f;
             if (hasBeam) {
                 FixVector bd;
-                FixMatrix_RotateVector(&bd, (FixVector *)&src->dir, &invView);
+                FixMatrix_RotateVector(&bd, &dirN, &invView);
                 const double bx = bd.x, by = bd.y, bz = bd.z;
                 const double bl = sqrt(bx * bx + by * by + bz * bz);
                 if (bl > 0.0) {
