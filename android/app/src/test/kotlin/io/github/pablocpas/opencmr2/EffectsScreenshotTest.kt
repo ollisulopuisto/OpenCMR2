@@ -3,8 +3,13 @@ package io.github.pablocpas.opencmr2
 import android.graphics.Bitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodes
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import java.io.File
 import org.junit.Rule
 import org.junit.Test
@@ -28,9 +33,29 @@ class EffectsScreenshotTest {
     @Test
     fun effectsScreenRenders() {
         rule.waitForIdle()
+        capture("effects.png")
+    }
+
+    @Test
+    fun tunnelSliderAppearsWhenEnabled() {
+        rule.waitForIdle()
+        rule.onAllNodes(isToggleable())[0].performClick()
+        rule.waitForIdle()
+        capture("effects-slider.png")
+    }
+
+    @Test
+    fun scrolledStateShowsFogAndDone() {
+        rule.waitForIdle()
+        rule.onNodeWithText("Fog").performScrollTo()
+        rule.waitForIdle()
+        capture("effects-scrolled.png")
+    }
+
+    private fun capture(name: String) {
         val image = rule.onRoot().captureToImage()
         val dir = File(System.getProperty("user.dir"), "screenshots").apply { mkdirs() }
-        File(dir, "effects.png").outputStream().use { out ->
+        File(dir, name).outputStream().use { out ->
             image.asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, out)
         }
     }
