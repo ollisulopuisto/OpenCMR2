@@ -21,14 +21,17 @@
 
 struct WindshieldMap {
     uint8_t dirt[WINDSHIELD_MAP_W * WINDSHIELD_MAP_H];   // 0 clean .. 255 opaque grime
+    uint8_t crack[WINDSHIELD_MAP_W * WINDSHIELD_MAP_H];  // 0 intact .. 255 bright shatter mark
     uint8_t wet;        // 0 dry .. 255 soaked (ramps with the view's rain state)
+    uint8_t crackState; // 0 none, 1 damaged, 2 broken (stronger pattern)
     uint32_t rng;       // own LCG: render-only determinism, never the sim's RAND
 };
 
 inline void Windshield_Reset(WindshieldMap *m, uint32_t seed)
 {
-    for (int i = 0; i < WINDSHIELD_MAP_W * WINDSHIELD_MAP_H; i++) m->dirt[i] = 0;
+    for (int i = 0; i < WINDSHIELD_MAP_W * WINDSHIELD_MAP_H; i++) { m->dirt[i] = 0; m->crack[i] = 0; }
     m->wet = 0;
+    m->crackState = 0;
     m->rng = seed ? seed : 0x9e3779b9u;
 }
 
@@ -146,6 +149,71 @@ inline int Windshield_Wipe(WindshieldMap *m, float pivotU, float pivotV, float r
         }
     }
     return removed;
+}
+
+// Damage-linked cracks (video.windshield_cracks): when the car's windscreen
+// break slot (CarPartSet slot 0, the first window in the CIN glass list)
+// reaches damaged/broken, the glass gains a permanent shattered pattern -
+// radiating lines from impact points plus partial web rings, matching the
+// exterior model's damaged-glass look. Stamped once per stage per view,
+// deterministic per map seed; wipers clear dirt only, cracks stay until
+// reset. `broken` selects the full multi-impact pattern over the lighter
+// single-impact cracked look.
+inline void Windshield_CrackLine(WindshieldMap *m, float u0, float v0, float u1, float v1, int strength)
+{
+    float du = u1 - u0, dv = v1 - v0;
+    float ad = fabsf(du) > fabsf(dv) ? fabsf(du) : fabsf(dv);
+    int steps = (int)(ad * WINDSHIELD_MAP_W * 2);
+    if (steps < 1) steps = 1;
+    for (int i = 0; i <= steps; i++) {
+        float t = (float)i / steps;
+        float u = u0 + du * t, v = v0 + dv * t;
+        int x = (int)(u * WINDSHIELD_MAP_W), y = (int)(v * WINDSHIELD_MAP_H);
+        if (x < 0 || x >= WINDSHIELD_MAP_W || y < 0 || y >= WINDSHIELD_MAP_H) continue;
+        // Cell-centre glass test, same convention as the spatter/wipe passes.
+        if (!Windshield_InsideGlass((x + 0.5f) / WINDSHIELD_MAP_W, (y + 0.5f) / WINDSHIELD_MAP_H)) continue;
+        int val = (int)(strength * (1.0f - 0.6f * t));
+        int idx = y * WINDSHIELD_MAP_W + x;
+        if (val > m->crack[idx]) m->crack[idx] = (uint8_t)(val > 255 ? 255 : val);
+    }
+}
+
+inline void Windshield_StampCracks(WindshieldMap *m, int broken)
+{
+    int want = broken ? 2 : 1;
+    if (m->crackState >= want) return;
+    m->crackState = (uint8_t)want;
+    int impacts = broken ? 3 : 1;
+    for (int i = 0; i < impacts; i++) {
+        float iu = 0.30f + 0.40f * ((Windshield_Rand(m) & 0xffff) / 65535.0f);
+        float iv = 0.12f + 0.36f * ((Windshield_Rand(m) & 0xffff) / 65535.0f);
+        if (!Windshield_InsideGlass(iu, iv)) continue;
+        int rays = 6 + (int)(Windshield_Rand(m) % 4);
+        float base = ((Windshield_Rand(m) & 0xffff) / 65535.0f) * 6.2832f;
+        float lenScale = broken ? 1.4f : 1.0f;
+        for (int r = 0; r < rays; r++) {
+            float a = base + 6.2832f * r / rays + ((Windshield_Rand(m) & 0xff) / 255.0f - 0.5f) * 0.5f;
+            float len = (0.10f + 0.25f * ((Windshield_Rand(m) & 0xffff) / 65535.0f)) * lenScale;
+            Windshield_CrackLine(m, iu, iv, iu + sinf(a) * len, iv - cosf(a) * len, 150 + (int)(Windshield_Rand(m) % 70));
+        }
+        for (int ring = 1; ring <= 2; ring++) {
+            float rr = 0.045f * ring * (broken ? 1.5f : 1.0f);
+            int arcs = 3 + (int)(Windshield_Rand(m) % 3);
+            for (int q = 0; q < arcs; q++) {
+                float a0 = ((Windshield_Rand(m) & 0xffff) / 65535.0f) * 6.2832f;
+                float a1 = a0 + 0.6f + ((Windshield_Rand(m) & 0xff) / 255.0f);
+                Windshield_CrackLine(m, iu + sinf(a0) * rr, iv - cosf(a0) * rr,
+                                     iu + sinf(a1) * rr, iv - cosf(a1) * rr, 110);
+            }
+        }
+    }
+}
+
+inline int Windshield_TotalCracks(const WindshieldMap *m)
+{
+    int total = 0;
+    for (int i = 0; i < WINDSHIELD_MAP_W * WINDSHIELD_MAP_H; i++) total += m->crack[i];
+    return total;
 }
 
 // Total dirt (for "is it worth drawing" and the F10 line).

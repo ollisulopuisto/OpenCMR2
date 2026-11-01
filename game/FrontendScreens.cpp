@@ -4121,6 +4121,8 @@ void FrontendMenu_EnterAdvancedGraphicsOptions(Menu *pMenu, int param)
     Menu_GetItem(pMenu, 0x16)->max = Sys_GetOption("video.windscreen_wipers", 1) != 0 ? 1 : 0;
     // OpenCMR2: windscreen dirt strength default 40.
     Menu_GetItem(pMenu, 0x17)->max = SettingsPage_ClampPercent(Sys_GetOption("video.windscreen_dirt", 40));
+    // OpenCMR2: windshield cracks on by default.
+    Menu_GetItem(pMenu, 0x1d)->max = Sys_GetOption("video.windshield_cracks", 1) != 0 ? 1 : 0;
     // OpenCMR2: depth of field off by default.
     Menu_GetItem(pMenu, 0x18)->max = Sys_GetOption("video.depth_of_field", 0) != 0 ? 1 : 0;
     // OpenCMR2: god rays off by default.
@@ -4204,6 +4206,8 @@ void FrontendMenu_ApplyAdvancedGraphicsOptions(Menu *pMenu, int param)
     // OpenCMR2: windscreen dirt strength (0..100).
     int dirt = Menu_GetItem(pMenu, 0x17)->max;
     Sys_SetOption("video.windscreen_dirt", dirt);
+    // OpenCMR2: windshield cracks on/off.
+    Sys_SetOption("video.windshield_cracks", Menu_GetItem(pMenu, 0x1d)->max);
     // OpenCMR2: depth of field on/off.
     int dof = Menu_GetItem(pMenu, 0x18)->max;
     Sys_SetOption("video.depth_of_field", dof);

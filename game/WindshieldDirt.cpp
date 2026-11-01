@@ -10,6 +10,7 @@
 #include "port/gfx.h"
 #include "Graphics.h"
 #include "CarInterior.h"
+#include "CarParts.h"
 #include "StageBlock.h"
 #include "WindshieldDirt.h"
 #include "GraphicsOptions.h"
@@ -18,6 +19,7 @@
 WindshieldMap g_windshieldMaps[WINDSHIELD_MAX_VIEWS];
 
 int StageObject_GetViewWeatherField54(int index);
+CarPartSet *StageTiming_GetCarReplayRecord(int index);
 
 // Blade geometry in overlay uv: pivots below the dash line, a symmetric pair.
 // The models sweep their own nodes about their own pivots; this overlay
@@ -38,6 +40,18 @@ void Windshield_UpdateView(int view, int slot)
     int rain = StageObject_GetViewWeatherField54(slot);   // fixed, ~0..0x10000
     Windshield_UpdateWetness(m, rain * 255 / 0x8000);
     Windshield_Decay(m, frameCounter++);
+
+    // Damage-linked cracks (video.windshield_cracks): follow the car's real
+    // windscreen break state, so the cockpit glass shows what the exterior
+    // model already shows. slot == local car index (same mapping the wiper
+    // state uses). Break slot 0 is the first window in the CIN glass list;
+    // front-vs-rear order of slots 0/1 is a documented assumption pending
+    // native confirmation. Independent of the wiper toggle.
+    if (Sys_GetOption("video.windshield_cracks", 1) != 0 && slot >= 0 && slot <= 1) {
+        CarPartSet *parts = StageTiming_GetCarReplayRecord(slot);
+        if (parts != NULL && (parts->partBroken[0] != 0 || parts->partDamaged[0] != 0))
+            Windshield_StampCracks(m, parts->partBroken[0] != 0);
+    }
 
     if (Sys_GetOption("video.windscreen_wipers", 1) == 0 || slot < 0 || slot > 1)
         return;   // option off: the model's blades park; glass keeps its dirt
@@ -82,7 +96,7 @@ extern Graphics *g_pGraphics;
 void Windshield_DrawOverlay(int view, int resX, int resY)
 {
     WindshieldMap *m = &g_windshieldMaps[view & (WINDSHIELD_MAX_VIEWS - 1)];
-    if (Windshield_TotalDirt(m) == 0)
+    if (Windshield_TotalDirt(m) == 0 && Windshield_TotalCracks(m) == 0)
         return;
     if (g_windshieldTex == NULL) {
         g_windshieldTex = Gfx_CreateTexture(WINDSHIELD_MAP_W, WINDSHIELD_MAP_H, GFX_FORMAT_BGRA8, 1, 0);
@@ -94,10 +108,14 @@ void Windshield_DrawOverlay(int view, int resX, int resY)
         BYTE *row = (BYTE *)lr.pixels + y * lr.pitch;
         for (int x = 0; x < WINDSHIELD_MAP_W; x++) {
             int d = m->dirt[y * WINDSHIELD_MAP_W + x];
-            row[x * 4 + 0] = 0x20;   // B
-            row[x * 4 + 1] = 0x28;   // G
-            row[x * 4 + 2] = 0x30;   // R
-            row[x * 4 + 3] = (BYTE)(d > 224 ? 224 : d);
+            int c = m->crack[y * WINDSHIELD_MAP_W + x];
+            // Cracks catch the light: lerp the grime toward bright glass by
+            // the crack mark, alpha combines both layers (standard over).
+            row[x * 4 + 0] = (BYTE)(0x20 + (0xe0 - 0x20) * c / 255);   // B
+            row[x * 4 + 1] = (BYTE)(0x28 + (0xe8 - 0x28) * c / 255);   // G
+            row[x * 4 + 2] = (BYTE)(0x30 + (0xf0 - 0x30) * c / 255);   // R
+            int a = 255 - (255 - (d > 224 ? 224 : d)) * (255 - c) / 255;
+            row[x * 4 + 3] = (BYTE)(a > 235 ? 235 : a);
         }
     }
     Gfx_UnlockTexture(g_windshieldTex, 0, 0);
