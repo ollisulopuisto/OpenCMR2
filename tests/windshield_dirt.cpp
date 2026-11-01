@@ -69,6 +69,38 @@ int main()
     for (int f = 0; f < 64; f++) Windshield_Decay(&e, f);
     CHECK(Windshield_TotalDirt(&e) < t0);
 
+    // Damage-linked cracks: stamped once, upgrade to broken adds more, wipers
+    // never lift them, reset clears.
+    WindshieldMap c;
+    Windshield_Reset(&c, 5);
+    CHECK(Windshield_TotalCracks(&c) == 0 && c.crackState == 0);
+    Windshield_StampCracks(&c, 0);   // damaged: single impact
+    int cracked = Windshield_TotalCracks(&c);
+    CHECK(cracked > 0 && c.crackState == 1);
+    // Cracks only land on the glass opening.
+    int outside = 0;
+    for (int i = 0; i < WINDSHIELD_MAP_W * WINDSHIELD_MAP_H; i++)
+        if (c.crack[i] != 0 && !Windshield_InsideGlass((i % WINDSHIELD_MAP_W + 0.5f) / WINDSHIELD_MAP_W,
+                                                       (i / WINDSHIELD_MAP_W + 0.5f) / WINDSHIELD_MAP_H)) outside++;
+    CHECK(outside == 0);
+    // Same-level re-stamp is a no-op; the broken upgrade deepens the pattern.
+    Windshield_StampCracks(&c, 0);
+    CHECK(Windshield_TotalCracks(&c) == cracked);
+    Windshield_StampCracks(&c, 1);
+    CHECK(c.crackState == 2 && Windshield_TotalCracks(&c) > cracked);
+    // A wiper pass clears dirt but never cracks.
+    for (int i = 0; i < WINDSHIELD_MAP_W * WINDSHIELD_MAP_H; i++) c.dirt[i] = 150;
+    int cracksBefore = Windshield_TotalCracks(&c);
+    Windshield_Wipe(&c, 0.34f, 1.02f, 0.72f, -0.25f, 0.05f, 1);
+    CHECK(Windshield_TotalCracks(&c) == cracksBefore);
+    // Deterministic per seed; reset clears both layers.
+    WindshieldMap c2;
+    Windshield_Reset(&c2, 5);
+    Windshield_StampCracks(&c2, 0);
+    CHECK(Windshield_TotalCracks(&c2) == cracked);
+    Windshield_Reset(&c, 7);
+    CHECK(Windshield_TotalCracks(&c) == 0 && c.crackState == 0);
+
     std::printf(fails ? "FAILED\n" : "windshield dirt ok\n");
     return fails ? 1 : 0;
 }
