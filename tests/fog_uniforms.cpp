@@ -1,14 +1,23 @@
 // Exercising regression for the FogUniforms 23-vs-27-vec4 stack overflow:
 // the shared packer (render/fog_uniforms.h, called by BOTH executors) runs
-// with the full 8 lights against a guard page, so any size drift faults here
-// instead of a native stack smash. Values are verified per lane, including
-// the beam tail lanes the old 92-float arrays could not hold.
+// with the full 8 lights against a guard, so any size drift faults or
+// stomps a sentinel here instead of a native stack smash. Values are
+// verified per lane, including the beam tail lanes the old 92-float
+// arrays could not hold.
+//
+// Guard by platform: POSIX gets a real PROT_NONE page right after the
+// uniform window, which faults on ANY trailing read or write, however
+// large. Windows cannot include windows.h here (the project's own
+// port/types.h typedefs DWORD/ULONG/UINT32, which clash with the SDK
+// headers), so it uses 64-float canary fences on both sides instead:
+// that catches over- and underruns that land within the fences, which
+// covers the sequential size-drift writes this regression produces, but
+// unlike the guard page it would miss a write that jumps past the fence.
 #include "render/fog_uniforms.h"
 #include <cstdio>
 #include <cstring>
 #ifdef _WIN32
-#include <intrin.h>  // before windows.h: clang-MSVC declares _Interlocked* as builtins; including intrin.h first avoids conflicting winnt.h declarations
-#include <windows.h>
+#include <vector>
 #else
 #include <sys/mman.h>
 #include <unistd.h>
@@ -17,18 +26,22 @@
 static int fails = 0;
 #define CHECK(c) do{ if(!(c)){ std::printf("FAIL %d: %s\n", __LINE__, #c); ++fails; } }while(0)
 
+#ifdef _WIN32
+static const int kFence = 64;
+static const float kCanary = -13579.2468f;
+#endif
+
 int main() {
     CHECK(kFogUniformFloats == 140);
 #ifdef _WIN32
-    SYSTEM_INFO si;
-    GetSystemInfo(&si);
-    long page = (long)si.dwPageSize;
-    size_t span = (size_t)page * 2;
-    unsigned char *base = (unsigned char *)VirtualAlloc(nullptr, span, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-    CHECK(base != nullptr);
-    if (base == nullptr) return 1;
-    DWORD oldProtect;
-    CHECK(VirtualProtect(base + page, (size_t)page, PAGE_NOACCESS, &oldProtect) != 0);
+    std::vector<float> buf(kFence + kFogUniformFloats + kFence, kCanary);
+    float *u = buf.data() + kFence;
+    const auto fencesOk = [&]() {
+        for (int i = 0; i < kFence; i++) {
+            if (buf[i] != kCanary || buf[kFence + kFogUniformFloats + i] != kCanary) return false;
+        }
+        return true;
+    };
 #else
     long page = sysconf(_SC_PAGESIZE);
     size_t span = (size_t)page * 2;
@@ -36,9 +49,9 @@ int main() {
     CHECK(base != MAP_FAILED);
     if (base == MAP_FAILED) return 1;
     CHECK(mprotect(base + page, (size_t)page, PROT_NONE) == 0);
-#endif
     // Array ends exactly at the guard boundary: one float past lane 107 faults.
     float *u = (float *)(base + page - kFogUniformFloats * sizeof(float));
+#endif
 
     GfxFogLight lights[8];
     for (int i = 0; i < 8; i++) {
@@ -52,13 +65,14 @@ int main() {
     p.sunX = 0.4f; p.sunY = 0.3f; p.sunVisible = 1.0f; p.aspect = 1.6f;
     p.clearDistance = 60.0f; p.lightStrength = 1.0f;
 
-    FogUniforms_Pack(u, p, lights, 8);   // would SIGSEGV here on the old 92-float layout
+    FogUniforms_Pack(u, p, lights, 8);   // overran the old 92-float layout
     CHECK(u[0] == 0.03f && u[2] == 1.5f && u[3] == 900.0f);
     CHECK(u[104] == 0.31f + 7 && u[105] == 0.41f + 7 && u[106] == 0.51f + 7);   // beams[7] tail lanes
     CHECK(u[107] == 0.0f);
     CHECK(u[12 + 7 * 4] == 0.10f + 7 && u[44 + 7 * 4] == 0.30f + 7 * 0.01f);     // lights[7], depthRef
-    for (int i = 0; i < 12; i++) { /* header checked above */ }
-    (void)0;
+#ifdef _WIN32
+    CHECK(fencesOk());
+#endif
 
     // depthRef 0: no depth gate.
     std::memset(u, 0xCD, kFogUniformFloats * sizeof(float));
@@ -66,6 +80,9 @@ int main() {
     FogUniforms_Pack(u, p, lights, 8);
     CHECK(u[44 + 7 * 4] == 0.0f && u[44 + 7 * 4 + 1] == 0.9f);
     lights[7].depthRef = 0.37f;
+#ifdef _WIN32
+    CHECK(fencesOk());
+#endif
 
     // Oversized count clamps to the 8 shader lanes; fewer lights zero the rest.
     FogUniforms_Pack(u, p, lights, 99);
@@ -73,8 +90,12 @@ int main() {
     FogUniforms_Pack(u, p, lights, 2);
     CHECK(u[12 + 2 * 4] == 0.0f && u[76 + 2 * 4] == 0.0f && u[106] == 0.0f);
     FogUniforms_Pack(u, p, nullptr, 0);
-
+#ifdef _WIN32
+    CHECK(fencesOk());
+#else
     munmap(base, span);
+#endif
+
     std::printf(fails ? "FAILED\n" : "fog uniforms pack ok\n");
     return fails ? 1 : 0;
 }
