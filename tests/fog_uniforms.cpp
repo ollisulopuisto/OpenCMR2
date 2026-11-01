@@ -6,20 +6,36 @@
 #include "render/fog_uniforms.h"
 #include <cstdio>
 #include <cstring>
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <sys/mman.h>
 #include <unistd.h>
+#endif
 
 static int fails = 0;
 #define CHECK(c) do{ if(!(c)){ std::printf("FAIL %d: %s\n", __LINE__, #c); ++fails; } }while(0)
 
 int main() {
     CHECK(kFogUniformFloats == 140);
+#ifdef _WIN32
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    long page = (long)si.dwPageSize;
+    size_t span = (size_t)page * 2;
+    unsigned char *base = (unsigned char *)VirtualAlloc(nullptr, span, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    CHECK(base != nullptr);
+    if (base == nullptr) return 1;
+    DWORD oldProtect;
+    CHECK(VirtualProtect(base + page, (size_t)page, PAGE_NOACCESS, &oldProtect) != 0);
+#else
     long page = sysconf(_SC_PAGESIZE);
     size_t span = (size_t)page * 2;
     unsigned char *base = (unsigned char *)mmap(nullptr, span, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     CHECK(base != MAP_FAILED);
     if (base == MAP_FAILED) return 1;
     CHECK(mprotect(base + page, (size_t)page, PROT_NONE) == 0);
+#endif
     // Array ends exactly at the guard boundary: one float past lane 107 faults.
     float *u = (float *)(base + page - kFogUniformFloats * sizeof(float));
 
