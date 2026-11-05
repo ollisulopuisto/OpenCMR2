@@ -800,3 +800,7 @@ add_test(NAME tunnel_road_projection COMMAND tunnel_road_projection_test)
 if(Python3_EXECUTABLE)
     add_test(NAME windshield_composition_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/windshield_composition_wiring.py)
 endif()
+
+add_executable(cockpit_extension_test cockpit_extension.cpp)
+target_include_directories(cockpit_extension_test PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/game)
+add_test(NAME cockpit_extension COMMAND cockpit_extension_test)
