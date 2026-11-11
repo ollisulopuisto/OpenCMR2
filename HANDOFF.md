@@ -7,6 +7,30 @@ Verified against the pinned SDL release-3.4.18 implementation, not only the wiki
 A new source contract fails before the repair and passes after it. Native Apple
 startup, allocator behavior and Files import remain unverified here. No merge.
 
+# Finland1 audit texture-slot mapping (11 November2026)
+
+Devin found a real omission in the read-only placement audit: triangle texture
+slots follow texture-record load order, not name-table order. Parse groups after
+vertices/light levels/vertex flags/collision records, following Sector.cpp and
+Graphics_LoadTextureRecordList. Resolve entry name indices into load slots and
+reject truncated groups, invalid indices and triangle slots without a mapping.
+Synthetic reordered mapping was red (zero tree placements) and now counts the
+correct tree. Tests also cover multiple groups after nonempty geometry arrays.
+This is still an audit only: no real Finland asset counts, true3D classification,
+geometry changes or native coverage acceptance. No merge.
+
+# Finland 1 tree placement audit (11 November 2026)
+
+OC7 is actual 3D trees throughout Finland 1, not crossed cards. This PR is only
+the audit prerequisite: a read-only Python inventory for fin01hi/fin01lo stage
+models. Counts are scene-node/stage-object references per candidate mesh, not
+individual trees or successful replacements. Sector references, unknown names
+and parser refusals remain visible; hi/lo alternatives are never summed.
+The converter's all-tree path still emits crossed cutouts for some sources, so
+conversion counts cannot certify OC7. No rendering, collision, data, physics or
+pack generation changes. Full Linux build and 199 CTests pass, including the
+synthetic parser tests. Real Finland data and native Mac output are untested.
+Run the inventory command in docs/SCENERY-PACK.md against owned data to continue.
 # Clipped vector edge assertion repair (11 November 2026)
 
 The iPad Debug stack reaches StageUI_LoadCoDriverArrows and VectorSprite_Replace,
