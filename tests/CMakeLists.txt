@@ -811,3 +811,7 @@ endif()
 add_executable(cockpit_mesh_test cockpit_mesh.cpp)
 target_include_directories(cockpit_mesh_test PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/game)
 add_test(NAME cockpit_mesh COMMAND cockpit_mesh_test)
+
+if(Python3_Interpreter_FOUND)
+ add_test(NAME ios_platform_contract COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tests/ios_platform_contract.py)
+endif()

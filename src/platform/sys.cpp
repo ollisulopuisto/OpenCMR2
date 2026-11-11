@@ -1,3 +1,6 @@
+#if defined(__APPLE__)
+#include <TargetConditionals.h>
+#endif
 #include "platform/key_remapping.h"
 #include "CarDisplayNames.h"
 #include <fstream>
@@ -47,7 +50,7 @@
 #ifdef _WIN32
 #include <process.h>
 #include <io.h>
-#else
+#elif !(defined(TARGET_OS_IOS) && TARGET_OS_IOS)
 #include <spawn.h>
 #include <sys/wait.h>
 #include <errno.h>
@@ -750,6 +753,9 @@ bool Platform_Init(int argc, char **argv)
     // Back is the game's Escape (GameActivity). The on-screen keyboard opens
     // only while a name is typed (Sys_RequestTextInput).
     SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
+#elif defined(TARGET_OS_IOS) && TARGET_OS_IOS
+    SDL_SetHint(SDL_HINT_ENABLE_SCREEN_KEYBOARD, "0");
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
 #endif
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
@@ -821,6 +827,11 @@ bool Platform_Init(int argc, char **argv)
     candidates.push_back("./Data");
     if (const char *base = SDL_GetBasePath())
         candidates.push_back(std::string(base) + "Data");
+#if defined(TARGET_OS_IOS) && TARGET_OS_IOS
+    // The user's owned PC installation lives in Files > OpenCMR2 > Data.
+    if (const char *documents = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS))
+        candidates.push_back(std::string(documents) + "Data");
+#endif
     if (const char *setting = Platform_GetSetting("paths.data", NULL))
         candidates.push_back(setting);
     candidates.push_back(".");
@@ -1687,7 +1698,9 @@ extern "C" const char *Sys_GetReplayExportDir(void){
 // only, so export paths with spaces or metacharacters are passed verbatim.
 extern "C" BOOL Sys_CommandExists(const char *name){
  if(name==NULL||!*name)return FALSE;
-#ifdef _WIN32
+#if defined(TARGET_OS_IOS) && TARGET_OS_IOS
+ return FALSE; // iOS cannot run desktop helpers such as ffmpeg.
+#elif defined(_WIN32)
  char out[MAX_PATH];
  return SearchPathA(NULL,name,".exe",MAX_PATH,out,NULL)!=0?TRUE:FALSE;
 #else
@@ -1710,7 +1723,9 @@ extern "C" BOOL Sys_CommandExists(const char *name){
 }
 extern "C" int Sys_RunAndWait(const char *path, const char *const argv[]){
  if(path==NULL||argv==NULL)return -1;
-#ifdef _WIN32
+#if defined(TARGET_OS_IOS) && TARGET_OS_IOS
+ return -1; // Never call unavailable posix_spawnp on iOS.
+#elif defined(_WIN32)
  intptr_t r=_spawnvp(_P_WAIT,path,argv);
  return r==-1?-1:(int)r;
 #else

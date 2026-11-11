@@ -48,6 +48,26 @@
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" }
     },
     {
+      "name": "ios-sim", "inherits": "base",
+      "displayName": "iOS Simulator, arm64 (unsigned)",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "iOS", "CMAKE_OSX_SYSROOT": "iphonesimulator",
+        "CMAKE_OSX_ARCHITECTURES": "arm64", "CMAKE_OSX_DEPLOYMENT_TARGET": "13.0",
+        "OPENCMR2_VENDORED_SDL": "ON", "OPENCMR2_METALFX": "OFF", "OPENCMR2_METALFX_PROBE": "OFF"
+      },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" }
+    },
+    {
+      "name": "ios-device", "inherits": "ios-sim",
+      "displayName": "iOS device, arm64 (unsigned, not directly installable)",
+      "cacheVariables": { "CMAKE_OSX_SYSROOT": "iphoneos" }
+    },
+    {
+      "name": "ios-device-xcode", "inherits": "ios-device", "generator": "Xcode",
+      "displayName": "iOS device, local Xcode signing (team required)",
+      "cacheVariables": { "OPENCMR2_IOS_SIGNING": "ON" }
+    },
+    {
       "name": "windows-x64",
       "inherits": "base",
       "displayName": "Windows, x64 (clang++ from LLVM or Visual Studio, MSVC runtime)",
@@ -61,6 +81,9 @@
     { "name": "linux", "configurePreset": "linux" },
     { "name": "linux-debug", "configurePreset": "linux-debug" },
     { "name": "macos", "configurePreset": "macos" },
+    { "name": "ios-sim", "configurePreset": "ios-sim" },
+    { "name": "ios-device", "configurePreset": "ios-device" },
+    { "name": "ios-device-xcode", "configurePreset": "ios-device-xcode" },
     { "name": "windows-x64", "configurePreset": "windows-x64" }
   ],
   "testPresets": [
