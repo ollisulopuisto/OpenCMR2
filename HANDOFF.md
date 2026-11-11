@@ -1,3 +1,15 @@
+# Finland1 audit texture-slot mapping (11 November2026)
+
+Devin found a real omission in the read-only placement audit: triangle texture
+slots follow texture-record load order, not name-table order. Parse groups after
+vertices/light levels/vertex flags/collision records, following Sector.cpp and
+Graphics_LoadTextureRecordList. Resolve entry name indices into load slots and
+reject truncated groups, invalid indices and triangle slots without a mapping.
+Synthetic reordered mapping was red (zero tree placements) and now counts the
+correct tree. Tests also cover multiple groups after nonempty geometry arrays.
+This is still an audit only: no real Finland asset counts, true3D classification,
+geometry changes or native coverage acceptance. No merge.
+
 # Finland 1 tree placement audit (11 November 2026)
 
 OC7 is actual 3D trees throughout Finland 1, not crossed cards. This PR is only

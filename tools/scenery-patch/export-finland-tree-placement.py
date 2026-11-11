@@ -35,6 +35,8 @@ def analyse(raw):
     nn, nm, no, ns = take(24, '<4H')
     nt, = take(32, '<i')
     portals, = take(40, '<H')
+    flags, vertices = take(16, '<2i')
+    groups, records = take(36, '<2H')
     names_at, = take(12, '<I')
     mesh_at = 48 + nn * NODE
     object_at = mesh_at + (nm + no) * MESH
@@ -51,6 +53,28 @@ def analyse(raw):
         if not name:
             break
         textures.append(name.decode('ascii').replace('\\', '/').rsplit('/', 1)[-1].lower())
+    # Sector_RelocateStageMeshFile places texture groups after vertices,
+    # their light levels, vertex flags and collision records. Triangle slots
+    # follow Graphics_LoadTextureRecordList entry order, not name-table order.
+    if flags < 0 or vertices < 0:
+        raise ValueError('negative geometry array count')
+    group_at = tri_at + nt*TRI + vertices*(0x30+4) + flags*0x14 + records*0x5c
+    if group_at > names_at:
+        raise ValueError('geometry arrays overlap texture name table')
+    texture_slots = []
+    for _ in range(groups):
+        if group_at + 0x10 > names_at:
+            raise ValueError('texture group header outside record table')
+        entries, = take(group_at + 0xc, '<H')
+        group_end = group_at + 0x10 + entries*8
+        if group_end > names_at:
+            raise ValueError('texture group entries outside record table')
+        for entry in range(entries):
+            name_index, = take(group_at + 0x14 + entry*8, '<H')
+            if name_index >= len(textures):
+                raise ValueError('texture mapping outside name table')
+            texture_slots.append(textures[name_index])
+        group_at = group_end
     candidates = {}
     unclassified = set()
     for mi in range(nm + no):
@@ -68,9 +92,9 @@ def analyse(raw):
             for tx in take(tri_at + offset + j*TRI + 4, '<10i'):
                 if tx == -1:
                     continue
-                if not 0 <= tx < len(textures):
-                    raise ValueError('triangle texture outside name table')
-                name = textures[tx]
+                if not 0 <= tx < len(texture_slots):
+                    raise ValueError('triangle texture outside load mapping')
+                name = texture_slots[tx]
                 if name.startswith(('tre', 'bsh')):
                     names.add(name)
                 else:
