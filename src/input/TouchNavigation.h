@@ -5,6 +5,19 @@
 #include <cstdint>
 #include <map>
 
+struct TouchPicture {
+    int width = 0, height = 0;
+    bool stretch = false;
+    bool Outside(float x, float y, int windowW, int windowH) const {
+        if (stretch || width <= 0 || height <= 0 || windowW <= 0 || windowH <= 0) return false;
+        float scaleX = (float)windowW / width, scaleY = (float)windowH / height;
+        float scale = scaleX < scaleY ? scaleX : scaleY;
+        float marginX = (1.0f - width * scale / windowW) * 0.5f;
+        float marginY = (1.0f - height * scale / windowH) * 0.5f;
+        return x < marginX || x > 1.0f - marginX || y < marginY || y > 1.0f - marginY;
+    }
+};
+
 class TouchNavigation {
 public:
     enum Action { None, Left, Right, Up, Down, Confirm, Back };

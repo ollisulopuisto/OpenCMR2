@@ -149,10 +149,10 @@ bool s_touchEnabled;
 bool s_touchConfigLoaded;
 TouchNavigation s_touchNavigation;
 int s_touchContext = INPUT_TOUCH_MENU;
+int s_touchMenuPlayer = 0;
 int s_touchPendingKey = 0, s_touchCurrentKey = 0;
 bool s_touchReleaseFrame = false;
-int s_touchPictureW = 0, s_touchPictureH = 0;
-bool s_touchPictureStretch = false;
+TouchPicture s_touchPicture;
 
 bool IosTouchNavigation()
 {
@@ -714,7 +714,7 @@ const Profile *UpdatePlayer(int index)
         player.values[INPUT_PAUSE] = INPUT_FULL;
         s_pausePulse[index]--;
     }
-    if (index == 0 && IosTouchNavigation() && s_touchContext == INPUT_TOUCH_MENU) {
+    if (index == s_touchMenuPlayer && IosTouchNavigation() && s_touchContext == INPUT_TOUCH_MENU) {
         const int keys[] = {INPUT_KEY_LEFT, INPUT_KEY_RIGHT, INPUT_KEY_UP, INPUT_KEY_DOWN,
                             INPUT_KEY_RETURN, INPUT_KEY_ESCAPE};
         for (int i = 0; i < 6; ++i)
@@ -932,6 +932,7 @@ extern "C" void Input_Update(void)
         if (given == NULL)
             given = profile;
     }
+    s_touchMenuPlayer = 0; // selection applies to this sample only
     if (given != NULL)
         s_lastSection = given == &Bindings_TouchProfile() ? "touch" : given->section;
     // Another device for the force feedback is set up as a connection is,
@@ -1108,9 +1109,7 @@ extern "C" void Input_CancelTouchNavigation(void)
 
 extern "C" void Input_SetTouchPicture(int width, int height, BOOL stretch)
 {
-    s_touchPictureW = width;
-    s_touchPictureH = height;
-    s_touchPictureStretch = stretch != 0;
+    s_touchPicture = TouchPicture{width, height, stretch != 0};
 }
 
 extern "C" void Input_ResetTouchNavigation(void)
@@ -1121,6 +1120,12 @@ extern "C" void Input_ResetTouchNavigation(void)
         s_touchControls = TouchControls();
         s_touchConfigLoaded = false;
     }
+}
+
+extern "C" int Input_GetTouchContext(void) { return s_touchContext; }
+extern "C" void Input_SetTouchMenuPlayer(int player)
+{
+    s_touchMenuPlayer = player >= 0 && player < INPUT_PLAYERS ? player : 0;
 }
 
 extern "C" void Input_SetTouchContext(int context)
@@ -1139,13 +1144,7 @@ extern "C" int Input_TouchEvent(int type, long long fingerId, float x, float y)
     if (IosTouchNavigation()) {
         int w = 0, h = 0;
         if (Platform_GetWindow()) SDL_GetWindowSize(Platform_GetWindow(), &w, &h);
-        bool outside = false;
-        if (!s_touchPictureStretch && w > 0 && h > 0 && s_touchPictureW > 0 && s_touchPictureH > 0) {
-            float scale = std::min((float)w / s_touchPictureW, (float)h / s_touchPictureH);
-            float marginX = (1.0f - s_touchPictureW * scale / w) * 0.5f;
-            float marginY = (1.0f - s_touchPictureH * scale / h) * 0.5f;
-            outside = x < marginX || x > 1.0f - marginX || y < marginY || y > 1.0f - marginY;
-        }
+        bool outside = s_touchPicture.Outside(x, y, w, h);
         TouchNavigation::Action action = s_touchNavigation.Event(type, fingerId, x, y, SDL_GetTicks(), (float)w, (float)h,
             s_touchContext != INPUT_TOUCH_DRIVING && outside);
         if (s_touchContext != INPUT_TOUCH_DRIVING) {

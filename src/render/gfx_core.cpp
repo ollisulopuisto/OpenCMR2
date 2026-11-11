@@ -6,6 +6,7 @@
 
 #include "platform/platform.h"
 #include "port/sys.h"
+#include "port/input.h"
 #include "port/diagnostics.h"
 #include "render/gfx_internal.h"
 #include "render/motion_blur_limits.h"
@@ -675,6 +676,7 @@ extern "C" void Gfx_GetPresentTimeTotals(double *execMs,double *waitMs){if(execM
 static void Present(BOOL vsync, bool stretch)
 {
     s_presentCount++;
+    Input_SetTouchPicture(s_width, s_height, stretch);
     // Touch pads ride this frame's command stream, recorded last so they
     // draw on top. s_raceWorld still holds THIS frame's world flag here;
     // menus skip the overlay.

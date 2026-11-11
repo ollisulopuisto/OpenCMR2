@@ -56,9 +56,6 @@ static void DrawSpriteQuad(GfxTexture *texture, float cx, float cy, float rx, fl
 
 void TouchOverlay_RecordFrame(int contentW, int contentH, bool stretch)
 {
-    // Keep navigation inside the presented game picture, even when no
-    // driving pads are drawn in menus or movies.
-    Input_SetTouchPicture(contentW, contentH, stretch);
     if (!Input_TouchOverlayActive())
         return;
     TouchPadView views[4];

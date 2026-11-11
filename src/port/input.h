@@ -42,6 +42,8 @@ typedef struct InputEffect InputEffect;
 int Input_TouchEvent(int type, long long fingerId, float x, float y);
 enum InputTouchContext { INPUT_TOUCH_MENU, INPUT_TOUCH_DRIVING, INPUT_TOUCH_MOVIE };
 void Input_SetTouchContext(int context);
+int Input_GetTouchContext(void);
+void Input_SetTouchMenuPlayer(int player);
 void Input_CancelTouchNavigation(void);
 void Input_ResetTouchNavigation(void);
 void Input_SetTouchPicture(int width, int height, BOOL stretch);

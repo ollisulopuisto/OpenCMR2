@@ -9,6 +9,15 @@ static T::Action swipe(float x, float y) {
     return t.Event(2,1,x,y,100,1200,800);
 }
 int main() {
+    TouchPicture picture{800,600,false};
+    CHECK(picture.Outside(.01f,.5f,1200,600));
+    CHECK(!picture.Outside(.5f,.5f,1200,600));
+    picture = TouchPicture{1200,600,false}; // later menu must not inherit old bounds
+    CHECK(!picture.Outside(.01f,.5f,1200,600));
+    picture = TouchPicture{800,600,true}; // stretched movie fills its window
+    CHECK(!picture.Outside(.01f,.5f,1200,600));
+    picture = TouchPicture{1200,600,false};
+    CHECK(picture.Outside(.5f,.01f,800,800));
     CHECK(swipe(.3f,.5f)==T::Right);
     CHECK(swipe(.7f,.5f)==T::Left);
     CHECK(swipe(.5f,.3f)==T::Down);

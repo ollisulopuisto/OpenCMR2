@@ -823,5 +823,6 @@ target_include_directories(cockpit_mesh_test PRIVATE ${PROJECT_SOURCE_DIR}/src $
 add_test(NAME cockpit_mesh COMMAND cockpit_mesh_test)
 
 if(Python3_Interpreter_FOUND)
+ add_test(NAME ios_touch_wiring COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tests/ios_touch_wiring.py)
  add_test(NAME ios_platform_contract COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tests/ios_platform_contract.py)
 endif()
