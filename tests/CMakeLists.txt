@@ -81,6 +81,16 @@ add_test(NAME service_park_weather COMMAND service_park_weather_test)
 # The shared touch controls' settled semantics: floating circles, the
 # aggregate-brake invariant, direction reversal, handedness and the
 # retained classic pads. Pure logic, no SDL, no display needed.
+add_executable(touch_navigation_test touch_navigation.cpp)
+target_include_directories(touch_navigation_test PRIVATE ${PROJECT_SOURCE_DIR}/src/input)
+add_test(NAME touch_navigation COMMAND touch_navigation_test)
+add_executable(touch_navigation_menu_test touch_navigation_menu.cpp ${PROJECT_SOURCE_DIR}/game/Menu.cpp)
+target_include_directories(touch_navigation_menu_test PRIVATE ${PROJECT_SOURCE_DIR}/src/input ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src/port/compat)
+target_compile_options(touch_navigation_menu_test PRIVATE
+    "SHELL:-include ${PROJECT_SOURCE_DIR}/src/port/types.h"
+    "SHELL:-include ${PROJECT_SOURCE_DIR}/src/port/msvcrt.h" -fms-extensions)
+add_test(NAME touch_navigation_menu COMMAND touch_navigation_menu_test)
+
 add_executable(touch_layout_test touch_layout.cpp ${PROJECT_SOURCE_DIR}/src/input/TouchLayout.cpp)
 target_include_directories(touch_layout_test PRIVATE ${PROJECT_SOURCE_DIR}/src/input)
 add_test(NAME touch_layout COMMAND touch_layout_test)

@@ -5,6 +5,7 @@
 #include "platform/testing.h"
 #include "port/sys.h"
 #include "TouchLayout.h"
+#include "TouchNavigation.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -146,6 +147,22 @@ std::string s_lastSection;              // the profile of the input given last
 TouchControls s_touchControls;
 bool s_touchEnabled;
 bool s_touchConfigLoaded;
+TouchNavigation s_touchNavigation;
+int s_touchContext = INPUT_TOUCH_MENU;
+int s_touchPendingKey = 0, s_touchCurrentKey = 0;
+bool s_touchReleaseFrame = false;
+int s_touchPictureW = 0, s_touchPictureH = 0;
+bool s_touchPictureStretch = false;
+
+bool IosTouchNavigation()
+{
+#ifdef SDL_PLATFORM_IOS
+    return true;
+#else
+    return false;
+#endif
+}
+
 
 void LoadTouchConfig()
 {
@@ -188,7 +205,7 @@ bool TouchActive()
 } // namespace (the Input_* exports below need external C linkage)
 int Input_TouchOverlayActive()
 {
-    return TouchActive() ? 1 : 0;
+    return TouchActive() && (!IosTouchNavigation() || s_touchContext == INPUT_TOUCH_DRIVING) ? 1 : 0;
 }
 
 void Input_ReloadTouchConfig()
@@ -239,7 +256,7 @@ int Input_GetTouchPads(TouchPadView *pads, int maxPads, int *windowW, int *windo
         *windowH = h;
     if (pads == NULL || maxPads <= 0)
         return 0;
-    if (!TouchActive() || w <= 0 || h <= 0)
+    if (!Input_TouchOverlayActive() || w <= 0 || h <= 0)
         return 0;
     float basis = (float)(w < h ? w : h);
     if (s_touchControls.Config().mode == TOUCH_MODE_CLASSIC) {
@@ -270,6 +287,8 @@ bool TouchKeyDown(int key)
 {
     if (!TouchActive())
         return false;
+    if (IosTouchNavigation() && s_touchContext != INPUT_TOUCH_DRIVING)
+        return key == s_touchCurrentKey && key != 0;
     TouchInput in = s_touchControls.Input();
     switch (key) {
     case INPUT_KEY_LEFT: return in.steer < -kTouchPressThreshold;
@@ -285,6 +304,10 @@ void MergeTouchKeys(BYTE keys[256])
 {
     if (!TouchActive())
         return;
+    if (IosTouchNavigation() && s_touchContext != INPUT_TOUCH_DRIVING) {
+        if (s_touchCurrentKey != 0) keys[s_touchCurrentKey] = 0x80;
+        return;
+    }
     TouchInput in = s_touchControls.Input();
     if (in.steer < -kTouchPressThreshold)
         keys[INPUT_KEY_LEFT] |= 0x80;
@@ -691,6 +714,12 @@ const Profile *UpdatePlayer(int index)
         player.values[INPUT_PAUSE] = INPUT_FULL;
         s_pausePulse[index]--;
     }
+    if (index == 0 && IosTouchNavigation() && s_touchContext == INPUT_TOUCH_MENU) {
+        const int keys[] = {INPUT_KEY_LEFT, INPUT_KEY_RIGHT, INPUT_KEY_UP, INPUT_KEY_DOWN,
+                            INPUT_KEY_RETURN, INPUT_KEY_ESCAPE};
+        for (int i = 0; i < 6; ++i)
+            if (s_touchCurrentKey == keys[i]) player.values[INPUT_MENU_LEFT + i] = INPUT_FULL;
+    }
     // The kind of input last used decides; before any input, an axis if the
     // player has one.
     for (int i = 0; i < CHANNEL_COUNT; i++) {
@@ -881,6 +910,16 @@ void Input_ReloadBindings(void)
 extern "C" void Input_Update(void)
 {
     EnsureInit();
+    // A press lasts one input sample, followed by a release sample even if
+    // two taps arrive quickly. Never turn a swipe into held-key repeat.
+    s_touchCurrentKey = 0;
+    if (s_touchReleaseFrame)
+        s_touchReleaseFrame = false;
+    else if (s_touchPendingKey != 0) {
+        s_touchCurrentKey = s_touchPendingKey;
+        s_touchPendingKey = 0;
+        s_touchReleaseFrame = true;
+    }
     SDL_UpdateJoysticks();
     ScanJoysticks();
     ReleaseHeldBackKeys();
@@ -1060,10 +1099,65 @@ extern "C" BOOL Input_ReadMouse(InputDevice *device, InputMouseState *state)
     return TRUE;
 }
 
-extern "C" void Input_TouchEvent(int type, long long fingerId, float x, float y)
+extern "C" void Input_CancelTouchNavigation(void)
+{
+    s_touchNavigation.Cancel();
+    s_touchPendingKey = s_touchCurrentKey = 0;
+    s_touchReleaseFrame = false;
+}
+
+extern "C" void Input_SetTouchPicture(int width, int height, BOOL stretch)
+{
+    s_touchPictureW = width;
+    s_touchPictureH = height;
+    s_touchPictureStretch = stretch != 0;
+}
+
+extern "C" void Input_ResetTouchNavigation(void)
+{
+    Input_CancelTouchNavigation();
+    s_touchNavigation.Reset();
+    if (IosTouchNavigation()) {
+        s_touchControls = TouchControls();
+        s_touchConfigLoaded = false;
+    }
+}
+
+extern "C" void Input_SetTouchContext(int context)
+{
+    if (!IosTouchNavigation() || context == s_touchContext) return;
+    Input_CancelTouchNavigation();
+    s_touchControls = TouchControls();
+    s_touchConfigLoaded = false;
+    s_touchContext = context;
+}
+
+extern "C" int Input_TouchEvent(int type, long long fingerId, float x, float y)
 {
     if (!TouchActive())
-        return;
+        return 0;
+    if (IosTouchNavigation()) {
+        int w = 0, h = 0;
+        if (Platform_GetWindow()) SDL_GetWindowSize(Platform_GetWindow(), &w, &h);
+        bool outside = false;
+        if (!s_touchPictureStretch && w > 0 && h > 0 && s_touchPictureW > 0 && s_touchPictureH > 0) {
+            float scale = std::min((float)w / s_touchPictureW, (float)h / s_touchPictureH);
+            float marginX = (1.0f - s_touchPictureW * scale / w) * 0.5f;
+            float marginY = (1.0f - s_touchPictureH * scale / h) * 0.5f;
+            outside = x < marginX || x > 1.0f - marginX || y < marginY || y > 1.0f - marginY;
+        }
+        TouchNavigation::Action action = s_touchNavigation.Event(type, fingerId, x, y, SDL_GetTicks(), (float)w, (float)h,
+            s_touchContext != INPUT_TOUCH_DRIVING && outside);
+        if (s_touchContext != INPUT_TOUCH_DRIVING) {
+            if (s_touchContext == INPUT_TOUCH_MOVIE)
+                return action == TouchNavigation::Confirm ? INPUT_KEY_RETURN : 0;
+            const int keys[] = {0, INPUT_KEY_LEFT, INPUT_KEY_RIGHT, INPUT_KEY_UP,
+                                INPUT_KEY_DOWN, INPUT_KEY_RETURN, INPUT_KEY_ESCAPE};
+            int key = keys[action];
+            if (key && !s_touchPendingKey) s_touchPendingKey = key;
+            return key;
+        }
+    }
     int id = (int)(fingerId & 0x7fffffff);
     if (type == 0)
         s_touchControls.PointerDown(id, x, y);
@@ -1071,6 +1165,7 @@ extern "C" void Input_TouchEvent(int type, long long fingerId, float x, float y)
         s_touchControls.PointerMove(id, x, y);
     else if (type == 2)
         s_touchControls.PointerUp(id);
+    return 0;
 }
 
 extern "C" BOOL Input_IsKeyDown(int key)

@@ -646,6 +646,8 @@ int OptionMovie_Open(char *fileName, unsigned int trackIndex)
 
     g_unk0x00831ac8 = Movie_GetWidth(g_pUnk0x00831ad0);
     g_unk0x00831acc = Movie_GetHeight(g_pUnk0x00831ad0);
+    Input_SetTouchContext(INPUT_TOUCH_MOVIE);
+    Input_CancelTouchNavigation();
     return 1;
 }
 
@@ -721,6 +723,8 @@ BOOL OptionMovie_PlayFrame(BYTE skipOnSpace)
 // FUNCTION: CMR2 0x005103d0
 void OptionMovie_Close(void)
 {
+    Input_SetTouchContext(CGameInfo::m_fixedMenuKeys ? INPUT_TOUCH_MENU : INPUT_TOUCH_DRIVING);
+    Input_CancelTouchNavigation();
     g_unk0x00831c68 = 0;
     g_pUnk0x00831c54 = NULL;
     if (g_pUnk0x00831ad0 != NULL) {
@@ -1226,6 +1230,7 @@ void CGameInfo::SetFrontendSessionFlag(BYTE param1) {
 void CGameInfo::SetInputAndGamePaused(unsigned int param1) {
     SetInputPausedFlag(param1);
     m_fixedMenuKeys = param1;
+    Input_SetTouchContext(param1 ? INPUT_TOUCH_MENU : INPUT_TOUCH_DRIVING);
 }
 
 // FUNCTION: CMR2 0x0049e930

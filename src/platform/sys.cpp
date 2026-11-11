@@ -1035,6 +1035,7 @@ bool Translate(const SDL_Event &e, SysEvent *out)
     // the original did; video.run_in_background keeps it running (network
     // play, two copies on one machine).
     case SDL_EVENT_WINDOW_FOCUS_LOST:
+        Input_ResetTouchNavigation();
         out->type = SYS_EVENT_FOCUS_LOST;
         return !RunInBackground();
     case SDL_EVENT_WINDOW_FOCUS_GAINED:
@@ -1072,12 +1073,21 @@ bool Translate(const SDL_Event &e, SysEvent *out)
         out->repeat = e.key.repeat;
         return out->key != 0;
     case SDL_EVENT_FINGER_DOWN:
-        Input_TouchEvent(0, (long long)e.tfinger.fingerID, e.tfinger.x, e.tfinger.y);
-        return false;
     case SDL_EVENT_FINGER_MOTION:
-        Input_TouchEvent(1, (long long)e.tfinger.fingerID, e.tfinger.x, e.tfinger.y);
-        return false;
-    case SDL_EVENT_FINGER_UP:
+    case SDL_EVENT_FINGER_UP: {
+        int type = e.type == SDL_EVENT_FINGER_DOWN ? 0 : e.type == SDL_EVENT_FINGER_MOTION ? 1 : 2;
+        int key = Input_TouchEvent(type, (long long)e.tfinger.fingerID, e.tfinger.x, e.tfinger.y);
+        if (!key) return false;
+        out->type = SYS_EVENT_KEY_DOWN;
+        out->key = key;
+        if (s_window && SDL_TextInputActive(s_window)) {
+            if (key == INPUT_KEY_RETURN) s_pendingText.push_back(13);
+            if (key == INPUT_KEY_ESCAPE) s_pendingText.push_back(27);
+        }
+        return true;
+    }
+    case SDL_EVENT_FINGER_CANCELED:
+        Input_CancelTouchNavigation();
         Input_TouchEvent(2, (long long)e.tfinger.fingerID, e.tfinger.x, e.tfinger.y);
         return false;
     case SDL_EVENT_TEXT_INPUT: {

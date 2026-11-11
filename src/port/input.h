@@ -37,7 +37,14 @@ typedef struct InputEffect InputEffect;
    layer merges the resulting driving inputs into the keyboard state the game
    already polls, under the default arrow/Space bindings. type: 0 down,
    1 move, 2 up. */
-void Input_TouchEvent(int type, long long fingerId, float x, float y);
+/* Returns a synthetic key-down for a completed navigation gesture, or 0.
+ * Movie taps are events only, never held keyboard state. */
+int Input_TouchEvent(int type, long long fingerId, float x, float y);
+enum InputTouchContext { INPUT_TOUCH_MENU, INPUT_TOUCH_DRIVING, INPUT_TOUCH_MOVIE };
+void Input_SetTouchContext(int context);
+void Input_CancelTouchNavigation(void);
+void Input_ResetTouchNavigation(void);
+void Input_SetTouchPicture(int width, int height, BOOL stretch);
 
 /* Visible touch pads: a pixel-space view of the shared touch layer's pad
  * geometry for the on-screen overlay (src/render/touch_overlay.cpp).
