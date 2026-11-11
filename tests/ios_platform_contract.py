@@ -49,6 +49,13 @@ class IOSContract(unittest.TestCase):
         self.assertNotIn('$(', p['CFBundleExecutable'])
         self.assertTrue(all('Landscape' in s for s in p['UISupportedInterfaceOrientations']))
 
+    def test_documents_path_remains_owned_by_sdl(self):
+        source = (root/'src/platform/sys.cpp').read_text()
+        documents = source.split('if (const char *documents = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS)) {', 1)[1].split('}', 1)[0]
+        self.assertIn('candidates.push_back(std::string(documents) + "Data");', documents)
+        self.assertNotIn('SDL_free', documents)
+        self.assertNotIn('free(', documents)
+
     def test_ios_disables_desktop_helpers_and_uses_documents(self):
         src = (root/'src/platform/sys.cpp').read_text()
         self.assertIn('SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS)', src)

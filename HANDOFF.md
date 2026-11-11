@@ -1,3 +1,12 @@
+# iOS Documents ownership repair (11 November 2026)
+
+Devin found a real ownership error in Platform_Init: SDL_GetUserFolder returns
+SDL's cached const pointer, freed by SDL_QuitFilesystem, not caller-owned memory.
+Removed the invalid SDL_free while preserving the owned candidate string copy.
+Verified against the pinned SDL release-3.4.18 implementation, not only the wiki.
+A new source contract fails before the repair and passes after it. Native Apple
+startup, allocator behavior and Files import remain unverified here. No merge.
+
 # Clipped vector edge assertion repair (11 November 2026)
 
 The iPad Debug stack reaches StageUI_LoadCoDriverArrows and VectorSprite_Replace,
@@ -27,8 +36,8 @@ team and bundle identifier, and reached Game setup on the physical iPad.
 SDL's folder picker returned "That operation is not supported". This proves
 startup, not successful data import or gameplay. iOS setup now explains the
 Finder Files > OpenCMR2 > Data copy route rather than offering that unsupported
-picker. Startup already checks Documents/Data. Also free SDL_GetUserFolder's
-allocated result. Six source contracts pass; updated Apple build/UI not tested.
+picker. Startup already checks Documents/Data. SDL_GetUserFolder returns an SDL-owned cached path; keep only the std::string
+copy and never free the borrowed pointer (corrected after review). Six source contracts pass; updated Apple build/UI not tested.
 The user is currently copying data; don't force pull/regeneration or reinstall,
 which could lose manual signing settings/data. Keep his existing app for now.
 

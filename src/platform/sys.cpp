@@ -845,7 +845,7 @@ bool Platform_Init(int argc, char **argv)
     // The user's owned PC installation lives in Files > OpenCMR2 > Data.
     if (const char *documents = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS)) {
         candidates.push_back(std::string(documents) + "Data");
-        SDL_free((void *)documents);
+        // SDL caches and owns this const path; the candidate owns its copy.
     }
 #endif
     if (const char *setting = Platform_GetSetting("paths.data", NULL))
