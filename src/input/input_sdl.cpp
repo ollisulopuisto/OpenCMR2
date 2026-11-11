@@ -136,9 +136,9 @@ std::string s_lastSection;              // the profile of the input given last
 // The shared touch controls: one implementation for every SDL platform
 // (Android first, iPhone/iPad and a browser build later). Finger events
 // arrive through Input_TouchEvent from the platform event pump; the merged
-// driving inputs ride the keyboard state the game already polls, under the
-// default arrow/Space bindings, exactly like the Android overlay's key
-// injection. Enabled by input.touch_controls (auto/on/off; auto = a touch
+// driving inputs enter the player-one action accumulator independently of
+// keyboard remaps. Raw key queries retain the arrow/Space compatibility path.
+// Enabled by input.touch_controls (auto/on/off; auto = a touch
 // device exists, except on Android where the Kotlin overlay owns the
 // screen until it is retired); the mode and handedness come from
 // input.touch_mode (floating/classic) and input.touch_handed
@@ -349,9 +349,6 @@ std::string Identity(SDL_JoystickID id)
 
 bool KeyDown(SDL_Scancode scancode)
 {
-    // Action bindings use this path, not Input_ReadKeyboard. Include the pads.
-    if (TouchKeyDown(Keys_FromScancode(scancode)))
-        return true;
     if (s_testKeyboard) {
         int dik = Keys_FromScancode(scancode);
         return dik != 0 && (s_testKeyboard[dik] & 0x80);
@@ -668,6 +665,26 @@ void Accumulate(Player &player, InputDevice *device, const Profile &profile, Cha
     }
 }
 
+// Shared pads have fixed driving actions, independent of physical keyboard
+// remaps and keyboard ownership. Keep their established digital threshold.
+void AccumulateTouch(Player &player, ChannelUse *use)
+{
+    const struct { int action; int key; } actions[] = {
+        {INPUT_STEER_LEFT, INPUT_KEY_LEFT}, {INPUT_STEER_RIGHT, INPUT_KEY_RIGHT},
+        {INPUT_THROTTLE, INPUT_KEY_UP}, {INPUT_BRAKE, INPUT_KEY_DOWN},
+        {INPUT_HANDBRAKE, INPUT_KEY_SPACE},
+    };
+    for (const auto &binding : actions) {
+        if (!TouchKeyDown(binding.key))
+            continue;
+        player.values[binding.action] = INPUT_FULL;
+        if (binding.action <= INPUT_BRAKE)
+            use->digital[ChannelOf(binding.action)] = true;
+        if (use->given == NULL)
+            use->given = &Bindings_TouchProfile();
+    }
+}
+
 bool SteersWithAxis(const Profile &profile)
 {
     for (int action = INPUT_STEER_LEFT; action <= INPUT_STEER_RIGHT; action++)
@@ -692,6 +709,8 @@ const Profile *UpdatePlayer(int index)
     if (index == 0)
         Accumulate(player, NULL, Bindings_TouchProfile(), &use);
 #endif
+    if (index == 0)
+        AccumulateTouch(player, &use);
     for (InputDevice &device : s_devices) {
         if (device.id == 0 || !Plays(Owner(device), index))
             continue;

@@ -832,6 +832,7 @@ void CheckTouchDrivingActions()
     std::filesystem::create_directories(dir);
     std::string dirText = dir.string() + "/";
     Platform_SetTestUserDir(dirText.c_str());
+    Input_ReloadBindings();
     Sys_SetOption("input.touch_controls", 1);
     Sys_SetOption("input.touch_mode", 0);
     Sys_SetOption("input.touch_handed", 0);
@@ -842,6 +843,18 @@ void CheckTouchDrivingActions()
     Input_Update();
     Check(Input_GetAction(0, INPUT_THROTTLE) == INPUT_FULL, "touch drag reaches gameplay throttle");
     Check(Input_GetAction(0, INPUT_STEER_RIGHT) == INPUT_FULL, "touch drag reaches gameplay steering");
+    Check(Input_GetAction(1, INPUT_THROTTLE) == 0 && Input_GetAction(1, INPUT_STEER_RIGHT) == 0,
+          "touch controls only player one");
+
+    // A keyboard remap/import must neither disable touch nor turn an arrow
+    // gesture into an unrelated action. The pads have their own fixed actions.
+    const char remapped[] = "[keyboard]\nsteer_left = a\nsteer_right = d\nthrottle = w\nbrake = s\ncamera = up\n";
+    SDL_SaveFile((dir / "controls.ini").string().c_str(), remapped, sizeof(remapped) - 1);
+    Input_ReloadBindings();
+    Input_Update();
+    Check(Input_GetAction(0, INPUT_THROTTLE) == INPUT_FULL && Input_GetAction(0, INPUT_STEER_RIGHT) == INPUT_FULL,
+          "touch driving ignores physical keyboard remaps");
+    Check(Input_GetAction(0, INPUT_CAMERA) == 0, "an arrow remapped to camera does not turn touch into camera");
     Input_TouchEvent(2, 123, 0.35f, 0.5f);
     Input_Update();
     Check(Input_GetAction(0, INPUT_THROTTLE) == 0 && Input_GetAction(0, INPUT_STEER_RIGHT) == 0,
@@ -849,6 +862,7 @@ void CheckTouchDrivingActions()
     Sys_SetOption("input.touch_controls", 0);
     Input_ReloadTouchConfig();
     Platform_SetTestUserDir("");
+    Input_ReloadBindings();
     std::filesystem::remove_all(dir);
 }
 
