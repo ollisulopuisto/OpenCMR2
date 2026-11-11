@@ -23,6 +23,23 @@ pack generation changes. Full Linux build and 199 CTests pass, including the
 synthetic parser tests. Real Finland data and native Mac output are untested.
 Run the inventory command in docs/SCENERY-PACK.md against owned data to continue.
 
+# Android dependency catalog repair (11 November 2026)
+
+Removed the duplicate `junit` library key that made Gradle reject the TOML
+catalog before compilation, plus its repeated `testImplementation` declaration.
+Dependency versions, workflows and gameplay are unchanged. The lightweight
+`android_catalog` CTest uses Python 3.11+ tomllib; older Python skips these checks.
+It covers the real catalog, duplicate-key rejection and the single JUnit use.
+
+Before repair, local current-main Gradle failed with "junit previously defined".
+A first repaired trial passed configuration and reached resource compilation.
+Full APK compilation and Android unit tests did not finish: this host could not
+sustain the build. The emulator also could not start within available memory
+and had no KVM acceleration. Do not restart heavy builds/emulator here. No APK,
+boot, install, data-import, gameplay or phone-performance success is claimed.
+Native Android validation remains required. No new workflow/upload, paid service,
+private game assets, touch redesign, web work or merge is included.
+
 # Fog beam foliage leak: per-beam occluder-edge fade (8 November 2026, reworked after review)
 
 Follow-up to the #350 repro (merged this morning): the beam gate leaked through alpha-cutout foliage because cutout texels write no depth, so holes keep the far background depth and `step(segRef, depth)` passed there (leaf +0 / hole +77 in the harness). fog.frag now fades each beam's light by occluder evidence sampled in RAW depth space (the GL effects path passes fog.z == 0, so only raw-buffer comparisons against segRef are valid on both executors) at two rings, 4 px and 12 px, so cutouts wider than 4 px are caught; the harness keeps a regression assertion on the original x=32 wide-hole pixel. A neighbor counts as an occluder for a beam only when it is IN FRONT of that beam's per-pixel segment reference (a silhouette BEHIND the segment - road at 50 beside a tree at 10 with the segment at 5 - never darkens anything) but not drastically nearer (raw >= 30% of the segment's: the car's own interior shell/dashboard beside a distant beam is not an occluder, so open road next to the cockpit frame keeps its light - pinned by the cockpit_window_render shell case). Fade magnitude is the relative view-depth gap (25%): distant skyline transitions keep the beam, a far background through a near cutout fades fully, and light ON the occluder itself is never faded. False-positive control: the open-scene yawed assertions (uniform depth, no near occluders) are unchanged. Harness flips: hole(27) +39 -> +0, hole(32) +77 -> +0, leaf +0; ctest 199/199, all six GL harnesses pass on the local Mesa build. Trade-off to judge natively in the replay 2:57 spot: background within 12 px of a foliage silhouette can dim when the silhouette sits just in front of the beam segment - physically right, but worth a look. Second review round (Devin on b5950db) drove two more changes. (1) The shell exclusion is no longer a raw-depth ratio - full-range GPU depth maps the same geometry to different ratios (leaf at 1.4 units -> raw 0.287 vs segment at 30 -> 0.971 fell under the 30% cutoff and leaked). fog.frag now classifies via occluderCounts (pure-maths reference Fog_OccluderCounts in render/fog_math.h, unit-tested in fog_math.cpp against the exact full-range/half-range cases): a neighbor counts when its raw buffer depth is in front of the beam's per-pixel segment reference AND, with a known projection (fog.z > 0: SDL_GPU always, GL when the WORLD_END voting recovers it), its view distance is at least 1.0 world unit - nearer geometry is the car's own interior and blocks beams only inside its own silhouette; with an unknown projection (GL recovery fallback, the harness ortho case) it degrades to the raw 30% band. (2) A third evidence ring at 8 px closes the 5-11 px sampling gap between the 4 px and 12 px rings; the foliage texture grew a middle v-band with a narrow 6 px leaf strip so the hole pixel at x=29 sits 5-11 px from the nearest leaf - with the 8 px ring disabled it leaks at +50, with it +0. Remaining known limits: leaves narrower than ~3 px between rings can still slip, and the GPU cost of the 12 depth taps is unmeasured (D-run material). Same shader runs on Metal via SPIRV-Cross; native confirmation is the user's. Note: harness shader changes need a ninja run to regenerate shaders_spirv.h before the .py harnesses pick them up.
