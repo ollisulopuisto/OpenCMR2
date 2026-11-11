@@ -175,3 +175,34 @@ If an active keyboard uses W for driving and no explicit wiper key is saved,
 the implicit W shortcut is suppressed. Choose an unused key in Controls.
 A rising edge toggles continuous wiping, even with dirt strength zero.
 Native menu rendering and navigation still require verification on real game data.
+
+## Finland 1 placement audit (no conversion)
+
+`--trees shell --tree-coverage all` is not proof that all trees are actual 3D:
+the converter also emits crossed cutouts for some sources and preserves
+multi-tree strips. A texture inventory does not count placed trees.
+
+For a read-only first inventory, run from the repository root:
+
+```sh
+python3 tools/scenery-patch/export-finland-tree-placement.py \
+  --data "/path/to/owned/game-data" --output /tmp/fin01-placement-new.json
+```
+
+The output must be a new file outside the game data. No upload is performed.
+It contains archive/member hashes, candidate texture names, mesh record IDs,
+scene-node and stage-object references, and unresolved sector references.
+It never contains texture pixels, vertex arrays or collision records.
+Hi/lo archives are alternative detail versions: do not add their counts.
+A multi-tree strip or mixed mesh can contain many trees; a placement record
+is not necessarily a single tree. Materials outside `tre*`/`bsh*` remain listed
+for manual inspection so the name heuristic cannot silently claim full coverage.
+Name-based categories are hints, not confirmed geometry types.
+
+Unknown layouts, invalid references, multiple LOD records and bad archives
+produce refusals (exit 2); no archives or an unsafe destination exits 1.
+`parse_complete` means only that the inspected records parsed. The report always
+sets `all_trees_3d_verified` to false. It does not inspect a generated pack,
+prove that a replacement is a true 3D mesh, establish runtime replacement
+eligibility, or confirm native gameplay. Those checks still need the actual
+Finland 1 data and native views. Originals and collision behaviour are unchanged.
