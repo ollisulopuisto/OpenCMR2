@@ -9,3 +9,5 @@
 int Input_TouchOverlayActive(void) { return 0; }
 void Input_ReloadTouchConfig(void) {}
 int Input_GetTouchPads(TouchPadView *, int, int *, int *) { return 0; }
+
+void Input_SetTouchPicture(int, int, BOOL) {}

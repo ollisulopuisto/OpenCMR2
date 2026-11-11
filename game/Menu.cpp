@@ -273,6 +273,7 @@ void Menu_PlaySound(int id)
 // FUNCTION: CMR2 0x004a0ad0
 void Menu_SetNextAction(Menu *action)
 {
+    Input_CancelTouchNavigation();
     if (g_unk0x0059f8fc == 0 && g_unk0x0059fa14 != 0)
         Menu_PlaySound(CInput::m_menuSelectSound);
     g_unk0x0059fa16 = 0;
@@ -524,6 +525,7 @@ notify:
         g_menuActionPending = 1;
 done:
     action = g_menuNextAction;
+    if (action != NULL) Input_CancelTouchNavigation();
     g_menuNextAction = 0;
     return action;
 }
