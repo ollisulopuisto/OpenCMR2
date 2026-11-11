@@ -28,7 +28,6 @@ androidx-test-runner = { group = "androidx.test", name = "runner", version.ref =
 androidx-test-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidTestJunit" }
 androidx-compose-ui-test = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 
-junit = { group = "junit", name = "junit", version.ref = "junit" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 
