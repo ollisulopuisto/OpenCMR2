@@ -175,6 +175,13 @@ void LoadTouchConfig()
 #endif
     }
     s_touchConfigLoaded = true;
+#ifdef SDL_PLATFORM_IOS
+    int diagnosticCount = 0;
+    SDL_TouchID *diagnosticDevices = SDL_GetTouchDevices(&diagnosticCount);
+    SDL_free(diagnosticDevices);
+    Sys_Log("touch config: requested=%s enabled=%d devices=%d mode=%s handed=%s",
+            enable, (int)s_touchEnabled, diagnosticCount, mode, hand);
+#endif
 }
 
 bool TouchActive()
@@ -1065,6 +1072,15 @@ extern "C" BOOL Input_ReadMouse(InputDevice *device, InputMouseState *state)
 
 extern "C" void Input_TouchEvent(int type, long long fingerId, float x, float y)
 {
+#ifdef SDL_PLATFORM_IOS
+    // Bounded diagnostic before the gate: no-output reports need delivery evidence.
+    static int loggedEvents = 0;
+    if (loggedEvents < 12) {
+        ++loggedEvents;
+        Sys_Log("touch event: type=%d id=%lld xy=%.4f,%.4f enabled=%d",
+                type, fingerId, x, y, (int)TouchActive());
+    }
+#endif
     if (!TouchActive())
         return;
     int id = (int)(fingerId & 0x7fffffff);
