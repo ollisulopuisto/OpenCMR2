@@ -843,9 +843,9 @@ bool Platform_Init(int argc, char **argv)
         candidates.push_back(std::string(base) + "Data");
 #if defined(TARGET_OS_IOS) && TARGET_OS_IOS
     // The user's owned PC installation lives in Files > OpenCMR2 > Data.
-    if (char *documents = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS)) {
+    if (const char *documents = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS)) {
         candidates.push_back(std::string(documents) + "Data");
-        SDL_free(documents);
+        SDL_free((void *)documents);
     }
 #endif
     if (const char *setting = Platform_GetSetting("paths.data", NULL))
