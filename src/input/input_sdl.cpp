@@ -342,6 +342,9 @@ std::string Identity(SDL_JoystickID id)
 
 bool KeyDown(SDL_Scancode scancode)
 {
+    // Action bindings use this path, not Input_ReadKeyboard. Include the pads.
+    if (TouchKeyDown(Keys_FromScancode(scancode)))
+        return true;
     if (s_testKeyboard) {
         int dik = Keys_FromScancode(scancode);
         return dik != 0 && (s_testKeyboard[dik] & 0x80);

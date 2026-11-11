@@ -5,6 +5,7 @@
 
 #include "port/types.h"
 #include "port/input.h"
+#include "port/sys.h"
 #include "GameInfo.h"
 #include "Input.h"
 #include "Menu.h"
@@ -825,6 +826,32 @@ void CheckBindingsFile(Pad &pad)
     std::filesystem::remove_all(dir);
 }
 
+void CheckTouchDrivingActions()
+{
+    auto dir = std::filesystem::temp_directory_path() / ("opencmr2-touch-actions-" + std::to_string(SDL_GetTicksNS()));
+    std::filesystem::create_directories(dir);
+    std::string dirText = dir.string() + "/";
+    Platform_SetTestUserDir(dirText.c_str());
+    Sys_SetOption("input.touch_controls", 1);
+    Sys_SetOption("input.touch_mode", 0);
+    Sys_SetOption("input.touch_handed", 0);
+    Input_ReloadTouchConfig();
+    memset(s_keys, 0, sizeof(s_keys));
+    Input_TouchEvent(0, 123, 0.25f, 0.6f);
+    Input_TouchEvent(1, 123, 0.35f, 0.5f);
+    Input_Update();
+    Check(Input_GetAction(0, INPUT_THROTTLE) == INPUT_FULL, "touch drag reaches gameplay throttle");
+    Check(Input_GetAction(0, INPUT_STEER_RIGHT) == INPUT_FULL, "touch drag reaches gameplay steering");
+    Input_TouchEvent(2, 123, 0.35f, 0.5f);
+    Input_Update();
+    Check(Input_GetAction(0, INPUT_THROTTLE) == 0 && Input_GetAction(0, INPUT_STEER_RIGHT) == 0,
+          "lifting the touch releases gameplay actions");
+    Sys_SetOption("input.touch_controls", 0);
+    Input_ReloadTouchConfig();
+    Platform_SetTestUserDir("");
+    std::filesystem::remove_all(dir);
+}
+
 } // namespace
 
 int main()
@@ -867,6 +894,7 @@ int main()
     Detach(pad);
     Input_Update();
     Check(Input_GetProfileCount() == 2, "and not without one, as nothing could be bound");
+    CheckTouchDrivingActions();
     Platform_SetTestKeyboard(nullptr);
     SDL_DestroyWindow(window);
     SDL_Quit();
