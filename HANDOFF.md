@@ -1,3 +1,15 @@
+# iPhone/iPad AppIcon from existing art (11 November 2026)
+
+Reused res/opencmr2.png, the existing opaque 1254px rally-car icon, with only
+Lanczos resizing. Added an AppIcon asset catalog with iPad home/Pro/notification/
+Settings/Spotlight slots, iPhone universal slots and 1024px marketing icon.
+Xcode selects AppIcon through the asset-catalog build setting. Unsigned Ninja
+presets run actool then merge its icon metadata into the generated Info.plist.
+Signing team, bundle identifier and user data paths are unchanged.
+Verified PNG dimensions and RGB/no-alpha metadata, inspected a contact sheet.
+No Apple actool/Xcode execution, built .app inspection or iPad icon rendering
+has been tested here. Regenerate with tools/generate_ios_appicon.py (Pillow).
+
 # iOS Documents ownership repair (11 November 2026)
 
 Devin found a real ownership error in Platform_Init: SDL_GetUserFolder returns

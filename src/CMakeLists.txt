@@ -87,6 +87,29 @@ elseif(IOS)
         MACOSX_BUNDLE_GUI_IDENTIFIER "${OPENCMR2_IOS_BUNDLE_IDENTIFIER}"
         XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${OPENCMR2_IOS_BUNDLE_IDENTIFIER}"
         XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2")
+    set(IOS_ASSET_CATALOG ${PROJECT_SOURCE_DIR}/res/Assets.xcassets)
+    if(CMAKE_GENERATOR STREQUAL "Xcode")
+        target_sources(opencmr2 PRIVATE ${IOS_ASSET_CATALOG})
+        set_source_files_properties(${IOS_ASSET_CATALOG} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+        set_target_properties(opencmr2 PROPERTIES XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME AppIcon)
+    else()
+        # Ninja presets create unsigned bundles; compile assets and merge actool's
+        # icon metadata after CMake creates Info.plist. No signing settings change.
+        find_package(Python3 REQUIRED COMPONENTS Interpreter)
+        if(CMAKE_OSX_SYSROOT MATCHES "simulator")
+            set(IOS_ICON_PLATFORM iphonesimulator)
+        else()
+            set(IOS_ICON_PLATFORM iphoneos)
+        endif()
+        file(GLOB_RECURSE IOS_ICON_INPUTS CONFIGURE_DEPENDS ${IOS_ASSET_CATALOG}/*)
+        set_property(TARGET opencmr2 APPEND PROPERTY LINK_DEPENDS ${IOS_ICON_INPUTS}
+            ${PROJECT_SOURCE_DIR}/tools/compile_ios_appicon.py)
+        add_custom_command(TARGET opencmr2 POST_BUILD
+            COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tools/compile_ios_appicon.py
+                --catalog ${IOS_ASSET_CATALOG} --bundle $<TARGET_BUNDLE_DIR:opencmr2>
+                --platform ${IOS_ICON_PLATFORM} --minimum ${CMAKE_OSX_DEPLOYMENT_TARGET}
+            VERBATIM)
+    endif()
     if(NOT OPENCMR2_IOS_SIGNING)
         set_target_properties(opencmr2 PROPERTIES XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED NO)
     endif()

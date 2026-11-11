@@ -824,6 +824,7 @@ add_test(NAME cockpit_mesh COMMAND cockpit_mesh_test)
 
 if(Python3_Interpreter_FOUND)
  add_test(NAME ios_touch_wiring COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tests/ios_touch_wiring.py)
+ add_test(NAME ios_appicon COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tests/ios_appicon.py)
  add_test(NAME ios_platform_contract COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tests/ios_platform_contract.py)
  add_test(NAME android_catalog COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/android_catalog.py)
 endif()
