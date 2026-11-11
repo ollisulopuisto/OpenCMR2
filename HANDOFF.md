@@ -1,6 +1,28 @@
-# First iPad run and unsupported picker (11 November2026)
+# Clipped vector edge assertion repair (11 November 2026)
 
-User compiled/installed51f8d14 with Xcode26.3/iPhoneOS SDK26.2, selected own
+The iPad Debug stack reaches StageUI_LoadCoDriverArrows and VectorSprite_Replace,
+not a font glyph. ARROWS4.TGA is traced to contours, then rasterized by vendored
+stb_truetype v1.26. The screenshot has sy1=424.625 and y_final=424.748138:
+clamping to scanline bottom misses an overshoot beyond the clipped edge endpoint.
+Clamp both intersections to sy1 and avoid the unused adjacent-pixel division by
+zero. Assertions remain unchanged. Debug sprite rasterization logs the sprite,
+cell, layer, dimensions, scale and all input vertices before the call; these
+local diagnostic logs can be verbose. No original artwork is committed.
+
+The standalone stb_edge_endpoint CTest uses a synthetic edge, not captured game
+vertices. Its checks remain enabled with NDEBUG. Original header fails the same
+assertion; repaired header passes both winding directions at -O0/-O2, including
+-DNDEBUG, with finite bounded contributions and preserved fill height.
+
+No iPad run, real-asset reproduction or visual arrow/font comparison has been
+performed. The exact failing cell and layer remain unknown. Shared-header changes
+also affect fonts. Run vector_sprites and diagnostic_font alongside the new test;
+full project configuration needs CMake 3.24+, Clang and SDL3, absent on this host. Do not infer
+native rendering correctness from the synthetic arithmetic regression.
+
+# First iPad run and unsupported picker (11 November 2026)
+
+User compiled/installed 51f8d14 with Xcode 26.3/iPhoneOS SDK 26.2, selected own
 team and bundle identifier, and reached Game setup on the physical iPad.
 SDL's folder picker returned "That operation is not supported". This proves
 startup, not successful data import or gameplay. iOS setup now explains the
@@ -10,7 +32,7 @@ allocated result. Six source contracts pass; updated Apple build/UI not tested.
 The user is currently copying data; don't force pull/regeneration or reinstall,
 which could lose manual signing settings/data. Keep his existing app for now.
 
-# iOS requested text-entry keyboard (11 November2026)
+# iOS requested text-entry keyboard (11 November 2026)
 
 Devin identified that the global iOS screen-keyboard disable prevents requested
 save-name/password fields from showing the software keyboard. Removed the global

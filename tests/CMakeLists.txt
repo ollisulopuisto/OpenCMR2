@@ -827,3 +827,7 @@ if(Python3_Interpreter_FOUND)
  add_test(NAME ios_platform_contract COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tests/ios_platform_contract.py)
  add_test(NAME android_catalog COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/android_catalog.py)
 endif()
+
+add_executable(stb_edge_endpoint_test stb_edge_endpoint_test.cpp)
+target_include_directories(stb_edge_endpoint_test PRIVATE ${PROJECT_SOURCE_DIR}/third_party/stb)
+add_test(NAME stb_edge_endpoint COMMAND stb_edge_endpoint_test)

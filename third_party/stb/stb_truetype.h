@@ -3181,9 +3181,9 @@ static void stbtt__fill_active_edges_new(float *scanline, float *scanline_fill, 
                // goal is to measure the area covered by '.' in each pixel
 
                // if x2 is right at the right edge of x1, y_crossing can blow up, github #1057
-               // @TODO: maybe test against sy1 rather than y_bottom?
-               if (y_crossing > y_bottom)
-                  y_crossing = y_bottom;
+               // Clamp to the clipped edge endpoint, not the scanline bottom.
+               if (y_crossing > sy1)
+                  y_crossing = sy1;
 
                sign = e->direction;
 
@@ -3193,10 +3193,11 @@ static void stbtt__fill_active_edges_new(float *scanline, float *scanline_fill, 
                // area of the triangle (x_top,sy0), (x1+1,sy0), (x1+1,y_crossing)
                scanline[x1] += stbtt__sized_triangle_area(area, x1+1 - x_top);
 
-               // check if final y_crossing is blown up; no test case for this
-               if (y_final > y_bottom) {
-                  y_final = y_bottom;
-                  dy = (y_final - y_crossing ) / (x2 - (x1+1)); // if denom=0, y_final = y_crossing, so y_final <= y_bottom
+               // The final intersection must also stay within the clipped edge.
+               if (y_final > sy1) {
+                  y_final = sy1;
+                  if (x2 > x1+1) // adjacent pixels have no intermediate trapezoids
+                     dy = (y_final - y_crossing) / (x2 - (x1+1));
                }
 
                // in second pixel, area covered by line segment found in first pixel

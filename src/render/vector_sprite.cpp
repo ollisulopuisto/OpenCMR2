@@ -142,7 +142,8 @@ float Sample(const std::vector<float> &mask, int w, int h, float x, float y) {
 // Trace the original mask, preserving small dots,
 // holes and sharp corners. Rasterise the resulting cubic paths only to build
 // their distance field; display scaling follows the field, not bitmap texels.
-std::vector<float> Trace(const std::vector<float> &mask, int w, int h, int up, bool curves) {
+std::vector<float> Trace(const std::vector<float> &mask, int w, int h, int up, bool curves,
+                         const char *name, Cell cell, const char *layer) {
     const int traceScale = curves && w > 64 ? 4 : 1;
     int tw = w * traceScale, th = h * traceScale;
     const int bits = sizeof(potrace_word) * 8;
@@ -210,6 +211,19 @@ std::vector<float> Trace(const std::vector<float> &mask, int w, int h, int up, b
     int rw = w * up, rh = h * up;
     std::vector<unsigned char> pixels((size_t)rw * rh);
     if (!vertices.empty()) {
+        // Log before calling stb so an assertion leaves the exact input in the log.
+        // Only debug builds dump contours; release startup stays quiet.
+#ifndef NDEBUG
+        Sys_Log("vector raster: %s cell=%d,%d,%d,%d layer=%s mask=%dx%d raster=%dx%d vertices=%d scale=%.9g flatness=0.1",
+                name, cell.x, cell.y, cell.w, cell.h, layer, w, h, rw, rh,
+                (int)vertices.size(), up / 64.0f);
+        for (size_t i = 0; i < vertices.size(); ++i) {
+            const auto &v = vertices[i];
+            Sys_Log("vector vertex: %d type=%d xy=%d,%d c=%d,%d c1=%d,%d",
+                    (int)i, (int)v.type, (int)v.x, (int)v.y, (int)v.cx,
+                    (int)v.cy, (int)v.cx1, (int)v.cy1);
+        }
+#endif
         stbtt__bitmap raster{rw, rh, rw, pixels.data()};
         stbtt_Rasterize(&raster, 0.1f, vertices.data(), (int)vertices.size(), up / 64.0f, up / 64.0f, 0, 0, 0,
                         0, 0, nullptr);
@@ -293,7 +307,8 @@ std::vector<float> Circle(const std::vector<float> &mask, int w, int h, int up) 
     return distance;
 }
 
-Built Build(const Image &image, const std::vector<Cell> &cells, bool curves, bool map, bool dots) {
+Built Build(const Image &image, const std::vector<Cell> &cells, bool curves, bool map, bool dots,
+            const char *name) {
     int texels = !map && cells.front().w >= 96 ? 2 : 4;
     int up = texels * kOversample;
     Built built{image.w * texels, image.h * texels * 3, {}};
@@ -319,8 +334,8 @@ Built Build(const Image &image, const std::vector<Cell> &cells, bool curves, boo
                 fill[i] = norm > 0 ? std::clamp(dot / norm, 0.0f, 1.0f) * alpha[i] : alpha[i];
                 coloured |= alpha[i] > .9f && fill[i] < .1f && norm > 0;
             }
-        auto outer = dots ? Circle(alpha, w, h, up) : Trace(alpha, w, h, up, curves);
-        auto inner = coloured ? Trace(fill, w, h, up, curves) : std::vector<float>();
+        auto outer = dots ? Circle(alpha, w, h, up) : Trace(alpha, w, h, up, curves, name, cell, "outer");
+        auto inner = coloured ? Trace(fill, w, h, up, curves, name, cell, "fill") : std::vector<float>();
         if (outer.empty() || (coloured && inner.empty()))
             return {};
         // Bolt optimization: Precompute palette color bytes once per cell, step
@@ -417,7 +432,8 @@ extern "C" void VectorSprite_Replace(const char *name, GfxTexture *texture) {
     auto found = cache.find(key);
     if (found == cache.end()) {
         Built built =
-            Build(image, cells, map || base == "arrows4" || base == "circle", map, base == "smmatrix");
+            Build(image, cells, map || base == "arrows4" || base == "circle", map,
+                  base == "smmatrix", base.c_str());
         if (built.pixels.empty())
             return;
         size_t bytes = built.pixels.size();
