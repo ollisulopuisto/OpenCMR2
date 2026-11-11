@@ -166,7 +166,6 @@ dependencies {
         // Only its build used the old Android extensions plugin.
         exclude(group = "org.jetbrains.kotlin", module = "kotlin-android-extensions-runtime")
     }
-    testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
