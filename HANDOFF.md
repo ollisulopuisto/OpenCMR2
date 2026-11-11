@@ -1,3 +1,15 @@
+# Touch driving action routing (11 November 2026)
+
+Driving pads injected raw keyboard state, but action bindings polled physical
+SDL keyboard state through KeyDown and missed TouchKeyDown. Include touch in
+that internal polling path too; no new gestures or pad geometry. input_actions
+now exercises a floating drag through Input_GetAction throttle/steering and
+release. Local extracted-production KeyDown harness is red before the fix and
+green after, with touch/physical/test-keyboard/release/held-key checks. Touch
+layout unit tests pass. Full SDL action suite and iPad run await CI/device tests.
+The actual user's build head is unknown; this is a code defect, not proof of
+which gate failed in that binary. No merge.
+
 # iPhone/iPad AppIcon from existing art (11 November 2026)
 
 Reused res/opencmr2.png, the existing opaque 1254px rally-car icon, with only
