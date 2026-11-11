@@ -1,3 +1,15 @@
+# First iPad run and unsupported picker (11 November2026)
+
+User compiled/installed51f8d14 with Xcode26.3/iPhoneOS SDK26.2, selected own
+team and bundle identifier, and reached Game setup on the physical iPad.
+SDL's folder picker returned "That operation is not supported". This proves
+startup, not successful data import or gameplay. iOS setup now explains the
+Finder Files > OpenCMR2 > Data copy route rather than offering that unsupported
+picker. Startup already checks Documents/Data. Also free SDL_GetUserFolder's
+allocated result. Six source contracts pass; updated Apple build/UI not tested.
+The user is currently copying data; don't force pull/regeneration or reinstall,
+which could lose manual signing settings/data. Keep his existing app for now.
+
 # iOS requested text-entry keyboard (11 November2026)
 
 Devin identified that the global iOS screen-keyboard disable prevents requested

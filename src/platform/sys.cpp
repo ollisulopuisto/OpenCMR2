@@ -537,6 +537,18 @@ void SDLCALL FolderSelected(void *userdata, const char *const *files, int)
 
 bool SelectGameData(const std::string &settingsFile)
 {
+#if defined(TARGET_OS_IOS) && TARGET_OS_IOS
+    // SDL's native folder dialog is unsupported on iOS. App Documents is
+    // exposed through Finder file sharing; startup checks Documents/Data.
+    std::string message = "Copy your owned PC game installation into Files > On My iPad/iPhone > OpenCMR2 > Data.\n\n"
+                          "Data must directly contain Game, FrontEnd, Sounds, CountrySpecific and SetupRep.\n\n"
+                          "With the device connected to your Mac, use Finder > device > Files > OpenCMR2 to copy the Data folder. "
+                          "Then close and reopen OpenCMR2. No folder picker is available on iOS.";
+    Sys_Log("%s", message.c_str());
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "OpenCMR2 - Copy game data", message.c_str(), NULL);
+    s_setupCanceled = true;
+    return false;
+#else
     std::string message = "Welcome to OpenCMR2\n\n"
                           "Choose a folder containing your Colin McRae Rally 2.0 copy for PC.\n"
                           "You can also choose a folder inside the installation.\n\n"
@@ -595,6 +607,7 @@ bool SelectGameData(const std::string &settingsFile)
         return true;
     }
     return false;
+#endif
 }
 
 // Earlier versions kept the user files one level deeper, in OpenCMR2/OpenCMR2
@@ -830,8 +843,10 @@ bool Platform_Init(int argc, char **argv)
         candidates.push_back(std::string(base) + "Data");
 #if defined(TARGET_OS_IOS) && TARGET_OS_IOS
     // The user's owned PC installation lives in Files > OpenCMR2 > Data.
-    if (const char *documents = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS))
+    if (char *documents = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS)) {
         candidates.push_back(std::string(documents) + "Data");
+        SDL_free(documents);
+    }
 #endif
     if (const char *setting = Platform_GetSetting("paths.data", NULL))
         candidates.push_back(setting);

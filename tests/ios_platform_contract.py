@@ -23,6 +23,15 @@ class IOSContract(unittest.TestCase):
         plist = plistlib.loads((root/'res/Info-iOS.plist').read_bytes())
         self.assertEqual(plist['CFBundleIdentifier'], '${MACOSX_BUNDLE_GUI_IDENTIFIER}')
 
+    def test_ios_setup_explains_local_import_without_unsupported_picker(self):
+        source = (root/'src/platform/sys.cpp').read_text()
+        setup = source.split('bool SelectGameData(const std::string &settingsFile)', 1)[1]
+        ios = setup.split('#if defined(TARGET_OS_IOS) && TARGET_OS_IOS', 1)[1].split('#else', 1)[0]
+        self.assertIn('Finder > device > Files > OpenCMR2', ios)
+        self.assertIn('close and reopen OpenCMR2', ios)
+        self.assertNotIn('SDL_ShowOpenFolderDialog', ios)
+        self.assertIn('s_setupCanceled = true;', ios)
+
     def test_presets_distinguish_simulator_device_and_local_signing(self):
         p = {v['name']: v for v in json.loads((root/'CMakePresets.json').read_text())['configurePresets']}
         self.assertEqual(p['ios-sim']['cacheVariables']['CMAKE_OSX_SYSROOT'], 'iphonesimulator')
