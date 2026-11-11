@@ -2,6 +2,7 @@
 #include "port/audio.h"
 #include "port/gfx.h"
 #include "port/movie.h"
+#include "port/input.h"
 #include "port/sys.h"
 #include "render/presentation.h"
 
@@ -23,6 +24,10 @@ static int stretchedPresents, presents;
 static int stretchMovies;
 static int savedStates;
 static GfxTLVertex drawn[4];
+static int touchRect[4];
+extern "C" void Input_SetTouchMovieRect(int x, int y, int w, int h) {
+    touchRect[0]=x;touchRect[1]=y;touchRect[2]=w;touchRect[3]=h;
+}
 
 extern "C" SysFile *Sys_OpenFile(const char *, int) { ++files; return new SysFile; }
 extern "C" void Sys_CloseFile(SysFile *file) { --files; delete file; }
@@ -106,9 +111,13 @@ int main() {
     Check(presents == 1 && stretchedPresents == 0 && drawn[0].sx == 420 && drawn[0].sy == 0 &&
           drawn[3].sx == 1500 && drawn[3].sy == 1080 && drawn[3].tu == 1 && drawn[3].tv == 1,
           "movie keeps its proportions in a wide rectangle");
+    Check(touchRect[0] == 420 && touchRect[1] == 0 && touchRect[2] == 1080 && touchRect[3] == 1080,
+          "touch bounds match fitted movie, not its black bars");
     Movie_Present(movie, 0, 0, 900, 1600);
     Check(drawn[0].sx == 0 && drawn[0].sy == 350 && drawn[3].sx == 900 && drawn[3].sy == 1250,
           "movie keeps its proportions in a tall rectangle");
+    Check(touchRect[0] == 0 && touchRect[1] == 350 && touchRect[2] == 900 && touchRect[3] == 900,
+          "portrait movie touch bounds");
     stretchMovies = 1;
     Movie_Present(movie, 0, 0, 1920, 1080);
     Check(stretchedPresents == 1 && drawn[0].sx == 0 && drawn[0].sy == 0 &&

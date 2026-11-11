@@ -18,6 +18,20 @@ struct TouchPicture {
     }
 };
 
+struct TouchPictureRect {
+    int x = 0, y = 0, width = 0, height = 0;
+    bool Outside(const TouchPicture &picture, float px, float py, int windowW, int windowH) const {
+        if (width <= 0 || height <= 0 || picture.width <= 0 || picture.height <= 0 || windowW <= 0 || windowH <= 0)
+            return true; // no presented movie yet
+        float sx = (float)windowW / picture.width, sy = (float)windowH / picture.height;
+        if (!picture.stretch) sx = sy = sx < sy ? sx : sy;
+        float offsetX = (windowW - picture.width * sx) * .5f;
+        float offsetY = (windowH - picture.height * sy) * .5f;
+        float bx = (px * windowW - offsetX) / sx, by = (py * windowH - offsetY) / sy;
+        return bx < x || bx > x + width || by < y || by > y + height;
+    }
+};
+
 class TouchNavigation {
 public:
     enum Action { None, Left, Right, Up, Down, Confirm, Back };

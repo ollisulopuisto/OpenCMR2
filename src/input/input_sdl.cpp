@@ -153,6 +153,7 @@ int s_touchMenuPlayer = 0;
 int s_touchPendingKey = 0, s_touchCurrentKey = 0;
 bool s_touchReleaseFrame = false;
 TouchPicture s_touchPicture;
+TouchPictureRect s_touchMovieRect;
 
 bool IosTouchNavigation()
 {
@@ -285,10 +286,10 @@ const float kTouchPressThreshold = 0.05f;
 
 bool TouchKeyDown(int key)
 {
-    if (!TouchActive())
-        return false;
     if (IosTouchNavigation() && s_touchContext != INPUT_TOUCH_DRIVING)
         return key == s_touchCurrentKey && key != 0;
+    if (!TouchActive())
+        return false;
     TouchInput in = s_touchControls.Input();
     switch (key) {
     case INPUT_KEY_LEFT: return in.steer < -kTouchPressThreshold;
@@ -302,12 +303,12 @@ bool TouchKeyDown(int key)
 
 void MergeTouchKeys(BYTE keys[256])
 {
-    if (!TouchActive())
-        return;
     if (IosTouchNavigation() && s_touchContext != INPUT_TOUCH_DRIVING) {
         if (s_touchCurrentKey != 0) keys[s_touchCurrentKey] = 0x80;
         return;
     }
+    if (!TouchActive())
+        return;
     TouchInput in = s_touchControls.Input();
     if (in.steer < -kTouchPressThreshold)
         keys[INPUT_KEY_LEFT] |= 0x80;
@@ -1107,6 +1108,11 @@ extern "C" void Input_CancelTouchNavigation(void)
     s_touchReleaseFrame = false;
 }
 
+extern "C" void Input_SetTouchMovieRect(int x, int y, int width, int height)
+{
+    s_touchMovieRect = TouchPictureRect{x, y, width, height};
+}
+
 extern "C" void Input_SetTouchPicture(int width, int height, BOOL stretch)
 {
     s_touchPicture = TouchPicture{width, height, stretch != 0};
@@ -1135,16 +1141,19 @@ extern "C" void Input_SetTouchContext(int context)
     s_touchControls = TouchControls();
     s_touchConfigLoaded = false;
     s_touchContext = context;
+    s_touchMovieRect = TouchPictureRect{};
 }
 
 extern "C" int Input_TouchEvent(int type, long long fingerId, float x, float y)
 {
-    if (!TouchActive())
+    if (!TouchActive() && !(IosTouchNavigation() && s_touchContext != INPUT_TOUCH_DRIVING))
         return 0;
     if (IosTouchNavigation()) {
         int w = 0, h = 0;
         if (Platform_GetWindow()) SDL_GetWindowSize(Platform_GetWindow(), &w, &h);
         bool outside = s_touchPicture.Outside(x, y, w, h);
+        if (s_touchContext == INPUT_TOUCH_MOVIE)
+            outside = s_touchMovieRect.Outside(s_touchPicture, x, y, w, h);
         TouchNavigation::Action action = s_touchNavigation.Event(type, fingerId, x, y, SDL_GetTicks(), (float)w, (float)h,
             s_touchContext != INPUT_TOUCH_DRIVING && outside);
         if (s_touchContext != INPUT_TOUCH_DRIVING) {

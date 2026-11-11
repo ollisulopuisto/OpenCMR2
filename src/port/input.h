@@ -47,6 +47,7 @@ void Input_SetTouchMenuPlayer(int player);
 void Input_CancelTouchNavigation(void);
 void Input_ResetTouchNavigation(void);
 void Input_SetTouchPicture(int width, int height, BOOL stretch);
+void Input_SetTouchMovieRect(int x, int y, int width, int height);
 
 /* Visible touch pads: a pixel-space view of the shared touch layer's pad
  * geometry for the on-screen overlay (src/render/touch_overlay.cpp).

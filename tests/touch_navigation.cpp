@@ -18,6 +18,12 @@ int main() {
     CHECK(!picture.Outside(.01f,.5f,1200,600));
     picture = TouchPicture{1200,600,false};
     CHECK(picture.Outside(.5f,.01f,800,800));
+    TouchPictureRect movie{420,0,1080,1080};
+    TouchPicture movieFrame{1920,1080,false};
+    CHECK(movie.Outside(movieFrame,.1f,.5f,1200,800));
+    CHECK(!movie.Outside(movieFrame,.5f,.5f,1200,800));
+    CHECK(movie.Outside(movieFrame,.5f,.01f,1200,800));
+    CHECK(TouchPictureRect{}.Outside(movieFrame,.5f,.5f,1200,800));
     CHECK(swipe(.3f,.5f)==T::Right);
     CHECK(swipe(.7f,.5f)==T::Left);
     CHECK(swipe(.5f,.3f)==T::Down);

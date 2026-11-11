@@ -3,6 +3,16 @@ import pathlib
 import unittest
 R = pathlib.Path(__file__).resolve().parents[1]
 class TouchWiring(unittest.TestCase):
+    def test_navigation_does_not_depend_on_driving_setting(self):
+        source=(R/'src/input/input_sdl.cpp').read_text()
+        event=source.split('extern "C" int Input_TouchEvent',1)[1].split('extern "C" BOOL Input_IsKeyDown',1)[0]
+        self.assertIn('!TouchActive() && !(IosTouchNavigation() && s_touchContext != INPUT_TOUCH_DRIVING)',event)
+        for name in ('bool TouchKeyDown', 'void MergeTouchKeys'):
+            block=source.split(name,1)[1].split('TouchInput in',1)[0]
+            self.assertLess(block.index('s_touchContext != INPUT_TOUCH_DRIVING'),block.index('!TouchActive()'))
+    def test_movie_records_fitted_rectangle(self):
+        source=(R/'src/video/movie.cpp').read_text().split('extern "C" void Movie_Present',1)[1]
+        self.assertLess(source.index('width = int(fitted)'),source.index('Input_SetTouchMovieRect(x, y, width, height)'))
     def test_every_presentation_updates_bounds_before_race_gate(self):
         source=(R/'src/render/gfx_core.cpp').read_text().split('static void Present(BOOL vsync, bool stretch)',1)[1]
         self.assertLess(source.index('Input_SetTouchPicture(s_width, s_height, stretch)'),source.index('if (s_raceWorld)'))

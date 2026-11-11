@@ -3,6 +3,7 @@
 #include "port/gfx.h"
 #include "port/movie.h"
 #include "port/sys.h"
+#include "port/input.h"
 #include "video/bink_decoder.h"
 
 #include <cstdint>
@@ -141,6 +142,7 @@ extern "C" void Movie_Present(Movie *movie, int x, int y, int width, int height)
             height = fittedHeight;
         }
     }
+    Input_SetTouchMovieRect(x, y, width, height);
     GfxTLVertex v[4];
     float x0 = (float)x, y0 = (float)y, x1 = (float)(x + width), y1 = (float)(y + height);
 
