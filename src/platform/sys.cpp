@@ -1,3 +1,6 @@
+#if defined(__APPLE__)
+#include <TargetConditionals.h>
+#endif
 #include "platform/key_remapping.h"
 #include "CarDisplayNames.h"
 #include <fstream>
@@ -47,7 +50,7 @@
 #ifdef _WIN32
 #include <process.h>
 #include <io.h>
-#else
+#elif !(defined(TARGET_OS_IOS) && TARGET_OS_IOS)
 #include <spawn.h>
 #include <sys/wait.h>
 #include <errno.h>
@@ -534,6 +537,18 @@ void SDLCALL FolderSelected(void *userdata, const char *const *files, int)
 
 bool SelectGameData(const std::string &settingsFile)
 {
+#if defined(TARGET_OS_IOS) && TARGET_OS_IOS
+    // SDL's native folder dialog is unsupported on iOS. App Documents is
+    // exposed through Finder file sharing; startup checks Documents/Data.
+    std::string message = "Copy your owned PC game installation into Files > On My iPad/iPhone > OpenCMR2 > Data.\n\n"
+                          "Data must directly contain Game, FrontEnd, Sounds, CountrySpecific and SetupRep.\n\n"
+                          "With the device connected to your Mac, use Finder > device > Files > OpenCMR2 to copy the Data folder. "
+                          "Then close and reopen OpenCMR2. No folder picker is available on iOS.";
+    Sys_Log("%s", message.c_str());
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "OpenCMR2 - Copy game data", message.c_str(), NULL);
+    s_setupCanceled = true;
+    return false;
+#else
     std::string message = "Welcome to OpenCMR2\n\n"
                           "Choose a folder containing your Colin McRae Rally 2.0 copy for PC.\n"
                           "You can also choose a folder inside the installation.\n\n"
@@ -592,6 +607,7 @@ bool SelectGameData(const std::string &settingsFile)
         return true;
     }
     return false;
+#endif
 }
 
 // Earlier versions kept the user files one level deeper, in OpenCMR2/OpenCMR2
@@ -750,6 +766,10 @@ bool Platform_Init(int argc, char **argv)
     // Back is the game's Escape (GameActivity). The on-screen keyboard opens
     // only while a name is typed (Sys_RequestTextInput).
     SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
+#elif defined(TARGET_OS_IOS) && TARGET_OS_IOS
+    // Requested save names/passwords need the software keyboard. Offered
+    // fields suppress it only around their own SDL_StartTextInput call.
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
 #endif
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
@@ -821,6 +841,13 @@ bool Platform_Init(int argc, char **argv)
     candidates.push_back("./Data");
     if (const char *base = SDL_GetBasePath())
         candidates.push_back(std::string(base) + "Data");
+#if defined(TARGET_OS_IOS) && TARGET_OS_IOS
+    // The user's owned PC installation lives in Files > OpenCMR2 > Data.
+    if (const char *documents = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS)) {
+        candidates.push_back(std::string(documents) + "Data");
+        // SDL caches and owns this const path; the candidate owns its copy.
+    }
+#endif
     if (const char *setting = Platform_GetSetting("paths.data", NULL))
         candidates.push_back(setting);
     candidates.push_back(".");
@@ -1008,6 +1035,7 @@ bool Translate(const SDL_Event &e, SysEvent *out)
     // the original did; video.run_in_background keeps it running (network
     // play, two copies on one machine).
     case SDL_EVENT_WINDOW_FOCUS_LOST:
+        Input_ResetTouchNavigation();
         out->type = SYS_EVENT_FOCUS_LOST;
         return !RunInBackground();
     case SDL_EVENT_WINDOW_FOCUS_GAINED:
@@ -1045,12 +1073,21 @@ bool Translate(const SDL_Event &e, SysEvent *out)
         out->repeat = e.key.repeat;
         return out->key != 0;
     case SDL_EVENT_FINGER_DOWN:
-        Input_TouchEvent(0, (long long)e.tfinger.fingerID, e.tfinger.x, e.tfinger.y);
-        return false;
     case SDL_EVENT_FINGER_MOTION:
-        Input_TouchEvent(1, (long long)e.tfinger.fingerID, e.tfinger.x, e.tfinger.y);
-        return false;
-    case SDL_EVENT_FINGER_UP:
+    case SDL_EVENT_FINGER_UP: {
+        int type = e.type == SDL_EVENT_FINGER_DOWN ? 0 : e.type == SDL_EVENT_FINGER_MOTION ? 1 : 2;
+        int key = Input_TouchEvent(type, (long long)e.tfinger.fingerID, e.tfinger.x, e.tfinger.y);
+        if (!key) return false;
+        out->type = SYS_EVENT_KEY_DOWN;
+        out->key = key;
+        if (s_window && SDL_TextInputActive(s_window)) {
+            if (key == INPUT_KEY_RETURN) s_pendingText.push_back(13);
+            if (key == INPUT_KEY_ESCAPE) s_pendingText.push_back(27);
+        }
+        return true;
+    }
+    case SDL_EVENT_FINGER_CANCELED:
+        Input_CancelTouchNavigation();
         Input_TouchEvent(2, (long long)e.tfinger.fingerID, e.tfinger.x, e.tfinger.y);
         return false;
     case SDL_EVENT_TEXT_INPUT: {
@@ -1687,7 +1724,9 @@ extern "C" const char *Sys_GetReplayExportDir(void){
 // only, so export paths with spaces or metacharacters are passed verbatim.
 extern "C" BOOL Sys_CommandExists(const char *name){
  if(name==NULL||!*name)return FALSE;
-#ifdef _WIN32
+#if defined(TARGET_OS_IOS) && TARGET_OS_IOS
+ return FALSE; // iOS cannot run desktop helpers such as ffmpeg.
+#elif defined(_WIN32)
  char out[MAX_PATH];
  return SearchPathA(NULL,name,".exe",MAX_PATH,out,NULL)!=0?TRUE:FALSE;
 #else
@@ -1710,7 +1749,9 @@ extern "C" BOOL Sys_CommandExists(const char *name){
 }
 extern "C" int Sys_RunAndWait(const char *path, const char *const argv[]){
  if(path==NULL||argv==NULL)return -1;
-#ifdef _WIN32
+#if defined(TARGET_OS_IOS) && TARGET_OS_IOS
+ return -1; // Never call unavailable posix_spawnp on iOS.
+#elif defined(_WIN32)
  intptr_t r=_spawnvp(_P_WAIT,path,argv);
  return r==-1?-1:(int)r;
 #else

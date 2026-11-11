@@ -635,6 +635,7 @@ int OptionMovie_StartPlayback(char *path, Texture *pTexture, short *pRect, unsig
 // FUNCTION: CMR2 0x0050ff90
 // PORT: opens the movie with our decoder; there is no surface or Bink buffer
 // to create.
+static int s_moviePreviousTouchContext = INPUT_TOUCH_MENU;
 int OptionMovie_Open(char *fileName, unsigned int trackIndex)
 {
     g_pUnk0x00831ad0 = Movie_Open(fileName, trackIndex);
@@ -646,6 +647,9 @@ int OptionMovie_Open(char *fileName, unsigned int trackIndex)
 
     g_unk0x00831ac8 = Movie_GetWidth(g_pUnk0x00831ad0);
     g_unk0x00831acc = Movie_GetHeight(g_pUnk0x00831ad0);
+    s_moviePreviousTouchContext = Input_GetTouchContext();
+    Input_SetTouchContext(INPUT_TOUCH_MOVIE);
+    Input_CancelTouchNavigation();
     return 1;
 }
 
@@ -721,6 +725,8 @@ BOOL OptionMovie_PlayFrame(BYTE skipOnSpace)
 // FUNCTION: CMR2 0x005103d0
 void OptionMovie_Close(void)
 {
+    Input_SetTouchContext(s_moviePreviousTouchContext);
+    Input_CancelTouchNavigation();
     g_unk0x00831c68 = 0;
     g_pUnk0x00831c54 = NULL;
     if (g_pUnk0x00831ad0 != NULL) {
@@ -1226,6 +1232,7 @@ void CGameInfo::SetFrontendSessionFlag(BYTE param1) {
 void CGameInfo::SetInputAndGamePaused(unsigned int param1) {
     SetInputPausedFlag(param1);
     m_fixedMenuKeys = param1;
+    Input_SetTouchContext(param1 ? INPUT_TOUCH_MENU : INPUT_TOUCH_DRIVING);
 }
 
 // FUNCTION: CMR2 0x0049e930
@@ -2232,12 +2239,13 @@ void OptionMenu_UpdateActivePage(void)
 
     OptionMenu_ResetActivePage();
     Sound_UpdateMusicStreaming();
-    CInput::UpdateAllAvailableDevices();
     input = 0;
     if (CGameInfo::GetActiveOptionSlot() == 1) {
         if (CGameInfo::IsConfiguredMultiplayer() == 0)
             input = 1;
     }
+    Input_SetTouchMenuPlayer(input);
+    CInput::UpdateAllAvailableDevices();
     Input_TranslatePedalsToMenuKeys();
     pDevice = CInput::GetAvailableDeviceRecord(input);
     Input_MergeAssignedJoystickButtons(input, pDevice);
@@ -4167,6 +4175,8 @@ void InRaceMenu_AdvanceCascade(CallbackStateMachine *param1, int param2)
         }
         if (CGameInfo::GetConfiguredGameMode() == 4) {
             CGameInfo::SetInputAndGamePaused(1);
+            // Replay's fixed keyboard bindings do not mean a menu is open.
+            Input_SetTouchContext(INPUT_TOUCH_DRIVING);
             CGame::PromoteCallbackEntryByRule(param1, param2, 5, 2);
             return;
         }
@@ -4563,6 +4573,7 @@ updateMenus:
         } while (i < Car_GetOrderCount());
     }
     g_pMenu0x0052af44 = g_pMenu0x0052af48;
+    Input_SetTouchMenuPlayer(g_unk0x0052af58[0]);
     CInput::UpdateAllAvailableDevices();
     Input_TranslatePedalsToMenuKeys();
     pDev = CInput::GetAvailableDeviceRecord(g_unk0x0052af58[0]);

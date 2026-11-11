@@ -77,6 +77,42 @@ if(ANDROID)
     # SDLActivity loads libmain.so and calls its SDL_main.
     add_library(opencmr2 SHARED platform/main.cpp)
     set_target_properties(opencmr2 PROPERTIES OUTPUT_NAME main)
+elseif(IOS)
+    add_executable(opencmr2 MACOSX_BUNDLE platform/main.cpp)
+    option(OPENCMR2_IOS_SIGNING "Allow local Xcode development signing" OFF)
+    set(OPENCMR2_IOS_BUNDLE_IDENTIFIER "io.github.pablocpas.OpenCMR2" CACHE STRING
+        "Reverse-DNS bundle identifier for local iOS signing")
+    set_target_properties(opencmr2 PROPERTIES
+        MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/res/Info-iOS.plist
+        MACOSX_BUNDLE_GUI_IDENTIFIER "${OPENCMR2_IOS_BUNDLE_IDENTIFIER}"
+        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${OPENCMR2_IOS_BUNDLE_IDENTIFIER}"
+        XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2")
+    set(IOS_ASSET_CATALOG ${PROJECT_SOURCE_DIR}/res/Assets.xcassets)
+    if(CMAKE_GENERATOR STREQUAL "Xcode")
+        target_sources(opencmr2 PRIVATE ${IOS_ASSET_CATALOG})
+        set_source_files_properties(${IOS_ASSET_CATALOG} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+        set_target_properties(opencmr2 PROPERTIES XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME AppIcon)
+    else()
+        # Ninja presets create unsigned bundles; compile assets and merge actool's
+        # icon metadata after CMake creates Info.plist. No signing settings change.
+        find_package(Python3 REQUIRED COMPONENTS Interpreter)
+        if(CMAKE_OSX_SYSROOT MATCHES "simulator")
+            set(IOS_ICON_PLATFORM iphonesimulator)
+        else()
+            set(IOS_ICON_PLATFORM iphoneos)
+        endif()
+        file(GLOB_RECURSE IOS_ICON_INPUTS CONFIGURE_DEPENDS ${IOS_ASSET_CATALOG}/*)
+        set_property(TARGET opencmr2 APPEND PROPERTY LINK_DEPENDS ${IOS_ICON_INPUTS}
+            ${PROJECT_SOURCE_DIR}/tools/compile_ios_appicon.py)
+        add_custom_command(TARGET opencmr2 POST_BUILD
+            COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tools/compile_ios_appicon.py
+                --catalog ${IOS_ASSET_CATALOG} --bundle $<TARGET_BUNDLE_DIR:opencmr2>
+                --platform ${IOS_ICON_PLATFORM} --minimum ${CMAKE_OSX_DEPLOYMENT_TARGET}
+            VERBATIM)
+    endif()
+    if(NOT OPENCMR2_IOS_SIGNING)
+        set_target_properties(opencmr2 PROPERTIES XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED NO)
+    endif()
 else()
     add_executable(opencmr2 platform/main.cpp)
     if(EMSCRIPTEN)
@@ -89,6 +125,7 @@ else()
 endif()
 target_link_libraries(opencmr2 PRIVATE opencmr2_platform)
 # Source-only preparation helpers ship with desktop binaries. No game artwork.
+if(NOT IOS)
 set_property(TARGET opencmr2 APPEND PROPERTY LINK_DEPENDS
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/prepare.py
     ${PROJECT_SOURCE_DIR}/tools/scenery-patch/convert.py
@@ -130,6 +167,7 @@ add_custom_command(TARGET opencmr2 POST_BUILD
         ${PROJECT_SOURCE_DIR}/tools/scenery-patch/export-evidence.py
         ${PROJECT_SOURCE_DIR}/tools/scenery-patch/road_contract.py
         $<TARGET_FILE_DIR:opencmr2>/enhancements/scenery-patch)
+endif() # NOT IOS
 
 if(WIN32)
     target_sources(opencmr2 PRIVATE ${PROJECT_SOURCE_DIR}/res/opencmr2.rc)
@@ -137,7 +175,7 @@ if(WIN32)
     add_custom_command(TARGET opencmr2 POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_RUNTIME_DLLS:opencmr2> $<TARGET_FILE_DIR:opencmr2>
         COMMAND_EXPAND_LISTS)
-elseif(OPENCMR2_BUILT_SDL AND NOT ANDROID)
+elseif(OPENCMR2_BUILT_SDL AND NOT ANDROID AND NOT IOS)
     # The SDL3 built here goes next to the executable, which looks for it
     # there, so the release archives run without SDL3 installed.
     if(APPLE)
@@ -159,7 +197,7 @@ endif()
 # Direct3D 12, takes GLSL 330 from the same SPIR-V: drawn upside down, so
 # that images keep Direct3D's rows, with the depth range of OpenGL.
 option(OPENCMR2_SHADERS_MSL "Also build Metal (MSL) shaders" ${APPLE})
-if(ANDROID)
+if(ANDROID OR IOS)
     set(OPENCMR2_RENDERER_GL_DEFAULT OFF)
 else()
     set(OPENCMR2_RENDERER_GL_DEFAULT ON)

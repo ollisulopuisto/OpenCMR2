@@ -10,6 +10,27 @@ layout unit tests pass. Full SDL action suite and iPad run await CI/device tests
 The actual user's build head is unknown; this is a code defect, not proof of
 which gate failed in that binary. No merge.
 
+# iPhone/iPad AppIcon from existing art (11 November 2026)
+
+Reused res/opencmr2.png, the existing opaque 1254px rally-car icon, with only
+Lanczos resizing. Added an AppIcon asset catalog with iPad home/Pro/notification/
+Settings/Spotlight slots, iPhone universal slots and 1024px marketing icon.
+Xcode selects AppIcon through the asset-catalog build setting. Unsigned Ninja
+presets run actool then merge its icon metadata into the generated Info.plist.
+Signing team, bundle identifier and user data paths are unchanged.
+Verified PNG dimensions and RGB/no-alpha metadata, inspected a contact sheet.
+No Apple actool/Xcode execution, built .app inspection or iPad icon rendering
+has been tested here. Regenerate with tools/generate_ios_appicon.py (Pillow).
+
+# iOS Documents ownership repair (11 November 2026)
+
+Devin found a real ownership error in Platform_Init: SDL_GetUserFolder returns
+SDL's cached const pointer, freed by SDL_QuitFilesystem, not caller-owned memory.
+Removed the invalid SDL_free while preserving the owned candidate string copy.
+Verified against the pinned SDL release-3.4.18 implementation, not only the wiki.
+A new source contract fails before the repair and passes after it. Native Apple
+startup, allocator behavior and Files import remain unverified here. No merge.
+
 # Finland1 audit texture-slot mapping (11 November2026)
 
 Devin found a real omission in the read-only placement audit: triangle texture
@@ -55,6 +76,39 @@ performed. The exact failing cell and layer remain unknown. Shared-header change
 also affect fonts. Run vector_sprites and diagnostic_font alongside the new test;
 full project configuration needs CMake 3.24+, Clang and SDL3, absent on this host. Do not infer
 native rendering correctness from the synthetic arithmetic regression.
+
+# First iPad run and unsupported picker (11 November 2026)
+
+User compiled/installed 51f8d14 with Xcode 26.3/iPhoneOS SDK 26.2, selected own
+team and bundle identifier, and reached Game setup on the physical iPad.
+SDL's folder picker returned "That operation is not supported". This proves
+startup, not successful data import or gameplay. iOS setup now explains the
+Finder Files > OpenCMR2 > Data copy route rather than offering that unsupported
+picker. Startup already checks Documents/Data. SDL_GetUserFolder returns an SDL-owned cached path; keep only the std::string
+copy and never free the borrowed pointer (corrected after review). Six source contracts pass; updated Apple build/UI not tested.
+The user is currently copying data; don't force pull/regeneration or reinstall,
+which could lose manual signing settings/data. Keep his existing app for now.
+
+# iOS requested text-entry keyboard (11 November 2026)
+
+Devin identified that the global iOS screen-keyboard disable prevents requested
+save-name/password fields from showing the software keyboard. Removed the global
+disable; Sys_OfferTextInput retains its temporary suppression and reset. Source
+contract reproduces red and now passes. Four iOS source/build contracts pass.
+No Apple compile, software-keyboard interaction or device gameplay verified.
+
+# Current-main iOS device preparation (11 November 2026)
+
+Ported only iOS platform preparation from the old PoC onto current main; no
+old gameplay files or web changes copied. Separate simulator/unsigned device
+presets, static SDL, Metal-only renderer, Files Documents/Data discovery and
+correct SDL entry-point ownership. Local Xcode-signing preset is opt-in; no
+team/account/device is assumed. Current-main external-tool calls now decline on
+iOS instead of referencing unavailable desktop process-spawn APIs. Source
+contracts and desktop build/tests are checked; current iOS compile, signing,
+installation, touch design, real assets and device gameplay remain unverified.
+The historical PoC's successful boot/unsigned compile is not this head's proof.
+No new CI jobs/artifact storage/signups/spend. No merge authorization.
 
 # Android dependency catalog repair (11 November 2026)
 

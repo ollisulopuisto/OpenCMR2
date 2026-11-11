@@ -771,3 +771,34 @@ cycling, comma/period speed, Space pause and saved chase settings are unchanged.
 Offsets are applied to a fresh interpolated render pose, not camera records,
 recorded controls, physics or original game assets. Native Mac acceptance remains
 unverified.
+
+### iPhone/iPad build preparation (not a playable release)
+
+The `ios-sim` and `ios-device` presets build separate arm64 app bundles from
+this tree. On a Mac with Xcode, CMake, Ninja, glslangValidator and spirv-cross:
+
+```sh
+./scripts/build-ios.sh sim
+./scripts/build-ios.sh device
+```
+
+These commands do not install, sign, upload or create accounts. The device
+bundle is unsigned; the simulator bundle cannot run on a physical device.
+For local Xcode development signing, configure `cmake --preset ios-device-xcode`,
+optionally adding `-DOPENCMR2_IOS_BUNDLE_IDENTIFIER=your.reverse.dns.identifier`.
+The identifier is cached and reused on later CMake regeneration. A manual edit
+in the generated Xcode project alone can be overwritten by CMake. Signing team
+and other manual Xcode settings are separate: preserve them before regenerating.
+Then
+open `build/ios-device-xcode/OpenCMR2.xcodeproj`, select your own signing team
+and connected device, then build/run in Xcode. That route is prepared but has
+not been verified on a physical device. A Developer ID certificate for Mac apps
+is not an iOS development-signing setup.
+
+Copy your owned PC game installation into **Files > OpenCMR2 > Data** after
+installing the app. `Data` must directly contain `Game`, `FrontEnd`, `Sounds`,
+and the rest of the PC installation. No copyrighted game data ships in the app.
+Files import and gameplay remain device-unverified. First trials need a working
+controller/keyboard route; iPhone/iPad touch controls still need design approval
+and native testing. Desktop helper processes such as ffmpeg are unavailable on
+iOS. No TestFlight, paid membership purchase or account changes are automated.
