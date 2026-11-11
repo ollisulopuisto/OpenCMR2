@@ -15,6 +15,14 @@ class IOSContract(unittest.TestCase):
         self.assertIn('SDL_HINT_ENABLE_SCREEN_KEYBOARD, "0"', offered)
         self.assertIn('SDL_ResetHint(SDL_HINT_ENABLE_SCREEN_KEYBOARD)', offered)
 
+    def test_bundle_identifier_is_configurable_and_shared_with_plist(self):
+        source = (root/'src/CMakeLists.txt').read_text()
+        self.assertIn('set(OPENCMR2_IOS_BUNDLE_IDENTIFIER "io.github.pablocpas.OpenCMR2" CACHE STRING', source)
+        self.assertIn('MACOSX_BUNDLE_GUI_IDENTIFIER "${OPENCMR2_IOS_BUNDLE_IDENTIFIER}"', source)
+        self.assertIn('XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${OPENCMR2_IOS_BUNDLE_IDENTIFIER}"', source)
+        plist = plistlib.loads((root/'res/Info-iOS.plist').read_bytes())
+        self.assertEqual(plist['CFBundleIdentifier'], '${MACOSX_BUNDLE_GUI_IDENTIFIER}')
+
     def test_presets_distinguish_simulator_device_and_local_signing(self):
         p = {v['name']: v for v in json.loads((root/'CMakePresets.json').read_text())['configurePresets']}
         self.assertEqual(p['ios-sim']['cacheVariables']['CMAKE_OSX_SYSROOT'], 'iphonesimulator')

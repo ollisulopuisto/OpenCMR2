@@ -785,6 +785,11 @@ this tree. On a Mac with Xcode, CMake, Ninja, glslangValidator and spirv-cross:
 These commands do not install, sign, upload or create accounts. The device
 bundle is unsigned; the simulator bundle cannot run on a physical device.
 For local Xcode development signing, configure `cmake --preset ios-device-xcode`,
+optionally adding `-DOPENCMR2_IOS_BUNDLE_IDENTIFIER=your.reverse.dns.identifier`.
+The identifier is cached and reused on later CMake regeneration. A manual edit
+in the generated Xcode project alone can be overwritten by CMake. Signing team
+and other manual Xcode settings are separate: preserve them before regenerating.
+Then
 open `build/ios-device-xcode/OpenCMR2.xcodeproj`, select your own signing team
 and connected device, then build/run in Xcode. That route is prepared but has
 not been verified on a physical device. A Developer ID certificate for Mac apps

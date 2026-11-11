@@ -80,10 +80,12 @@ if(ANDROID)
 elseif(IOS)
     add_executable(opencmr2 MACOSX_BUNDLE platform/main.cpp)
     option(OPENCMR2_IOS_SIGNING "Allow local Xcode development signing" OFF)
+    set(OPENCMR2_IOS_BUNDLE_IDENTIFIER "io.github.pablocpas.OpenCMR2" CACHE STRING
+        "Reverse-DNS bundle identifier for local iOS signing")
     set_target_properties(opencmr2 PROPERTIES
         MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/res/Info-iOS.plist
-        MACOSX_BUNDLE_GUI_IDENTIFIER io.github.pablocpas.OpenCMR2
-        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER io.github.pablocpas.OpenCMR2
+        MACOSX_BUNDLE_GUI_IDENTIFIER "${OPENCMR2_IOS_BUNDLE_IDENTIFIER}"
+        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${OPENCMR2_IOS_BUNDLE_IDENTIFIER}"
         XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2")
     if(NOT OPENCMR2_IOS_SIGNING)
         set_target_properties(opencmr2 PROPERTIES XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED NO)
