@@ -754,7 +754,8 @@ bool Platform_Init(int argc, char **argv)
     // only while a name is typed (Sys_RequestTextInput).
     SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
 #elif defined(TARGET_OS_IOS) && TARGET_OS_IOS
-    SDL_SetHint(SDL_HINT_ENABLE_SCREEN_KEYBOARD, "0");
+    // Requested save names/passwords need the software keyboard. Offered
+    // fields suppress it only around their own SDL_StartTextInput call.
     SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
 #endif
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {

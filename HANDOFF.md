@@ -1,3 +1,11 @@
+# iOS requested text-entry keyboard (11 November2026)
+
+Devin identified that the global iOS screen-keyboard disable prevents requested
+save-name/password fields from showing the software keyboard. Removed the global
+disable; Sys_OfferTextInput retains its temporary suppression and reset. Source
+contract reproduces red and now passes. Four iOS source/build contracts pass.
+No Apple compile, software-keyboard interaction or device gameplay verified.
+
 # Current-main iOS device preparation (11 November 2026)
 
 Ported only iOS platform preparation from the old PoC onto current main; no
