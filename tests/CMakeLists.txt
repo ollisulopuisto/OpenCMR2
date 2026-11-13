@@ -832,3 +832,7 @@ endif()
 add_executable(stb_edge_endpoint_test stb_edge_endpoint_test.cpp)
 target_include_directories(stb_edge_endpoint_test PRIVATE ${PROJECT_SOURCE_DIR}/third_party/stb)
 add_test(NAME stb_edge_endpoint COMMAND stb_edge_endpoint_test)
+
+if(Python3_Interpreter_FOUND)
+    add_test(NAME windows_command_lookup_contract COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/windows_command_lookup_contract.py)
+endif()

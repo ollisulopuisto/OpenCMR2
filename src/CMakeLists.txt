@@ -322,6 +322,9 @@ add_custom_command(
 
 # Applications menu entry: on its own, as it includes the real <windows.h>
 # that port/compat replaces for the game.
+add_library(opencmr2_command_lookup STATIC platform/command_lookup_windows.cpp)
+target_link_libraries(opencmr2_platform PUBLIC opencmr2_command_lookup)
+
 add_library(opencmr2_procmem STATIC platform/process_memory.cpp)
 if(WIN32)
     target_link_libraries(opencmr2_procmem PRIVATE psapi)

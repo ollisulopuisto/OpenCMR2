@@ -48,6 +48,7 @@
 
 // Detached child spawn (Sys_RunDetached, replay-export ffmpeg assembly).
 #ifdef _WIN32
+#include "platform/command_lookup_windows.h"
 #include <process.h>
 #include <io.h>
 #elif !(defined(TARGET_OS_IOS) && TARGET_OS_IOS)
@@ -1727,8 +1728,7 @@ extern "C" BOOL Sys_CommandExists(const char *name){
 #if defined(TARGET_OS_IOS) && TARGET_OS_IOS
  return FALSE; // iOS cannot run desktop helpers such as ffmpeg.
 #elif defined(_WIN32)
- char out[MAX_PATH];
- return SearchPathA(NULL,name,".exe",MAX_PATH,out,NULL)!=0?TRUE:FALSE;
+ return Windows_CommandExists(name)?TRUE:FALSE;
 #else
  const char *path=getenv("PATH");
  if(path==NULL)return FALSE;
