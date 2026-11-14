@@ -397,6 +397,15 @@ int main()
         CHECK(sd.dpDesc.dwUser2 == 9 && strcmp(sd.dpDesc.lpszSessionNameA, "Rally 2") == 0);
     }
     CHECK(a.session->GetSessionDesc(&joined) == NET_OK && joined.dwUser2 == 9);
+    // Both clients must consume the broadcast before the next receive test.
+    // Drain() below is only a snapshot and can miss b's in-flight update.
+    CHECK(b.WaitSystem(NET_SYS_SETSESSIONDESC, &m));
+    {
+        NetMsgSetSessionDesc sd;
+        memcpy(&sd, m.data.data(), sizeof(sd));
+        CHECK(sd.dpDesc.dwUser2 == 9 && strcmp(sd.dpDesc.lpszSessionNameA, "Rally 2") == 0);
+    }
+    CHECK(b.session->GetSessionDesc(&joined) == NET_OK && joined.dwUser2 == 9);
     CHECK(a.session->SetSessionDesc(&desc) == NET_ERR_ACCESSDENIED);
 
     // ---- a buffer too small keeps the message ----
