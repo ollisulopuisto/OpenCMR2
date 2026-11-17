@@ -249,7 +249,8 @@ struct Executor : GfxExecutor {
     SDL_GPUTexture *backdrop = nullptr;    // the copy of backColor the distance fade reads
     SDL_GPUTexture *motionBlurPrevious = nullptr;  // the previous frame, for motion blur
     SDL_GPUTexture *motionBlurTemp = nullptr;      // the blended frame, before the swapchain blit
-    SDL_GPUTexture *bloomBuf1 = nullptr, *bloomBuf2 = nullptr;  // bloom ping-pong buffers
+    SDL_GPUTexture *bloomBuf1 = nullptr, *bloomBuf2 = nullptr;  // bloom ping-pong buffers (half resolution)
+    SDL_GPUTexture *lensGrimeTarget = nullptr;  // lens grime scratch when motionBlurTemp is the input
     SDL_GPUGraphicsPipeline *motionBlurPipeline = nullptr;  // the full-screen blend pass
     SDL_GPUGraphicsPipeline *bloomBrightPassPipeline = nullptr;  // bright-pass extract
     SDL_GPUGraphicsPipeline *bloomBlurPipeline = nullptr;  // directional blur pass
@@ -456,6 +457,7 @@ struct Executor : GfxExecutor {
         SDL_ReleaseGPUTexture(device, motionBlurTemp);
         SDL_ReleaseGPUTexture(device, bloomBuf1);
         SDL_ReleaseGPUTexture(device, bloomBuf2);
+        SDL_ReleaseGPUTexture(device, lensGrimeTarget);
         SDL_ReleaseGPUTexture(device, gradingTarget);
         SDL_ReleaseGPUTexture(device, dofBuf1);
         SDL_ReleaseGPUTexture(device, godRaysBuf1);
@@ -694,6 +696,7 @@ struct Executor : GfxExecutor {
             SDL_ReleaseGPUTexture(device, motionBlurTemp);
             SDL_ReleaseGPUTexture(device, bloomBuf1);
             SDL_ReleaseGPUTexture(device, bloomBuf2);
+            SDL_ReleaseGPUTexture(device, lensGrimeTarget);
             SDL_ReleaseGPUTexture(device, dofBuf1);
             SDL_ReleaseGPUTexture(device, godRaysBuf1);
             SDL_ReleaseGPUTexture(device, fogBuf1);
@@ -726,6 +729,8 @@ struct Executor : GfxExecutor {
                                       SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
             gradingTarget = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, width, height, 1, 1,
                 SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
+            lensGrimeTarget = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, width, height, 1, 1,
+                SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
             dofBuf1 = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, width, height, 1, 1,
                                     SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER);
             godRaysBuf1 = CreateTexture(SDL_GPU_TEXTURETYPE_2D, colorFormat, width, height, 1, 1,
@@ -739,7 +744,7 @@ struct Executor : GfxExecutor {
             backHeight = height;
             if (backColor == NULL || backDepth == NULL || backdrop == NULL ||
                 motionBlurPrevious == NULL || motionBlurTemp == NULL ||
-                bloomBuf1 == NULL || bloomBuf2 == NULL ||
+                bloomBuf1 == NULL || bloomBuf2 == NULL || lensGrimeTarget == NULL ||
                 dofBuf1 == NULL || godRaysBuf1 == NULL || fogBuf1 == NULL || gradingTarget == NULL)
                 return false;
         }
@@ -2970,7 +2975,9 @@ struct Executor : GfxExecutor {
                 { presentSource, Sampler(GfxStageState()) },
                 { white2D, Sampler(GfxStageState()) },
             };
-            SDL_GPUTexture *lensTarget = presentSource == motionBlurTemp ? gradingTarget : motionBlurTemp;   // gradingTarget: full-res and free here (bloomBuf2 is half-res)
+            // Dedicated scratch: gradingTarget only looks free here - the later speed streak skips while
+            // presentSource == gradingTarget and color grading renders into it (Devin review #373).
+            SDL_GPUTexture *lensTarget = presentSource == motionBlurTemp ? lensGrimeTarget : motionBlurTemp;
             if (PostProcessPass(cmd, LensGrimePipeline(), lensTarget, bindings, 2,
                                 uniforms, sizeof(uniforms)))
                 presentSource = lensTarget;

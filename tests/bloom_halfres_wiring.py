@@ -42,6 +42,17 @@ need("{ bloomBuf1, Sampler(bloomUp) }" in block, "composite binds the bloom buff
 need("? bloomBuf2 :" not in gfx and "bloomBuf2 : motionBlurTemp" not in gfx,
      "no pass uses a (half-res) bloom buffer as a full-res target")
 
+# Lens grime's scratch when motionBlurTemp is the input is a DEDICATED full-res target, not
+# gradingTarget: the later speed streak skips while presentSource == gradingTarget and color
+# grading renders into it (Devin review on #373 caught the gradingTarget version).
+need(re.search(r"lensGrimeTarget = CreateTexture\([^;]*(?<!\()width, height", gfx, re.S),
+     "lensGrimeTarget created at full resolution")
+need(gfx.count("SDL_ReleaseGPUTexture(device, lensGrimeTarget);") == 2,
+     "lensGrimeTarget released at both teardown sites")
+need("bloomBuf2 == NULL || lensGrimeTarget == NULL" in gfx, "lensGrimeTarget in the creation null-check")
+need("? lensGrimeTarget : motionBlurTemp" in gfx and "lensGrimeTarget : gradingTarget" not in gfx,
+     "lens grime uses the dedicated scratch, never gradingTarget")
+
 sem = (r / "tests/post_shader_semantics.py").read_text()
 need("bloom half-res vs full-res" in sem and "bloom_chain" in sem,
      "post_shader_semantics.py keeps the behavioural half-res equivalence case")
