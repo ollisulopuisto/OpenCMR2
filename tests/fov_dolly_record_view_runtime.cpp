@@ -23,8 +23,9 @@ void View_GetFovDolly(unsigned int view, int *scale, int *widening);
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line%d %s\n",__LINE__,#x);return 1;}}while(0)
 static DWORD ticks(){return 1000;}static double precise(){return 1000;}
 static CameraRecord Chase(int index,int view){ CameraRecord r={}; r.index=(BYTE)index; r.view=(BYTE)view; r.car=(BYTE)view; r.type=4; return r; }
-// Both records of a view, same offset and basis, must land at the same dollied distance (the 0.70 floor at x2.0).
-static int CheckViewDolly(int view){
+// Both records of a view, same offset and basis, must land at the same dollied distance. The caller varies
+// the per-view speed FOV between views, so the widening/scale ranges isolate each view's own eased state.
+static int CheckViewDolly(int view, int widenLo, int widenHi, int scaleLo, int scaleHi){
  int slot=view*2;
  g_playerCameraMode[slot]=g_playerCameraMode[slot+1]=4;
  g_chaseCameraViewOffsets[view]={0,0x13333,-0x50000};
@@ -41,8 +42,8 @@ static int CheckViewDolly(int view){
  CHECK(b.matrix.position.y == a.matrix.position.y);
  // The overlay reads the same per-view state the records used.
  int scale=0,widening=0;View_GetFovDolly(view,&scale,&widening);
- CHECK(widening > 65536*19/10);             // x2.0, held at full speed
- CHECK(scale > 65536*69/100 && scale < 65536*71/100);   // the 0.70 floor (full compensation at x2.0 is 0.50, amount 150 overshoots into the clamp)
+ CHECK(widening > widenLo && widening < widenHi);
+ CHECK(scale > scaleLo && scale < scaleHi);
  return 0;
 }
 int main(){
@@ -53,12 +54,21 @@ int main(){
  CGraphics::m_projectionScale=1;
  Sys_SetOption("video.speed_effects",1);Sys_SetOption("video.speed_fov",100);Sys_SetOption("video.speed_fov_hold",1);
  Sys_SetOption("video.camera_effects",0);   // no handheld-operator shake in the matrix build
- for(int view=0;view<2;++view){
-  g_viewZooms[view]=65536;g_viewNearPlanes[view]=65536;g_viewFarPlanes[view]=1000*65536;
-  g_activeViewRecord[view]=0;g_viewRecords[view*2].type=4;
-  View_SetPlayerProjection(view);            // hold snaps this view's eased speed FOV to full: widening x2.0
-  if(CheckViewDolly(view))return 1;
- }
+ // View 0 at full speed FOV: hold snaps its eased value to full - widening x2.0, dolly at the 0.70 floor
+ // (full compensation at x2.0 is 0.50, amount 150 overshoots into the clamp).
+ g_viewZooms[0]=65536;g_viewNearPlanes[0]=65536;g_viewFarPlanes[0]=1000*65536;
+ g_activeViewRecord[0]=0;g_viewRecords[0].type=4;
+ View_SetPlayerProjection(0);
+ if(CheckViewDolly(0, 65536*19/10, 65536*21/10, 65536*69/100, 65536*71/100))return 1;
+ // View 1 at one tenth of the speed FOV: widening x1.1, compensation above the floor. A shared or
+ // record-index-keyed state would read view 0's x2.0 here (or nothing, as in the native bug).
+ Sys_SetOption("video.speed_fov",10);
+ g_viewZooms[1]=65536;g_viewNearPlanes[1]=65536;g_viewFarPlanes[1]=1000*65536;
+ g_activeViewRecord[1]=0;g_viewRecords[2].type=4;
+ View_SetPlayerProjection(1);
+ if(CheckViewDolly(1, 65536*105/100, 65536*115/100, 65536*75/100, 65536*95/100))return 1;
+ // Cross-view isolation: view 1's setup must not clobber view 0's eased state (Devin review on #371).
+ if(CheckViewDolly(0, 65536*19/10, 65536*21/10, 65536*69/100, 65536*71/100))return 1;
  Platform_SetTestClock(nullptr);g_pGraphics=nullptr;std::filesystem::current_path(old);std::filesystem::remove_all(tmp);
- puts("chase records key the dolly on their view: both records of view 0 and of view 1 get the same 0.70 distance");
+ puts("chase records key the dolly on their view: per-view widenings x2.0 and x1.1 stay isolated across both records and views");
 }
