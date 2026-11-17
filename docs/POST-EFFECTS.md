@@ -33,6 +33,19 @@ cap and a sun-ward glow - screen-space, not occluded volumetric shafts. It is
 deliberately heavy at amount100 by request and meant to be dialed down. Full
 details, controls and evidence: docs/ATMOSPHERE.md.
 
+## Motion blur keeps the car sharp
+
+Motion blur (video.motion_blur / video.motion_blur_amount) blends the frame with
+the previous one, which smeared the followed car along with the world. With
+video.motion_blur_car (default 1, per the user's request) the SDL_GPU renderer
+scales the blend to zero inside the followed car's screen rectangle, from the
+car's own projected vertices (the same region DoF whole-scene mode uses,
+render/car_region.h): the car - and the road inside the rectangle - stays sharp
+while the world blurs. The rectangle is a feathered bounding box, not a
+per-pixel silhouette. With no car draw in front (cockpit camera) the gate turns
+itself off and the blend is the old whole-frame one. The OpenGL renderer records
+no car region and keeps the old behaviour there.
+
 ## Taste and limits
 
 The intent is less white fog, actual soft defocus and a subtle grade, rather than
