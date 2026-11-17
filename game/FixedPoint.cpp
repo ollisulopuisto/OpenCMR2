@@ -869,7 +869,10 @@ int View_CurrentWidening(unsigned int viewIn)
 }
 static int View_FovDollyScale(CameraRecord *pObj)
 {
-    int view = pObj->index & 7;
+    // The record's VIEW keys the per-view speed FOV state, never the record index: a view's two chase records
+    // (index = slot + view * 2, toggling on every camera switch) share that view's easing. Keying on the index read
+    // the other player's (zero) slot half the time and nothing for view 1 - the native "dolly does not work" report.
+    int view = pObj->view & 7;
     int saved = g_appliedFovSetting ? g_appliedFovSetting : Sys_GetOption("video.fov", 70);
     saved = saved < 30 ? 30 : saved > 150 ? 150 : saved;
     int preview = Sys_GetOption("video.fov_preview", 0);
