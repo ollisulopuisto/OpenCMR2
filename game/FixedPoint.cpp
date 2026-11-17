@@ -945,7 +945,7 @@ void ChaseCamera_BuildMatrix(CameraRecord *pObj, FixMatrix *pRef)
     if (g_playerCameraMode[index] == 4)
         FixMatrix_RotateAboutRight(pM, (unsigned short)g_chaseCameraPitch[2 + pObj->view]);
     {   // OpenCMR2 debug camera move (visual only, video.camera_move_chase): signed move along the final look direction, + forward, - back, 0.05 model units per step.
-        int step = (pObj->type >= 4 && pObj->type <= 6 && !CameraOperator_Enabled(pObj)) ? View_CameraMoveStep(pObj->type, pObj->index) : 0;
+        int step = (pObj->type >= 4 && pObj->type <= 6 && !CameraOperator_Enabled(pObj)) ? View_CameraMoveStep(pObj->type, pObj->view) : 0;
         if (step != 0) {
             pObj->matrix.position.x += FixMul(pObj->matrix.forward.x, step);
             pObj->matrix.position.y += FixMul(pObj->matrix.forward.y, step);
@@ -1180,7 +1180,7 @@ void View_PositionFromCarProfile(CameraRecord *pObj, FixMatrix *pRef)
     pos.z += off.z;
     FixMatrix_SetPosition(&pos, pM);
     {   // OpenCMR2 debug camera move (video.camera_move_car) for the car-mounted views (types 1, 2, 10: bonnet, bumper...). The position is rebuilt above every call, so this never accumulates.
-        int step = View_CameraMoveStep(pObj->type, pObj->index);
+        int step = View_CameraMoveStep(pObj->type, pObj->view);
         if (step != 0) {
             pM->position.x += FixMul(pM->forward.x, step);
             pM->position.y += FixMul(pM->forward.y, step);

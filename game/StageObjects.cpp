@@ -8729,7 +8729,7 @@ void StageObject_BuildCarMountWorldMatrix(CameraRecord *object, void *unused)
         }
     }
     {   // OpenCMR2 debug camera move (video.camera_move_cockpit), signed along the camera forward axis, + forward, - back, 0.05 model units per step, scaled by speed (0 standing still).
-        int step = View_CameraMoveStep(3, object->index);
+        int step = View_CameraMoveStep(3, object->view);
         if (step != 0) {
             object->matrix.position.x += FixMul(object->matrix.forward.x, step);
             object->matrix.position.y += FixMul(object->matrix.forward.y, step);
