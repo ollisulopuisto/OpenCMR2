@@ -215,6 +215,7 @@ GLuint ApplyEffects()
             mbp.mix = motionMix / 255.0f;
             mbp.keepCar = 0;
             mbp.regionValid = 0;
+            mbp.interiorView = 0;
             mbp.u0 = mbp.v0 = mbp.u1 = mbp.v1 = 0.0f;
             mbp.feather = 0.02f;
             float mix[kMotionBlurUniformFloats];

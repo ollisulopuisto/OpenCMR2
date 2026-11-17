@@ -39,6 +39,16 @@ int main(void)
     MotionBlurUniforms_Pack(u, p);
     Check(u[1] == 0.0f && u[6] == 0.0f, "invalid region disables the gate");
 
+    // Interior (cockpit) view: the exterior windscreen mesh keeps the followed car's objectId,
+    // so the projected region is VALID there - the gate must still resolve off, or the world
+    // behind the glass loses its blur (PR review finding).
+    p.keepCar = 1; p.regionValid = 1; p.interiorView = 1;
+    MotionBlurUniforms_Pack(u, p);
+    Check(u[1] == 0.0f && u[4] == 0.0f && u[6] == 0.0f, "interior view disables the gate even with a valid region");
+    p.interiorView = 0;
+    MotionBlurUniforms_Pack(u, p);
+    Check(u[1] == 1.0f && u[4] == 0.3f, "exterior view gates again");
+
     // Zero mix still packs (the pass is skipped by the caller, but the block stays well-formed).
     p.mix = 0.0f; p.keepCar = 1; p.regionValid = 1;
     MotionBlurUniforms_Pack(u, p);

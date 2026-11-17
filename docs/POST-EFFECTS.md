@@ -42,9 +42,11 @@ scales the blend to zero inside the followed car's screen rectangle, from the
 car's own projected vertices (the same region DoF whole-scene mode uses,
 render/car_region.h): the car - and the road inside the rectangle - stays sharp
 while the world blurs. The rectangle is a feathered bounding box, not a
-per-pixel silhouette. With no car draw in front (cockpit camera) the gate turns
-itself off and the blend is the old whole-frame one. The OpenGL renderer records
-no car region and keeps the old behaviour there.
+per-pixel silhouette. In the interior (cockpit) view the gate stays off: the exterior
+windscreen mesh keeps the followed car's objectId there, so the game tells the renderer
+the camera type (Gfx_SetPlayerInterior, camera type 3) and the blend is the old
+whole-frame one. With no followed-car draw in front at all, the gate is off as well.
+The OpenGL renderer records no car region and keeps the old behaviour there.
 
 ## Taste and limits
 

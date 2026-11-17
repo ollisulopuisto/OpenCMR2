@@ -19,6 +19,12 @@ need('Sys_GetOption("video.motion_blur_car", 1)' in g, "default on per the user'
 need("CarRegion_AddDraw(carRegion" in g, "car region from the car's own vertices")
 need(g.index("CarRegion carRegion;") < g.index("// Motion blur: blend"), "region is computed before the motion blur pass (shared with DoF)")
 need('Sys_GetOption("video.blur_mode", 0)' in g, "DoF whole-scene mode still shares the region")
+# cockpit: the exterior windscreen keeps the followed car's objectId, so the region is VALID in the
+# interior view - the gate must be forced off there, and the game must tell the renderer the view type.
+need("mbp.interiorView =" in g and "interiorView" in rd("src/render/motion_blur_uniforms.h"), "interior view feeds the packer, which resolves the gate off")
+need("bool interiorView" in rd("src/render/gfx_internal.h"), "world-end marker carries the interior flag")
+need("Gfx_SetPlayerInterior" in rd("src/render/gfx_core.cpp") and "Gfx_SetPlayerInterior" in rd("src/port/gfx.h"), "renderer API")
+need("Gfx_SetPlayerInterior" in rd("game/Game.cpp") and "View_GetActiveCameraMode" in rd("game/Game.cpp"), "game marks the interior view (camera type 3)")
 gl = rd("src/render/gl_effects_executor.h")
 need("MotionBlurUniforms_Pack" in gl and "keepCar = 0" in gl, "GL has no car region: gate off, full block uploaded")
 need('{"Motion blur keeps the car sharp (0/1)", "video.motion_blur_car", 0, 1, 1, 1}' in rd("game/TuningPanel.h"), "panel row, default 1")

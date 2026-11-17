@@ -2882,12 +2882,15 @@ struct Executor : GfxExecutor {
         // The followed car's screen rectangle, shared by motion blur (keep the car sharp,
         // video.motion_blur_car, default 1 per the user's request) and DoF whole-scene mode
         // (video.blur_mode). From the car's own projected vertices: a bounding rectangle plus a
-        // depth interval, not a per-pixel mask (render/car_region.h). No car draw in front
-        // (cockpit camera) = no region, and both gates stay off.
+        // depth interval, not a per-pixel mask (render/car_region.h). In the interior view the
+        // exterior windscreen mesh keeps the car's objectId, so the region is VALID there -
+        // the motion-blur gate is forced off via MotionBlurUniformParams.interiorView instead.
         CarRegion carRegion;
+        const bool interiorView =
+            worldEnd < frame.commands.size() && frame.commands[worldEnd].interiorView;
         const bool wantCarRegion =
             Sys_GetOption("video.blur_mode", 0) != 0 ||
-            (motionBlurEnabled && motionBlurMix > 0 && Sys_GetOption("video.motion_blur_car", 1) != 0);
+            (motionBlurEnabled && motionBlurMix > 0 && !interiorView && Sys_GetOption("video.motion_blur_car", 1) != 0);
         if (wantCarRegion && worldEnd < frame.commands.size() && frame.commands[worldEnd].playerObject != 0) {
             for (const GfxCommand &oc : frame.commands)
                 if (oc.type == GFX_CMD_DRAW && oc.target == NULL && !oc.transformed) {
@@ -2916,6 +2919,7 @@ struct Executor : GfxExecutor {
             mbp.mix = motionBlurMix / 255.0f;
             mbp.keepCar = Sys_GetOption("video.motion_blur_car", 1);
             mbp.regionValid = carRegion.Valid() ? 1 : 0;
+            mbp.interiorView = interiorView ? 1 : 0;
             mbp.u0 = carRegion.u0; mbp.v0 = carRegion.v0; mbp.u1 = carRegion.u1; mbp.v1 = carRegion.v1;
             mbp.feather = 0.02f;
             float mix[kMotionBlurUniformFloats];

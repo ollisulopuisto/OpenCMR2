@@ -18,14 +18,16 @@ struct MotionBlurUniformParams {
     float mix;         // 0..1 previous-frame blend (already clamped by MotionBlurClampMix)
     int keepCar;       // requested: scale the mix to 0 inside the car rectangle
     int regionValid;   // the rectangle below is a real projected car region
+    int interiorView;  // the followed view is the interior camera: the exterior windscreen mesh
+                       // keeps the car's objectId, so the region is valid there - gate off anyway
     float u0, v0, u1, v1;  // car screen rectangle (uv, v downwards), valid only when regionValid
     float feather;     // soft edge of the rectangle, in uv units (dof.frag uses 0.02)
 };
 
 inline void MotionBlurUniforms_Pack(float *out, const MotionBlurUniformParams &p) {
-    // A stale rectangle must never gate: keep resolves off without a valid region,
-    // and the rect lanes are zeroed whenever the gate is off.
-    const bool keep = p.keepCar != 0 && p.regionValid != 0;
+    // A stale rectangle must never gate: keep resolves off without a valid region or in the
+    // interior view, and the rect lanes are zeroed whenever the gate is off.
+    const bool keep = p.keepCar != 0 && p.regionValid != 0 && p.interiorView == 0;
     out[0] = p.mix;
     out[1] = keep ? 1.0f : 0.0f;
     out[2] = p.feather;
