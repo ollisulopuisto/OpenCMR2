@@ -1,3 +1,25 @@
+# Windshield: replays re-accrue damage instead of showing the end state (18 November 2026)
+
+Olli's Nov 5 replay: the windshield was already broken at the replay's first
+frame even where the recording had it intact. Mechanism (verified in code):
+the crack state is read fresh every frame from the live parts table
+(Windshield_UpdateView -> StageTiming_GetCarReplayRecord(slot)->partBroken/
+partDamaged, WindshieldDirt.cpp), and those flags are cleared only in stage
+setup while the accrual pass (StageTiming_FlagCarPartBreaks) only ever sets
+them, re-deriving them from damageValues - so a replay opened with the race's
+end state. Fix (option A, approved by Olli 18 Nov): replay session starts
+(pre-race-scene promote and replay restart, the SelectionFlag26/27 gates in
+Race.cpp) call StageTiming_ResetPartDamageForReplay: the existing mesh rebuild
+restores exterior appearance and CarPartDamage_ClearAccumulated (CarParts.h)
+zeroes flags, damage values/biases, dent grid and glass counters, so the
+replay re-sim re-accrues the recorded damage history. Performance scales are
+untouched; championship carryover flows from the one-shot finish snapshot
+(CarDamage_CaptureStageSnapshot), not the live table. tests/car_part_damage.cpp
+was red before the clear existed and pins flags+values clearing and scale
+survival; windshield_reset_wiring.py pins both call sites. UNVERIFIED: native
+look through a full replay (re-sim accrual can differ from live, known bug 4);
+222/222 ctest on linux.
+
 # Speed streak: keep the player car sharp (18 November 2026)
 
 Olli's chase-view "double shape around the car": the radial speed streak's clear

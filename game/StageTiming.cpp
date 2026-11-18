@@ -4424,6 +4424,31 @@ void StageTiming_RebuildDamagedPartMeshes(Car *pCar)
     }
 }
 
+// OpenCMR2: replay sessions keep the live part table from the finished race,
+// whose break flags and damage values still hold the end state, so a replay
+// opens with end-of-race damage (a broken windshield) even where the recording
+// had the car intact. StageTiming_FlagCarPartBreaks only ever sets flags and
+// re-derives them from damageValues, so both reset together and the replay
+// re-accrues its recorded damage history. The mesh rebuild restores the
+// exterior appearance (vertices, normals, submesh visibility); performance
+// scales are untouched. Championship carryover is unaffected: it flows from
+// the one-shot stage snapshot captured at the finish
+// (CarDamage_CaptureStageSnapshot), and a fresh stage rebuilds this table in
+// CarDamage_SetupOrderedCarParts.
+void StageTiming_ResetPartDamageForReplay(void)
+{
+    int car;
+    Car *pCar;
+
+    for (car = 0; car < Car_GetOrderCount(); car++) {
+        pCar = Car_Get(car);
+        if (pCar == NULL)
+            continue;
+        StageTiming_RebuildDamagedPartMeshes(pCar);
+        CarPartDamage_ClearAccumulated(g_carPartSets + pCar->index);
+    }
+}
+
 // Preserves a quantised damage snapshot and part/line flags once per stage.
 // FUNCTION: CMR2 0x00469a80
 void CarDamage_CaptureStageSnapshot(int car)
