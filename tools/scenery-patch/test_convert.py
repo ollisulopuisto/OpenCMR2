@@ -76,6 +76,11 @@ class Tests(unittest.TestCase):
         self.assertIn('Reading originals 1/', full.stdout)
         self.assertIn('Converting assets 1/', full.stdout)
         self.assertLess(full.stdout.index('Converting assets 1/'), full.stdout.index('Created'))
+        # The slow step is the per-asset conversion: the in-progress line must name the
+        # asset being worked on BEFORE it runs, so a long conversion never leaves the
+        # previous asset's name on screen (review finding on PR #386).
+        self.assertIn('Converted 1/', full.stdout)
+        self.assertLess(full.stdout.index('Converting assets 1/'), full.stdout.index('Converted 1/'))
 
     def tearDown(self):
         self.tmp.cleanup()

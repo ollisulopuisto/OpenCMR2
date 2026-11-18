@@ -513,6 +513,7 @@ def main():
    total=len(index)
    for i,(key,rec) in enumerate(index.items(),1):
     archive,leaf=key.split('/');a={**rec,'archive':archive,'texture':leaf};rel=Path(Path(archive).stem)/Path(leaf).stem
+    print(f'Converting assets {i}/{total}: {leaf}',flush=True)
     source=Path(tmp)/archive/leaf;source.parent.mkdir(exist_ok=True);source.write_bytes(data[key]);a['path']=str(source)
     if rec.get('category')=='individual-tree' and ((archive,Path(leaf).stem) in TREE_CANDIDATES or (args.tree_geometry=='crossed' and (archive,Path(leaf).stem) in CROSSED_CANDIDATES)):
      asset=(crossed_tree if args.tree_geometry=='crossed' else tree)(a,Path('trees')/rel);rows.append('\t'.join(['tree',archive,leaf,asset,'','1']));status='source-fitted-interpolated'
@@ -534,7 +535,7 @@ def main():
     elif rec.get('category')=='spectator':
      frames=spectator(a,Path('spectators')/rel);rows.append('\t'.join(['spectator',archive,leaf,frames[0],','.join(frames),'6' if len(frames)==4 else '5']));status='articulated-forearm' if len(frames)==4 else 'upper-body-sway'
     else:status='retained-original'
-    print(f'Converting assets {i}/{total}: {leaf} ({status})',flush=True)
+    print(f'Converted {i}/{total}: {leaf} ({status})',flush=True)
     if rec.get('category')=='individual-tree':wind_identities.append('\t'.join([key,str(len(data[key])),rec['sha256']]))
     if status!='retained-original':identities.append('\t'.join([key,str(len(data[key])),rec['sha256']]))
     coverage.append({k:v for k,v in a.items() if k!='path'}|{'status':status})
