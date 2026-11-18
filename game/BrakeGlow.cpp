@@ -15,18 +15,25 @@
 
 static float s_heat[BRAKE_GLOW_MAX_CARS][4];
 static GfxTexture *s_glowTex;
+static bool s_texFailed;
 
 // 64x64 radial falloff, white RGB so the vertex diffuse carries the hot colour;
 // the alpha does the soft edge under additive blending.
 static GfxTexture *BrakeGlow_Texture(void)
 {
+    if (s_texFailed)
+        return NULL;
     if (s_glowTex != NULL)
         return s_glowTex;
     GfxTexture *tex = Gfx_CreateTexture(64, 64, GFX_FORMAT_BGRA8, 1, 0);
-    if (tex == NULL)
+    if (tex == NULL) {
+        s_texFailed = true;
         return NULL;
+    }
     GfxLockedRect lr;
     if (!Gfx_LockTexture(tex, 0, 0, &lr)) {
+        Gfx_DestroyTexture(tex);   // no per-frame leak on a failed lock; remember it
+        s_texFailed = true;
         return NULL;
     }
     for (int y = 0; y < 64; y++) {

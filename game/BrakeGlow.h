@@ -3,8 +3,10 @@
 // Pure inline model so tests/brake_glow.cpp exercises the decision logic without the
 // renderer; game/BrakeGlow.cpp owns texture/draw state. No physics inputs are written.
 
-// Fixed 16.16 reference speed for full heating: 30 world units/s (~108 kph).
-#define BRAKE_GLOW_SPEED_REF (30 * 65536)
+// Fixed 16.16 reference speed for full heating: 1.5 world units/s, the game's own
+// full-speed scale (the speed-driven effects in Race_ApplySpeedEffectParams normalise
+// speed/1.5), so the model's speed range covers real driving.
+#define BRAKE_GLOW_SPEED_REF 98304
 
 inline float BrakeGlow_Clamp01(float v) { return v < 0.f ? 0.f : v > 1.f ? 1.f : v; }
 
