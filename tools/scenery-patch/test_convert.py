@@ -68,6 +68,15 @@ class Tests(unittest.TestCase):
             self.assertEqual(digest, hashlib.sha256(self.raw).hexdigest())
             self.assertIn(self.index[key]['category'], ['individual-tree', 'spectator'])
 
+    def test_progress_output_during_prepare(self):
+        # The pack step ran silently for minutes on a real Mac and looked hung: it must narrate phases.
+        verify = self.run_patch('--check-only')
+        self.assertIn('Reading originals 1/', verify.stdout)
+        full = self.run_patch('--tree-geometry', 'crossed')
+        self.assertIn('Reading originals 1/', full.stdout)
+        self.assertIn('Converting assets 1/', full.stdout)
+        self.assertLess(full.stdout.index('Converting assets 1/'), full.stdout.index('Created'))
+
     def tearDown(self):
         self.tmp.cleanup()
 
