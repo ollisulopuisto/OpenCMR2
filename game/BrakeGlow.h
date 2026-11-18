@@ -30,9 +30,19 @@ inline void BrakeGlow_UpdateHeat(float heat[4], int brakeInput, int brakeBias, i
 
 // Below this heat the disc draws nothing (the faint tail would only add overdraw).
 #define BRAKE_GLOW_THRESHOLD 0.08f
-// Disc quad radius in world units: a touch under the tyre radius so the glow reads
-// as the disc inside the wheel, not the whole wheel.
+// Disc quad radius bounds in world units. The quad scales off the measured wheel
+// mesh radius (BrakeGlow_WheelExtent) so the glow stays inside the hubcap of any
+// wheel model; this is only the clamp range and the fallback when a node has no
+// readable mesh.
 #define BRAKE_GLOW_RADIUS 0.30f
+// Glow radius for a wheel of measured mesh radius wheelExtent (bounding-box half of
+// the largest dimension, ie the tyre radius): a brake disc sits well inside the rim,
+// roughly half the wheel face, so scale down and clamp to sane bounds. Below ~0.10
+// the glow reads as a point, above 0.30 it spills past the wheel.
+inline float BrakeGlow_DiscRadius(float wheelExtent) {
+    float r = 0.55f * wheelExtent;
+    return r < 0.10f ? 0.10f : r > BRAKE_GLOW_RADIUS ? BRAKE_GLOW_RADIUS : r;
+}
 
 // Builds the disc quad for one wheel from its node's world matrix (the SceneNode
 // worldF layout: rows right/up/forward, position in [12..14]). The quad spans the

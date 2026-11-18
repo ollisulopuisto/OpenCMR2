@@ -73,6 +73,19 @@ int main() {
         float axle = (p[v][0]-1.f)*0.f + (p[v][1]-0.3f)*0.f + (p[v][2]-2.f)*(-1.f);  // dot with right
         CHECK(std::fabs(axle) < 1e-4f);
         CHECK(std::fabs(std::fabs(p[v][0] - 1.f) - BRAKE_GLOW_RADIUS) < 1e-4f); } }
+    // 13. Disc radius scales off the measured wheel extent and clamps: a Subaru-sized
+    // wheel (~0.31 tyre radius) gets a disc inside the hubcap, huge and tiny meshes
+    // stay in sane bounds.
+    { float r = BrakeGlow_DiscRadius(0.31f);
+      CHECK(r > 0.14f && r < 0.20f);
+      CHECK(BrakeGlow_DiscRadius(1.0f) == 0.30f);
+      CHECK(BrakeGlow_DiscRadius(0.1f) == 0.10f);
+      // the quad built with that radius never spans past 60% of the wheel
+      float p4[4][3], uv4[4][2], a4;
+      float ident[16] = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
+      CHECK(BrakeGlow_BuildDiscQuad(ident, BrakeGlow_DiscRadius(0.31f), 0.5f, p4, uv4, &a4) == 1);
+      for (int v = 0; v < 4; v++)
+        CHECK(std::fabs(p4[v][1]) <= 0.6f * 0.31f + 1e-4f && std::fabs(p4[v][2]) <= 0.6f * 0.31f + 1e-4f); }
     std::puts("brake glow heat model: pass");
     return 0;
 }

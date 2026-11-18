@@ -9,13 +9,45 @@
 #include "port/sys.h"
 #include "Car.h"
 #include "SceneNode.h"
+#include "Mesh.h"
+#include "MeshVertex.h"
 #include "BrakeGlow.h"
 
 #define BRAKE_GLOW_MAX_CARS 48   // g_carOrder capacity
 
 static float s_heat[BRAKE_GLOW_MAX_CARS][4];
+static float s_extent[BRAKE_GLOW_MAX_CARS][4];   // measured wheel mesh radius per wheel
+static int s_extentValid[BRAKE_GLOW_MAX_CARS];
 static GfxTexture *s_glowTex;
 static bool s_texFailed;
+
+// Radial mesh extent of one wheel node: half the largest bounding-box dimension of
+// the mesh vertices (the tyre radius, robust to the mesh origin not being the hub).
+// Measured once per car; the glow quad scales off it (BrakeGlow_DiscRadius) so it
+// stays inside the hubcap of any wheel model. Returns 0 when unreadable.
+static float BrakeGlow_WheelExtent(SceneNode *node)
+{
+    if (node == NULL || node->pObject == NULL)
+        return 0.f;
+    Mesh *mesh = (Mesh *)node->pObject;
+    const MeshVertexF *verts = (const MeshVertexF *)mesh->pVertexData;
+    if (verts == NULL || mesh->field_0x10 <= 0 || mesh->field_0x10 > 100000)
+        return 0.f;
+    float lo[3] = { 1e30f, 1e30f, 1e30f }, hi[3] = { -1e30f, -1e30f, -1e30f };
+    for (int i = 0; i < mesh->field_0x10; i++) {
+        const float p[3] = { verts[i].x, verts[i].y, verts[i].z };
+        for (int a = 0; a < 3; a++) {
+            if (p[a] < lo[a]) lo[a] = p[a];
+            if (p[a] > hi[a]) hi[a] = p[a];
+        }
+    }
+    float best = 0.f;
+    for (int a = 0; a < 3; a++) {
+        float d = 0.5f * (hi[a] - lo[a]);
+        if (d > best) best = d;
+    }
+    return best;
+}
 
 // 64x64 radial falloff, white RGB so the vertex diffuse carries the hot colour;
 // the alpha does the soft edge under additive blending.
@@ -93,8 +125,17 @@ void BrakeGlow_Draw(void)
             SceneNode *node = g_carBuffer[car].pWheelNodes[w];
             if (node == NULL)
                 continue;
+            if (s_extentValid[car] == 0) {
+                for (int k = 0; k < 4; k++)
+                    s_extent[car][k] = BrakeGlow_WheelExtent(g_carBuffer[car].pWheelNodes[k]);
+                s_extentValid[car] = 1;
+                if (Sys_GetOption("video.brake_glow_debug", 0) != 0)
+                    Sys_Log("brake glow: car %d wheel extents %.3f %.3f %.3f %.3f",
+                            car, s_extent[car][0], s_extent[car][1], s_extent[car][2], s_extent[car][3]);
+            }
+            float radius = s_extent[car][w] > 0.f ? BrakeGlow_DiscRadius(s_extent[car][w]) : BRAKE_GLOW_RADIUS;
             float pos[4][3], uv[4][2], alpha;
-            if (!BrakeGlow_BuildDiscQuad(node->worldF, BRAKE_GLOW_RADIUS, s_heat[car][w],
+            if (!BrakeGlow_BuildDiscQuad(node->worldF, radius, s_heat[car][w],
                                          pos, uv, &alpha))
                 continue;
             int a = (int)(alpha * 255.f);
@@ -149,4 +190,6 @@ void BrakeGlow_Draw(void)
 void BrakeGlow_Reset(void)
 {
     memset(s_heat, 0, sizeof s_heat);
+    for (int c = 0; c < BRAKE_GLOW_MAX_CARS; c++)
+        s_extentValid[c] = 0;
 }
