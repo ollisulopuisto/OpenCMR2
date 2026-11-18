@@ -11,7 +11,7 @@ layout(std140, set = 3, binding = 0) uniform SpeedStreakUniforms {
     vec4 cockpitDepth; // x clear distance (0 disabled), y near, z far, w reserved
     vec4 tunnelLines;  // x tunnel vision strength 0..2 (eased, same as dof.frag), y 1 = radial lines inside the tunnel vision zone
     vec4 tunnelFocus;  // x focus u, y focus v in gl_FragCoord space (the upload pre-flips per runtime), z 1.0 = valid (0/unset = screen centre, the old look), w reserved
-    vec4 carProtect;   // x band near z, y band far z (view depth of the player car, world units), z fade width, w 1.0 = enabled: the streak and lines stay off the car (SpeedStreak_CarProtect)
+    vec4 carProtect;   // x band near z, y band far z (view depth of the player car, world units), z fade width, w 1.0 = enabled: the streak and lines stay off the car, and radial taps whose source depth is in the band are dropped (SpeedStreak_CarProtect)
 };
 // Mirrors src/render/speed_streak.h. Directional radial streak: samples run from the pixel toward the screen centre, so the
 // scenery smears outward. The clear inner zone is a radial exclusion, not a car mask.
@@ -132,7 +132,17 @@ void main()
     for (int i = 1; i <= TAPS; ++i) {
         float t = float(i) / float(TAPS);
         float k = 1.0 - 0.6 * t;
-        sum += texture(scene, uv + toCenter * t).rgb * k;
+        vec2 suv = uv + toCenter * t;
+        // A background pixel just outside the car otherwise taps inward across the
+        // car and pulls its colour outward (the double shape): drop samples whose
+        // own depth sits in the car's protection band.
+        if (carProtect.w > 0.5 && depthInfo.y > depthInfo.x) {
+            float sd = textureLod(depthTex, suv, 0.0).r;
+            float sz = depthInfo.x * depthInfo.y / max(depthInfo.y - sd * (depthInfo.y - depthInfo.x), 1e-6);
+            float sdist = sz < carProtect.x ? carProtect.x - sz : sz > carProtect.y ? sz - carProtect.y : 0.0;
+            k *= smoothstep(0.0, carProtect.z, sdist);
+        }
+        sum += texture(scene, suv).rgb * k;
         total += k;
     }
     outColor = vec4(mix(sum / total, vec3(0.93, 0.95, 1.0), lines), base.a);

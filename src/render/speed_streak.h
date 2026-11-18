@@ -24,8 +24,10 @@ inline float SpeedStreak_Length(float r, float strength) { return SpeedStreak_We
 // Car protection: the clear inner zone is a circle around the focus, not a car mask, so
 // the chase/drone car's rear sits outside it and smears (the double-shape ghost). This
 // multiplier keeps the streak (and the lines) off the player car's view-depth band
-// [zMin, zMax], ramping back to full across fade on both sides. Mirrored in
-// shaders/speedstreak.frag (carProtect uniform).
+// [zMin, zMax], ramping back to full across fade on both sides; the shader also
+// weights each radial tap by this at the TAP's depth, so background pixels next to
+// the car stop pulling car colour outward. Mirrored in shaders/speedstreak.frag
+// (carProtect uniform).
 inline float SpeedStreak_CarProtect(float sceneZ, float zMin, float zMax, float fade)
 {
     float d = sceneZ < zMin ? zMin - sceneZ : sceneZ > zMax ? sceneZ - zMax : 0.0f;

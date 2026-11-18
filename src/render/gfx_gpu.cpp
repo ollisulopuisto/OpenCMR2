@@ -3159,8 +3159,10 @@ struct Executor : GfxExecutor {
             vaporSmooth += (vaporTarget - vaporSmooth) * (1.0f - std::exp(-std::min(rawDt, 0.25f) / 0.4f));
             if (!raceWorld || vaporTarget <= 0.0f) { if (vaporSmooth < 0.01f || !raceWorld) vaporSmooth = 0.0f; }
             float trailStrength = SpeedStreak_Smoothstep(0.30f, 0.90f, vaporSmooth);
-            if (vaporSmooth <= 0.01f || !raceWorld || worldEnd >= frame.commands.size() || frame.commands[worldEnd].playerObject == 0) { vaporHistory.Reset(); vaporHavePrev = vaporHaveDir = false; }
-            else if ((trailStrength > 0.0f || speedStreakSmooth > 0.01f) && sampledDepth && backDepth != nullptr) {   // trails are hidden by nearer geometry and the streak's car protection reads the car's depth band: no depth = neither
+            const bool carInfoOk = raceWorld && worldEnd < frame.commands.size() && frame.commands[worldEnd].playerObject != 0;
+            if (vaporSmooth <= 0.01f || !carInfoOk) { vaporHistory.Reset(); vaporHavePrev = vaporHaveDir = false; }
+            // Car protection needs the car bounds even with vapor trails off (speed streak alone): collect whenever either effect is live.
+            if (carInfoOk && (trailStrength > 0.0f || speedStreakSmooth > 0.01f) && sampledDepth && backDepth != nullptr) {   // trails are hidden by nearer geometry and the streak's car protection reads the car's depth band: no depth = neither
                 const unsigned player = frame.commands[worldEnd].playerObject;
                 const GfxDrawState *ref = NULL;   // any of the car's draws: they share the view, projection and viewport
                 auto carVertices = [&](auto &&fn) {

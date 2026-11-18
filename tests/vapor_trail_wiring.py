@@ -17,6 +17,7 @@ need("vec4 trailZ[28];" in s and "vec4 depthInfo;" in s and "sampler2D depthTex"
 need("speedstreak_frag), SDL_GPU_SHADERSTAGE_FRAGMENT, 2, 1)" in g, "pipeline has 2 samplers")
 need("uniforms[3] = Sys_GetOption(\"video.speed_lines\", 1) != 0" in g, "radial lines have their own toggle")
 need("vaporTarget <= 0.0f" in g and "vaporHistory.Reset()" in g, "off = history cleared, no work")
+need("if (vaporSmooth <= 0.01f || !carInfoOk)" in g and "carInfoOk && (trailStrength > 0.0f || speedStreakSmooth > 0.01f)" in g, "bounds collection must also run for streak-only driving (vapor off)")
 need("jump > 20.0f * carHeight" in g, "teleport resets the history")
 need("vaporHistory.Step(rawDt, 0.25f, anchors)" in g, "gap resets the history")
 need('"video.vapor_trails", 0, 1, 1, 1' in rd("game/TuningPanel.h") and '"video.speed_lines", 0, 1, 1, 0' in rd("game/TuningPanel.h"), "panel rows, trails on and lines off by default (tuned)")
