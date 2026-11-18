@@ -15,15 +15,15 @@ rdc = rd("game/RallyData.cpp")
 sh = rd("game/Sprite.h"); sc = rd("game/Sprite.cpp"); gc = rd("game/Game.cpp")
 
 # Panel row accounting: the line() lambda rows between the row counter and the end of the panel.
-start = rdc.index("int row=spectator?7:6;")
+start = re.search(r"int row=spectator\?\d+:\d+;", rdc).start()
 end = rdc.index("DebugOverlays_RequestView", start)
 block = rdc[start:end]
 sites = len(re.findall(r"\bline\(", block))  # call sites only (the lambda declaration is "line=[")
 # A for-loop over N rows from one call site (launch summary) expands the count.
 loops = sum(int(n) - 1 for n in re.findall(r"for\s*\([^)]*<\s*(\d+)\s*;[^)]*\)\s*line\(", block))
 rows = sites + loops
-m = re.search(r"DebugOverlayLayout::For\(g_pGraphics->resX,g_pGraphics->resY,\(spectator\?7:6\)\+(\d+)\)", rdc)
-need(m, "panel budget expression (spectator?7:6)+N")
+m = re.search(r"DebugOverlayLayout::For\(g_pGraphics->resX,g_pGraphics->resY,\(spectator\?\d+:\d+\)\+(\d+)\)", rdc)
+need(m, "panel budget expression (spectator?H:h)+N")
 need(m and int(m.group(1)) == rows, f"budget covers the line() rows: {rows} counted ({sites} call sites + {loops} from loops), budget says {m.group(1) if m else '?'}")
 need("header rows + one entry per line() row below" in rdc, "budget keeps the sync comment")
 

@@ -721,6 +721,32 @@ extern "C" void Gfx_PresentStretched(BOOL vsync) { Present(vsync, true); }
 
 // OpenCMR2: statistics of the frame last presented, for the debug overlay.
 extern "C" uint32_t Gfx_GetFrameDrawCalls(void) { return s_lastDrawCalls; }
+
+// Diagnostics for the memory overlay: every live texture is in s_textures, so
+// the CPU total is the retained level copies and the GPU figure is the decoded
+// 4 bytes/pixel the upload path writes (UploadSize: everything but native-BC
+// expands to RGBA8; Metal decodes BC, so 4/px is exact there and an upper
+// bound elsewhere).
+extern "C" void Gfx_GetTextureMemoryStats(unsigned long long *cpuBytes, unsigned long long *gpuEstimateBytes,
+                                          int *textureCount)
+{
+    unsigned long long cpu = 0, gpu = 0;
+    for (GfxTexture *t : s_textures) {
+        int faces = (t->flags & GFX_TEXTURE_CUBE) ? 6 : 1;
+        for (int f = 0; f < faces; f++)
+            for (int m = 0; m < t->mipLevels && m < 16; m++) {
+                cpu += t->levels[f][m].size();
+                int w = std::max(1, t->width >> m), h = std::max(1, t->height >> m);
+                gpu += (unsigned long long)w * h * 4;
+            }
+    }
+    if (cpuBytes)
+        *cpuBytes = cpu;
+    if (gpuEstimateBytes)
+        *gpuEstimateBytes = gpu;
+    if (textureCount)
+        *textureCount = (int)s_textures.size();
+}
 extern "C" uint32_t Gfx_GetFrameVertices(void) { return s_lastVertices; }
 extern "C" uint32_t Gfx_GetFrameIndices(void) { return s_lastIndices; }
 extern "C" uint32_t Gfx_GetFrameTriangles(void) { return s_lastTriangles; }
