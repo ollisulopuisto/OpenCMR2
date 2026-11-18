@@ -41,6 +41,8 @@ bool Gfx_GpuIsAvailable(void) { return false; }
 extern "C" unsigned int Sys_GetTicks() { return 0; }
 extern "C" double Sys_GetTicksPrecise(void) { return 0; }
 extern "C" void Sys_GetDesktopSize(int *w, int *h) { *w = 96; *h = 64; }
+// input_sdl.cpp is not linked into this harness; the present path calls it.
+extern "C" void Input_SetTouchPicture(int width, int height, BOOL stretch) { (void)width; (void)height; (void)stretch; }
 
 // Globals the production path reads.
 FogLightSource g_fogLightSources[LIGHT_FIELD_MAX];
@@ -74,9 +76,10 @@ static void putQuad()
     Gfx_UnlockVertexBuffer(vb);
 }
 
+static int fogAmount=70;   // post-fog amount re-armed per frame
 static void drawAndRead(DWORD *pixels)
 {
-    Gfx_SetPostFog(TRUE, 70, 100);   // re-arm per frame: the executor one-shots post state
+    Gfx_SetPostFog(TRUE, fogAmount, 100);   // re-arm per frame: the executor one-shots post state
     Gfx_SetRaceWorld(TRUE);
     Gfx_Clear(GFX_CLEAR_TARGET | GFX_CLEAR_ZBUFFER, 0xff181c20, 1.0f);
     Gfx_SetTexture(0, whiteTex);
@@ -597,6 +600,59 @@ int main(int argc, char **argv)
         }
         fprintf(stderr,"short forward continuation=%d\n",continuation);
         require(continuation==0,"short forward beam terminates at true endpoint");
+    }
+    // Horizon blowout (user screenshots 2026-10-31, foggy day chase view:
+    // "headlights mostly overexpose the horizon and don't draw anything
+    // between the lamps and the horizon"). Day fog fogs the far road to
+    // near-white; the wedge's screen-anchored falloff lets its far end push
+    // that bright fog to clip, while the road between stays unlit. Criterion:
+    // at the beam's far end the light may spend at most a third of a pixel's
+    // remaining headroom, and the mid run must keep a visible shaft.
+    {
+        Gfx_SetFogColor(0xffd8d8d8);
+        fogAmount=200;   // foggy day stage: the far road fogs to near-white
+        SceneNode cv={}; FixMatrix_Identity(&cv.world);
+        cv.world.up.y=cv.world.forward.z=65536;
+        cv.world.position.y=(int)(2.4f*65536); cv.world.position.z=(int)(-6.8f*65536);
+        LightField_Clear();
+        for (int side=-1;side<=1;side+=2) {
+            FixVector pos={(int)(side*0.65f*65536),(int)(0.55f*65536),(int)(2.05f*65536)};
+            FixVector dir={0,0,65536};
+            LightField_Add(&pos,&dir,65536,65536,65536,65536);
+        }
+        GfxFogLight fwd[LIGHT_FIELD_MAX];
+        int nf=FogBeam_ProjectLights(fwd,LIGHT_FIELD_MAX,&cv,W,H,1.0f/1.5f,-0.5f/1.5f);
+        require(nf==2,"horizon: two forward lamps");
+        static DWORD off[W*H],on[W*H];
+        putQuad(); Gfx_SetFogLights(nullptr,0); drawAndRead(off);
+        fogLightStrength=200;
+        Gfx_SetFogLights(fwd,nf); drawAndRead(on);
+        fogLightStrength=100;
+        dumpPpm(prefix,"dayfog-off",off);
+        dumpPpm(prefix,"dayfog",on);
+        int worstEnd=0, endHead=255, midSum=0, midN=0;
+        for(int yy=0;yy<H;yy++) for(int xx=0;xx<W;xx++) {
+            float u=(xx+0.5f)/W, v=(yy+0.5f)/H;
+            for(int i=0;i<nf;i++) {
+                float dx=(u-fwd[i].x)*W/H, dy=v-fwd[i].y;
+                float a=dx*fwd[i].beamX+dy*fwd[i].beamY;
+                if(a<0) continue;
+                float l=dx*fwd[i].beamY-dy*fwd[i].beamX;
+                float width=0.015f+a*0.35f;
+                if(l>width||l<-width) continue;
+                float t=a/fwd[i].beamLen;
+                int lift=red(on,xx,yy)-red(off,xx,yy);
+                if(t>=0.70f&&t<=1.05f) {
+                    if(lift>worstEnd) { worstEnd=lift; endHead=255-red(off,xx,yy); }
+                } else if(t>=0.30f&&t<=0.60f&&l>-0.01f&&l<0.01f) { midSum+=lift; midN++; }
+            }
+        }
+        fprintf(stderr,"horizon: worst end lift=%d (headroom %d), mid shaft mean=%d over %d px\n",
+                worstEnd,endHead,midN?midSum/midN:0,midN);
+        require(3*worstEnd<=endHead,"horizon: far end stays a third under clip over bright fog");
+        require(midN>0&&midSum/midN>=8,"horizon: visible shaft between lamps and horizon");
+        Gfx_SetFogColor(0xff000000);
+        fogAmount=70;
     }
     printf("fog_beam_render ok\n");
     return 0;
