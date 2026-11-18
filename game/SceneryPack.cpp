@@ -24,7 +24,6 @@
 #include "port/gfx.h"
 #include <map>
 #include <unordered_map>
-#include <unordered_map>
 #include <set>
 #ifdef rand
 #undef rand
@@ -58,7 +57,8 @@ unsigned long long crowdDrawsTotal=0,crowdTrianglesTotal=0,treeTrianglesTotal=0,
 unsigned loggedSecond=0,treeReplacementDraws=0,treeWindDraws=0,crowdDraws=0;unsigned long long crowdTriangles=0;
 // Distance LOD latch for the 3D tree replacement (video.tree_3d_radius): per-tree near/far state
 // with a hysteresis band so a tree hovering at the boundary does not flicker card/shell.
-// Stage-scoped cache: the sector unload path releases it through SceneryPack_Clear.
+// Stage-scoped cache: stage objects live in one arena (Sector.cpp:144-161, g_stageObjects), so
+// addresses are stable until sector unload, where Sector.cpp:312 calls SceneryPack_Clear and drops it.
 static std::unordered_map<const void*,std::unordered_map<StageObject*,bool>> treeLodNear;
 static int treeLodRadius=250;static unsigned treeLodCardDraws=0;static bool treeLodLogged=false;
 std::unordered_map<const Mesh*,CrowdMesh::Template<GfxVertex>> crowdMeshes;

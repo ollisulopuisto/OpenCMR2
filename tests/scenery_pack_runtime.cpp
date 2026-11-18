@@ -170,7 +170,8 @@ if(argc<2)return 0;base=argv[1];legacy=argc>2&&!strcmp(argv[2],"legacy");separat
  unsigned farBefore=0,farAfter=0;SceneryPack_GetTreeStatus(nullptr,nullptr,nullptr,&farBefore);
  SceneryPack_BeginBatch(eye,nullptr);place(1000);{bool far=SceneryPack_Draw(&object,(float*)&billboard);settle();CHECK(!far||world._41==99);}
  SceneryPack_GetTreeStatus(nullptr,nullptr,nullptr,&farAfter);CHECK(farAfter==farBefore+1); // far: never the shell
- SceneryPack_BeginBatch(eye,nullptr);place(225);{bool far=SceneryPack_Draw(&object,(float*)&billboard);settle();CHECK(!far||world._41==99);} // latched far inside 0.8x band
+ SceneryPack_BeginBatch(eye,nullptr);place(225);{bool far=SceneryPack_Draw(&object,(float*)&billboard);settle();CHECK(!far||world._41==99);}
+ {unsigned n=0;SceneryPack_GetTreeStatus(nullptr,nullptr,nullptr,&n);CHECK(n==farAfter+1);} // latched far inside 0.8x band declines again
  SceneryPack_BeginBatch(eye,nullptr);place(150);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==150); // back inside 0.8x: shell again
  SceneryPack_BeginBatch(nullptr,nullptr);place(1000);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==1000); // no eye: ungated
  SceneryPack_BeginBatch(nullptr,nullptr);place(3);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();
