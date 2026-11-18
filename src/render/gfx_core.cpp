@@ -729,6 +729,9 @@ extern "C" uint32_t Gfx_GetFrameDrawCalls(void) { return s_lastDrawCalls; }
 // bound elsewhere). This is a logical color+depth size estimate for registered
 // textures, including textures not uploaded yet, not measured GPU residency.
 // Driver alignment, postprocess resources and transfer buffers are outside it.
+// Threading: the gfx API is main-thread (Direct3D 7 model); tree wind workers
+// only compute vertex data (SceneryPack.cpp ComputeAll), so s_textures cannot
+// change while the overlay reads these counters.
 extern "C" void Gfx_GetTextureMemoryStats(unsigned long long *cpuBytes, unsigned long long *gpuEstimateBytes,
                                           int *textureCount)
 {
