@@ -8,8 +8,10 @@ partDamaged, WindshieldDirt.cpp), and those flags are cleared only in stage
 setup while the accrual pass (StageTiming_FlagCarPartBreaks) only ever sets
 them, re-deriving them from damageValues - so a replay opened with the race's
 end state. Fix (option A, approved by Olli 18 Nov): replay session starts
-(pre-race-scene promote and replay restart, the SelectionFlag26/27 gates in
-Race.cpp) call StageTiming_ResetPartDamageForReplay: the existing mesh rebuild
+(pre-race-scene promote and replay restart, gated on game mode 4 = replay
+mode in Race.cpp; the SelectionFlag26/27 bits are race configuration - modes
+5/6 and stage 10 - not a replay marker, so gating on them would erase live
+championship carryover) call StageTiming_ResetPartDamageForReplay: the existing mesh rebuild
 restores exterior appearance and CarPartDamage_ClearAccumulated (CarParts.h)
 zeroes flags, damage values/biases, dent grid and glass counters, so the
 replay re-sim re-accrues the recorded damage history. Performance scales are
