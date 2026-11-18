@@ -11,6 +11,7 @@
 #include <stddef.h>
 #include "Graphics.h"
 #include "Car.h"
+#include "BrakeGlow.h"
 #include "RallyRouteNode.h"
 #include "CarResources.h"
 #include "CarParts.h"
@@ -6267,6 +6268,7 @@ void Car_UpdateWheelMeshStates(void)
             if (pNode != NULL)
                 Game_SetTriangleField2CByGroup((Mesh *)pNode->pObject, 1, appearance);
         }
+        BrakeGlow_UpdateCar(car);   // OpenCMR2: brake disc glow heat tick (visual only)
     }
 }
 
