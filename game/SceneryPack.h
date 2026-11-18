@@ -15,7 +15,7 @@ bool SceneryPack_Draw(StageObject *object, const float *billboardMatrix);
 // eye: camera position in world units; pass null to disable distance effects.
 // Batch callers must supply it so the tree wind distance falloff does not
 // depend on game globals (tests link SceneryPack.cpp standalone).
-void SceneryPack_BeginBatch(const float *eye);
+void SceneryPack_BeginBatch(const float *eye, const void *eyeKey);
 void SceneryPack_BeginBatch(void);
 void SceneryPack_FlushBatch(void);
 void SceneryPack_EndBatch(void);

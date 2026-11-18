@@ -162,14 +162,23 @@ if(argc<2)return 0;base=argv[1];legacy=argc>2&&!strcmp(argv[2],"legacy");separat
  float eye[3]={0,0,0};
  auto place=[&](int x){object.position.x=x*65536;object.position.z=0;object.matrix.position.x=x*65536;};
  auto settle=[&](){SceneryPack_EndBatch();Gfx_Present(FALSE);}; // flush deferred wind batches, then capture
- SceneryPack_BeginBatch(eye);
+ SceneryPack_BeginBatch(eye,nullptr);
  place(3);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==3); // near: 3D shell
- SceneryPack_BeginBatch(eye);place(275);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==275); // latched near inside 1.2x band
- SceneryPack_BeginBatch(eye);place(1000);{bool far=SceneryPack_Draw(&object,(float*)&billboard);settle();CHECK(!far||world._41==99);} // far: never the shell
- SceneryPack_BeginBatch(eye);place(225);{bool far=SceneryPack_Draw(&object,(float*)&billboard);settle();CHECK(!far||world._41==99);} // latched far inside 0.8x band
- SceneryPack_BeginBatch(eye);place(150);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==150); // back inside 0.8x: shell again
- SceneryPack_BeginBatch(nullptr);place(1000);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==1000); // no eye: ungated
- SceneryPack_BeginBatch(nullptr);place(3);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();
+ SceneryPack_BeginBatch(eye,nullptr);place(275);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==275); // latched near inside 1.2x band
+ SceneryPack_BeginBatch(eye,nullptr);place(1000);{bool far=SceneryPack_Draw(&object,(float*)&billboard);settle();CHECK(!far||world._41==99);} // far: never the shell
+ SceneryPack_BeginBatch(eye,nullptr);place(225);{bool far=SceneryPack_Draw(&object,(float*)&billboard);settle();CHECK(!far||world._41==99);} // latched far inside 0.8x band
+ SceneryPack_BeginBatch(eye,nullptr);place(150);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==150); // back inside 0.8x: shell again
+ SceneryPack_BeginBatch(nullptr,nullptr);place(1000);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==1000); // no eye: ungated
+ SceneryPack_BeginBatch(nullptr,nullptr);place(3);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();
+ // Split-screen (Devin review on #382): the near/far latch is per camera, so player two's far
+ // draw must not flip player one's latched-near tree to a card inside the hysteresis band.
+ int camera1=1,camera2=2;float eye2[3]={1000,0,0};
+ SceneryPack_BeginBatch(eye,&camera1);place(150);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==150); // cam1 latches near
+ SceneryPack_BeginBatch(eye,&camera1);place(275);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==275); // cam1 near, inside 1.2x band
+ SceneryPack_BeginBatch(eye2,&camera2);place(275);{bool p2=SceneryPack_Draw(&object,(float*)&billboard);settle();CHECK(!p2||world._41==99);} // cam2 first sight at 725: far card
+ SceneryPack_BeginBatch(eye,&camera1);place(275);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==275); // cam1 latch survives cam2's far draw
+ SceneryPack_BeginBatch(eye2,&camera2);place(275);{bool p2=SceneryPack_Draw(&object,(float*)&billboard);settle();CHECK(!p2||world._41==99);} // cam2 still far, unaffected by cam1
+ SceneryPack_BeginBatch(nullptr,nullptr);place(3);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();
  Mesh cropped=mesh;MeshVertexF cropverts[3];memcpy(cropverts,verts,sizeof verts);
  for(auto &v:cropverts)v.textureCoordinates[0][0]=v.textureCoordinates[0][0]*.5f;
  cropped.pVertexData=(DWORD*)cropverts;object.pMesh=&cropped;CHECK(!SceneryPack_Draw(&object,(float*)&billboard));object.pMesh=&mesh;CHECK(logs.find("cropped, nonplanar or invalid")!=std::string::npos);

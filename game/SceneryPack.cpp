@@ -57,7 +57,7 @@ unsigned long long crowdDrawsTotal=0,crowdTrianglesTotal=0,treeTrianglesTotal=0,
 unsigned loggedSecond=0,treeReplacementDraws=0,treeWindDraws=0,crowdDraws=0;unsigned long long crowdTriangles=0;
 // Distance LOD latch for the 3D tree replacement (video.tree_3d_radius): per-tree near/far state
 // with a hysteresis band so a tree hovering at the boundary does not flicker card/shell.
-static std::map<StageObject*,bool> treeLodNear;static unsigned treeLodCardDraws=0;static bool treeLodLogged=false;
+static std::map<std::pair<StageObject*,const void*>,bool> treeLodNear;static unsigned treeLodCardDraws=0;static bool treeLodLogged=false;
 std::unordered_map<const Mesh*,CrowdMesh::Template<GfxVertex>> crowdMeshes;
 
 struct Part { std::vector<GfxVertex> vertices; PackTexture *texture=nullptr; std::vector<SceneryMotion::WindVertex> wind; float windBottom=0,windHeight=0; };
@@ -218,6 +218,7 @@ void SceneryPack_Advance(int step){if(step>0)animationTime+=(unsigned)step;}
 void SceneryPack_SetReactionSource(int slot,int x,int z,int speed,bool valid){if(slot<0||slot>=8)return;reactCars[slot]={x/65536.f,z/65536.f,speed/65536.f,valid,animationTime};}
 static bool treeBatch=false;
 static float batchEye[4]={0,0,0,0}; // xyz + valid flag, set by SceneryPack_BeginBatch(eye)
+static const void *batchEyeKey=nullptr; // active camera identity: the near/far latch is per camera (split-screen)
 static void FlushTrees();
 static ParallelWork::Pool &treePool(){
     // video.tree_threads: 0 = automatic (cores, at most 8), 1 = no worker threads. Read once.
@@ -331,7 +332,7 @@ static bool DrawReplacement(StageObject *object,const float *billboard,unsigned 
         if(lodRadius>0&&batchEye[3]>0.5f){
             float dx=object->position.x/65536.f-batchEye[0],dy=object->position.y/65536.f-batchEye[1],dz=object->position.z/65536.f-batchEye[2];
             float d=std::sqrt(dx*dx+dy*dy+dz*dz);
-            auto slot=treeLodNear.try_emplace(object,d<=(float)lodRadius);
+            auto slot=treeLodNear.try_emplace(std::make_pair(object,batchEyeKey),d<=(float)lodRadius);
             bool &near=slot.first->second;
             if(near){if(d>lodRadius*1.2f)near=false;}
             else if(d<lodRadius*0.8f)near=true;
@@ -449,12 +450,13 @@ void FlushTrees(){
     if(replacementDepth==0)timeReplacementNs+=dt;
     if(drawDepth==0)timeOtherNs+=dt;
 }
-void SceneryPack_BeginBatch(const float *eye){
+void SceneryPack_BeginBatch(const float *eye, const void *eyeKey){
+    batchEyeKey=eyeKey;
     treeBatch=true;
     if(eye){batchEye[0]=eye[0];batchEye[1]=eye[1];batchEye[2]=eye[2];batchEye[3]=1.f;}
     else batchEye[3]=0.f;
 }
-void SceneryPack_BeginBatch(){SceneryPack_BeginBatch(nullptr);}
+void SceneryPack_BeginBatch(){SceneryPack_BeginBatch(nullptr,nullptr);}
 void SceneryPack_FlushBatch(){FlushTrees();}
 void SceneryPack_EndBatch(){
     FlushTrees();treeBatch=false;
