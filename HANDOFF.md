@@ -7,18 +7,21 @@ the crack state is read fresh every frame from the live parts table
 partDamaged, WindshieldDirt.cpp), and those flags are cleared only in stage
 setup while the accrual pass (StageTiming_FlagCarPartBreaks) only ever sets
 them, re-deriving them from damageValues - so a replay opened with the race's
-end state. Fix (option A, approved by Olli 18 Nov): replay session starts
-(pre-race-scene promote and replay restart, gated on game mode 4 = replay
-mode in Race.cpp; the SelectionFlag26/27 bits are race configuration - modes
-5/6 and stage 10 - not a replay marker, so gating on them would erase live
-championship carryover) call StageTiming_ResetPartDamageForReplay: the existing mesh rebuild
+end state. Fix (option A, approved by Olli 18 Nov): the live part table
+resets at the real playback boundary - Replay_SelectAndInitializeLane setting
+playing=1 (StageObjects.cpp), which a live session never crosses.
+Session-transition gates were tried and rejected via Devin review: flags
+26/27 are race configuration (modes 5/6, stage 10) and game mode 4 is also
+live knockout, so both erased live carryover or missed actual replays. The
+reset (StageTiming_ResetPartDamageForReplay): the existing mesh rebuild
 restores exterior appearance and CarPartDamage_ClearAccumulated (CarParts.h)
 zeroes flags, damage values/biases, dent grid and glass counters, so the
 replay re-sim re-accrues the recorded damage history. Performance scales are
 untouched; championship carryover flows from the one-shot finish snapshot
 (CarDamage_CaptureStageSnapshot), not the live table. tests/car_part_damage.cpp
 was red before the clear existed and pins flags+values clearing and scale
-survival; windshield_reset_wiring.py pins both call sites. UNVERIFIED: native
+survival; windshield_reset_wiring.py pins the playback-boundary call site.
+UNVERIFIED: native
 look through a full replay (re-sim accrual can differ from live, known bug 4);
 222/222 ctest on linux.
 

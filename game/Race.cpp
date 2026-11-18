@@ -2499,7 +2499,6 @@ void StageObject_SpawnRandomDebrisBurst(void);
 BYTE View_GetActiveCameraFlags(BYTE);
 int RallyData_IsChampionshipFinalStage(void);
 void Race_StartPlayerAndOpponentReplays(int player);
-void StageTiming_ResetPartDamageForReplay(void);
 extern BYTE g_unk0x0053811f;
 // GLOBAL: CMR2 0x005191a4
 int g_unk0x005191a4 = 0xacb49c;
@@ -2656,14 +2655,6 @@ big:
         if ((char)RallyData_GetSelectionFlag26() != 0)
             StageObject_StartReplaySession(0);
     }
-    // OpenCMR2: replay playback (game mode 4) re-accrues its damage from the
-    // recorded inputs; clear the race's end state first so the replay doesn't
-    // open with end-of-race damage (broken windshield) the recording didn't
-    // have yet. Live stage starts keep their setup/carryover damage: the
-    // selection flags are race configuration (modes 5/6, stage 10), not a
-    // replay marker.
-    if (CGameInfo::GetConfiguredGameMode() == 4)
-        StageTiming_ResetPartDamageForReplay();
     if (((char)RallyData_GetSelectionFlag26() != 0 || (char)RallyData_GetSelectionFlag27() != 0) &&
         CGameInfo::GetGameModeOptionBit19() == 0) {
         StageTiming_StorePreviousCarCheckpoints();
@@ -3320,9 +3311,6 @@ void Race_TeardownStage(CallbackStateMachine *param1, int param2, char flag)
     RallyData_MarkAllElementsReached();
     if (RallyData_GetSelectionFlag26())
         StageObject_StartReplaySession(1);
-    // OpenCMR2: same replay damage reset on a replay restart (mode 4 teardown).
-    if (CGameInfo::GetConfiguredGameMode() == 4)
-        StageTiming_ResetPartDamageForReplay();
     StageTiming_ResetRaceDriverTimes();
     if (CGameInfo::GetGameModeOptionBit19()) {
         n = 1;
