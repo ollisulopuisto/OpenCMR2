@@ -180,24 +180,34 @@ void main()
                 // vanishing point and across the other lamp in bumper view.
                 float decay;
                 if (beams[i].w < 1.0) {
-                    // Distribute a forward beam by WORLD fraction along it,
-                    // not screen fraction. 1/viewZ is linear in screen space
-                    // along the projected wedge, so with q = zLamp/zEnd
-                    // (beamFade) the world fraction at screen fraction t is
-                    // wf = q*t / (1 - t + q*t): the wedge's screen-far end
-                    // holds most of the beam's world length, and a screen
-                    // falloff leaves it nearly as bright as the mid run -
-                    // the 2026-11-18 horizon report (headlights "mostly
-                    // overexpose the horizon and don't draw anything between
-                    // the lamps and the horizon"). World falloff keeps the
-                    // near/mid shaft and lets the far end die quadratically,
-                    // as lamp light does with distance. The soft tail follows
-                    // the same world fraction so the endpoint stays soft.
+                    // Distribute a genuinely forward beam by WORLD fraction
+                    // along it, not screen fraction. 1/viewZ is linear in
+                    // screen space along the projected wedge, so with
+                    // q = zLamp/zEnd (beamFade) the world fraction at screen
+                    // fraction t is wf = q*t / (1 - t + q*t): the wedge's
+                    // screen-far end holds most of the beam's world length,
+                    // and a screen falloff leaves it nearly as bright as the
+                    // mid run - the 2026-11-18 horizon report (headlights
+                    // "mostly overexpose the horizon and don't draw anything
+                    // between the lamps and the horizon"). World falloff
+                    // keeps the near/mid shaft and lets the far end die
+                    // quadratically, as lamp light does with distance.
+                    //
+                    // Near-transverse beams (q -> 1, including forward runs
+                    // the projector capped at 0.6 screen fraction: their
+                    // adjusted q lands near 1) keep the calibrated screen
+                    // curve. worldW blends the two so a camera rotating
+                    // across q = 1 sees no brightness step, and a capped
+                    // stub keeps its calibrated shape instead of taking the
+                    // full-distance attenuation on its retained fraction
+                    // (Devin review r5949430383, both flags).
                     float q = max(beams[i].w, 1e-4);
                     float wf = q * t0 / (1.0 - t0 + q * t0);
-                    axial *= 1.0 - smoothstep(0.70, 1.0, wf);
+                    float worldW = clamp((1.0 - q) * 2.0, 0.0, 1.0);
+                    axial *= 1.0 - smoothstep(0.70, 1.0, mix(t0, wf, worldW));
                     float d = 1.0 + 8.0 * wf;
-                    decay = 1.0 / (d * d);
+                    decay = mix(1.0 / (1.0 + 6.0 * max(a, 0.0) / blen),
+                                1.0 / (d * d), worldW);
                 } else {
                     decay = 1.0 / (1.0 + 6.0 * max(a, 0.0) / blen);
                 }

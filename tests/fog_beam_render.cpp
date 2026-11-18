@@ -654,6 +654,46 @@ int main(int argc, char **argv)
         Gfx_SetFogColor(0xff000000);
         fogAmount=70;
     }
+    // Devin review r5949430383 on the horizon fix: (1) a beam rotating
+    // across beamFade == 1 must not step in brightness - the forward world
+    // curve and the backward screen curve disagree mid-beam, so the blend
+    // between them must reach the screen curve as q -> 1; (2) a forward
+    // beam whose projected run is capped at 0.6 gets an adjusted q near 1,
+    // and must not take the full-distance world attenuation on its retained
+    // stub.
+    {
+        static DWORD off[W*H];
+        putQuad(); Gfx_SetFogLights(nullptr,0); drawAndRead(off);
+        // (2) capped stub: adjusted q near 1 (kept ~7% of the run drawn).
+        GfxFogLight stub={};
+        stub.x=0.2f; stub.y=0.2f; stub.beamX=1.0f; stub.beamLen=0.6f;
+        stub.beamFade=0.9325f; stub.intensity=4;
+        stub.r=stub.g=stub.b=1;
+        stub.depthRef=0.980f; stub.haloRef=0.960f; stub.beamEndRef=0.9627f;   // projector scales the end ref by the kept fraction
+        static DWORD stubOn[W*H];
+        Gfx_SetFogLights(&stub,1); drawAndRead(stubOn);
+        int sx=(int)((0.2f+0.9f*0.6f*2.0f/3.0f)*W), sy=(int)(0.2f*H);
+        int stubEnd=red(stubOn,sx,sy)-red(off,sx,sy);
+        fprintf(stderr,"capped stub: end lift=%d\n",stubEnd);
+        require(stubEnd>5,"capped forward stub keeps the calibrated curve, not full-distance attenuation");
+        // (1) transverse continuity: same beam, q just below / above 1.
+        GfxFogLight belowOne={};
+        belowOne.x=0.2f; belowOne.y=0.5f; belowOne.beamX=1.0f; belowOne.beamLen=0.5f;
+        belowOne.beamFade=0.97f; belowOne.intensity=4;
+        belowOne.r=belowOne.g=belowOne.b=1;
+        belowOne.depthRef=0.980f; belowOne.haloRef=0.960f; belowOne.beamEndRef=0.999f;
+        GfxFogLight aboveOne=belowOne; aboveOne.beamFade=1.03f; aboveOne.beamEndRef=0.90f;
+        static DWORD below[W*H],above[W*H];
+        Gfx_SetFogLights(&belowOne,1); drawAndRead(below);
+        Gfx_SetFogLights(&aboveOne,1); drawAndRead(above);
+        // Mid-run spine: lamp at uv (0.2,0.5), beam +x, t=0.5 -> x 0.2+0.25*(H/W).
+        int mx=(int)((0.2f+0.25f*2.0f/3.0f)*W), my=(int)(0.5f*H);
+        int liftBelow=red(below,mx,my)-red(off,mx,my);
+        int liftAbove=red(above,mx,my)-red(off,mx,my);
+        fprintf(stderr,"transverse continuity: q=0.97 mid lift=%d, q=1.03 mid lift=%d\n",liftBelow,liftAbove);
+        require(liftAbove>5 && abs(liftBelow-liftAbove)<=std::max(4,liftAbove/4),
+                "transverse beam: no brightness step across beamFade == 1");
+    }
     printf("fog_beam_render ok\n");
     return 0;
 }
