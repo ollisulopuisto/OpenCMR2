@@ -10424,15 +10424,17 @@ done:
 
 // Draws the stage icon of one view node: projects its world position to the
 // FUNCTION: OpenCMR2
-// video.color_grading: per-condition race grade, updated once per view per
-// frame. Wet amount is smoothed (weather kind flips are discrete at route
-// intervals; the shared static advances once per view, so split-screen
-// cross-fades a touch faster - cosmetic only); sun elevation and light warmth
-// key the golden-hour blend. With
+// video.color_grading: per-condition race grade, updated once per frame from
+// view 0. The executors run the effects chain when the recorded frame
+// executes, so one grade serves the whole frame; view 0 owns it, the same
+// scope as the fog lights and sun position set beside it. Wet amount is
+// smoothed on wall-clock dt (weather kind flips are discrete at route
+// intervals); sun elevation and light warmth key the golden-hour blend. With
 // the effect off this does nothing and the executor keeps its neutral grade.
-static void StageObject_UpdateConditionGrade(int view)
+static void StageObject_UpdateConditionGrade(void)
 {
     static float s_wet = 0.0f;
+    static double s_lastMs = 0.0;
     static int s_debugFrames = 0;
     FixVector vR;
     int kind;
@@ -10440,6 +10442,8 @@ static void StageObject_UpdateConditionGrade(int view)
     int len;
     int lightR;
     int lightB;
+    double now;
+    float dt;
     float elevation;
     float warmth;
     float target;
@@ -10448,11 +10452,16 @@ static void StageObject_UpdateConditionGrade(int view)
     strength = EffectSettings::GradeStrength();
     if (strength == 0)
         return;
-    kind = StageObject_GetViewWeatherStateByte(view);
+    kind = StageObject_GetViewWeatherStateByte(0);
     // Rain and snow both grade wet: an overcast whiteout wants the same
     // cool, muted treatment as rain.
     target = (kind == 1 || kind == 2) ? 1.0f : 0.0f;
-    s_wet = GradeConditions::Step(s_wet, target, 1.0f / 60.0f);  // frame-locked dt
+    now = Sys_GetTicksPrecise();
+    dt = s_lastMs > 0.0 ? (float)((now - s_lastMs) / 1000.0) : 1.0f / 60.0f;
+    if (dt > 0.1f) dt = 0.1f;   // a stall or pause advances the fade, never snaps it
+    if (dt < 0.0f) dt = 0.0f;
+    s_lastMs = now;
+    s_wet = GradeConditions::Step(s_wet, target, dt);
     StageObject_GetRotatedStageLightVector(&vR);
     len = FixVec_Length(&vR);
     elevation = len > 0 ? (float)vR.y / (float)len : 1.0f;
@@ -10498,9 +10507,10 @@ void StageObject_DrawProjectedViewIcon(int *pViewRect, int param_2)
     icon.y = 0;
     Gfx_SetSunScreenPosition(0,0,FALSE);
     Gfx_SetFogLights(NULL, 0);
-    if (param_2 == 0)
+    if (param_2 == 0) {
         SnowMaterial_UpdateFrame();   // video.snow_material: once per frame, view 0
-    StageObject_UpdateConditionGrade(param_2);   // video.color_grading: per-condition grade, every view
+        StageObject_UpdateConditionGrade();   // video.color_grading: per-condition grade, view 0 owns the frame
+    }
     if (g_sunGlowTexture == 0)
         return;
     uv.x = g_sunGlowTexture->field_0x11c;
