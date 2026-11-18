@@ -10422,7 +10422,6 @@ done:
     }
 }
 
-// Draws the stage icon of one view node: projects its world position to the
 // FUNCTION: OpenCMR2
 // video.color_grading: per-condition race grade, updated once per frame from
 // view 0. The executors run the effects chain when the recorded frame
@@ -10483,6 +10482,7 @@ static void StageObject_UpdateConditionGrade(void)
     }
 }
 
+// Draws the stage icon of one view node: projects its world position to the
 // screen, blends the object ramp into the stage colour and queues the sprite.
 // FUNCTION: CMR2 0x00462d80
 void StageObject_DrawProjectedViewIcon(int *pViewRect, int param_2)

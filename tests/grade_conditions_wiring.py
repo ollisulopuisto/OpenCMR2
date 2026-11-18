@@ -49,4 +49,14 @@ need("SetColorGrading(c.grade[0],c.grade[1],c.grade[2],c.grade[3])" in gl.replac
      "the GL executor must apply the command's grade snapshot at world end")
 need("SetColorGrading(frame.commands[worldEnd].grade[0]" in gpu.replace(" ", ""),
      "the SDL_GPU executor must apply the command's grade snapshot at world end")
+# No effects pass runs without a world-end boundary, so a boundary-less menu
+# frame can never consume a stale race grade from executor state: the GL
+# executor's only ApplyEffects call sits behind the single-boundary gate, and
+# the SDL_GPU executor gates its post chain on worldEffects (boundaries==1).
+gl_apply = [l for l in gl.splitlines() if "ApplyEffects()" in l and "GLuint" in l]
+need(len(gl_apply) == 1, "the GL executor must have exactly one ApplyEffects call site")
+gate_at = gl.index("boundaries==1")
+need(gate_at < gl.index("ApplyEffects()"), "the GL single-boundary gate must precede ApplyEffects")
+need("boolworldEffects=present&&boundaries==1;" in gpu.replace(" ", ""),
+     "the SDL_GPU post chain must stay gated on a single world-end boundary")
 print("grade_conditions_wiring OK")
