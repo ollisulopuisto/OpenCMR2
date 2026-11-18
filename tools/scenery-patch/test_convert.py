@@ -160,6 +160,9 @@ class Tests(unittest.TestCase):
         self.assertIn('not full3D',metadata['geometry'])
         self.assertIn('bottom6%',metadata['alpha_changes'])
         self.assertFalse(list(self.output.glob('trees/*/*/crown.tga')))
+        # Devin #385: crossed trees must not carry the shell-only textures tree() wrote first.
+        self.assertFalse(list(self.output.glob('trees/*/*/cap.tga')))
+        self.assertFalse(list(self.output.glob('trees/*/*/core.tga')))
         before={str(p.relative_to(self.output)):p.read_bytes() for p in self.output.rglob('*') if p.is_file()}
         shutil.rmtree(self.output);self.run_patch('--tree-geometry','crossed')
         self.assertEqual(before,{str(p.relative_to(self.output)):p.read_bytes() for p in self.output.rglob('*') if p.is_file()})

@@ -184,8 +184,10 @@ def crossed_tree(a,rel,with_stem=True):
  (p/'tree.mtl').write_text('newmtl crown\nKd 1 1 1\nd 1\nmap_Kd crossed.tga\nnewmtl trunk\nKd 1 1 1\nd 1\nmap_Kd trunk.tga\n')
  (p/'source-vertices.json').write_text(json.dumps({'schema':'source-uv-per-obj-v-1','source_canvas_wh':[w,h],'vertices':[{'source_uv':[.5+v[0]*h/w,1-v[1]]}for v in points]},indent=2))
  metadata=json.loads((p/'recipe.json').read_text());metadata.update(method='4x premultiplied interpolation, no new detail; fixed source-projection cutouts',crown_pixels=[w*4,h*4],geometry='four fixed intersecting cutout planes, not full3D',triangles=len(faces)+(len(stem) if broad else 0),alpha_changes='broadleaf lower central stem and bottom6% removed from canopy; separate original stem' if broad else 'original source alpha interpolated')
- (p/'recipe.json').write_text(json.dumps(metadata,indent=2)+'\n');(p/'crown.tga').unlink();return asset
-
+ (p/'recipe.json').write_text(json.dumps(metadata,indent=2)+'\n')
+ for shell_only in ('crown.tga','cap.tga','core.tga'): # crossed planes replace the shell; drop its textures
+  (p/shell_only).unlink(missing_ok=True)
+ return asset
 def articulated_spectator(src):
  # Exact manually authored demo recipe, only for hash-verified spc_mn9a.
  # This is four forearm poses on a 2D atlas, not a general skeleton.
