@@ -726,7 +726,9 @@ extern "C" uint32_t Gfx_GetFrameDrawCalls(void) { return s_lastDrawCalls; }
 // the CPU total is the retained level copies and the GPU figure is the decoded
 // 4 bytes/pixel the upload path writes (UploadSize: everything but native-BC
 // expands to RGBA8; Metal decodes BC, so 4/px is exact there and an upper
-// bound elsewhere).
+// bound elsewhere). This is a logical color+depth size estimate for registered
+// textures, including textures not uploaded yet, not measured GPU residency.
+// Driver alignment, postprocess resources and transfer buffers are outside it.
 extern "C" void Gfx_GetTextureMemoryStats(unsigned long long *cpuBytes, unsigned long long *gpuEstimateBytes,
                                           int *textureCount)
 {
@@ -739,6 +741,10 @@ extern "C" void Gfx_GetTextureMemoryStats(unsigned long long *cpuBytes, unsigned
                 int w = std::max(1, t->width >> m), h = std::max(1, t->height >> m);
                 gpu += (unsigned long long)w * h * 4;
             }
+        // GPU: D24S8 or D32F; GL: D24S8. Both allocate one 32-bit depth
+        // attachment per render target, not per cube face (Ensure in each backend).
+        if (t->flags & GFX_TEXTURE_RENDER_TARGET)
+            gpu += (unsigned long long)t->width * t->height * 4;
     }
     if (cpuBytes)
         *cpuBytes = cpu;

@@ -65,6 +65,18 @@ int main()
     Gfx_DestroyTexture(b);
     Gfx_GetTextureMemoryStats(&cpu, &gpu, &count);
     CHECK(count == 0 && cpu == 0 && gpu == 0);
+    // Devin #384: target color is not its only allocation. Both backends own one
+    // 32-bit depth attachment per target (also for a six-face cube target).
+    for (DWORD flags : {DWORD(GFX_TEXTURE_RENDER_TARGET), DWORD(GFX_TEXTURE_RENDER_TARGET | GFX_TEXTURE_CUBE)}) {
+        GfxTexture *target = Gfx_CreateTexture(32, 32, GFX_FORMAT_BGRA8, 1, flags);
+        Gfx_GetTextureMemoryStats(&cpu, &gpu, &count);
+        unsigned long long color = 32 * 32 * 4 * ((flags & GFX_TEXTURE_CUBE) ? 6 : 1);
+        CHECK(count == 1 && cpu == color);
+        CHECK(gpu == color + 32 * 32 * 4);
+        Gfx_DestroyTexture(target);
+        Gfx_GetTextureMemoryStats(&cpu, &gpu, &count);
+        CHECK(count == 0 && cpu == 0 && gpu == 0);
+    }
     Gfx_Shutdown();
     puts("texture memory stats: registration, level bytes, BC decode estimate, destruction");
     return 0;
