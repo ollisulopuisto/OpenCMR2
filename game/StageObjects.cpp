@@ -25,6 +25,8 @@ short Car_GetOrderCount(void);
 #include "Texture.h"
 #include "StageTiming.h"
 #include "StageWeather.h"
+#include "GradeConditions.h"
+#include "render/effect_settings.h"
 #include "AIHelper.h"
 #include "RegKey.h"
 #include <stdio.h>
@@ -10421,6 +10423,57 @@ done:
 }
 
 // Draws the stage icon of one view node: projects its world position to the
+// FUNCTION: OpenCMR2
+// video.color_grading: per-condition race grade, updated once per view per
+// frame. Wet amount is smoothed (weather kind flips are discrete at route
+// intervals; the shared static advances once per view, so split-screen
+// cross-fades a touch faster - cosmetic only); sun elevation and light warmth
+// key the golden-hour blend. With
+// the effect off this does nothing and the executor keeps its neutral grade.
+static void StageObject_UpdateConditionGrade(int view)
+{
+    static float s_wet = 0.0f;
+    static int s_debugFrames = 0;
+    FixVector vR;
+    int kind;
+    int strength;
+    int len;
+    int lightR;
+    int lightB;
+    float elevation;
+    float warmth;
+    float target;
+    GradeConditions::Grade grade;
+
+    strength = EffectSettings::GradeStrength();
+    if (strength == 0)
+        return;
+    kind = StageObject_GetViewWeatherStateByte(view);
+    // Rain and snow both grade wet: an overcast whiteout wants the same
+    // cool, muted treatment as rain.
+    target = (kind == 1 || kind == 2) ? 1.0f : 0.0f;
+    s_wet = GradeConditions::Step(s_wet, target, 1.0f / 60.0f);  // frame-locked dt
+    StageObject_GetRotatedStageLightVector(&vR);
+    len = FixVec_Length(&vR);
+    elevation = len > 0 ? (float)vR.y / (float)len : 1.0f;
+    lightR = g_stageLighting.primary.lightColour.x +
+        (int)(((long long)(g_stageLighting.secondary.lightColour.x - g_stageLighting.primary.lightColour.x) * g_stageLighting.blend) >> 16);
+    lightB = g_stageLighting.primary.lightColour.z +
+        (int)(((long long)(g_stageLighting.secondary.lightColour.z - g_stageLighting.primary.lightColour.z) * g_stageLighting.blend) >> 16);
+    warmth = (lightR + lightB) > 0 ? (float)(lightR - lightB) / (float)(lightR + lightB) : 0.0f;
+    grade = GradeConditions::Compute(s_wet, elevation, warmth, strength);
+    Gfx_SetColorGrading(grade.temp, grade.tint, grade.saturation, grade.contrast);
+    // Calibration aid for native tuning of the elevation/warmth thresholds:
+    // video.grade_debug prints the live signals once per second.
+    if (++s_debugFrames >= 60) {
+        s_debugFrames = 0;
+        if (Sys_GetOption("video.grade_debug", 0))
+            printf("grade: kind=%d wet=%.2f elev=%.3f warmth=%.3f -> temp=%d tint=%d sat=%d contrast=%d\n",
+                kind, (double)s_wet, (double)elevation, (double)warmth,
+                grade.temp, grade.tint, grade.saturation, grade.contrast);
+    }
+}
+
 // screen, blends the object ramp into the stage colour and queues the sprite.
 // FUNCTION: CMR2 0x00462d80
 void StageObject_DrawProjectedViewIcon(int *pViewRect, int param_2)
@@ -10447,6 +10500,7 @@ void StageObject_DrawProjectedViewIcon(int *pViewRect, int param_2)
     Gfx_SetFogLights(NULL, 0);
     if (param_2 == 0)
         SnowMaterial_UpdateFrame();   // video.snow_material: once per frame, view 0
+    StageObject_UpdateConditionGrade(param_2);   // video.color_grading: per-condition grade, every view
     if (g_sunGlowTexture == 0)
         return;
     uv.x = g_sunGlowTexture->field_0x11c;
