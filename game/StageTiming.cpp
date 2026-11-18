@@ -4429,11 +4429,13 @@ void StageTiming_RebuildDamagedPartMeshes(Car *pCar)
 // opens with end-of-race damage (a broken windshield) even where the recording
 // had the car intact. StageTiming_FlagCarPartBreaks only ever sets flags and
 // re-derives them from damageValues, so both reset together and the replay
-// re-accrues its recorded damage history. The mesh rebuild restores the
-// exterior appearance (vertices, normals, submesh visibility); performance
-// scales are untouched. Championship carryover is unaffected: it flows from
-// the one-shot stage snapshot captured at the finish
-// (CarDamage_CaptureStageSnapshot), and a fresh stage rebuilds this table in
+// re-accrues its recorded damage history. The clear runs before the mesh
+// rebuild so the rebuild (which restores vertices/normals from the pristine
+// set->geometry and unconditionally unhides the break submeshes) can never
+// re-apply a stale damage state; performance scales are untouched.
+// Championship carryover is unaffected: it flows from the one-shot stage
+// snapshot captured at the finish (CarDamage_CaptureStageSnapshot, guarded so
+// it cannot re-capture mid-replay), and a fresh stage rebuilds this table in
 // CarDamage_SetupOrderedCarParts.
 void StageTiming_ResetPartDamageForReplay(void)
 {
@@ -4444,8 +4446,8 @@ void StageTiming_ResetPartDamageForReplay(void)
         pCar = Car_Get(car);
         if (pCar == NULL)
             continue;
-        StageTiming_RebuildDamagedPartMeshes(pCar);
         CarPartDamage_ClearAccumulated(g_carPartSets + pCar->index);
+        StageTiming_RebuildDamagedPartMeshes(pCar);
     }
 }
 

@@ -8,11 +8,14 @@ partDamaged, WindshieldDirt.cpp), and those flags are cleared only in stage
 setup while the accrual pass (StageTiming_FlagCarPartBreaks) only ever sets
 them, re-deriving them from damageValues - so a replay opened with the race's
 end state. Fix (option A, approved by Olli 18 Nov): the live part table
-resets at the real playback boundary - Replay_SelectAndInitializeLane setting
-playing=1 (StageObjects.cpp), which a live session never crosses.
-Session-transition gates were tried and rejected via Devin review: flags
-26/27 are race configuration (modes 5/6, stage 10) and game mode 4 is also
-live knockout, so both erased live carryover or missed actual replays. The
+resets at the replay-viewing boundary - Race_StartPlayerAndOpponentReplays
+(Race.cpp), the race-end fade callback that starts stream playback, before
+the first lane init. Session-transition gates were tried and rejected via
+Devin review: flags 26/27 are race configuration (modes 5/6, stage 10) and
+game mode 4 is also live knockout, so both erased live carryover or missed
+actual replays. The generic lane init (Replay_SelectAndInitializeLane) was
+rejected next: ghost playback restarts (Replay_RestartGhostCar) pass it
+during live sessions. The
 reset (StageTiming_ResetPartDamageForReplay): the existing mesh rebuild
 restores exterior appearance and CarPartDamage_ClearAccumulated (CarParts.h)
 zeroes flags, damage values/biases, dent grid and glass counters, so the

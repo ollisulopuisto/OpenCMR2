@@ -12033,7 +12033,6 @@ extern CarDamageRecord *g_carDamageRecords;
 void CarDamage_ApplyCollisionDeformImpulse(Car *pCar, int *param_2, FixVector *param_3, int param_4, unsigned char param_5,
                   int param_6);
 void StageTiming_RebuildDamagedPartMeshes(Car *pCar);
-void StageTiming_ResetPartDamageForReplay(void);
 void StageTiming_FlagCarPartBreaks(Car *pCar, int param_2);
 void CarDamage_DecodeImpactPayload(CarImpactPayload *p);
 void StageObject_RebuildDamagePartValues(Car *pCar);
@@ -12173,12 +12172,6 @@ int Replay_SelectAndInitializeLane(ReplayStream *p, short lane, short start, BYT
     if (lane >= p->laneCount)
         return 0;
     p->car = car;
-    // OpenCMR2: playback is starting, so this is the replay boundary a live
-    // session never crosses (playing is only set here). Replay playback
-    // re-accrues damage from the recorded inputs; clear the raced end state
-    // first (idempotent) so the replay doesn't open with end-of-race damage
-    // (a broken windshield) the recording didn't have yet.
-    StageTiming_ResetPartDamageForReplay();
     p->playing = 1;
     p->lane = lane;
     p->playStarted = 1;
