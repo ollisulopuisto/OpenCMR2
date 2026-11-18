@@ -24,6 +24,7 @@
 #include "port/gfx.h"
 #include <map>
 #include <unordered_map>
+#include <unordered_map>
 #include <set>
 #ifdef rand
 #undef rand
@@ -57,7 +58,9 @@ unsigned long long crowdDrawsTotal=0,crowdTrianglesTotal=0,treeTrianglesTotal=0,
 unsigned loggedSecond=0,treeReplacementDraws=0,treeWindDraws=0,crowdDraws=0;unsigned long long crowdTriangles=0;
 // Distance LOD latch for the 3D tree replacement (video.tree_3d_radius): per-tree near/far state
 // with a hysteresis band so a tree hovering at the boundary does not flicker card/shell.
-static std::map<std::pair<StageObject*,const void*>,bool> treeLodNear;static unsigned treeLodCardDraws=0;static bool treeLodLogged=false;
+// Stage-scoped cache: the sector unload path releases it through SceneryPack_Clear.
+static std::unordered_map<const void*,std::unordered_map<StageObject*,bool>> treeLodNear;
+static int treeLodRadius=250;static unsigned treeLodCardDraws=0;static bool treeLodLogged=false;
 std::unordered_map<const Mesh*,CrowdMesh::Template<GfxVertex>> crowdMeshes;
 
 struct Part { std::vector<GfxVertex> vertices; PackTexture *texture=nullptr; std::vector<SceneryMotion::WindVertex> wind; float windBottom=0,windHeight=0; };
@@ -328,14 +331,14 @@ static bool DrawReplacement(StageObject *object,const float *billboard,unsigned 
     // run; far cards restore the original look where a tree is a few dozen pixels tall. First
     // sight uses the plain radius; afterwards a 0.8x/1.2x hysteresis band prevents flicker.
     {
-        int lodRadius=Sys_GetOption("video.tree_3d_radius",250);
+        int lodRadius=treeLodRadius;
         if(lodRadius>0&&batchEye[3]>0.5f){
             float dx=object->position.x/65536.f-batchEye[0],dy=object->position.y/65536.f-batchEye[1],dz=object->position.z/65536.f-batchEye[2];
-            float d=std::sqrt(dx*dx+dy*dy+dz*dz);
-            auto slot=treeLodNear.try_emplace(std::make_pair(object,batchEyeKey),d<=(float)lodRadius);
+            float d2=dx*dx+dy*dy+dz*dz,r=(float)lodRadius;
+            auto slot=treeLodNear[batchEyeKey].try_emplace(object,d2<=r*r);
             bool &near=slot.first->second;
-            if(near){if(d>lodRadius*1.2f)near=false;}
-            else if(d<lodRadius*0.8f)near=true;
+            if(near){if(d2>(r*1.2f)*(r*1.2f))near=false;}
+            else if(d2<(r*0.8f)*(r*0.8f))near=true;
             if(!near){
                 ++treeLodCardDraws;
                 if(!treeLodLogged){Sys_Log("options: tree 3D radius %d: far trees draw as original cards (video.tree_3d_radius, 0 = unlimited)",lodRadius);treeLodLogged=true;}
@@ -451,6 +454,9 @@ void FlushTrees(){
     if(drawDepth==0)timeOtherNs+=dt;
 }
 void SceneryPack_BeginBatch(const float *eye, const void *eyeKey){
+    // Read once per viewport batch, not thousands of string lookups per forest frame.
+    // Nonpositive radius means unlimited; promote to float before squared thresholds.
+    treeLodRadius=std::max(0,Sys_GetOption("video.tree_3d_radius",250));
     batchEyeKey=eyeKey;
     treeBatch=true;
     if(eye){batchEye[0]=eye[0];batchEye[1]=eye[1];batchEye[2]=eye[2];batchEye[3]=1.f;}

@@ -20,6 +20,7 @@
 #include "MeshVertex.h"
 #include "port/sys.h"
 #include "render/gfx_internal.h"
+static unsigned lodOptionReads=0;
 static bool separate=false,legacy=false,windEnabled=true;static std::string base; static unsigned draws; static GfxMatrix world;static GfxTexture *bound;static std::vector<GfxVertex> captured;
 #include "RallyRoute.h"
 // SceneryPack.cpp reads the stage route (brush extrusion); this test has no route, so define empty globals.
@@ -39,7 +40,7 @@ extern "C" SysFile *Sys_OpenSceneryFile(const char*p){return Sys_OpenFile((base+
 extern "C" void Sys_CloseFile(SysFile *f){fclose(f->file);delete f;}
 extern "C" DWORD Sys_GetFileSize(SysFile *f){fseek(f->file,0,SEEK_END);long n=ftell(f->file);rewind(f->file);return n;}
 extern "C" DWORD Sys_ReadFile(SysFile *f,void *b,DWORD n){return fread(b,1,n,f->file);}
-extern "C" int Sys_GetOption(const char *key,int f){return !strcmp(key,"video.tree_wind")?int(windEnabled):f;}
+extern "C" int Sys_GetOption(const char *key,int f){if(!strcmp(key,"video.tree_3d_radius"))++lodOptionReads;return !strcmp(key,"video.tree_wind")?int(windEnabled):f;}
 extern "C" double Sys_GetTicksPrecise(void){return 0;}
 extern "C" const char *Sys_GetOptionText(const char*,const char*){return base.c_str();}
 static std::string logs;
@@ -162,10 +163,13 @@ if(argc<2)return 0;base=argv[1];legacy=argc>2&&!strcmp(argv[2],"legacy");separat
  float eye[3]={0,0,0};
  auto place=[&](int x){object.position.x=x*65536;object.position.z=0;object.matrix.position.x=x*65536;};
  auto settle=[&](){SceneryPack_EndBatch();Gfx_Present(FALSE);}; // flush deferred wind batches, then capture
- SceneryPack_BeginBatch(eye,nullptr);
- place(3);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==3); // near: 3D shell
+ unsigned readsBefore=lodOptionReads;
+ SceneryPack_BeginBatch(eye,nullptr);CHECK(lodOptionReads==readsBefore+1);
+ place(3);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==3);CHECK(lodOptionReads==readsBefore+1); // near: 3D shell
  SceneryPack_BeginBatch(eye,nullptr);place(275);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==275); // latched near inside 1.2x band
- SceneryPack_BeginBatch(eye,nullptr);place(1000);{bool far=SceneryPack_Draw(&object,(float*)&billboard);settle();CHECK(!far||world._41==99);} // far: never the shell
+ unsigned farBefore=0,farAfter=0;SceneryPack_GetTreeStatus(nullptr,nullptr,nullptr,&farBefore);
+ SceneryPack_BeginBatch(eye,nullptr);place(1000);{bool far=SceneryPack_Draw(&object,(float*)&billboard);settle();CHECK(!far||world._41==99);}
+ SceneryPack_GetTreeStatus(nullptr,nullptr,nullptr,&farAfter);CHECK(farAfter==farBefore+1); // far: never the shell
  SceneryPack_BeginBatch(eye,nullptr);place(225);{bool far=SceneryPack_Draw(&object,(float*)&billboard);settle();CHECK(!far||world._41==99);} // latched far inside 0.8x band
  SceneryPack_BeginBatch(eye,nullptr);place(150);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==150); // back inside 0.8x: shell again
  SceneryPack_BeginBatch(nullptr,nullptr);place(1000);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==1000); // no eye: ungated
