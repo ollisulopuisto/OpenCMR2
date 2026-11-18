@@ -31,5 +31,5 @@ void SceneryPack_GetFrameTotals(unsigned long long *crowdDraws,unsigned long lon
 // Diagnostics: running totals (ns, calls) of wall-clock time inside SceneryPack_Draw and inside its whole-tree replacement part.
 void SceneryPack_GetTimeSplit(unsigned long long *windMathNs,unsigned long long *submitNs);
 void SceneryPack_GetTimeTotals(unsigned long long *replacementNs,unsigned long long *totalNs,unsigned long long *calls);
-void SceneryPack_GetTreeStatus(unsigned *replacements,unsigned *wind,unsigned *originalSources);
+void SceneryPack_GetTreeStatus(unsigned *replacements,unsigned *wind,unsigned *originalSources,unsigned *farCards);
 #endif

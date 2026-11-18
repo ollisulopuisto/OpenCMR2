@@ -117,7 +117,7 @@ if(argc<2)return 0;base=argv[1];legacy=argc>2&&!strcmp(argv[2],"legacy");separat
 
    windEnabled=false;CHECK(!SceneryPack_Draw(&object,(float*)&billboard));windEnabled=true;
    SceneryPack_RegisterSource(&source,"bad",3);CHECK(!SceneryPack_Draw(&object,(float*)&billboard));
-   unsigned td=0,wd=0,og=0;SceneryPack_GetTreeStatus(&td,&wd,&og);CHECK(wd==2&&td==1);
+   unsigned td=0,wd=0,og=0,fc=1;SceneryPack_GetTreeStatus(&td,&wd,&og,&fc);CHECK(wd==2&&td==1&&fc==0); // no eye set: LOD gate never declines
    strcpy(source.name,"spc_mn9a.dds");
    SceneryPack_RegisterSource(&source,"xyz",3);CHECK(!SceneryPack_Draw(&object,(float*)&billboard));
    CHECK(logs.find("spectator sidecar active")!=std::string::npos);
@@ -157,6 +157,19 @@ if(argc<2)return 0;base=argv[1];legacy=argc>2&&!strcmp(argv[2],"legacy");separat
  CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);
  CHECK(captured.size()==movedTree.size()&&!memcmp(captured.data(),movedTree.data(),captured.size()*sizeof(GfxVertex)));
  windEnabled=false;CHECK(SceneryPack_Draw(&object,(float*)&billboard));Gfx_Present(FALSE);CHECK(!memcmp(captured.data(),restTree.data(),captured.size()*sizeof(GfxVertex)));windEnabled=true;
+ // Distance LOD (5.9 fps forest run, 1.85M tree tris): past video.tree_3d_radius (default 250 world units)
+ // a tree declines the 3D shell replacement so the original card draws instead; hysteresis 0.8x/1.2x per tree.
+ float eye[3]={0,0,0};
+ auto place=[&](int x){object.position.x=x*65536;object.position.z=0;object.matrix.position.x=x*65536;};
+ auto settle=[&](){SceneryPack_EndBatch();Gfx_Present(FALSE);}; // flush deferred wind batches, then capture
+ SceneryPack_BeginBatch(eye);
+ place(3);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==3); // near: 3D shell
+ SceneryPack_BeginBatch(eye);place(275);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==275); // latched near inside 1.2x band
+ SceneryPack_BeginBatch(eye);place(1000);{bool far=SceneryPack_Draw(&object,(float*)&billboard);settle();CHECK(!far||world._41==99);} // far: never the shell
+ SceneryPack_BeginBatch(eye);place(225);{bool far=SceneryPack_Draw(&object,(float*)&billboard);settle();CHECK(!far||world._41==99);} // latched far inside 0.8x band
+ SceneryPack_BeginBatch(eye);place(150);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==150); // back inside 0.8x: shell again
+ SceneryPack_BeginBatch(nullptr);place(1000);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();CHECK(world._41==1000); // no eye: ungated
+ SceneryPack_BeginBatch(nullptr);place(3);CHECK(SceneryPack_Draw(&object,(float*)&billboard));settle();
  Mesh cropped=mesh;MeshVertexF cropverts[3];memcpy(cropverts,verts,sizeof verts);
  for(auto &v:cropverts)v.textureCoordinates[0][0]=v.textureCoordinates[0][0]*.5f;
  cropped.pVertexData=(DWORD*)cropverts;object.pMesh=&cropped;CHECK(!SceneryPack_Draw(&object,(float*)&billboard));object.pMesh=&mesh;CHECK(logs.find("cropped, nonplanar or invalid")!=std::string::npos);
