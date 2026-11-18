@@ -1,5 +1,5 @@
 // Brake disc glow renderer (video.brake_glow, default on). Visual only: reads the
-// car's brake pedal, bias and speed each wheel-mesh tick, keeps a per-wheel heat
+// car's brake pedal, bias and speed once per consumed physics step, keeps a per-wheel heat
 // (BrakeGlow.h, unit-tested) and draws an additive radial quad on the disc plane of
 // each hot wheel during the 3D pass. Nothing here feeds physics, the replay stream
 // or any original render state; all state changes sit inside Push/PopState.
@@ -46,18 +46,19 @@ static GfxTexture *BrakeGlow_Texture(void)
     return s_glowTex;
 }
 
-// One wheel-mesh tick for one car (called from Car_UpdateWheelMeshStates): fold the
-// current pedal/bias/speed into the heat model. dt comes from the physics step so
-// heat gain is frame-rate independent.
-void BrakeGlow_UpdateCar(int car)
+// One physics step for one car (called from Car_DecrementContactTimers, once per
+// consumed step): fold the current pedal/bias/speed into the heat model. dtSteps is
+// that step's duration in model units (1.0 at the original 25 Hz rate), so heat gain
+// tracks the simulation, not the render rate; paused frames consume no steps and
+// change no heat.
+void BrakeGlow_TickStep(int car, float dtSteps)
 {
-    if (car < 0 || car >= BRAKE_GLOW_MAX_CARS)
+    if (car < 0 || car >= BRAKE_GLOW_MAX_CARS || dtSteps <= 0.f)
         return;
     if (Sys_GetOption("video.brake_glow", 1) == 0)
         return;
     Car *c = &g_carBuffer[car];
-    BrakeGlow_UpdateHeat(s_heat[car], c->brakeInput, c->brakeBias, c->speed,
-                         g_physicsTimeStep / 65536.f);
+    BrakeGlow_UpdateHeat(s_heat[car], c->brakeInput, c->brakeBias, c->speed, dtSteps);
 }
 
 // Draws every hot disc in the current view. Called at world-end of the 3D pass
@@ -67,6 +68,10 @@ void BrakeGlow_Draw(void)
 {
     if (Sys_GetOption("video.brake_glow", 1) == 0)
         return;
+    // Car_FreeTable releases the car table without clearing g_carOrderCount, and
+    // menu scenes reuse this 3D pass: never index a freed table.
+    if (g_carBuffer == NULL || g_carCount <= 0 || g_carOrderCount <= 0)
+        return;
     GfxTexture *tex = BrakeGlow_Texture();
     if (tex == NULL)
         return;
@@ -75,7 +80,7 @@ void BrakeGlow_Draw(void)
     int count = 0;
     for (int order = 0; order < g_carOrderCount && order < BRAKE_GLOW_MAX_CARS; order++) {
         int car = g_carOrder[order];
-        if (car < 0 || car >= BRAKE_GLOW_MAX_CARS)
+        if (car < 0 || car >= BRAKE_GLOW_MAX_CARS || car >= g_carCount)
             continue;
         for (int w = 0; w < 4; w++) {
             SceneNode *node = g_carBuffer[car].pWheelNodes[w];

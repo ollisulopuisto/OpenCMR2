@@ -3765,8 +3765,14 @@ void Car_DecrementContactTimers(short *pList, short count)
 
     for (i = count - 1; i >= 0; i--) {
         pCar = &g_carBuffer[pList[i]];
-        if (pCar->simulationStepsRemaining > 0)
+        if (pCar->simulationStepsRemaining > 0) {
             pCar->simulationStepsRemaining--;
+            // OpenCMR2: brake disc glow heat tick (visual only): one tick per consumed
+            // physics step, in model units (1.0 at 25 Hz), so heat is governed by the
+            // sim rate and is render-rate independent; replay pause consumes no steps.
+            if (pCar->simulationRateHz > 0.f)
+                BrakeGlow_TickStep(pList[i], 25.0f / pCar->simulationRateHz);
+        }
     }
 }
 
@@ -6268,7 +6274,6 @@ void Car_UpdateWheelMeshStates(void)
             if (pNode != NULL)
                 Game_SetTriangleField2CByGroup((Mesh *)pNode->pObject, 1, appearance);
         }
-        BrakeGlow_UpdateCar(car);   // OpenCMR2: brake disc glow heat tick (visual only)
     }
 }
 

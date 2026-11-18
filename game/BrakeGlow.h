@@ -57,6 +57,6 @@ inline int BrakeGlow_BuildDiscQuad(const float world[16], float radius, float he
 }
 
 // Renderer-side entry points (game/BrakeGlow.cpp).
-void BrakeGlow_UpdateCar(int car);
+void BrakeGlow_TickStep(int car, float dtSteps);
 void BrakeGlow_Draw(void);
 void BrakeGlow_Reset(void);
