@@ -31,6 +31,7 @@
 #include "SceneNode.h"
 #include "LightZone.h"
 #define SDL_MAIN_HANDLED
+#include <chrono>
 #include <SDL3/SDL_main.h>
 #include <cstdio>
 #include <cstdlib>
@@ -160,6 +161,15 @@ struct Probe : Diagnostics::TimingObserver {
     void BeginTick(unsigned char value) override {
         TimingObserver::BeginTick(value);
         state = value;
+        // OPENCMR2_PROBE_TICK_CLOCK: when each tick begins on the monotonic
+        // clock, to place what a device received (tests/ffb_wheel.cpp
+        // --record) among the ticks.
+        if (getenv("OPENCMR2_PROBE_TICK_CLOCK")) {
+            // steady_clock is CLOCK_MONOTONIC on Linux, as the wheel's.
+            long long now = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::steady_clock::now().time_since_epoch()).count();
+            fprintf(stderr, "probe: tick %u clock %lld\n", tick, now);
+        }
         // OPENCMR2_PROBE_RESTART: the race after the finish is the same stage
         // again (Restart in the results menu), not Finland stage 2.
         if (finishInjected && value != 8)
@@ -482,7 +492,9 @@ int main(int argc, char **argv) {
     Platform_SetTestClock(&clock);
     Platform_SetTestKeyboard(keys);
     // Recorded and random inputs only: no controller connected to the machine.
-    Platform_SetTestNoControllers(true);
+    // OPENCMR2_PROBE_CONTROLLERS keeps them, for the force feedback a stage
+    // sends to a wheel (tests/ffb_wheel.cpp --record).
+    Platform_SetTestNoControllers(getenv("OPENCMR2_PROBE_CONTROLLERS") == nullptr);
     Main_InitD3DX();
     CGame::RegisterNetworkResourceRelease();
     Input_ClearKeyPressQueue();

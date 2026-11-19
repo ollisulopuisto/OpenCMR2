@@ -148,6 +148,7 @@ void CMain::HandleEvent(const SysEvent *event)
 	case SYS_EVENT_FOCUS_LOST:
 		CSound::StopSharedMusicBuffer();
 		SetGameActiveState(1);
+		Game_SaveMenuChanges();   // PORT
 		break;
 
 	case SYS_EVENT_FOCUS_GAINED:
@@ -163,7 +164,10 @@ void CMain::HandleEvent(const SysEvent *event)
 		SetGameActiveState(0);
 		break;
 
+	// PORT: closing the window saves like Quit in the main menu; the original
+	// lost the options changed since the last race.
 	case SYS_EVENT_QUIT:
+		Game_SaveBeforeQuit();
 		m_exitCode = 0;
 		CGame::m_shouldExit = 1;
 		break;

@@ -238,6 +238,11 @@ installation. The installation itself, a folder inside it or a parent folder
 all work. The location is checked and remembered, and the game files stay
 where they are.
 
+On Arch Linux and its derivatives, the community package
+[opencmr2-git](https://aur.archlinux.org/packages/opencmr2-git), maintained by
+sxdot, builds the latest source: `yay -S opencmr2-git`, `paru -S opencmr2-git`,
+or `makepkg -si` in a folder with its PKGBUILD.
+
 If you have the CD or an ISO, install the game or extract it first: OpenCMR2
 reads the installed folders `Game`, `FrontEnd`, `Sounds`, `CountrySpecific`
 and `SetupRep`, and does not start when one of them is missing.
@@ -271,7 +276,14 @@ recorded runs of the super specials, driven with keys): from linear in slow
 corners to a square at top speed. The end of its travel still gives full
 lock at any speed.
 Wheels steer with their first axis, followed directly, and their pedals are
-found from where their axes rest.
+found from where their axes rest: the first centred axis steers, the axes
+resting at an end are pedals (of three, the first is taken for the clutch,
+which the game has no use for). Pedals, a shifter or a handbrake connected
+on their own neither steer nor move through the menus. Every axis counts
+from where it rests, so a pedal or clutch resting at one end gives nothing,
+and a device becomes the one used only when one of its inputs moves.
+The force feedback and the rumble go to the controller the player steers
+with, never to separate pedals.
 
 **Options > Controllers** chooses the bindings to edit: player 1's keys,
 player 2's keys, the gamepads' (while one is connected) or those of a
@@ -280,8 +292,14 @@ This only chooses what to edit: every connected controller drives player 1
 unless two players race.
 **Configuration** binds each driving action to the next key, button or axis
 given (Escape gives up waiting for a controller's); an input already bound to
-another action trades places with it. The page also sets a controller's
-deadzone, steering curve and vibration, and **Default**
+another action trades places with it, and a stick or wheel given for one
+steering direction steers both ways. Delete, Backspace or a gamepad's west
+button (X, Square) leaves the action under the cursor unbound. A bar under
+each action shows what its inputs give, to try them. The page also sets a
+controller's deadzone, steering curve and vibration, whether a joystick or
+wheel is used and the player it belongs to, and the strength of a wheel's
+force feedback (100% is the original's, up to 200%; changing it plays a
+short sample on the wheel), and **Default**
 restores the bindings of the device chosen. OK saves, Back drops the changes.
 
 The bindings are kept in `controls.ini` in the user directory,
@@ -293,12 +311,18 @@ a steering curve for finer corrections around the centre, the strength of a
 gamepad's rumble and the player it belongs to. The keys of an older
 `Controller.rcf` are taken when `controls.ini` does not exist yet.
 
-Gamepads rumble on the stages, the one the player used last: lightly on the high frequency motor with the
+Gamepads rumble on the stages, the one the player steers with: lightly on the high frequency motor with the
 roughness of the surface under the front wheels, more with speed, and with
 impacts on the low frequency one. Wheels and joysticks with force feedback get the game's
-own forces. Both go to the controller the player used last, so a wheel does
-not turn by itself while a gamepad drives; before one is used, a wheel with
-force feedback takes them.
+own forces. Both go to the controller the player steers with, so a wheel
+does not turn by itself while a gamepad drives and separate pedals never
+take them; before the player steers, a wheel with force feedback does.
+A wheel without the spring the game centres it with (Logitech's on Linux
+have only a constant force and an autocentre) gets it as its autocentre,
+and a negative damping, which the original can ask for and a strong modern
+wheel would follow by pushing itself along, is left out. A wheel's degrees
+of rotation are set in its own driver, as for the original. The log lists
+the effects each wheel has, and those it refused.
 
 On Android, install the APK and copy the installation folder to the
 device first. On first launch, choose it in the system's folder picker: the
@@ -360,6 +384,16 @@ game files. Generate `driver-names.tsv` in a private user directory and launch
 with that `--user-dir`. Without the sidecar, the original names remain.
 See [enable, mapping and undo instructions](tools/driver-name-patch/README.md).
 
+### Cheats
+
+The original's cheat codes are typed as a driver's full name: create a new
+driver profile, enter any initials, type the code as the name and confirm it.
+The game accepts the code and returns to the profile menu without creating
+the profile. Entering the code again turns it off.
+
+`greatnews` unlocks the Expert difficulty and all eight arcade tracks on
+Intermediate and Expert. Novice has three arcade tracks by design.
+
 ## Configuration
 
 Settings are stored in `opencmr2.ini` in the user directory
@@ -370,6 +404,14 @@ Settings are stored in `opencmr2.ini` in the user directory
 It is created with comments on first launch. The Screen page of the
 graphics options sets `hud_scale`, `menu_scale`, `vsync` and `fullscreen` in
 the game.
+
+The game's own options and cheats are kept in `Configuration/GameInfo.rcf`,
+next to the profiles (`pps`) and saved games (`gamesave`) in the same folder.
+They are read from the game data until the first save. Options, cheats and
+profile changes are saved when the menu screen they were made in is left and
+when the window is closed; changes made during a race are saved when it ends.
+Every file is written to a temporary copy first, so a crash while saving
+leaves the previous one.
 
 | Setting | Default | Description |
 | --- | --- | --- |

@@ -109,6 +109,19 @@ add_executable(input_actions_test input_actions.cpp)
 target_include_directories(input_actions_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
 target_link_libraries(input_actions_test PRIVATE opencmr2_platform)
 add_test(NAME input_actions COMMAND input_actions_test)
+# The uinput wheels of ffb_wheel are real devices that input_actions would
+# see among its virtual ones: never at the same time.
+set_tests_properties(input_actions PROPERTIES RESOURCE_LOCK input_devices)
+
+# A force feedback wheel made with uinput (Linux): skipped without access to
+# /dev/uinput.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT ANDROID)
+    add_executable(ffb_wheel_test ffb_wheel.cpp)
+    target_include_directories(ffb_wheel_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
+    target_link_libraries(ffb_wheel_test PRIVATE opencmr2_platform)
+    add_test(NAME ffb_wheel COMMAND ffb_wheel_test)
+    set_tests_properties(ffb_wheel PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60 RESOURCE_LOCK input_devices)
+endif()
 
 add_executable(frontend_language_test frontend_language.cpp)
 target_link_libraries(frontend_language_test PRIVATE opencmr2_platform)
@@ -160,6 +173,12 @@ add_test(NAME country_flags COMMAND country_flags_test ${CMAKE_CURRENT_SOURCE_DI
 add_executable(vector_sprites_test vector_sprites.cpp)
 target_link_libraries(vector_sprites_test PRIVATE opencmr2_platform)
 add_test(NAME vector_sprites COMMAND vector_sprites_test)
+
+add_executable(outline_font_test outline_font.cpp)
+target_include_directories(outline_font_test PRIVATE ${PROJECT_BINARY_DIR}/src/generated ${PROJECT_SOURCE_DIR}/third_party/stb)
+target_link_libraries(outline_font_test PRIVATE opencmr2_platform)
+add_test(NAME outline_font COMMAND outline_font_test)
+set_tests_properties(outline_font PROPERTIES TIMEOUT 30)
 
 add_executable(saved_game_test saved_game.cpp)
 target_link_libraries(saved_game_test PRIVATE opencmr2_platform)

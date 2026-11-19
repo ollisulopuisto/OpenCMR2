@@ -101,6 +101,14 @@ colours are retained. The renderer also binds the untouched source texture,
 which native-size and smaller draws sample directly. Enlarged draws use the
 traced fields. The distance transform is shared with the outlined fonts.
 
+Helvetica font atlases (`hel_*`) use TeX Gyre Heros outlines for ASCII letters
+and digits whose shapes match the original glyphs. Other cells, including
+Cyrillic in translated editions and Polish letters in repurposed symbol slots,
+get distance fields from their original pixels. The atlas defines the glyph
+for each byte; extended characters retain the translation's shapes, cell
+rectangles and spacing when enlarged. This uses the installed edition's fonts
+and text files; it does not supply a translation.
+
 Arcade HUD maps (`cha01` through `cha08`, 128x128) and their car markers
 (`chalblob`) use the same contour path. The selection maps retain their original 36x36 DMD cell
 grids and palette: only the shared `SmMatrix` point is replaced. Enlarged
@@ -131,10 +139,24 @@ gears, camera, look back and pause with an analogue value, and the menu
 directions, confirm and back. Each action is bound to keys, gamepad buttons,
 axis halves, whole axes (pedals) or hat directions in `controls.ini`, by
 kind of device: the two keyboard players, controllers SDL knows the layout
-of, and joysticks and wheels by model. A wheel's pedals are found from where
-its axes rest when it is first connected. Every controller belongs to a
-player: the second one connected to player 2 when two players race, unless
-`controls.ini` says otherwise. Disconnected devices are kept, so their
+of, and joysticks and wheels by model. Where each joystick axis rests (its
+centre or one end) is taken from SDL's first reading of it: an axis half
+counts from there, so a pedal or clutch resting at an end gives nothing, and
+a new device's defaults steer only with a centred axis and take the axes
+resting at an end as pedals. A device becomes a player's last used, and the
+one they steer with, only when an action's input crosses a quarter of its
+travel after the device was read once, so an input held since it was
+connected never takes over. The force feedback and rumble go to the
+controller the player steers with, as the original asked DirectInput for
+them: a constant force whose direction gives its side (polar 9000 or
+27000, sent as the same direction along X and Y, since DirectInput takes a
+polar direction only on two axes and most wheels have one), and a centring
+spring and a damper on X, sent when the game gives them; a device without
+a spring plays it as its autocentre, and a negative condition coefficient
+is sent as none. `tests/ffb_wheel.cpp` makes uinput wheels whose
+driver side checks those effects. Every controller belongs to a player:
+the second one connected that can steer to player 2 when two players race,
+unless `controls.ini` says otherwise; a device can also be left out. Disconnected devices are kept, so their
 force-feedback effects stay valid and they get them back on reconnection.
 
 The game still reads the device records it was written for (`game/Input.cpp`,
