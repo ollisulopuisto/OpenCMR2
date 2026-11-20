@@ -109,3 +109,12 @@ off run; do not change the branch or rebuild between A/B samples.
 Rendering optimization is deferred until the remaining 2D scenery conversion
 is complete. Measurements document cost without blocking that conversion
 program. Safety and correctness issues still need fixing as they appear.
+
+## Coexistence with individual-tree rows
+
+After #395, a valid explicitly enabled `--tree-rows 1` replacement wins for
+its supported source/placement. It does not draw a hedge on top. If the row
+path declines or is off, the existing relief/hedge path is retained, and
+`--strip-hedge 1` still controls the hedge body independently. Both runtime
+defaults remain off. Resolving these conflicts is not design approval or
+permission to merge this held hedge PR.

@@ -15,6 +15,8 @@ with tempfile.TemporaryDirectory() as d:
     rc, out = run("--strip-hedge", "2"); need(rc == 2 and "0 or 1" in out, "strip hedge rejects invalid value")
     rc, out = run("--run", "--dry-run", "--strip-hedge=1", env={**os.environ, "CMR2_DATA": "", "OPENCMR2_DATA": ""})
     need(rc == 0 and "--strip-hedge 1" in out, "strip hedge equals form normalizes")
+    rc, out = run("--tree-rows", "2"); need(rc == 2, "tree rows reject invalid switch")
+    rc, out = run("--run", "--dry-run", "--tree-rows=1", env={**os.environ, "CMR2_DATA":"", "OPENCMR2_DATA":""}); need(rc == 0 and "--tree-rows 1" in out, "tree row switch reaches launch")
     rc, out = run("--help"); need(rc == 0 and "--trees" in out and "--dry-run" in out, "help lists the asset options")
     rc, out = run("--trees", "crossed", "--dry-run", env={**os.environ, "CMR2_DATA": ""}); need(rc == 2 and "--data" in out, "asset option without data stops")
     rc, out = run("--data", d + "/nope", "--trees", "crossed", "--dry-run"); need(rc == 2 and "not found" in out, "missing data folder is reported")

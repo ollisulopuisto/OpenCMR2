@@ -880,3 +880,11 @@ target_include_directories(grade_conditions_test PRIVATE ${PROJECT_SOURCE_DIR}/g
 add_test(NAME grade_conditions COMMAND grade_conditions_test)
 add_test(NAME grade_conditions_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/grade_conditions_wiring.py)
 set_tests_properties(grade_conditions_wiring PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+add_executable(tree_row_fit_test tree_row_fit.cpp)
+target_include_directories(tree_row_fit_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src)
+add_test(NAME tree_row_fit COMMAND tree_row_fit_test)
+add_test(NAME tree_row_converter COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tools/scenery-patch/test_tree_rows.py)
+
+
+add_test(NAME tree_row_runtime COMMAND scenery_pack_runtime_test ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/scenery-pack rows)

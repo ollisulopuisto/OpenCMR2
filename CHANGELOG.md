@@ -3,6 +3,8 @@
 All notable changes to OpenCMR2 are documented here.
 
 ## [Unreleased]
+
+- Experimental Finland forest-row replacement: opt-in private five-tree trunk/crown packs for two reviewed strip sources, with exact source/geometry gates, away-from-route fitting and behavioural tests. Hand reconstruction, not automatic segmentation; native appearance, FPS and collision fit are unverified. See docs/FINLAND1-TREE-ROWS.md.
 ### Added
 - Finland1 forest strips gain a route-aware hedge body: a back card, stepped
   contour cap and closed ends, extruded away from the road. Opt-in through all-mods or `--strip-hedge 1`, with

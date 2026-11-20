@@ -12,7 +12,7 @@ int main(int argc,char **argv){
     assert(Frame(65536ull*5,5,12,3)==4);
     uint64_t at25=0,at50=0;for(int i=0;i<25;i++)at25+=Step(25);for(int i=0;i<50;i++)at50+=Step(50);
     assert(at25==at50&&Frame(at25,5,12,0)==Frame(at50,5,12,0));
-    Entry e;assert(ParseEntry("tree\tfrahit.bfl\ttre_md1.dds\ttrees/a/tree.obj\t\t1",e));
+    Entry e;if(!ParseEntry("tree-row\tfinhit.bfl\ttresh1ba.dds\trows/a/row.obj\t\t1",e))return 2;assert(ParseEntry("tree\tfrahit.bfl\ttre_md1.dds\ttrees/a/tree.obj\t\t1",e));
     assert(e.source=="tre_md1");assert(!ParseEntry("tree\tfrahit.bfl\ttre.dds\t../x\t\t1",e));
     assert(!ParseEntry("spectator\tfrahit.bfl\ts.dds\tx.tga\tx.tga\t0",e));
     std::vector<Group> groups;

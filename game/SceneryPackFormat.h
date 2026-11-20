@@ -30,7 +30,7 @@ inline unsigned Frame(uint64_t time,unsigned ticks,unsigned count,unsigned phase
 struct Entry { std::string kind,archive,source,asset; std::vector<std::string> frames; unsigned ticks=5; };
 inline bool ParseEntry(std::string line, Entry &out) {
     if(!line.empty()&&line.back()=='\r') line.pop_back();
-    auto p=Split(line,'\t'); if(p.size()!=6 || (p[0]!="tree"&&p[0]!="spectator")) return false;
+    auto p=Split(line,'\t'); if(p.size()!=6 || (p[0]!="tree"&&p[0]!="spectator"&&p[0]!="tree-row")) return false;
     if(!SafePath(p[3])||p[1]!=Leaf(p[1])||p[1].empty()||p[2].empty()) return false;
     Entry e; e.kind=p[0];e.archive=p[1];e.source=Stem(p[2]);e.asset=p[3];
     char *end=nullptr; unsigned long t=std::strtoul(p[5].c_str(),&end,10);
