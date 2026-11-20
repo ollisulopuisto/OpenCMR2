@@ -532,3 +532,9 @@ motion stability or native Metal performance. Actual loader tests verify every
 uploaded mip byte and recorded sampler state, while identity/reset and legacy
 fallback tests remain intact. This is a sampling fix, not new source detail,
 new tree mappings, or native gameplay acceptance.
+
+## Reconstructed Finland forest rows
+
+The separate opt-in [individual-tree row recipe](../../docs/FINLAND1-TREE-ROWS.md)
+builds the approved five-tree trunk/crown prototype for two supported strips.
+It is a private manual pack, not automatic segmentation or full forest coverage.

@@ -20,6 +20,7 @@
 #include "MeshVertex.h"
 #include "port/sys.h"
 #include "render/gfx_internal.h"
+static int rowMode=-1;static bool fixedMode=false,verifiedFixed=true;
 static unsigned lodOptionReads=0;
 static bool separate=false,legacy=false,windEnabled=true;static std::string base; static unsigned draws; static GfxMatrix world;static GfxTexture *bound;static std::vector<GfxVertex> captured;
 #include "RallyRoute.h"
@@ -40,7 +41,7 @@ extern "C" SysFile *Sys_OpenSceneryFile(const char*p){return Sys_OpenFile((base+
 extern "C" void Sys_CloseFile(SysFile *f){fclose(f->file);delete f;}
 extern "C" DWORD Sys_GetFileSize(SysFile *f){fseek(f->file,0,SEEK_END);long n=ftell(f->file);rewind(f->file);return n;}
 extern "C" DWORD Sys_ReadFile(SysFile *f,void *b,DWORD n){return fread(b,1,n,f->file);}
-extern "C" int Sys_GetOption(const char *key,int f){if(!strcmp(key,"video.tree_3d_radius"))++lodOptionReads;return !strcmp(key,"video.tree_wind")?int(windEnabled):f;}
+extern "C" int Sys_GetOption(const char *key,int f){if(fixedMode){if(!strcmp(key,"video.texture_uprez"))return 1;if(!strcmp(key,"video.tree_rows"))return rowMode<0?f:rowMode;}if(!strcmp(key,"video.tree_3d_radius"))++lodOptionReads;return !strcmp(key,"video.tree_wind")?int(windEnabled):f;}
 extern "C" double Sys_GetTicksPrecise(void){return 0;}
 extern "C" const char *Sys_GetOptionText(const char*,const char*){return base.c_str();}
 static std::string logs;
@@ -67,7 +68,41 @@ struct Capture: GfxExecutor {
 };
 GfxExecutor *Gfx_CreateGpuExecutor(){return new Capture;}
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line%d: %s\n",__LINE__,#x);return 1;}}while(0)
+static int RowIntegration(const char*fixture){
+ fixedMode=true;rowMode=1;CHECK(Gfx_SetVideoMode(640,480,FALSE));
+ auto temp=std::filesystem::temp_directory_path()/("cmr-row-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+ std::filesystem::copy(fixture,temp,std::filesystem::copy_options::recursive);base=temp.string();
+ {std::ofstream o(temp/"tree.obj");o<<"# opencmr2-source-canvas-1 256 256\nmtllib tree.mtl\nv -.2 0 -.1\nv .2 0 .1\nv 0 1 0\nvt 0 0\nvt 1 0\nvt .5 1\nvn 0 0 1\nusemtl 0_crown\nf 1/1/1 2/2/1 3/3/1\nusemtl 0_trunk\nf 1/1/1 2/2/1 3/3/1\n";}
+ {std::ofstream o(temp/"tree.mtl");o<<"newmtl 0_crown\nmap_Kd f0.tga\nnewmtl 0_trunk\nmap_Kd f1.tga\n";}
+ {std::ofstream o(temp/"manifest.tsv");o<<"tree-row\tfinhit.bfl\ttresh_test.dds\ttree.obj\t\t1\n";}
+ {std::ofstream o(temp/"source-identities.tsv");o<<"finhit.bfl/tresh_test.dds\t3\t"<<SceneryIdentity::SHA256("abc",3)<<"\n";}
+ GfxMatrix identity={};identity._11=identity._22=identity._33=identity._44=1;Gfx_SetTransform(GFX_TRANSFORM_WORLD,&identity);
+ Texture tex={};strcpy(tex.name,"tresh_test.dds");tex.pSurface=Gfx_CreateTexture(8,8,GFX_FORMAT_BGRA8,1,0);
+ D3DTextureManager manager={};manager.textureBuffer[0]=&tex;SceneryPackTestAccess::Set(&manager,1);
+ MeshVertexF v[4]={};float p[4][3]={{0,4,10},{8,4,10},{0,0,10},{8,0,10}};
+ for(int i=0;i<4;i++){v[i].x=p[i][0];v[i].y=p[i][1];v[i].z=p[i][2];v[i].diffuseColour=0xff808080;v[i].textureCoordinates[0][0]=i%2;v[i].textureCoordinates[0][1]=i/2;}
+ unsigned short ix[]={0,1,3,0,3,2};MeshPart part={};part.texture=0;part.indexCount=6;part.pData=ix;
+ Mesh mesh={};mesh.flags=0x801;mesh.pVertexData=(DWORD*)v;mesh.field_0x10=4;
+ RallyRouteNode route[2]={};route[0].position.x=-20*65536;route[1].position.x=20*65536;g_routeNodes=route;g_routeNodeCount=2;
+ auto draw=[&](){captured.clear();bool ok=SceneryPack_DrawFixedPart(&mesh,&part);Gfx_Present(FALSE);return ok;};
+ auto bind=[&](){SceneryPack_RegisterSource(&tex,"abc",3);};bind();
+ CHECK(draw());CHECK(captured.size()==3);for(auto&q:captured)CHECK(q.z>=10&&q.x>=0&&q.x<=8&&q.diffuse==0xff808080);
+ MeshVertexF saved[4];memcpy(saved,v,sizeof v);
+ for(auto&q:v)q.diffuseColour=0xff202020;CHECK(draw());CHECK(captured[0].diffuse==0xff202020);memcpy(v,saved,sizeof v);
+ rowMode=-1;CHECK(draw());CHECK(captured.size()==54);rowMode=0;CHECK(draw());CHECK(captured.size()==54);rowMode=1;CHECK(draw());CHECK(captured.size()==3);
+ GfxMatrix moved=identity;moved._41=2;Gfx_SetTransform(GFX_TRANSFORM_WORLD,&moved);CHECK(draw());CHECK(captured.size()==54);Gfx_SetTransform(GFX_TRANSFORM_WORLD,&identity);
+ verifiedFixed=false;CHECK(!draw());verifiedFixed=true;CHECK(draw());CHECK(captured.size()==3);
+ SceneryPack_RegisterSource(&tex,"bad",3);CHECK(draw());CHECK(captured.size()==54);bind();CHECK(draw());CHECK(captured.size()==3);
+ g_routeNodes=nullptr;g_routeNodeCount=0;CHECK(draw());CHECK(captured.size()==54);g_routeNodes=route;g_routeNodeCount=2;
+ SceneryPack_Clear();bind();route[0].position.z=route[1].position.z=10*65536;CHECK(draw());CHECK(captured.size()==54);
+ SceneryPack_Clear();bind();route[0].position.z=route[1].position.z=0;CHECK(draw());CHECK(captured.size()==3);
+ SceneryPack_Clear();bind();v[0].x=.25f;CHECK(!draw());memcpy(v,saved,sizeof v);
+ CHECK(!memcmp(v,saved,sizeof v));CHECK(ix[0]==0&&ix[5]==2);SceneryPack_Clear();g_routeNodes=nullptr;g_routeNodeCount=0;
+ Gfx_Shutdown();std::filesystem::remove_all(temp);puts("row runtime: identities, geometry gate, route/world/off fallback, live colours, stage reload and immutable sources pass");return 0;
+}
+
 int main(int argc,char **argv){
+ if(argc>2&&!strcmp(argv[2],"rows"))return RowIntegration(argv[1]);
  unsigned selected=0;for(int x=-1000;x<1000;x++){
   auto a=CrowdSelection::Articulate(x*65536,1234567);
   CHECK(a==CrowdSelection::Articulate(x*65536,1234567));selected+=a;
@@ -198,5 +233,5 @@ if(argc<2)return 0;base=argv[1];legacy=argc>2&&!strcmp(argv[2],"legacy");separat
  SceneryPack_Clear();CHECK(!SceneryPack_Draw(&object,(float*)&billboard));Gfx_Shutdown();puts("actual pack runtime draw, matrix, frames, clear: pass");
 }
 
-bool France1Textures_IsVerifiedCutout(Texture*){return false;}
+bool France1Textures_IsVerifiedCutout(Texture*){return fixedMode&&verifiedFixed;}
 bool France1Textures_CutoutAlpha(Texture*,const unsigned char**,int*,int*){return false;}
