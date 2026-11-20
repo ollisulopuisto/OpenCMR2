@@ -12,7 +12,13 @@
 #include "FixedStrip.h"
 #include "StripHedge.h"
 #include "France1Textures.h"
+// Standalone integration tests compile against synthetic source metadata.
+// Production uses only the recovered-source allowlist, never a runtime override.
+#ifdef OPENCMR2_FIXED_STRIP_SOURCE_HEADER
+#include OPENCMR2_FIXED_STRIP_SOURCE_HEADER
+#else
 #include "FixedStripSources.inc"
+#endif
 #include "Gre01BrushSources.inc"
 #include "RallyRoute.h"
 #include "BrushRelief.h"
@@ -650,7 +656,7 @@ bool SceneryPack_DrawFixedPart(Mesh *mesh,MeshPart *part){
  }
  GfxMatrix fixedWorld;Gfx_GetTransform(GFX_TRANSFORM_WORLD,&fixedWorld);
  const float*fixedW=&fixedWorld._11;
- const int hedgeOption=Sys_GetOption("video.strip_hedge",1)!=0;
+ const int hedgeOption=Sys_GetOption("video.strip_hedge",0)!=0;
  auto found=fixedParts.find(part);
  if(found!=fixedParts.end()&&(found->second.hedgeOption!=hedgeOption||found->second.route!=g_routeNodes||found->second.routeCount!=g_routeNodeCount||memcmp(found->second.world,fixedW,sizeof(float)*16)!=0)){
   fixedParts.erase(found);found=fixedParts.end();

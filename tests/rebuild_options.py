@@ -13,6 +13,8 @@ with tempfile.TemporaryDirectory() as d:
     rc, out = run("--run", "--dry-run", "--strip-hedge", "0", env={**os.environ, "CMR2_DATA": "", "OPENCMR2_DATA": ""})
     need(rc == 0 and "--strip-hedge 0" in out, "strip hedge on/off reaches game for A/B runs")
     rc, out = run("--strip-hedge", "2"); need(rc == 2 and "0 or 1" in out, "strip hedge rejects invalid value")
+    rc, out = run("--run", "--dry-run", "--strip-hedge=1", env={**os.environ, "CMR2_DATA": "", "OPENCMR2_DATA": ""})
+    need(rc == 0 and "--strip-hedge 1" in out, "strip hedge equals form normalizes")
     rc, out = run("--help"); need(rc == 0 and "--trees" in out and "--dry-run" in out, "help lists the asset options")
     rc, out = run("--trees", "crossed", "--dry-run", env={**os.environ, "CMR2_DATA": ""}); need(rc == 2 and "--data" in out, "asset option without data stops")
     rc, out = run("--data", d + "/nope", "--trees", "crossed", "--dry-run"); need(rc == 2 and "not found" in out, "missing data folder is reported")
@@ -65,6 +67,9 @@ with tempfile.TemporaryDirectory() as d:
     # --all-mods carries the experimental brush extrusion; an explicit value wins (later flag); help names it
     rc, out = run("--data", d, "--all-mods", "--mods-dir", d, "--run", "--dry-run")
     need(rc == 0 and "--brush-volume 1" in out, "--all-mods enables the experimental brush volume")
+    need("--strip-hedge 1" in out, "all-mods explicitly opts into strip hedge")
+    rc, out = run("--data", d, "--all-mods", "--mods-dir", d, "--run", "--dry-run", "--strip-hedge", "0")
+    need(rc == 0 and out.rindex("--strip-hedge 0") > out.rindex("--strip-hedge 1"), "explicit strip hedge 0 wins over preset")
     rc, out = run("--data", d, "--all-mods", "--mods-dir", d, "--run", "--dry-run", "--brush-volume", "0")
     need(rc == 0 and out.rindex("--brush-volume 0") > out.rindex("--brush-volume 1"), "explicit --brush-volume 0 comes last and wins")
     rc, out = run("--data", d, "--run", "--dry-run", "--textures", "original", "--brush-volume=1")

@@ -5,7 +5,7 @@ All notable changes to OpenCMR2 are documented here.
 ## [Unreleased]
 ### Added
 - Finland1 forest strips gain a route-aware hedge body: a back card, stepped
-  contour cap and closed ends, extruded away from the road. Enabled with
+  contour cap and closed ends, extruded away from the road. Opt-in through all-mods or `--strip-hedge 1`, with
   verified uprez textures; `--strip-hedge 0` keeps the previous shallow relief.
   Source data and collision are unchanged. Native look and FPS not measured.
 - Cockpit view: the car's exterior window glass no longer writes depth while a

@@ -20,6 +20,7 @@
 #include "MeshVertex.h"
 #include "port/sys.h"
 #include "render/gfx_internal.h"
+static int hedgeMode=-1;static bool fixedMode=false,verifiedFixed=true;static unsigned alphaReads=0;static unsigned char fixedAlpha[64*32];
 static unsigned lodOptionReads=0;
 static bool separate=false,legacy=false,windEnabled=true;static std::string base; static unsigned draws; static GfxMatrix world;static GfxTexture *bound;static std::vector<GfxVertex> captured;
 #include "RallyRoute.h"
@@ -40,7 +41,7 @@ extern "C" SysFile *Sys_OpenSceneryFile(const char*p){return Sys_OpenFile((base+
 extern "C" void Sys_CloseFile(SysFile *f){fclose(f->file);delete f;}
 extern "C" DWORD Sys_GetFileSize(SysFile *f){fseek(f->file,0,SEEK_END);long n=ftell(f->file);rewind(f->file);return n;}
 extern "C" DWORD Sys_ReadFile(SysFile *f,void *b,DWORD n){return fread(b,1,n,f->file);}
-extern "C" int Sys_GetOption(const char *key,int f){if(!strcmp(key,"video.tree_3d_radius"))++lodOptionReads;return !strcmp(key,"video.tree_wind")?int(windEnabled):f;}
+extern "C" int Sys_GetOption(const char *key,int f){if(fixedMode){if(!strcmp(key,"video.texture_uprez"))return 1;if(!strcmp(key,"video.strip_hedge"))return hedgeMode<0?f:hedgeMode;}if(!strcmp(key,"video.tree_3d_radius"))++lodOptionReads;return !strcmp(key,"video.tree_wind")?int(windEnabled):f;}
 extern "C" double Sys_GetTicksPrecise(void){return 0;}
 extern "C" const char *Sys_GetOptionText(const char*,const char*){return base.c_str();}
 static std::string logs;
@@ -67,7 +68,41 @@ struct Capture: GfxExecutor {
 };
 GfxExecutor *Gfx_CreateGpuExecutor(){return new Capture;}
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line%d: %s\n",__LINE__,#x);return 1;}}while(0)
+static int FixedIntegration(){
+ fixedMode=true;memset(fixedAlpha,255,sizeof fixedAlpha);CHECK(Gfx_SetVideoMode(640,480,FALSE));
+ GfxMatrix identity={};identity._11=identity._22=identity._33=identity._44=1;Gfx_SetTransform(GFX_TRANSFORM_WORLD,&identity);
+ Texture tex={};strcpy(tex.name,"tresh_test.dds");tex.pSurface=Gfx_CreateTexture(8,8,GFX_FORMAT_BGRA8,1,0);
+ D3DTextureManager manager={};manager.textureBuffer[0]=&tex;SceneryPackTestAccess::Set(&manager,1);
+ MeshVertexF v[4]={};float p[4][3]={{0,4,10},{8,4,10},{0,0,10},{8,0,10}};
+ for(int i=0;i<4;i++){v[i].x=p[i][0];v[i].y=p[i][1];v[i].z=p[i][2];v[i].diffuseColour=0xff808080;v[i].textureCoordinates[0][0]=i%2;v[i].textureCoordinates[0][1]=i/2;}
+ unsigned short ix[]={0,1,3,0,3,2};MeshPart part={};part.texture=0;part.indexCount=6;part.pData=ix;
+ Mesh mesh={};mesh.flags=0x801;mesh.pVertexData=(DWORD*)v;mesh.field_0x10=4;
+ RallyRouteNode route[2]={};route[0].position.x=-20*65536;route[1].position.x=20*65536;g_routeNodes=route;g_routeNodeCount=2;
+ auto draw=[&](){captured.clear();bool ok=SceneryPack_DrawFixedPart(&mesh,&part);Gfx_Present(FALSE);return ok;};
+ // No texture verification and no matching geometry hash must both fail closed.
+ hedgeMode=1;verifiedFixed=false;CHECK(!draw());verifiedFixed=true;
+ v[0].x=.25f;SceneryPack_Clear();CHECK(!draw());v[0].x=0;SceneryPack_Clear();
+ hedgeMode=-1;CHECK(draw());CHECK(captured.size()==54); // unselected enhancement stays OFF
+ hedgeMode=1;CHECK(draw());CHECK(captured.size()>54);auto grown=captured.size();CHECK(alphaReads>0);
+ for(auto&x:captured)CHECK(x.z>=10-1e-5); // all added depth is away from z=0 road
+ hedgeMode=0;CHECK(draw());CHECK(captured.size()==54); // live option invalidates cache
+ hedgeMode=1;GfxMatrix moved=identity;moved._41=2;Gfx_SetTransform(GFX_TRANSFORM_WORLD,&moved);
+ CHECK(draw());CHECK(captured.size()==54); // non-identity world declines only the body
+ Gfx_SetTransform(GFX_TRANSFORM_WORLD,&identity);CHECK(draw());CHECK(captured.size()==grown);
+ g_routeNodes=nullptr;g_routeNodeCount=0;CHECK(draw());CHECK(captured.size()==54);
+ g_routeNodes=route;g_routeNodeCount=2;CHECK(draw());CHECK(captured.size()==grown);
+ // Stage unload clears the cache even if every part/route address and count is reused.
+ SceneryPack_Clear();route[0].position.z=route[1].position.z=10*65536;
+ CHECK(draw());CHECK(captured.size()==54); // ambiguous centreline, same pointer/count
+ SceneryPack_Clear();route[0].position.z=route[1].position.z=0;CHECK(draw());CHECK(captured.size()==grown);
+ // Clear also prevents a previous verified part being reused for changed stage geometry.
+ SceneryPack_Clear();v[0].x=.5f;CHECK(!draw());v[0].x=0;
+ verifiedFixed=false;CHECK(!draw());verifiedFixed=true;
+ SceneryPack_Clear();g_routeNodes=nullptr;g_routeNodeCount=0;Gfx_Shutdown();
+ puts("SceneryPack fixed-strip integration: texture/hash gates, default off, world/route decline, option/cache invalidation and same-address stage reload pass");return 0;
+}
 int main(int argc,char **argv){
+ if(argc>2&&!strcmp(argv[2],"fixed"))return FixedIntegration();
  unsigned selected=0;for(int x=-1000;x<1000;x++){
   auto a=CrowdSelection::Articulate(x*65536,1234567);
   CHECK(a==CrowdSelection::Articulate(x*65536,1234567));selected+=a;
@@ -198,5 +233,5 @@ if(argc<2)return 0;base=argv[1];legacy=argc>2&&!strcmp(argv[2],"legacy");separat
  SceneryPack_Clear();CHECK(!SceneryPack_Draw(&object,(float*)&billboard));Gfx_Shutdown();puts("actual pack runtime draw, matrix, frames, clear: pass");
 }
 
-bool France1Textures_IsVerifiedCutout(Texture*){return false;}
-bool France1Textures_CutoutAlpha(Texture*,const unsigned char**,int*,int*){return false;}
+bool France1Textures_IsVerifiedCutout(Texture*){return fixedMode&&verifiedFixed;}
+bool France1Textures_CutoutAlpha(Texture*,const unsigned char**a,int*w,int*h){if(!fixedMode)return false;++alphaReads;*a=fixedAlpha;*w=64;*h=32;return true;}

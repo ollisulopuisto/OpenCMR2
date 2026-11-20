@@ -295,7 +295,7 @@ inline const char *EnhancementHelp(){return
 "  --camera-roll 0..100        Optional damped corner roll for drone/chase, default 30, 100 = up to four degrees\n"
 "  --speed-fov-cockpit 0..100  Cockpit camera: share of --speed-fov it uses, percent (default 25; overrides opencmr2.ini)\n"
 "  --tunnel-vision 0..200      Tunnel vision strength, percent (default 130; overrides opencmr2.ini; --test-preset overdo sets 130 too)\n"
-"  --strip-hedge 0|1          Finland1 forest-strip hedge body (default 1; needs verified uprez textures); 0 = previous relief\n"
+"  --strip-hedge 0|1          Finland1 forest-strip hedge body (default 0; all-mods enables 1; needs verified uprez textures); 0 = previous relief\n"
 "  --brush-volume 0|1          EXPERIMENTAL Greece1 roadside brush walls get depth away from the road (visual only, collision unchanged, needs --textures uprez/asset pack; default 0 = original flat quads; real-stage direction not yet verified)\n"
 "  --tunnel-lines 0|1          Radial lines inside the tunnel-vision zone (default 1; overrides opencmr2.ini)\n"
 "  --tunnel-track 0|1          Tunnel vision + streak centre follows the road ahead, cockpit only (default 1)\n"

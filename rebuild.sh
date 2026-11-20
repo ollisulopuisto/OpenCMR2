@@ -36,7 +36,7 @@
 #   --fog-spatial 0|1           Fog pockets along the stage route (default 0 = off)
 #   --fog-lights 0..200        Fog response to head/rear lights, percent (default 100)
 #   --fog-evolve -100..100      Fog trend start to finish: negative clears, positive thickens (default 0)
-#   --strip-hedge 0|1          Finland1 forest-strip hedge body (default 1 with verified uprez textures;
+#   --strip-hedge 0|1          Finland1 forest-strip hedge body (default 0; all-mods enables 1 with verified uprez textures;
 #                               0 keeps the old relief). Use the same replay for before/after FPS.
 #   --brush-volume 0|1          Greece1 roadside brush-wall extrusion away from the road (default 0 = original flat quads;
 #                               --all-mods sets 1; explicit value wins). Experimental, launch-only passthrough

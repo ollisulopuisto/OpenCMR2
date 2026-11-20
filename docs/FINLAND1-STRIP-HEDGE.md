@@ -1,7 +1,9 @@
 # Finland1 strip hedge, first pass
 
 The owner selected hedge extrusion for Finland1's flat forest-strip cards.
-With verified uprez textures, `--strip-hedge 1` adds a shaded back card,
+The runtime default is 0, so merely selecting uprez textures does not enable
+this enhancement. The explicit all-mods preset supplies `--strip-hedge 1`;
+a later explicit 0 wins. With verified uprez textures, `--strip-hedge 1` adds a shaded back card,
 stepped top runs following a smoothed alpha contour, vertical risers between
 steps, and end walls. Depth is 18% of source height, clamped to 0.8..4 world
 units. The dark, flat end walls are intentional, as in the selected preview.
@@ -40,11 +42,30 @@ layout: all 0x120-byte mesh records, then the 0xa0-byte object records, and the
 texture-slot table rather than direct texture-name indices. Repairing that
 older exporter is separate follow-up work.
 
+## Cache and alpha-grid review
+
+`Sector_Unload` calls `SceneryPack_Clear`, which clears every fixed-part cache.
+The integration test reuses the same part and route addresses/count after
+that clear with different route contents, proving the old hedge is not reused.
+Within a stage, option/world/route pointer/count changes rebuild the part.
+
+The only alpha-grid consumers are the `bsh_sh1` brush branch and the `tresh`
+strip branch in `SceneryPack_DrawFixedPart`. Both require a verified texture
+first and check their own texture prefix. The presence of a grid does not
+classify a sheet as a brush. The loader clears grids on stage unload and
+before each texture apply. The `tresh` integration scenario runs the strip
+path with an alpha grid without entering the brush branch.
+
 ## Validation
 
 - Failing-first `strip_hedge` behavioural test, then green: back-card depth and
   UVs, contour height change, shaded caps, immutable source, away-only bounds,
   four-corner colour weights, output append contract and invalid inputs.
+- Actual `SceneryPack.cpp` integration test with synthetic-only source hash
+  metadata and captured renderer vertices: unverified texture/unknown geometry
+  hash decline, default off, world/route decline, option/world/route invalidation,
+  and same-address stage reload. The production allowlist is unchanged. This
+  test failed before the default change and passed afterward.
 - CLI parser and rebuild dry-run tests cover the 0/1 switch and reject bad
   values. The all-mods preset includes `--strip-hedge 1`; a later explicit 0
   wins.
