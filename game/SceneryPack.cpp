@@ -10,8 +10,13 @@
 #include "SceneryPackFormat.h"
 #include "ScenerySourceFit.h"
 #include "FixedStrip.h"
+#include "TreeRowFit.h"
+#include <array>
 #include "France1Textures.h"
-#include "FixedStripSources.inc"
+#ifndef OPENCMR2_FIXED_STRIP_SOURCE_HEADER
+#define OPENCMR2_FIXED_STRIP_SOURCE_HEADER "FixedStripSources.inc"
+#endif
+#include OPENCMR2_FIXED_STRIP_SOURCE_HEADER
 #include "Gre01BrushSources.inc"
 #include "RallyRoute.h"
 #include "BrushRelief.h"
@@ -63,11 +68,14 @@ static std::unordered_map<const void*,std::unordered_map<StageObject*,bool>> tre
 static int treeLodRadius=250;static unsigned treeLodCardDraws=0;static bool treeLodLogged=false;
 std::unordered_map<const Mesh*,CrowdMesh::Template<GfxVertex>> crowdMeshes;
 
-struct Part { std::vector<GfxVertex> vertices; PackTexture *texture=nullptr; std::vector<SceneryMotion::WindVertex> wind; float windBottom=0,windHeight=0; };
+struct Part { int rowTree=-1;std::vector<GfxVertex> vertices; PackTexture *texture=nullptr; std::vector<SceneryMotion::WindVertex> wind; float windBottom=0,windHeight=0; };
 struct PendingTree{GfxMatrix m;std::vector<Part> *parts;SceneryMotion::WindFrame frame;};
 static OrderedBatch<PendingTree,std::vector<std::vector<GfxVertex>>> pendingTrees;
 struct Asset { std::map<const Mesh*,std::vector<Part>> fitted; int sourceWidth=0,sourceHeight=0; SceneryFormat::Entry entry; std::string failure; std::set<std::string> loggedFailures; bool attempted=false,ready=false; std::vector<Part> parts; std::vector<PackTexture*> frames; };
 std::vector<Asset> assets;
+struct RowDraw {PackTexture*texture=nullptr;unsigned short ids[4]={};std::vector<GfxVertex>vertices;std::vector<std::array<float,2>>weights;};
+struct RowPart {bool ready=false;Asset*asset=nullptr;const RallyRouteNode*route=nullptr;int routeCount=0;std::string hash;size_t count=0;std::vector<RowDraw>draws;};
+std::map<const MeshPart*,RowPart>rowParts;size_t rowVertexCount=0;bool rowLogged=false;
 struct FixedPart {bool ready=false;std::vector<FixedStrip::Vertex> vertices;std::vector<GfxVertex> scratch;};
 struct BrushPart {bool ready=false;float world[16]={};std::vector<BrushRelief::Vertex> vertices;std::vector<unsigned short> indices;std::vector<GfxVertex> scratch;MeshVertexF corners[4]={};};
 std::map<const MeshPart*,FixedPart> fixedParts;
@@ -171,7 +179,9 @@ bool Prepare(Asset &a){
     while(std::getline(input,line)){std::istringstream in(line);in>>tag;
         if(tag=="newmtl")in>>material;else if(tag=="map_Kd"){std::string p;in>>p;if(!SafePath(p))return Reject(a,"unsafe material texture path");maps[material]=Dir(a.entry.asset)+Dir(mtl)+p;}}
     for(auto &g:groups){auto it=maps.find(g.material);if(it==maps.end())return Reject(a,"tree material has no texture mapping");
-        Part p;p.texture=Load(it->second,true);if(!p.texture)return Reject(a,"tree texture missing, invalid TGA or texture allocation failed");
+        Part p;
+        if(a.entry.kind=="tree-row"){if(g.material.size()<3||g.material[0]<'0'||g.material[0]>'4'||g.material[1]!='_')return Reject(a,"row material lacks placement id");p.rowTree=g.material[0]-'0';}
+        p.texture=Load(it->second,true);if(!p.texture)return Reject(a,"tree texture missing, invalid TGA or texture allocation failed");
         for(auto &v:g.vertices)p.vertices.push_back({v.x,v.y,v.z,v.nx,v.ny,v.nz,0xffffffff,0,v.u,v.v,0,0});
         a.parts.push_back(std::move(p));}
     return a.ready=true;
@@ -216,7 +226,7 @@ void SceneryPack_RegisterSource(Texture *texture,const void *bytes,unsigned size
 }
 void SceneryPack_RegisterArchive(GenericFile *file,const char *path){if(file&&path)archives[file]=Leaf(path);}
 struct ReactCar{float x=0,z=0,speed=0;bool valid=false;uint64_t at=0;};static ReactCar reactCars[8];
-void SceneryPack_Clear(){pendingTrees.Clear();fixedParts.clear();crowdMeshes.clear();assets.clear();windIdentities.clear();windLogged.clear();treeOriginalLogged.clear();archives.clear();sourceIdentities.clear();identities.clear();unmatched.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;identityContract=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;for(auto &c:reactCars)c=ReactCar();diagnosticObject=nullptr;diagnosticArticulated=false;diagnosticFrame=diagnosticChanges=loggedSecond=treeReplacementDraws=treeWindDraws=0;diagnosticTime=0;treeLodNear.clear();treeLodCardDraws=0;treeLodLogged=false;}
+void SceneryPack_Clear(){rowParts.clear();rowVertexCount=0;rowLogged=false;pendingTrees.Clear();fixedParts.clear();crowdMeshes.clear();assets.clear();windIdentities.clear();windLogged.clear();treeOriginalLogged.clear();archives.clear();sourceIdentities.clear();identities.clear();unmatched.clear();for(auto t:ownedTextures)Gfx_DestroyTexture(t);ownedTextures.clear();textures.clear();loaded=false;identityContract=false;treeLogged=false;spectatorLogged=false;root.clear();animationTime=0;for(auto &c:reactCars)c=ReactCar();diagnosticObject=nullptr;diagnosticArticulated=false;diagnosticFrame=diagnosticChanges=loggedSecond=treeReplacementDraws=treeWindDraws=0;diagnosticTime=0;treeLodNear.clear();treeLodCardDraws=0;treeLodLogged=false;}
 void SceneryPack_Advance(int step){if(step>0)animationTime+=(unsigned)step;}
 void SceneryPack_SetReactionSource(int slot,int x,int z,int speed,bool valid){if(slot<0||slot>=8)return;reactCars[slot]={x/65536.f,z/65536.f,speed/65536.f,valid,animationTime};}
 static bool treeBatch=false;
@@ -252,6 +262,7 @@ static bool DrawReplacement(StageObject *object,const float *billboard,unsigned 
             Sys_Log("options: scenery source unmatched %s runtime archive=%s; source bytes unverified or pack lacks matching identity; keeping original",stem.c_str(),archive==archives.end()?"loose/unregistered":archive->second.c_str());
         return false;
     }
+    if(asset->entry.kind=="tree-row")return false;
     if(asset->entry.kind=="tree"&&Sys_GetOption("video.tree_overrides",1)==0)return false;
     if(asset->entry.kind=="spectator"&&Sys_GetOption("video.spectator_overrides",1)==0)return false;
     if(!Prepare(*asset)){
@@ -536,6 +547,96 @@ void SceneryPack_GetTreeStatus(unsigned *replacements,unsigned *wind,unsigned *o
 
 // Called AFTER the original material/state binding. No world transform, material,
 // culling, lighting, alpha mode, collision pointer or source vertex is changed.
+// Fixed-card row path. All eligibility decisions precede drawing, so a mixed
+// or invalid material run cannot lose half its original quads.
+static bool DrawTreeRow(Mesh *mesh,MeshPart *part,Texture *source){
+ if(!Sys_GetOption("video.tree_rows",0))return false;
+ GfxMatrix world;Gfx_GetTransform(GFX_TRANSFORM_WORLD,&world);const float*W=&world._11;
+ for(int i=0;i<16;i++)if(!std::isfinite(W[i])||std::abs(W[i]-(i%5==0?1.f:0.f))>1e-3f)return false;
+ if(!g_routeNodes||g_routeNodeCount<2||g_routeNodeCount>100000)return false;
+ auto ident=sourceIdentities.find(source);if(ident==sourceIdentities.end())return false;
+ Init();Asset*asset=nullptr;const auto stem=Stem(source->name);
+ for(auto&id:identities)if(id.source==stem&&id.hash==ident->second)
+  for(auto&a:assets)if(a.entry.kind=="tree-row"&&a.entry.source==stem&&a.entry.archive==id.archive)asset=&a;
+ if(!asset||!Prepare(*asset))return false;
+ // The high-source row recipe is normalized to a square canvas. Low-source
+ // originals have their own exact DDS identities but share that reconstruction.
+ if(asset->sourceWidth!=256||asset->sourceHeight!=256)return false;
+ if(part->indexCount<6||part->indexCount>12000||part->indexCount%6||part->minIndex<0||mesh->field_0x10<4||mesh->field_0x10>65536)return false;
+ auto*v=(const MeshVertexF*)mesh->pVertexData;
+ std::vector<unsigned short> indices;std::string original;
+ for(int i=0;i<part->indexCount;i++){
+  unsigned j=unsigned(part->pData[i])+unsigned(part->minIndex);if(j>=unsigned(mesh->field_0x10))return false;
+  indices.push_back(j);original.append((const char*)&v[j].x,12);original.append((const char*)v[j].textureCoordinates[0],8);
+ }
+ auto hash=SceneryIdentity::SHA256(original.data(),original.size());bool known=false;
+ for(auto h:fixedStripSources)if(hash==h){known=true;break;}if(!known)return false;
+ // Cache is bounded across parts. Reaching the budget retains the existing
+ // relief, never mutates source geometry or the collision structures.
+ auto cached=rowParts.find(part);
+ if(cached!=rowParts.end()&&(cached->second.asset!=asset||cached->second.route!=g_routeNodes||cached->second.routeCount!=g_routeNodeCount||cached->second.hash!=hash)){
+  rowVertexCount-=cached->second.count;rowParts.erase(cached);cached=rowParts.end();
+ }
+ if(cached==rowParts.end()){
+  RowPart data;data.asset=asset;data.route=g_routeNodes;data.routeCount=g_routeNodeCount;data.hash=hash;
+  size_t perRow=0;float front=.5f;float lo[5]={.5,.5,.5,.5,.5},hi[5]={-.5,-.5,-.5,-.5,-.5};
+  for(auto&p:asset->parts){perRow+=p.vertices.size();for(auto&q:p.vertices){front=std::min(front,q.z);if(p.rowTree<0||p.rowTree>4)return false;lo[p.rowTree]=std::min(lo[p.rowTree],q.x);hi[p.rowTree]=std::max(hi[p.rowTree],q.x);}}
+  const size_t total=perRow*size_t(part->indexCount/6);
+  if(!perRow||total>1000000||rowVertexCount+total>2000000)return false;
+  std::vector<float>route;route.reserve(size_t(g_routeNodeCount)*2);
+  for(int i=0;i<g_routeNodeCount;i++){route.push_back(g_routeNodes[i].position.x/65536.f);route.push_back(g_routeNodes[i].position.z/65536.f);}
+  auto build=[&](){
+  for(int at=0;at<part->indexCount;at+=6){
+   MeshVertexF c[4];unsigned short ids[4];unsigned mask=0;
+   for(int i=0;i<6;i++){
+    auto j=indices[at+i];float u=v[j].textureCoordinates[0][0],t=v[j].textureCoordinates[0][1];
+    if((u!=0&&u!=1)||(t!=0&&t!=1))return false;
+    int k=int(u)+2*int(t);if((mask&(1u<<k))&&ids[k]!=j)return false;c[k]=v[j];ids[k]=j;mask|=1u<<k;
+   }
+   if(mask!=15)return false;
+   // Reject degenerate or duplicate triangles despite having all four corners.
+   for(int i=0;i<6;i+=3)if(indices[at+i]==indices[at+i+1]||indices[at+i]==indices[at+i+2]||indices[at+i+1]==indices[at+i+2])return false;
+   TreeRowFit::Frame fit;if(!TreeRowFit::Build(c,route.data(),g_routeNodeCount,fit))return false;fit.front=front;
+   for(auto&p:asset->parts){
+    if(!fit.SetTree(lo[p.rowTree],hi[p.rowTree]))return false;
+    RowDraw draw;draw.texture=p.texture;
+    for(int k=0;k<4;k++)draw.ids[k]=ids[k];
+    draw.vertices.reserve(p.vertices.size());draw.weights.reserve(p.vertices.size());
+    for(auto&q:p.vertices){float xyz[3];if(!fit.Map(q.x,q.y,q.z,xyz))return false;
+     // Conservative local route guard, tested at each actual vertex against
+     // all route segments. No row vertex may move closer to the route than
+     // its position on the original card plane.
+     float base[3];fit.Base(q.x,base);
+     if(!TreeRowFit::AwaySafe(base,xyz,route.data(),g_routeNodeCount))return false;
+     GfxVertex out=q;out.x=xyz[0];out.y=xyz[1];out.z=xyz[2];
+     float nx=q.nx;
+     out.nx=nx*fit.fit.du[0]/fit.width+q.nz*fit.away[0];out.ny=q.ny;out.nz=nx*fit.fit.du[2]/fit.width+q.nz*fit.away[2];
+     float nl=std::sqrt(out.nx*out.nx+out.ny*out.ny+out.nz*out.nz);if(!std::isfinite(nl)||nl<1e-6f)return false;out.nx/=nl;out.ny/=nl;out.nz/=nl;
+     draw.vertices.push_back(out);draw.weights.push_back({fit.anchor+(q.x-fit.center)*fit.scale/fit.width,1-q.y*fit.scale/fit.fit.height});
+    }
+    data.draws.push_back(std::move(draw));
+   }
+  }
+  return true;};
+  data.ready=build();if(data.ready){data.count=total;rowVertexCount+=total;}else data.draws.clear();cached=rowParts.emplace(part,std::move(data)).first;
+ }
+ if(!cached->second.ready)return false;
+ if(!rowLogged){Sys_Log("options: reconstructed tree rows active %s (%zu triangles in first run; visual only, hand reconstructed)",stem.c_str(),cached->second.count/3);rowLogged=true;}
+ // Refresh source lighting/fog colours, not stale cached daylight values.
+ FlushTrees();State(world,true);
+ for(auto&draw:cached->second.draws){
+  for(size_t i=0;i<draw.vertices.size();i++){
+   auto&q=draw.vertices[i];float u=draw.weights[i][0],t=draw.weights[i][1];float w[]={ (1-u)*(1-t),u*(1-t),(1-u)*t,u*t };
+   for(int col=0;col<2;col++){
+    unsigned char *dst=(unsigned char*)&q.diffuse+col*4;
+    for(int k=0;k<4;k++){float value=0;for(int b=0;b<4;b++)value+=((const unsigned char*)&v[draw.ids[b]].diffuseColour)[col*4+k]*w[b];dst[k]=(unsigned char)(value+.5f);}
+   }
+  }
+  Gfx_SetTexture(0,draw.texture->surface);Gfx_DrawPrimitive(GFX_TRIANGLELIST,draw.vertices.data(),draw.vertices.size());treeTrianglesTotal+=draw.vertices.size()/3;
+ }
+ Gfx_PopState();return true;
+}
+
 bool SceneryPack_DrawFixedPart(Mesh *mesh,MeshPart *part){
  if(!mesh||!part||!Sys_GetOption("video.scenery_overrides",1)||!Sys_GetOption("video.tree_overrides",1)||
     !Sys_GetOption("video.texture_uprez",0)||!(mesh->flags&0x800)||mesh->flags&2||part->texture<0||unsigned(part->texture)>=CGraphics::m_textureCount)return false;
@@ -544,6 +645,7 @@ bool SceneryPack_DrawFixedPart(Mesh *mesh,MeshPart *part){
  // DDS identities are added by the private texture helper, independently of the
  // individual billboard pack. A same-named modified source never enters here.
  if(!France1Textures_IsVerifiedCutout(source))return false;
+ if(name.compare(0,5,"tresh")==0&&DrawTreeRow(mesh,part,source))return true;
  // Greece1 brush walls (gre01 temp.sht stage-object bsh_sh1* parts): the flat card gets
  // draw-time depth - interior alpha relief plus a taller darkened back layer
  // ("skybreak"). Exact-source only: part hash + verified cutout + live dial.
