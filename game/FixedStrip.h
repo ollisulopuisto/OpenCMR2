@@ -6,7 +6,7 @@
 // Visual-only tessellation. Source perimeter is exactly fixed; no contact,
 // collision records, placement, bounding box or physics vertices are edited.
 namespace FixedStrip {
-struct Vertex { MeshVertexF source; float depth,weight;float lo[3],hi[3];unsigned short indices[3];float bary[3]; };
+struct Vertex { MeshVertexF source; float shade=1; float depth,weight;float lo[3],hi[3];unsigned short indices[4];float bary[4]; };
 inline bool Build(const MeshVertexF *v,int count,const unsigned short *ix,int n,std::vector<Vertex>&out,bool sourceWarp=false){
  if(!v||!ix||count<4||count>2000||n<6||n>12000||n%6)return false;
  std::vector<Vertex> result;

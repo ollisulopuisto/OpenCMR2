@@ -798,6 +798,10 @@ if(Python3_Interpreter_FOUND)
  add_test(NAME asset_upgrade_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/asset_upgrade_wiring.py)
 endif()
 
+add_executable(strip_hedge_test strip_hedge.cpp)
+target_include_directories(strip_hedge_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src)
+add_test(NAME strip_hedge COMMAND strip_hedge_test)
+
 add_executable(fixed_strip_test fixed_strip.cpp)
 target_include_directories(fixed_strip_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src)
 add_test(NAME fixed_strip COMMAND fixed_strip_test)

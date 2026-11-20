@@ -21,7 +21,10 @@ Next, in order:
 
 1. **Finland1 remaining 2D vegetation.** Hedge rows, brush and forest strips
    still render as flat cards next to the converted trees. Goal: no flat
-   cards left in Finland1.
+   cards left in Finland1. Owner selected hedge extrusion for the forest
+   strips on 2026-11-20. First pass adds a route-safe body; ambiguous or
+   distant strips still keep the old relief, so this item is not complete.
+   Native Metal appearance and before/after FPS remain unverified.
 2. **Greece1 roadside bushes.** Extrude the razor-thin 2D bushes away from
    the road: the road-facing edge stays fixed so driving room and collision
    are unchanged. Blocked on the Greece BFL source export from the game
@@ -30,6 +33,13 @@ Next, in order:
    progress), then the rest of the tracks.
 4. **Tree look fixes.** Some converted crowns read too wide and spotted;
    upscale the tree textures alongside.
+
+## Conversion first, rendering optimization later
+
+Convert all remaining 2D scenery assets before a dedicated 3D rendering
+optimization pass (owner decision, 2026-11-20). Record before/after FPS and
+geometry cost as conversions land, but do not delay conversion for tuning.
+Keep spectators 2D as specified below.
 
 ## Track geometry
 

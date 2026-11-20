@@ -10,6 +10,7 @@
 #include "SceneryPackFormat.h"
 #include "ScenerySourceFit.h"
 #include "FixedStrip.h"
+#include "StripHedge.h"
 #include "France1Textures.h"
 #include "FixedStripSources.inc"
 #include "Gre01BrushSources.inc"
@@ -68,7 +69,7 @@ struct PendingTree{GfxMatrix m;std::vector<Part> *parts;SceneryMotion::WindFrame
 static OrderedBatch<PendingTree,std::vector<std::vector<GfxVertex>>> pendingTrees;
 struct Asset { std::map<const Mesh*,std::vector<Part>> fitted; int sourceWidth=0,sourceHeight=0; SceneryFormat::Entry entry; std::string failure; std::set<std::string> loggedFailures; bool attempted=false,ready=false; std::vector<Part> parts; std::vector<PackTexture*> frames; };
 std::vector<Asset> assets;
-struct FixedPart {bool ready=false;std::vector<FixedStrip::Vertex> vertices;std::vector<GfxVertex> scratch;};
+struct FixedPart {bool ready=false;int hedgeOption=0;const RallyRouteNode*route=nullptr;int routeCount=0;float world[16]={};std::vector<FixedStrip::Vertex> vertices;std::vector<GfxVertex> scratch;};
 struct BrushPart {bool ready=false;float world[16]={};std::vector<BrushRelief::Vertex> vertices;std::vector<unsigned short> indices;std::vector<GfxVertex> scratch;MeshVertexF corners[4]={};};
 std::map<const MeshPart*,FixedPart> fixedParts;
 std::map<const MeshPart*,BrushPart> brushParts;
@@ -647,9 +648,15 @@ bool SceneryPack_DrawFixedPart(Mesh *mesh,MeshPart *part){
    }
   }
  }
+ GfxMatrix fixedWorld;Gfx_GetTransform(GFX_TRANSFORM_WORLD,&fixedWorld);
+ const float*fixedW=&fixedWorld._11;
+ const int hedgeOption=Sys_GetOption("video.strip_hedge",1)!=0;
  auto found=fixedParts.find(part);
+ if(found!=fixedParts.end()&&(found->second.hedgeOption!=hedgeOption||found->second.route!=g_routeNodes||found->second.routeCount!=g_routeNodeCount||memcmp(found->second.world,fixedW,sizeof(float)*16)!=0)){
+  fixedParts.erase(found);found=fixedParts.end();
+ }
  if(found==fixedParts.end()){
-  FixedPart data;std::vector<unsigned short>indices;std::string original;
+  FixedPart data;data.hedgeOption=hedgeOption;data.route=g_routeNodes;data.routeCount=g_routeNodeCount;memcpy(data.world,fixedW,sizeof(float)*16);std::vector<unsigned short>indices;std::string original;
   if(part->indexCount<6||part->indexCount>12000||part->minIndex<0)return false;
   auto*v=(const MeshVertexF*)mesh->pVertexData;
   for(int i=0;i<part->indexCount;i++){
@@ -658,6 +665,46 @@ bool SceneryPack_DrawFixedPart(Mesh *mesh,MeshPart *part){
   }
   auto hash=SceneryIdentity::SHA256(original.data(),original.size());bool known=false;for(auto h:fixedStripSources)if(hash==h){known=true;break;}
   if(known)data.ready=FixedStrip::Build(v,mesh->field_0x10,indices.data(),indices.size(),data.vertices,name.compare(0,5,"tresh")!=0);
+  if(data.ready&&name.compare(0,5,"tresh")==0&&hedgeOption){
+   // Owner-picked hedge body for the multi-tree strip cards: back card +
+   // stepped alpha-contour top cap + side caps, all extruded AWAY from the
+   // route. Same frame rules as the brush volume: decline unless the ambient
+   // world matrix is the identity (vertices already world-space) and the
+   // stage route fixes the away side; winding never decides the side.
+   const unsigned char*alpha=nullptr;int aw=0,ah=0;
+   GfxMatrix wmat;Gfx_GetTransform(GFX_TRANSFORM_WORLD,&wmat);const float*W=&wmat._11;
+   bool rigid=BrushRelief::RigidWorld(W);
+   for(int wi=0;wi<16&&rigid;wi++)if(std::fabs(W[wi]-((wi%5)==0?1.f:0.f))>1e-3f)rigid=false;
+   std::vector<float>stripRouteXZ;
+   if(g_routeNodes&&g_routeNodeCount>0){
+    stripRouteXZ.reserve(size_t(g_routeNodeCount)*2);
+    for(int i=0;i<g_routeNodeCount;i++){stripRouteXZ.push_back(g_routeNodes[i].position.x/65536.f);stripRouteXZ.push_back(g_routeNodes[i].position.z/65536.f);}
+   }
+   if(rigid&&France1Textures_CutoutAlpha(source,&alpha,&aw,&ah)&&!stripRouteXZ.empty()){
+    unsigned appended=0;
+    for(int p=0;p+6<=part->indexCount;p+=6){
+     unsigned short qids[4];int used=0;
+     for(int j=0;j<6;j++){unsigned short t=indices[p+j];bool f=false;for(int k=0;k<used;k++)if(qids[k]==t)f=true;if(!f){if(used==4){used=-1;break;}qids[used++]=t;}}
+     if(used!=4)continue;
+     MeshVertexF c[4];unsigned short sids[4];bool ok=true;unsigned slots=0;
+     for(int k=0;k<4;k++){
+      float tu=v[qids[k]].textureCoordinates[0][0],tv=v[qids[k]].textureCoordinates[0][1];
+      if((tu!=0&&tu!=1)||(tv!=0&&tv!=1)){ok=false;break;}
+      int slot=int(tu)+2*int(tv);if(slots&(1u<<slot)){ok=false;break;}slots|=1u<<slot;c[slot]=v[qids[k]];sids[slot]=qids[k];
+     }
+     if(!ok||slots!=15)continue;
+     float e1[3]={c[1].x-c[0].x,c[1].y-c[0].y,c[1].z-c[0].z},e2[3]={c[2].x-c[0].x,c[2].y-c[0].y,c[2].z-c[0].z};
+     float n[3]={e1[1]*e2[2]-e1[2]*e2[1],e1[2]*e2[0]-e1[0]*e2[2],e1[0]*e2[1]-e1[1]*e2[0]};
+     float nl=std::sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);if(nl<1e-5f)continue;
+     for(int k=0;k<3;k++)n[k]/=nl;
+     float qa[3]={c[0].x,c[0].y,c[0].z},qb[3]={c[1].x,c[1].y,c[1].z},awayW[3]={0,0,0};
+     if(BrushRelief::AwayFromRoad(qa,qb,n,stripRouteXZ.data(),g_routeNodeCount,60.f,awayW)&&
+        StripHedge::Build(c,sids,awayW,alpha,aw,ah,data.vertices))appended++;
+    }
+    static unsigned stripLogs=0;
+    if(appended&&stripLogs++<4)Sys_Log("scenery: tresh strip hedge active %s (%u quads extruded away from route; visual only)",name.c_str(),appended);
+   }
+  }
   if(data.ready&&fixedParts.empty())Sys_Log("scenery: fixed source strip relief active %s (%zu triangles in first part); visual only, not individual3Dtrees",name.c_str(),data.vertices.size()/3);
   found=fixedParts.emplace(part,std::move(data)).first;
  }
@@ -666,7 +713,7 @@ bool SceneryPack_DrawFixedPart(Mesh *mesh,MeshPart *part){
  for(size_t i=0;i<data.vertices.size();i++){auto&q=data.vertices[i];auto v=q.source;
   // Runtime lighting/fog updates rewrite original colours. Read them live.
   auto*live=(const MeshVertexF*)mesh->pVertexData;
-  for(int colour=0;colour<2;colour++){auto*dst=(unsigned char*)&v.diffuseColour+colour*4;for(int k=0;k<4;k++){float value=0;for(int b=0;b<3;b++)value+=((const unsigned char*)&live[q.indices[b]].diffuseColour)[colour*4+k]*q.bary[b];dst[k]=(unsigned char)(value+.5f);}}
+  for(int colour=0;colour<2;colour++){auto*dst=(unsigned char*)&v.diffuseColour+colour*4;for(int k=0;k<4;k++){float value=0;for(int b=0;b<4;b++)value+=((const unsigned char*)&live[q.indices[b]].diffuseColour)[colour*4+k]*q.bary[b];if(k<3)value*=q.shade;dst[k]=(unsigned char)(value+.5f);}}
  data.scratch[i]={std::max(q.lo[0],std::min(q.hi[0],v.x+wind*q.weight)),v.y,v.z,v.nx,v.ny,v.nz,v.diffuseColour,v.specularColour,v.textureCoordinates[0][0],v.textureCoordinates[0][1],v.textureCoordinates[1][0],v.textureCoordinates[1][1]};}
  Gfx_DrawPrimitive(GFX_TRIANGLELIST,data.scratch.data(),data.scratch.size());return true;
 }

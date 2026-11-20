@@ -91,8 +91,8 @@ bool France1Textures_Apply(Texture *texture,const void*bytes,unsigned size){
  originals[texture]=texture->pSurface;
  if(uprez){std::string file=source->file;
   if(file.find("tresh")==0||file.find("tre_w2")==0||file.find("tre_wl")==0||file.find("bsh_st1")==0||file.find("bsh_sh1")==0||file.find("tre_s1")==0)verifiedCutouts[texture]=texture->pSurface;
-  if(file.find("bsh_sh1")==0){
-   // Keep a small CPU alpha grid of the verified sheet for brush relief.
+  if(file.find("bsh_sh1")==0||file.find("tresh")==0){
+   // Keep a small CPU alpha grid of the verified sheet for brush relief/strip extrusion.
    const int GW=64,GH=32;std::vector<unsigned char>agrid(GW*GH);
    const unsigned char*top=(const unsigned char*)raw.data()+20;
    for(int gy=0;gy<GH;gy++)for(int gx=0;gx<GW;gx++){
@@ -108,8 +108,8 @@ bool France1Textures_Apply(Texture *texture,const void*bytes,unsigned size){
 
 bool France1Textures_IsVerifiedCutout(Texture*t){auto i=verifiedCutouts.find(t);return active&&uprez&&i!=verifiedCutouts.end()&&t&&t->pSurface==i->second;}
 
-// 64x32 alpha grid of a verified bsh_sh1 sheet, sampled from the same
-// hash-verified RGBA the GPU upload used. False when not a cached brush sheet.
+// 64x32 alpha grid of a verified bsh_sh1/tresh sheet, sampled from the same
+// hash-verified RGBA the GPU upload used. False when not a cached cutout sheet.
 bool France1Textures_CutoutAlpha(Texture*t,const unsigned char**alpha,int*aw,int*ah){
  auto i=cutoutAlpha.find(t);if(i==cutoutAlpha.end())return false;
  *alpha=i->second.data();*aw=64;*ah=32;return true;
