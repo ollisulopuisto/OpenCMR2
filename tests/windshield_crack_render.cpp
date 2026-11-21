@@ -38,7 +38,12 @@ static void render(DWORD*pixels,int selector,bool poison,bool fog=false){
  for(auto&t:triangles)t.field_0x2c=selector;
  int n=WindshieldCrackPane::Draw(&mesh,0x100,identity,[](int){return crack;});require(n==(selector?2:0),"live exterior pane count");
  if(fog)Gfx_EndWorldEffects();
- static DWORD dummy[W*H];Gfx_ReadBackBuffer(0,0,W,H,dummy);Gfx_Present(FALSE);require(Gfx_ReadBackBuffer(0,0,W,H,pixels),"readback");
+ // Harness only: invalidate the cached read, wait for THIS submission, then
+ // collect. The game intentionally keeps asynchronous historical readback.
+ s_readback.ready=false;
+ static DWORD dummy[W*H];Gfx_ReadBackBuffer(0,0,W,H,dummy);Gfx_Present(FALSE);
+ gl.Finish();
+ require(Gfx_ReadBackBuffer(0,0,W,H,pixels),"fresh completed readback");
 }
 static void dump(const char*prefix,const char*tag,const DWORD*p){if(!prefix)return;FILE*f=fopen((std::string(prefix)+"-"+tag+".ppm").c_str(),"wb");fprintf(f,"P6\n%d %d\n255\n",W,H);for(int i=0;i<W*H;i++){fputc(p[i]>>16&255,f);fputc(p[i]>>8&255,f);fputc(p[i]&255,f);}fclose(f);}
 int main(int argc,char**argv){

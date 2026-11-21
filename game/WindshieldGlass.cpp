@@ -522,10 +522,12 @@ int WindshieldGlass_SetupCar(int car)
 // inner face set (flag 0x8000 clear), the one that faces the cockpit; the 0x8000
 // faces are the outer set. Nothing is derived from the CIN window quad except
 // the window/group choice the resolver already made.
+static WindshieldCrackPane::Status g_wgPaneStatus[WG_MAX_CARS];
 int WindshieldGlass_DrawGroupPane(int car, unsigned group);
 
 int WindshieldGlass_DrawCrackPane(int car, int /*cachedState*/)
 {
+    if (car >= 0 && car < WG_MAX_CARS) g_wgPaneStatus[car] = {};
     if (Sys_GetOption("video.windshield_crack_overlay", 0) == 0)
         return 0;
     if (car < 0 || car >= WG_MAX_CARS || g_wgInfo[car].resolved != 1 || g_wgGlassPartCount[car] != 0)
@@ -556,7 +558,8 @@ int WindshieldGlass_DrawGroupPane(int car, unsigned group)
     Mesh *pMesh = mi >= 0 ? pParts->geometry.meshes[mi] : NULL;
     SceneNode *node = mi >= 0 ? pParts->geometry.nodes[mi] : NULL;
     if (pMesh == NULL || node == NULL || pMesh->pVertexData == NULL || pMesh->pTriangles == NULL) {
-        g_wgFailReason[car] = "overlay: no exterior body mesh";
+        g_wgPaneStatus[car].Record(0, "overlay: no exterior body mesh");
+        g_wgFailReason[car] = g_wgPaneStatus[car].reason;
         return 0;
     }
     GfxMatrix world;
@@ -565,7 +568,8 @@ int WindshieldGlass_DrawGroupPane(int car, unsigned group)
         Texture *texture = CGraphics::GetTextureBuffer()[index];
         return texture != NULL ? texture->pSurface : NULL;
     });
-    g_wgFailReason[car] = count ? "overlay drawn" : "overlay: no live damaged exterior glass";
+    g_wgPaneStatus[car].Record(count, "overlay: no live damaged exterior glass");
+    g_wgFailReason[car] = g_wgPaneStatus[car].reason;
     return count != 0;
 }
 

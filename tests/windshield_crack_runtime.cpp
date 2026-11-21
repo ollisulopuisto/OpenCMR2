@@ -22,6 +22,10 @@ bool Gfx_GpuIsAvailable(){return true;}
 GfxExecutor*Gfx_CreateGpuExecutor(){return new Capture;}
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line%d %s\n",__LINE__,#x);return 1;}}while(0)
 int main(){
+ WindshieldCrackPane::Status status;
+ status.Record(1,"intact");status.Record(0,"intact");CHECK(!strcmp(status.reason,"overlay drawn"));
+ status={};status.Record(0,"intact");CHECK(!strcmp(status.reason,"intact"));
+ status.Record(1,"intact");CHECK(!strcmp(status.reason,"overlay drawn"));
  CHECK(Gfx_SetVideoMode(96,64,FALSE));GfxTexture*damaged=Gfx_CreateTexture(2,2,GFX_FORMAT_BGRA8,1,0),*broken=Gfx_CreateTexture(2,2,GFX_FORMAT_BGRA8,1,0);
  MeshVertexF v[3]={};v[1].x=1;v[2].y=1;for(auto&q:v){q.z=1;q.nz=-1;q.textureCoordinates[0][0]=.25f;q.textureCoordinates[0][1]=.75f;}
  MeshTriangle tri={};tri.flags=0x400;tri.vertexIndex[1]=1;tri.vertexIndex[2]=2;tri.textures[3]=3;tri.textures[5]=5;
