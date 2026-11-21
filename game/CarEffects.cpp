@@ -1559,6 +1559,29 @@ void CarEffects_EmitWheelDustParticle(int car, int wheel, FixVector *pPos, FixVe
                    Car_Get(car)->pBodyNode->viewMask, dryWheelDust != 0);
 }
 
+// Dirt cone chips of one wheel (see WheelCone_Velocity): debris-type chips with an explicit
+// cone launch velocity. Own LCG so the gameplay rand() stream is untouched by the new random numbers.
+static void CarEffects_EmitDirtCone(int car, int wheel, Car *pCar, int count, BYTE *colour, int shadeLevel)
+{
+    static unsigned seed = 0x2f6e2b1u;
+    auto unit = [&]() { seed = seed * 1664525u + 1013904223u; return (seed >> 8) / 16777216.f; };
+    int type = (wheel == 0 || wheel == 2) ? 0x16 : 0x17;
+    for (int i = 0; i < count; i++) {
+        float ox, oy, oz;
+        if (!WheelCone_Velocity(pCar->cornerVelocity[wheel].x / 65536.f, pCar->cornerVelocity[wheel].z / 65536.f,
+                                unit(), unit(), unit(), &ox, &oy, &oz)) return;
+        FixVector velocity = { (int)std::lround(ox * 65536.f), (int)std::lround(oy * 65536.f), (int)std::lround(oz * 65536.f) };
+        FixVector position;
+        position.x = g_trailPos[car][wheel].x - pCar->position.x;
+        position.y = g_trailPos[car][wheel].y - pCar->position.y;
+        position.z = g_trailPos[car][wheel].z - pCar->position.z;
+        BYTE chip[4] = { colour[0], colour[1], colour[2], 0xff };
+        int carId = car;
+        Particle_SpawnTagged(type, &position, &velocity, position.y, 0, chip, shadeLevel, &carId,
+                             Car_Get(car)->pBodyNode->viewMask, true);
+    }
+}
+
 // Wheel dust, gravel and water of a car: the surface under each wheel and the
 // stage's country pick the colours and kinds; the faster the wheel spins, the
 // more particles.
@@ -1794,6 +1817,13 @@ void CarEffect_UpdateWheelSurfaceParticles(int car, bool emitParticles)
                                        -(pCar->cornerVelocity[wheel].z/4)};
             DustPlume_Emit(&cloudWorld, &cloudVelocity, colour, g_trailLevel[car][wheel],
                           (BYTE)pCar->pBodyNode->viewMask);
+        }
+        if (DustPlume_Surface(dirt, gravel, water, snow, ice)) {
+            int coneCount = WheelCone_Count(Car_GetWheelSpeed(pCar, (BYTE)wheel, 0), pCar->cornerOnGround[wheel] != 0, true,
+                                            (unsigned)phase * 2654435761u + (unsigned)wheel * 97u + (unsigned)car * 31u,
+                                            Sys_GetOption("video.dirt_cone", 100));
+            if (coneCount > 0 && WheelParticle_ChipBudgetOK(liveChips, g_particleCount))
+                CarEffects_EmitDirtCone(car, wheel, pCar, coneCount, colour, g_trailLevel[car][wheel]);
         }
         FixVecLength(&pCar->cornerVelocity[wheel]);
         velY = pCar->cornerVelocity[wheel].y;
