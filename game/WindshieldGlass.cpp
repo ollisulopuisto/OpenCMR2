@@ -524,9 +524,9 @@ int WindshieldGlass_SetupCar(int car)
 // the window/group choice the resolver already made.
 int WindshieldGlass_DrawGroupPane(int car, unsigned group);
 
-int WindshieldGlass_DrawCrackPane(int car, int state)
+int WindshieldGlass_DrawCrackPane(int car, int /*cachedState*/)
 {
-    if (state < 1 || Sys_GetOption("video.windshield_crack_overlay", 0) == 0)
+    if (Sys_GetOption("video.windshield_crack_overlay", 0) == 0)
         return 0;
     if (car < 0 || car >= WG_MAX_CARS || g_wgInfo[car].resolved != 1 || g_wgGlassPartCount[car] != 0)
         return 0;   // not this cockpit's problem: the interior glass parts handle it
@@ -537,15 +537,15 @@ int WindshieldGlass_DrawCrackPane(int car, int state)
 // glass groups (slots 2 and 3, groups 0x40 and 0x80), each with its own
 // damage state. Offline check against the Subaru exterior: both groups have
 // inner (non-0x8000) faces and drawable damaged/broken textures 14/15.
-int WindshieldGlass_DrawSidePanes(int car, int stateSlot2, int stateSlot3)
+int WindshieldGlass_DrawSidePanes(int car, int /*cachedState2*/, int /*cachedState3*/)
 {
     if (Sys_GetOption("video.windshield_crack_overlay", 0) == 0)
         return 0;
     if (car < 0 || car >= WG_MAX_CARS || g_wgInfo[car].resolved != 1)
         return 0;
     int n = 0;
-    if (stateSlot2 >= 1) n += WindshieldGlass_DrawGroupPane(car, WindshieldGlass_GroupForSlot(2));
-    if (stateSlot3 >= 1) n += WindshieldGlass_DrawGroupPane(car, WindshieldGlass_GroupForSlot(3));
+    n += WindshieldGlass_DrawGroupPane(car, WindshieldGlass_GroupForSlot(2));
+    n += WindshieldGlass_DrawGroupPane(car, WindshieldGlass_GroupForSlot(3));
     return n;
 }
 

@@ -36,18 +36,19 @@ int main(){
  // Deliberately poison every inherited state the old overlay left uncontrolled.
  Gfx_SetStageTexCoordIndex(0,GFX_TCI_CAMERASPACEREFLECTIONVECTOR|1);Gfx_SetStageTextureTransform(0,GFX_TTFF_COUNT3);
  Gfx_SetStageAddress(0,GFX_ADDRESS_WRAP);Gfx_SetAlphaTest(TRUE);Gfx_SetAlphaRef(254);Gfx_SetFog(TRUE);Gfx_SetBodyDirt(1,1,0,0);Gfx_SetDistanceFade(1,2);
+ const MeshTriangle beforeDraw=tri;
  CHECK(WindshieldCrackPane::Draw(&mesh,0x100,world,lookup)==1);
+ CHECK(!memcmp(v,saved,sizeof v));CHECK(!memcmp(&tri,&beforeDraw,sizeof tri));
  GfxVertex probe[3]={};Gfx_DrawPrimitive(GFX_TRIANGLELIST,probe,3);Gfx_Present(FALSE);CHECK(states.size()==2);
  CHECK(vertices.size()==6&&vertices[0].u0==.25f&&vertices[0].v0==.75f&&vertices[1].x==1);
  const auto&s=states[0];CHECK(s.stages[0].texture==damaged&&s.stages[0].texCoordIndex==0&&s.stages[0].textureTransform==GFX_TTFF_DISABLE&&s.stages[0].address==GFX_ADDRESS_CLAMP);
  CHECK(!s.alphaTest&&!s.fog&&!s.depthWrite&&s.depthTest&&s.alphaBlend&&s.world._41==2&&s.bodyDirt[0]==0&&s.fadeEnd==0);
- CHECK(states[1].stages[0].texCoordIndex==(GFX_TCI_CAMERASPACEREFLECTIONVECTOR|1)&&states[1].alphaTest&&states[1].fog&&states[1].bodyDirt[0]==1); // restored
+ CHECK(states[1].stages[0].texCoordIndex==(GFX_TCI_CAMERASPACEREFLECTIONVECTOR|1)&&states[1].alphaTest&&states[1].fog&&states[1].bodyDirt[0]==1&&states[1].stages[0].address==GFX_ADDRESS_WRAP&&states[1].alphaRef==254); // restored
  states.clear();tri.field_0x2c=5;CHECK(WindshieldCrackPane::Draw(&mesh,0x100,world,lookup)==1);Gfx_Present(FALSE);CHECK(states[0].stages[0].texture==broken);
  states.clear();tri.field_0x2c=0;CHECK(!WindshieldCrackPane::Draw(&mesh,0x100,world,lookup));tri.field_0x2c=10;CHECK(!WindshieldCrackPane::Draw(&mesh,0x100,world,lookup));
  tri.field_0x2c=3;tri.flags=0x20;CHECK(!WindshieldCrackPane::Draw(&mesh,0x100,world,lookup));tri.flags=0x8500;CHECK(WindshieldCrackPane::Draw(&mesh,0x100,world,lookup)==1); // outer fallback
  tri.vertexIndex[2]=99;CHECK(!WindshieldCrackPane::Draw(&mesh,0x100,world,lookup));tri=original;tri.field_0x2c=3;
  v[0].x=std::numeric_limits<float>::infinity();CHECK(!WindshieldCrackPane::Draw(&mesh,0x100,world,lookup));memcpy(v,saved,sizeof v);tri=original;
- CHECK(!memcmp(v,saved,sizeof v));CHECK(!memcmp(&tri,&original,sizeof tri));
  // Side windows are separate groups, not exclusive states of one pane.
  MeshTriangle sides[2]={};for(auto&t:sides){t.vertexIndex[1]=1;t.vertexIndex[2]=2;t.textures[3]=3;t.textures[5]=5;}
  sides[0].flags=0x40;sides[0].field_0x2c=3;sides[1].flags=0x200;sides[1].field_0x2c=5;mesh.pTriangles=sides;mesh.triangleCount=2;

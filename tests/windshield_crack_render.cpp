@@ -30,13 +30,14 @@ static void require(bool ok,const char*why){if(!ok){fprintf(stderr,"FAIL %s\n",w
 static const int W=96,H=64;
 static MeshVertexF source[4];static MeshTriangle triangles[2];static Mesh mesh;
 static GfxTexture*crack;static GfxMatrix identity={1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
-static void render(DWORD*pixels,int selector,bool poison){
+static void render(DWORD*pixels,int selector,bool poison,bool fog=false){
  Gfx_SetTransform(GFX_TRANSFORM_WORLD,&identity);Gfx_SetTransform(GFX_TRANSFORM_VIEW,&identity);Gfx_SetTransform(GFX_TRANSFORM_PROJECTION,&identity);
- Gfx_SetRaceWorld(FALSE);Gfx_SetPostFog(FALSE,0,0);Gfx_Clear(GFX_CLEAR_TARGET|GFX_CLEAR_ZBUFFER,0xff183028,1);
+ Gfx_SetRaceWorld(fog);Gfx_SetPostFog(fog,100,0);Gfx_Clear(GFX_CLEAR_TARGET|GFX_CLEAR_ZBUFFER,0xff183028,1);
  Gfx_SetStageTexCoordIndex(0,poison?(GFX_TCI_CAMERASPACEREFLECTIONVECTOR|1):0);Gfx_SetStageTextureTransform(0,poison?GFX_TTFF_COUNT3:GFX_TTFF_DISABLE);
  Gfx_SetAlphaTest(poison);Gfx_SetAlphaRef(254);Gfx_SetFog(poison);Gfx_SetBodyDirt(poison?1:0,1,0,0);Gfx_SetDistanceFade(poison?1:0,poison?2:0);
  for(auto&t:triangles)t.field_0x2c=selector;
  int n=WindshieldCrackPane::Draw(&mesh,0x100,identity,[](int){return crack;});require(n==(selector?2:0),"live exterior pane count");
+ if(fog)Gfx_EndWorldEffects();
  static DWORD dummy[W*H];Gfx_ReadBackBuffer(0,0,W,H,dummy);Gfx_Present(FALSE);require(Gfx_ReadBackBuffer(0,0,W,H,pixels),"readback");
 }
 static void dump(const char*prefix,const char*tag,const DWORD*p){if(!prefix)return;FILE*f=fopen((std::string(prefix)+"-"+tag+".ppm").c_str(),"wb");fprintf(f,"P6\n%d %d\n255\n",W,H);for(int i=0;i<W*H;i++){fputc(p[i]>>16&255,f);fputc(p[i]>>8&255,f);fputc(p[i]&255,f);}fclose(f);}
@@ -48,6 +49,8 @@ int main(int argc,char**argv){
  mesh.pVertexData=(DWORD*)source;mesh.field_0x10=4;mesh.pTriangles=triangles;mesh.triangleCount=2;
  crack=Gfx_CreateTexture(8,8,GFX_FORMAT_BGRA8,1,0);GfxLockedRect lock;require(Gfx_LockTexture(crack,0,0,&lock),"texture lock");for(int y=0;y<8;y++)for(int x=0;x<8;x++)((DWORD*)((char*)lock.pixels+y*lock.pitch))[x]=(x==y||x==7-y)?0xb0ffffff:0x00183028;Gfx_UnlockTexture(crack,0,0);
  DWORD clean[W*H],poison[W*H],intact[W*H];render(clean,3,false);render(poison,3,true);render(intact,0,true);
+ DWORD fogClean[W*H],fogPoison[W*H];render(fogClean,3,false,true);render(fogPoison,3,true,true);
+ require(!memcmp(fogClean,fogPoison,sizeof fogClean),"post-fog compositing depends on incoming material state");
  const char*prefix=argc>1?argv[1]:nullptr;dump(prefix,"damaged-clean",clean);dump(prefix,"damaged-reflection-incoming",poison);dump(prefix,"intact",intact);
  require(!memcmp(clean,poison,sizeof clean),"incoming reflection/material state changes crack pixels");int changed=0;for(int i=0;i<W*H;i++)if(clean[i]!=intact[i])changed++;require(changed>200,"damaged material is actually visible");
  printf("synthetic actual-helper GL pixels: clean=poisoned, intact no pane, %d changed pixels; no native replay or Metal claim\n",changed);Gfx_Shutdown();SDL_DestroyWindow(testWindow);SDL_Quit();
