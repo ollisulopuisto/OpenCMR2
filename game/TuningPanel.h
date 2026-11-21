@@ -27,6 +27,7 @@ inline const TuningRow *Tuning_Rows(int &count)
         {"Speed streak %", "video.speed_streak", 0, 100, 10, 100},
         {"FOV preview, video.fov number (0 off)", "video.fov_preview", 0, 150, 5, 0},   // absolute video.fov, debug only, a legacy scale number not an angle, below 20 acts as 20; Speed FOV % is separate
         {"Tyre debris (0 off; chips per wheel per step x100, loose/wet ground)", "video.tire_debris", 0, 2000, 25, 575},
+        {"Brake glow depth behind wheel % (0 = on the hub)", "video.brake_glow_inset", 0, 400, 25, 100},
         {"Dust/snow plume amount % (rate and cloud cap)", "video.dust_plume_amount", 0, 300, 25, 300},
         {"Wheel spray amount % (wet/loose ground)", "video.spray_amount", 0, 300, 25, 300},
         {"Exhaust smoke amount %", "video.exhaust_smoke_amount", 0, 300, 25, 300},
