@@ -1,5 +1,4 @@
 #pragma once
-#include <cmath>
 #include <math.h>
 // Brake disc glow (video.brake_glow, default on): a per-wheel heat model, visual only.
 // Pure inline model so tests/brake_glow.cpp exercises the decision logic without the
@@ -94,27 +93,6 @@ inline void BrakeGlow_FillMissingExtents(float extent[4]) {
 // it and the glow shows only through the gaps. insetPercent is video.brake_glow_inset (default 100, 0 = old
 // position, max 400).
 #define BRAKE_GLOW_INSET_FRACTION 0.25f
-// Spin-invariant, steering-aware wheel axle: spin turns two of the node's rows, so the axle is the row
-// that stays aligned with the car body's lateral axis (steering and camber only tilt it a little).
-// Writes the unit row, sign-matched to bodyLateral. Falls back to bodyLateral when degenerate.
-inline void BrakeGlow_PickAxle(const float world[16], const float bodyLateral[3], float out[3]) {
-    float bl = sqrtf(bodyLateral[0] * bodyLateral[0] + bodyLateral[1] * bodyLateral[1] + bodyLateral[2] * bodyLateral[2]);
-    for (int a = 0; a < 3; a++) out[a] = bodyLateral[a];
-    if (!(bl > 1e-4f)) return;
-    float best = 0.f;
-    for (int r = 0; r < 3; r++) {
-        const float *row = world + r * 4;
-        float len = sqrtf(row[0] * row[0] + row[1] * row[1] + row[2] * row[2]);
-        if (!(len > 1e-4f)) continue;
-        float d = (row[0] * bodyLateral[0] + row[1] * bodyLateral[1] + row[2] * bodyLateral[2]) / (len * bl);
-        if (std::fabs(d) > std::fabs(best) && std::fabs(d) > 0.5f) {
-            best = d;
-            float s = d < 0.f ? -1.f : 1.f;
-            for (int a = 0; a < 3; a++) out[a] = s * row[a] / len;
-        }
-    }
-}
-
 // Fills outOffset with the world-space shift for one wheel: axleDir = the car body's lateral axis in world units (spin-invariant; the wheel node's own rows turn with spin),
 // pointed toward the car centre (carPos is the car body position in the same world units). Returns 0
 // (no shift) when the inset is off, the wheel radius is unknown, or the wheel sits on the car's centre line.
