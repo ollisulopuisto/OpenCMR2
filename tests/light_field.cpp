@@ -1,6 +1,7 @@
 #include "port/types.h"
 #include "LightField.h"
 #include <cstdio>
+#include <cmath>
 static int fails;
 #define CHECK(c) do{ if(!(c)){ std::printf("FAIL %d: %s\n", __LINE__, #c); ++fails; } }while(0)
 FogLightSource g_fogLightSources[LIGHT_FIELD_MAX];
@@ -110,6 +111,37 @@ int main(){
     LightField_Clear();
     CHECK(g_fogLightSourceCount == 0);
     CHECK(LightField_Add(&pos, &dir, 0x10000, 1, 2, 3) == 1);
+    // Tail lamp beam: short, splayed outward per side, tilted down, off at 0.
+    {
+        FixVector back = {-0x10000, 0, 0};                 // lamp points backward (-x)
+        FixVector leftOff = {-0x20000, 0, -0x8000}, rightOff = {-0x20000, 0, 0x8000};
+        FixVector d1, d2; int len1, len2; float k1, k2;
+        CHECK(!LightField_TailBeam(&back, &leftOff, 0, &d1, &len1, &k1));
+        CHECK(LightField_TailBeam(&back, &leftOff, 100, &d1, &len1, &k1));
+        CHECK(LightField_TailBeam(&back, &rightOff, 100, &d2, &len2, &k2));
+        CHECK(len1 == 6 * 0x10000 && len2 == len1);                 // 6 units, not the 30-unit searchlight
+        CHECK(d1.z * d2.z < 0 && d1.z == -d2.z);                    // lamps splay to opposite sides
+        CHECK(d1.x < 0 && d2.x < 0 && d1.x == d2.x);                // both still point backward
+        CHECK(d1.y < 0);                                            // tilted to the ground
+        CHECK(d1.z < 0 && leftOff.z < 0);                           // splays toward its own side
+        double n = std::sqrt((double)d1.x * d1.x + (double)d1.y * d1.y + (double)d1.z * d1.z) / 65536.0;
+        CHECK(n > 0.999 && n < 1.001);                              // unit vector
+        CHECK(k1 < 1.f && k1 > 0.f);                                // dimmer than a headlamp
+        FixVector up = {0, 0x10000, 0};
+        CHECK(!LightField_TailBeam(&up, &leftOff, 100, &d1, &len1, &k1));   // no heading
+        CHECK(LightField_TailBeam(&back, &leftOff, 300, &d1, &len1, &k1) && len1 == 18 * 0x10000);
+        CHECK(LightField_TailBeam(&back, &leftOff, 9999, &d1, &len1, &k1) && len1 == 18 * 0x10000);
+        // Heading rotates the splay: a lamp pointing +z splays along x.
+        FixVector backZ = {0, 0, 0x10000}; FixVector offZ = {0x8000, 0, 0x20000};
+        CHECK(LightField_TailBeam(&backZ, &offZ, 100, &d1, &len1, &k1) && d1.z > 0 && d1.x != 0);
+        // beamLength rides along through LightField_Add; default stays 0 (30 units).
+        LightField_Clear();
+        FixVector p0 = {0, 0, 0};
+        LightField_Add(&p0, &back, 0x8000, 0x10000, 0, 0, 0, 6 * 0x10000);
+        LightField_Add(&p0, &back, 0x8000, 0x10000, 0, 0);
+        CHECK(g_fogLightSources[0].beamLength == 6 * 0x10000 && g_fogLightSources[1].beamLength == 0);
+        LightField_Clear();
+    }
     if (!fails) std::puts("light_field ok");
     return fails;
 }

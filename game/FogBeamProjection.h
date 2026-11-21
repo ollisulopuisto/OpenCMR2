@@ -45,9 +45,10 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
         // beam. Off-screen lamps stay: their wedge can still cross the frame
         // (the cockpit's own lamps sit below the windscreen line).
         FixVector beamEnd;
-        beamEnd.x = src->pos.x + FixMul(dirN.x, 0x1e0000);
-        beamEnd.y = src->pos.y + FixMul(dirN.y, 0x1e0000);
-        beamEnd.z = src->pos.z + FixMul(dirN.z, 0x1e0000);
+        const int run = src->beamLength > 0 ? src->beamLength : 0x1e0000;   // tail lamps carry a short run (LightField_TailBeam)
+        beamEnd.x = src->pos.x + FixMul(dirN.x, run);
+        beamEnd.y = src->pos.y + FixMul(dirN.y, run);
+        beamEnd.z = src->pos.z + FixMul(dirN.z, run);
         FixVector endView = {0, 0, 0};
         if (hasBeam)
             FixMatrix_TransformPoint(&endView, &beamEnd, &invView);

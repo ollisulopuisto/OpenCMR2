@@ -11,6 +11,11 @@ All notable changes to OpenCMR2 are documented here.
   just flat scattered clods. `--dirt-cone 0..300` (default 100, 0 off), `video.dirt_cone`,
   tuning panel row. Visual only. Launch speeds are untuned on the Mac; adjust with the
   option first.
+- Tail lights no longer cast a headlight-style beam in the fog pass: each rear lamp now
+  lights a short run (6 units, dimmer) splayed outward and tilted to the ground, so the
+  two lamps make a wide glow close behind the car. `--tail-light-beam 0..300` (default
+  100, 0 restores the old beam), `video.tail_light_beam`, tuning panel row. Lens flare
+  for tail lamps seen from behind is not part of this change.
 - Finland1 forest strips gain a route-aware hedge body: a back card, stepped
   contour cap and closed ends, extruded away from the road. Opt-in through all-mods or `--strip-hedge 1`, with
   verified uprez textures; `--strip-hedge 0` keeps the previous shallow relief.
