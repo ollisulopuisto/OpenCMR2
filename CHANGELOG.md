@@ -6,6 +6,11 @@ All notable changes to OpenCMR2 are documented here.
 
 - Experimental Finland forest-row replacement: opt-in private five-tree trunk/crown packs for two reviewed strip sources, with exact source/geometry gates, away-from-route fitting and behavioural tests. Hand reconstruction, not automatic segmentation; native appearance, FPS and collision fit are unverified. See docs/FINLAND1-TREE-ROWS.md.
 ### Added
+- Dirt cone / rooster tail: spinning wheels on dirt and gravel throw extra chips in a
+  cone (back, lifted with speed, fanned sideways) so a fast corner shows a plume, not
+  just flat scattered clods. `--dirt-cone 0..300` (default 100, 0 off), `video.dirt_cone`,
+  tuning panel row. Visual only. Launch speeds are untuned on the Mac; adjust with the
+  option first.
 - Finland1 forest strips gain a route-aware hedge body: a back card, stepped
   contour cap and closed ends, extruded away from the road. Opt-in through all-mods or `--strip-hedge 1`, with
   verified uprez textures; `--strip-hedge 0` keeps the previous shallow relief.

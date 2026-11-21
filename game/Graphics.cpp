@@ -5812,6 +5812,7 @@ void Particle_Spawn(int typeIndex, FixVector *pSource, FixVector *pPosition,
                          field0x54,callbackParam,field0x55,false);
 }
 
+bool g_particleCosmeticRand = false;
 void Particle_SpawnTagged(int typeIndex, FixVector *pSource, FixVector *pPosition,
                     int field0x48, FixMatrix *attachmentMatrix, BYTE *pColour,
                     BYTE field0x54, void *callbackParam, BYTE field0x55, bool dryWheelDust)
@@ -5834,7 +5835,7 @@ void Particle_SpawnTagged(int typeIndex, FixVector *pSource, FixVector *pPositio
     // Extra cosmetic clouds must not consume the gameplay/global rand stream.
     static unsigned cloudSeed = 0x5a17d93u;
     auto random = [&]() -> int {
-        if (typeIndex != DUST_PLUME_TYPE && typeIndex != SPEED_MOTE_TYPE && typeIndex != AIR_MOTE_TYPE) return rand();
+        if (!g_particleCosmeticRand && typeIndex != DUST_PLUME_TYPE && typeIndex != SPEED_MOTE_TYPE && typeIndex != AIR_MOTE_TYPE) return rand();
         cloudSeed = cloudSeed * 1664525u + 1013904223u;
         return (int)((cloudSeed >> 1) % ((unsigned)RAND_MAX + 1u));
     };
