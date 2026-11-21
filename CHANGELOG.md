@@ -5,6 +5,11 @@ All notable changes to OpenCMR2 are documented here.
 ## [Unreleased]
 
 - Experimental Finland forest-row replacement: opt-in private five-tree trunk/crown packs for two reviewed strip sources, with exact source/geometry gates, away-from-route fitting and behavioural tests. Hand reconstruction, not automatic segmentation; native appearance, FPS and collision fit are unverified. See docs/FINLAND1-TREE-ROWS.md.
+### Fixed
+- Brake glow: the disc quad now sits inboard of the wheel face (a quarter of the wheel radius
+  along the axle), so the depth test lets spokes and hubcap hide it and it glows only through
+  the gaps instead of being painted over the hubcap. `--brake-glow-inset 0..400` (default 100,
+  0 = old position), `video.brake_glow_inset`. Native look not measured.
 ### Added
 - Dirt cone / rooster tail: spinning wheels on dirt and gravel throw extra chips in a
   cone (back, lifted with speed, fanned sideways) so a fast corner shows a plume, not

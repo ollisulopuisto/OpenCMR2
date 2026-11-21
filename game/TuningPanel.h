@@ -58,6 +58,7 @@ inline const TuningRow *Tuning_Rows(int &count)
         {"Motion blur keeps the car sharp (0/1)", "video.motion_blur_car", 0, 1, 1, 1},   // appended: earlier row positions are pinned by tests/tuning_runtime.cpp
         {"Dirt cone / rooster tail % (0 off, gravel and dirt)", "video.dirt_cone", 0, 300, 25, 100},
         {"Tail light glow run % (0 = old long beam)", "video.tail_light_beam", 0, 300, 25, 100},
+        {"Brake glow depth behind wheel % (0 = on the hub)", "video.brake_glow_inset", 0, 400, 25, 100},
     };
     count = (int)(sizeof(rows) / sizeof(*rows));
     return rows;

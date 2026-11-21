@@ -115,6 +115,32 @@ int main() {
       float z[4] = {};
       BrakeGlow_FillMissingExtents(z);
       for (int w = 0; w < 4; w++) CHECK(z[w] == 0.f); }
+    // Inboard offset: the disc moves behind the wheel face, toward the car centre, on both sides.
+    { float left[16] = { 0,0,1,0,  0,1,0,0,  1,0,0,0,  0,0,-0.7f,1 };   // axle (right row) along +z, wheel at z = -0.7
+      float right[16] = { 0,0,1,0,  0,1,0,0,  1,0,0,0,  0,0,0.7f,1 };   // same axle direction, wheel at z = +0.7
+      float car[3] = { 0, 0, 0 }, off[3], axz[3] = { 0, 0, 1 };
+      CHECK(BrakeGlow_InboardOffset(left, axz, car, 0.30f, 100, off));
+      CHECK(off[2] > 0.07f && off[2] < 0.08f && off[0] == 0.f);          // 0.25 * 0.30, toward +z (car centre)
+      CHECK(BrakeGlow_InboardOffset(right, axz, car, 0.30f, 100, off));
+      CHECK(off[2] < -0.07f && off[2] > -0.08f);                          // toward -z
+      CHECK(BrakeGlow_InboardOffset(right, axz, car, 0.30f, 200, off) && off[2] < -0.14f);   // scales with the option
+      CHECK(BrakeGlow_InboardOffset(right, axz, car, 0.30f, 9999, off) && off[2] > -0.31f);  // clamped at 400 percent
+      CHECK(!BrakeGlow_InboardOffset(right, axz, car, 0.30f, 0, off) && off[2] == 0.f);     // 0 = old position
+      CHECK(!BrakeGlow_InboardOffset(right, axz, car, 0.f, 100, off));                       // unknown wheel size
+      float centred[16] = { 0,0,1,0,  0,1,0,0,  1,0,0,0,  0,0,0,1 };
+      CHECK(!BrakeGlow_InboardOffset(centred, axz, car, 0.30f, 100, off));                   // no side to pick
+      // Offset is along the axle only, so the quad stays parallel to the disc plane.
+      float tilted[16] = { 0,0.6f,0.8f,0,  0,0.8f,-0.6f,0,  1,0,0,0,  0,0,-0.7f,1 };
+      float axt[3] = { 0, 0.6f, 0.8f };
+      CHECK(BrakeGlow_InboardOffset(tilted, axt, car, 0.30f, 100, off));
+      CHECK(std::fabs(off[1] / off[2] - 0.75f) < 1e-3f && off[0] == 0.f);
+      // Spin invariance: the offset depends on the body axle, not the wheel node's rows, so
+      // spinning the node about any of its axes gives the same offset.
+      float o1[3], o2[3];
+      float spun[16] = { 0,1,0,0,  -1,0,0,0,  0,0,1,0,  0,0,-0.7f,1 };
+      CHECK(BrakeGlow_InboardOffset(tilted, axz, car, 0.30f, 100, o1));
+      CHECK(BrakeGlow_InboardOffset(spun, axz, car, 0.30f, 100, o2));
+      CHECK(o1[0] == o2[0] && o1[1] == o2[1] && o1[2] == o2[2]); }
     std::puts("brake glow heat model: pass");
     return 0;
 }

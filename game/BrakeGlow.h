@@ -1,4 +1,5 @@
 #pragma once
+#include <math.h>
 // Brake disc glow (video.brake_glow, default on): a per-wheel heat model, visual only.
 // Pure inline model so tests/brake_glow.cpp exercises the decision logic without the
 // renderer; game/BrakeGlow.cpp owns texture/draw state. No physics inputs are written.
@@ -84,6 +85,35 @@ inline void BrakeGlow_FillMissingExtents(float extent[4]) {
         return;
     for (int w = 0; w < 4; w++)
         if (extent[w] <= 0.f) extent[w] = best;
+}
+
+// Depth of the disc behind the wheel face. The quad used to sit in the hub's own plane, level with (and
+// drawn over) the hubcap. A real disc lives inboard of the rim, so the quad moves toward the car body
+// along the axle, by this share of the wheel radius; the depth test then lets the spokes and hubcap hide
+// it and the glow shows only through the gaps. insetPercent is video.brake_glow_inset (default 100, 0 = old
+// position, max 400).
+#define BRAKE_GLOW_INSET_FRACTION 0.25f
+// Fills outOffset with the world-space shift for one wheel: axleDir = the car body's lateral axis in world units (spin-invariant; the wheel node's own rows turn with spin),
+// pointed toward the car centre (carPos is the car body position in the same world units). Returns 0
+// (no shift) when the inset is off, the wheel radius is unknown, or the wheel sits on the car's centre line.
+inline int BrakeGlow_InboardOffset(const float world[16], const float axleDir[3], const float carPos[3], float wheelExtent, int insetPercent, float outOffset[3]) {
+    outOffset[0] = outOffset[1] = outOffset[2] = 0.f;
+    if (insetPercent <= 0 || !(wheelExtent > 0.f))
+        return 0;
+    if (insetPercent > 400) insetPercent = 400;
+    const float *axle = axleDir, *pos = world + 12;
+    float len = sqrtf(axle[0] * axle[0] + axle[1] * axle[1] + axle[2] * axle[2]);
+    if (!(len > 1e-4f))
+        return 0;
+    float side = 0.f;                                   // + when the car centre lies along +axle
+    for (int a = 0; a < 3; a++)
+        side += axle[a] / len * (carPos[a] - pos[a]);
+    if (side > -1e-3f && side < 1e-3f)
+        return 0;
+    float k = (side > 0.f ? 1.f : -1.f) * BRAKE_GLOW_INSET_FRACTION * (insetPercent / 100.f) * wheelExtent / len;
+    for (int a = 0; a < 3; a++)
+        outOffset[a] = axle[a] * k;
+    return 1;
 }
 
 // Builds the disc quad for one wheel from its node's world matrix (the SceneNode

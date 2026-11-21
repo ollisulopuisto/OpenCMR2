@@ -123,6 +123,17 @@ void BrakeGlow_Draw(void)
             if (!BrakeGlow_BuildDiscQuad(node->worldF, radius, s_heat[car][w],
                                          pos, uv, &alpha))
                 continue;
+            // Move the disc behind the wheel face so spokes and hubcap occlude it (BrakeGlow_InboardOffset).
+            {   const FixVector &cp = g_carBuffer[car].position;
+                float carPos[3] = { cp.x / 65536.f, cp.y / 65536.f, cp.z / 65536.f };
+                float off[3];
+                const FixVector &lat = g_carBuffer[car].forward;   // Car::forward is the side axis in this code base
+                float axle[3] = { lat.x / 65536.f, lat.y / 65536.f, lat.z / 65536.f };
+                if (BrakeGlow_InboardOffset(node->worldF, axle, carPos, s_extent[car][w], Sys_GetOption("video.brake_glow_inset", 100), off))
+                    for (int v = 0; v < 4; v++)
+                        for (int a = 0; a < 3; a++)
+                            pos[v][a] += off[a];
+            }
             int a = (int)(alpha * 255.f);
             if (a > 255) a = 255;
             // Dull red at the edge of the heat range toward bright orange when hot.
