@@ -150,6 +150,10 @@ add_executable(shadows_test shadows.cpp)
 target_include_directories(shadows_test PRIVATE ${PROJECT_SOURCE_DIR}/game)
 add_test(NAME shadows COMMAND shadows_test)
 
+add_executable(shadow_filter_test shadow_filter.cpp)
+target_include_directories(shadow_filter_test PRIVATE ${PROJECT_SOURCE_DIR}/src)
+add_test(NAME shadow_filter COMMAND shadow_filter_test)
+
 add_executable(render_stats_test render_stats.cpp
     ${PROJECT_SOURCE_DIR}/src/render/gfx_core.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay.cpp ${PROJECT_SOURCE_DIR}/src/render/touch_overlay_shapes.cpp ${CMAKE_CURRENT_SOURCE_DIR}/touch_input_stub.cpp
     ${PROJECT_SOURCE_DIR}/src/diagnostics/observer.cpp)
