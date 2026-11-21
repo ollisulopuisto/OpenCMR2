@@ -240,16 +240,15 @@ static void Windshield_DrawDirtPane(int view)
 }
 
 // Called from the 3D pass of a cockpit view (Game_DrawSceneViewport) so the
-// crack pane is depth tested against the interior. The state is the one the
-// previous frame's Windshield_UpdateView left.
+// crack pane is depth tested against the interior. Cached view states remain
+// API inputs for compatibility; live exterior selectors drive the crack panes.
 void Windshield_DrawCrackPane(int view)
 {
     int mview = view & (WINDSHIELD_MAX_VIEWS - 1);
     if (mview < 2) {
         WindshieldGlass_DrawCrackPane(mview, g_windshieldGlassState[mview]);
         Windshield_DrawDirtPane(mview);
-        if (g_windshieldGlassState[mview] >= 0)
-            WindshieldGlass_DrawSidePanes(mview, g_windshieldSideState[mview][0], g_windshieldSideState[mview][1]);
+        WindshieldGlass_DrawSidePanes(mview, g_windshieldSideState[mview][0], g_windshieldSideState[mview][1]);
         WindshieldGlass_DrawCockpitExtension(mview);
         WindshieldGlass_DrawCockpitMesh(mview);
     }

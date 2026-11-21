@@ -156,3 +156,26 @@ stage, fog interaction with real skybox/weather depths, Metal MSL output beyond
 compilation. Those need on-device driving, then dial the amounts down to taste.
 
 Fog amount defaults to 20 when neither a saved `video.fog_amount` nor a launch override supplies it. Saved INI values are preserved. `--test-preset atmosphere` deliberately overrides it to 65; `overdo` and plain `--all-mods` do not set fog amount. An explicit `--fog-amount N` wins over both saved values and presets. Remove older explicit `--fog-amount 60` from launch commands, or change it to 20, to use the new look.
+
+### Cockpit crack-pane regression
+
+`tests/windshield_crack_runtime.cpp` exercises the production pane drawer with
+synthetic source meshes and the real renderer command recorder. It checks live
+exterior selectors (intact 0, damaged 3, broken 5), independent side groups,
+source UVs, immutable source geometry, rejected invalid inputs and restored
+caller state. It is part of CTest. Cached viewport states do not gate the pane draw.
+
+For a GL-enabled build, run
+`python3 tests/windshield_crack_render.py --build build/linux --output /tmp/crack`.
+The synthetic GL pixel check compares clean state with incoming reflection UVs,
+alpha test, fog, paint dirt and distance fade. The two damaged-pane images must
+match, and the intact selector must draw no pane. This uses no game art and is
+not a native Mac/Metal replay or uprez acceptance test. This GL pixel test runs
+separately from CTest, so its pass is not included in the CTest total. Post-fog
+remains the global world pass and is not disabled by this material helper; the
+pixel test compares both clean and contaminated draws with post-fog on too.
+
+The crack overlay stays opt-in via `--windshield-crack-overlay 1` (or saved
+`video.windshield_crack_overlay=1`); use `--windshield-crack-overlay 0` for a
+comparison run. Side groups 0x40 and 0x80 can legitimately have different damage
+states in the same frame. Selecting one globally would hide a real side window.
