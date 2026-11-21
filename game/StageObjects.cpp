@@ -11993,17 +11993,18 @@ void CarLight_UpdateFlagsAndGlows(Car *pCar)
                 }
                 int fogIntensity = glowIntensity * 2 > 0x10000 ? 0x10000 : glowIntensity * 2;
                 int tailLength = 0;
+                FixVector tailDir = { 0, 0, 0 };
+                int tailScale = 0;
                 if (pPoint->slot == 0) {   // slot 0 is the red rear lamp (colour above): not a headlight, see LightField_TailBeam
                     FixVector offset = { worldPos.x - pCar->position.x, worldPos.y - pCar->position.y, worldPos.z - pCar->position.z };
-                    FixVector tailDir;
-                    float tailScale;
-                    if (LightField_TailBeam(&worldDir, &offset, Sys_GetOption("video.tail_light_beam", 100), &tailDir, &tailLength, &tailScale)) {
-                        worldDir = tailDir;
-                        fogIntensity = (int)(fogIntensity * tailScale);
-                    }
+                    float tailFloat;
+                    if (LightField_TailBeam(&worldDir, &offset, Sys_GetOption("video.tail_light_beam", 100), &tailDir, &tailLength, &tailFloat))
+                        tailScale = (int)(tailFloat * 65536.f);   // fog-only: worldDir and fogIntensity stay the real lamp values for motes and glints
+                    else
+                        tailDir = { 0, 0, 0 };
                 }
                 LightField_Add(&worldPos, &worldDir, fogIntensity,
-                               colour.x, colour.y, colour.z, pPoint->type == 8 ? 1 : 0, tailLength);   // type 8 = front headlight in the Subaru CIN (lamps 10-11 of 13)
+                               colour.x, colour.y, colour.z, pPoint->type == 8 ? 1 : 0, tailLength, &tailDir, tailScale);   // type 8 = front headlight in the Subaru CIN (lamps 10-11 of 13)
             }
             FixVecScale(&colour, &colour, glowIntensity);
             Glow_NoOpEntryCallback((BYTE)(INT_PTR)glow, (BYTE)colour.x, colour.y, colour.z);

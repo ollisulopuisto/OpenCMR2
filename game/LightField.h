@@ -18,7 +18,9 @@ struct FogLightSource {
     FixVector dir;   // world beam direction (16.16, zero when unknown)
     int intensity;   // 16.16, clamped to 0..0x10000
     int r, g, b;     // tint (16.16, unclamped - indicator amber exceeds 1.0 in R)
-    int beamLength;  // beam run in world units (16.16) the fog pass projects; 0 = the default 30 units
+    int beamLength;  // FOG PASS ONLY: beam run in world units (16.16) the fog pass projects; 0 = the default 30 units
+    FixVector fogDir; // FOG PASS ONLY: replaces dir in the fog pass when non-zero (tail lamps); dir stays the real lamp direction for motes, glints and snow
+    int fogScale;    // FOG PASS ONLY: 16.16 multiplier on intensity in the fog pass; 0 = 1.0
 };
 
 extern FogLightSource g_fogLightSources[LIGHT_FIELD_MAX];
@@ -31,7 +33,7 @@ inline void LightField_Clear(void) { g_fogLightSourceCount = 0; g_fogLightDroppe
 
 // Records one enabled light. When the field is full a priority light (headlight) replaces the
 // last non-priority source; any other light is lost and counted. Returns the count.
-inline int LightField_Add(const FixVector *pos, const FixVector *dir, int intensity, int r, int g, int b, int priority = 0, int beamLength = 0) {
+inline int LightField_Add(const FixVector *pos, const FixVector *dir, int intensity, int r, int g, int b, int priority = 0, int beamLength = 0, const FixVector *fogDir = 0, int fogScale = 0) {
     if (!pos || intensity <= 0)
         return g_fogLightSourceCount;
     int slot = -1;
@@ -50,6 +52,8 @@ inline int LightField_Add(const FixVector *pos, const FixVector *dir, int intens
     p->intensity = intensity > 0x10000 ? 0x10000 : intensity;
     p->r = r; p->g = g; p->b = b;
     p->beamLength = beamLength > 0 ? beamLength : 0;
+    p->fogDir = fogDir ? *fogDir : FixVector{0, 0, 0};
+    p->fogScale = fogScale > 0 ? fogScale : 0;
     return g_fogLightSourceCount;
 }
 

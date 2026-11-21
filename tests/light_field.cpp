@@ -137,9 +137,14 @@ int main(){
         // beamLength rides along through LightField_Add; default stays 0 (30 units).
         LightField_Clear();
         FixVector p0 = {0, 0, 0};
-        LightField_Add(&p0, &back, 0x8000, 0x10000, 0, 0, 0, 6 * 0x10000);
+        FixVector fd = {0, -0x2000, 0x8000};
+        LightField_Add(&p0, &back, 0x8000, 0x10000, 0, 0, 0, 6 * 0x10000, &fd, 0xb333);
         LightField_Add(&p0, &back, 0x8000, 0x10000, 0, 0);
         CHECK(g_fogLightSources[0].beamLength == 6 * 0x10000 && g_fogLightSources[1].beamLength == 0);
+        // Tail overrides are fog-only: the shared dir and intensity keep the real lamp values.
+        CHECK(g_fogLightSources[0].dir.x == -0x10000 && g_fogLightSources[0].intensity == 0x8000);
+        CHECK(g_fogLightSources[0].fogDir.z == 0x8000 && g_fogLightSources[0].fogScale == 0xb333);
+        CHECK(g_fogLightSources[1].fogDir.x == 0 && g_fogLightSources[1].fogDir.z == 0 && g_fogLightSources[1].fogScale == 0);
         LightField_Clear();
     }
     if (!fails) std::puts("light_field ok");
