@@ -79,6 +79,9 @@ struct Particle {
 
 void Particle_Spawn(int typeIndex, FixVector *pSource, FixVector *pPosition, int field0x48, FixMatrix *attachmentMatrix,
                     BYTE *pColour, BYTE field0x54, void *callbackParam, BYTE field0x55);
+// OpenCMR2: while set, Particle_SpawnTagged draws its random numbers from a private generator instead of rand(),
+// so cosmetic spawns (dirt cone) never move the shared random stream the original effects use.
+extern bool g_particleCosmeticRand;
 void Particle_SpawnTagged(int typeIndex, FixVector *pSource, FixVector *pPosition, int field0x48, FixMatrix *attachmentMatrix,
                     BYTE *pColour, BYTE field0x54, void *callbackParam, BYTE field0x55, bool dryWheelDust);
 

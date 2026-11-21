@@ -53,6 +53,12 @@ inline int WheelCone_Count(int wheelKmh, bool contact, bool looseOrWet, unsigned
     int n = scaled / 100 + ((int)((random >> 8) % 100) < scaled % 100 ? 1 : 0);
     return n > 8 ? 8 : n;
 }
+// Cone chips share the wheel-chip budget: never more than the room left under WheelParticle_ChipBudgetOK, so one batch
+// cannot overshoot the 60% cap (the caller adds what it really spawned to liveChips).
+inline int WheelCone_BudgetedCount(int count, int liveChips, int capacity) {
+    int room = capacity * 3 / 5 - liveChips;
+    return count < room ? count : (room > 0 ? room : 0);
+}
 // Launch velocity of one cone chip (world units per step). vx/vz is the wheel's horizontal velocity, u1..u3 are 0..1 random numbers.
 // Returns false when the wheel is too slow to define a direction. Back = 0.30..0.55 of the speed, lift = 0.25..0.60 of the speed,
 // sideways = up to +-0.25 of the speed, so the chips spread into a cone opening behind the wheel and rising above the ground.

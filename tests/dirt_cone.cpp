@@ -41,6 +41,11 @@ int main() {
     // Direction follows the wheel: driving +z throws toward -z.
     WheelCone_Velocity(0.f, 1.3f, .5f, .5f, .5f, &ox, &oy, &oz);
     check(oz < -0.3f && std::fabs(ox) < 0.01f, "rotates with heading");
+    // Budget: the batch is cut to the room left under the 60% chip cap (1200 pool -> 720 chips).
+    check(WheelCone_BudgetedCount(6, 0, 1200) == 6, "plenty of room keeps the batch");
+    check(WheelCone_BudgetedCount(6, 719, 1200) == 1, "one slot left allows one chip");
+    check(WheelCone_BudgetedCount(6, 720, 1200) == 0, "at the cap nothing spawns");
+    check(WheelCone_BudgetedCount(6, 900, 1200) == 0, "over the cap never goes negative");
     if (!fail) puts("dirt_cone: ok");
     return fail;
 }

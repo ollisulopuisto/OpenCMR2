@@ -27,7 +27,6 @@ inline const TuningRow *Tuning_Rows(int &count)
         {"Speed streak %", "video.speed_streak", 0, 100, 10, 100},
         {"FOV preview, video.fov number (0 off)", "video.fov_preview", 0, 150, 5, 0},   // absolute video.fov, debug only, a legacy scale number not an angle, below 20 acts as 20; Speed FOV % is separate
         {"Tyre debris (0 off; chips per wheel per step x100, loose/wet ground)", "video.tire_debris", 0, 2000, 25, 575},
-        {"Dirt cone / rooster tail % (0 off, gravel and dirt)", "video.dirt_cone", 0, 300, 25, 100},
         {"Dust/snow plume amount % (rate and cloud cap)", "video.dust_plume_amount", 0, 300, 25, 300},
         {"Wheel spray amount % (wet/loose ground)", "video.spray_amount", 0, 300, 25, 300},
         {"Exhaust smoke amount %", "video.exhaust_smoke_amount", 0, 300, 25, 300},
@@ -57,6 +56,7 @@ inline const TuningRow *Tuning_Rows(int &count)
         {"Drone speed height drop %", "video.drone_speed_drop", 0, 500, 5, 150},
         {"Brush wall depth (0-100)", "video.brush_relief", 0, 100, 5, 100},
         {"Motion blur keeps the car sharp (0/1)", "video.motion_blur_car", 0, 1, 1, 1},   // appended: earlier row positions are pinned by tests/tuning_runtime.cpp
+        {"Dirt cone / rooster tail % (0 off, gravel and dirt)", "video.dirt_cone", 0, 300, 25, 100},
     };
     count = (int)(sizeof(rows) / sizeof(*rows));
     return rows;
