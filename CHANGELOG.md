@@ -25,15 +25,12 @@ All notable changes to OpenCMR2 are documented here.
   result and state, dirt total, overlay draws vs calls and last skip reason), so a
   screenshot shows why cockpit dirt or cracks are not drawn. Counters only.
 ### Changed
+- Fog amount defaults to 20 across runtime, renderer fallbacks and both tuning menus. Saved values and explicit flags still win; the optional atmosphere test preset remains 65. No settings are overwritten.
 - Motion blur is retired: it now defaults to off at every layer (startup
   restore, graphics menu, F10 status readout), joining the tuned defaults,
   F10 panel row and test presets that were already off. Only an explicit
   `--effect motion_blur=on` or a saved `video.motion_blur=1` still enables
   it; the code path is unchanged. Owner decision 2026-11-18.
-- Default fog amount is now 65 percent (was 100; same 0..200 percent scale, menu and F10
-  0..100). Only unset values change: a saved `video.fog_amount` is kept. The
-  `--all-mods`/atmosphere preset also starts at 65 (a preset launch applies its own
-  values over saved ones, as before). `--fog-amount N` still wins.
 - The "What's new" changelog no longer pops up over the main menu (its OK
   row could sit on top of the menu behind it). It opens from a "What's
   new..." row at the bottom of the main Options menu instead.

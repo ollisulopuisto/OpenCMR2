@@ -92,13 +92,13 @@ frame-time spikes along with the GPU and display settings.
 Build and run the old relief path:
 
 ```sh
-./rebuild.sh --all-mods --data "/path/to/owned/CMR2" --cockpit-extend-rear 80 --cockpit-door-extend 40 --windshield-crack-overlay 1 --fog-amount 60 --strip-hedge 0 --run
+./rebuild.sh --all-mods --data "/path/to/owned/CMR2" --cockpit-extend-rear 80 --cockpit-door-extend 40 --windshield-crack-overlay 1 --fog-amount 20 --strip-hedge 0 --run
 ```
 
 Run the same binary and settings with the hedge body:
 
 ```sh
-./rebuild.sh --assets-only --all-mods --data "/path/to/owned/CMR2" --cockpit-extend-rear 80 --cockpit-door-extend 40 --windshield-crack-overlay 1 --fog-amount 60 --strip-hedge 1 --run
+./rebuild.sh --assets-only --all-mods --data "/path/to/owned/CMR2" --cockpit-extend-rear 80 --cockpit-door-extend 40 --windshield-crack-overlay 1 --fog-amount 20 --strip-hedge 1 --run
 ```
 
 Check for a `tresh strip hedge active` log line in the on run. Its absence
