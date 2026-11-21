@@ -68,6 +68,15 @@ constexpr int TAIL_BEAM_LENGTH_UNITS = 6;
 constexpr float TAIL_BEAM_SPLAY = 0.61f;    // radians, about 35 degrees
 constexpr float TAIL_BEAM_PITCH = 0.12f;    // downward share of the unit direction
 constexpr float TAIL_BEAM_INTENSITY = 0.7f; // a tail lamp is dimmer than a headlamp
+// Guard for the slot 0 = red rear lamp assumption (shipped car light data is not in the repo, so it
+// cannot be checked in CI): a lamp only gets the tail treatment when it sits in the rear half of the
+// car (offset from the car centre against the heading) and its beam points backward too. heading is
+// Car::right, the driving direction in this code base. Anything else keeps the original beam.
+inline bool LightField_IsRearLamp(const FixVector *offset, const FixVector *dir, const FixVector *heading) {
+    double po = (double)offset->x * heading->x + (double)offset->y * heading->y + (double)offset->z * heading->z;
+    double pd = (double)dir->x * heading->x + (double)dir->y * heading->y + (double)dir->z * heading->z;
+    return po < 0.0 && pd < 0.0;
+}
 inline bool LightField_TailBeam(const FixVector *dir, const FixVector *offset, int percent, FixVector *outDir, int *outLength, float *outIntensityScale) {
     if (percent <= 0) return false;
     if (percent > 300) percent = 300;

@@ -148,5 +148,13 @@ int main(){
         LightField_Clear();
     }
     if (!fails) std::puts("light_field ok");
+        // Rear-lamp guard: only a lamp behind the car centre whose beam points backward is a tail lamp.
+    { FixVector heading = { 65536, 0, 0 };
+      FixVector rearOff = { -2 * 65536, 0, 65536 / 2 }, frontOff = { 2 * 65536, 0, 65536 / 2 };
+      FixVector back = { -65536, 0, 0 }, ahead = { 65536, 0, 0 };
+      CHECK(LightField_IsRearLamp(&rearOff, &back, &heading));
+      CHECK(!LightField_IsRearLamp(&frontOff, &ahead, &heading));   // a headlight in slot 0 is left alone
+      CHECK(!LightField_IsRearLamp(&frontOff, &back, &heading));
+      CHECK(!LightField_IsRearLamp(&rearOff, &ahead, &heading)); }
     return fails;
 }
