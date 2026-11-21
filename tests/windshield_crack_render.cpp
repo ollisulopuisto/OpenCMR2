@@ -47,6 +47,8 @@ static void render(DWORD*pixels,int selector,bool poison,bool fog=false){
 }
 static void dump(const char*prefix,const char*tag,const DWORD*p){if(!prefix)return;FILE*f=fopen((std::string(prefix)+"-"+tag+".ppm").c_str(),"wb");fprintf(f,"P6\n%d %d\n255\n",W,H);for(int i=0;i<W*H;i++){fputc(p[i]>>16&255,f);fputc(p[i]>>8&255,f);fputc(p[i]&255,f);}fclose(f);}
 int main(int argc,char**argv){
+ const char*headless=SDL_getenv("OPENCMR2_HEADLESS");
+ if(headless&&*headless!='0'){fprintf(stderr,"GL pixel test cannot use OPENCMR2_HEADLESS; unset it to run the real GL executor.\n");return 2;}
  require(SDL_Init(SDL_INIT_VIDEO),SDL_GetError());Gfx_PrepareGlWindow();testWindow=SDL_CreateWindow("windshield crack material regression",W,H,SDL_WINDOW_OPENGL|SDL_WINDOW_HIDDEN);require(testWindow,SDL_GetError());require(Gfx_SetVideoMode(W,H,FALSE),"video");
  GfxViewport viewport={0,0,W,H,0,1};Gfx_SetViewport(&viewport);
  const float x[]={-.8f,.8f,-.8f,.8f},y[]={-.8f,-.8f,.8f,.8f};for(int i=0;i<4;i++){source[i].x=x[i];source[i].y=y[i];source[i].z=.5f;source[i].nz=-1;source[i].textureCoordinates[0][0]=i%2;source[i].textureCoordinates[0][1]=i/2;}
