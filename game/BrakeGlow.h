@@ -93,15 +93,15 @@ inline void BrakeGlow_FillMissingExtents(float extent[4]) {
 // it and the glow shows only through the gaps. insetPercent is video.brake_glow_inset (default 100, 0 = old
 // position, max 400).
 #define BRAKE_GLOW_INSET_FRACTION 0.25f
-// Fills outOffset with the world-space shift for one wheel: wheel axle = the node's right axis (world[0..2]),
+// Fills outOffset with the world-space shift for one wheel: axleDir = the car body's lateral axis in world units (spin-invariant; the wheel node's own rows turn with spin),
 // pointed toward the car centre (carPos is the car body position in the same world units). Returns 0
 // (no shift) when the inset is off, the wheel radius is unknown, or the wheel sits on the car's centre line.
-inline int BrakeGlow_InboardOffset(const float world[16], const float carPos[3], float wheelExtent, int insetPercent, float outOffset[3]) {
+inline int BrakeGlow_InboardOffset(const float world[16], const float axleDir[3], const float carPos[3], float wheelExtent, int insetPercent, float outOffset[3]) {
     outOffset[0] = outOffset[1] = outOffset[2] = 0.f;
     if (insetPercent <= 0 || !(wheelExtent > 0.f))
         return 0;
     if (insetPercent > 400) insetPercent = 400;
-    const float *axle = world, *pos = world + 12;
+    const float *axle = axleDir, *pos = world + 12;
     float len = sqrtf(axle[0] * axle[0] + axle[1] * axle[1] + axle[2] * axle[2]);
     if (!(len > 1e-4f))
         return 0;
