@@ -21,8 +21,6 @@ All notable changes to OpenCMR2 are documented here.
   two lamps make a wide glow close behind the car. `--tail-light-beam 0..300` (default
   100, 0 restores the old beam), `video.tail_light_beam`, tuning panel row. Lens flare
   for tail lamps seen from behind is not part of this change.
-- Shadow edges: the shadow-map filter is now a 12-tap rotated disk with a 1.5 texel
-  floor instead of a 5-tap cross, so the hard stair-stepped shadow border on the car
 - Shadow edges: the shadow-map filter is now a 12-tap rotated disk instead of a
   5-tap cross. Radius is 0.5 texel plus the Shadow softness setting (0% = 0.5 texel, the
   25% default = 1.5 texels, 100% = 4.5), so lowering softness sharpens the edge. The hard stair-stepped shadow border on the car
