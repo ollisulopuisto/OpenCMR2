@@ -141,6 +141,20 @@ int main() {
       CHECK(BrakeGlow_InboardOffset(tilted, axz, car, 0.30f, 100, o1));
       CHECK(BrakeGlow_InboardOffset(spun, axz, car, 0.30f, 100, o2));
       CHECK(o1[0] == o2[0] && o1[1] == o2[1] && o1[2] == o2[2]); }
+    // Axle pick: steering-aware and spin-invariant. Axle = node forward row (z), spun about it, steered 20 degrees.
+    { float body[3] = { 0, 0, 1 }, ax[3];
+      const float cs = std::cos(0.349f), sn = std::sin(0.349f);
+      for (int spin = 0; spin < 360; spin += 45) {
+        float sp = spin * 0.0174533f, c2 = std::cos(sp), s2 = std::sin(sp);
+        // rows: right/up turn about the axle, axle row itself is (sn,0,cs) from steering
+        float w[16] = { c2 * cs, s2, -c2 * sn, 0,   -s2 * cs, c2, s2 * sn, 0,   sn, 0, cs, 0,   0, 0, 0, 1 };
+        BrakeGlow_PickAxle(w, body, ax);
+        CHECK(std::fabs(ax[0] - sn) < 1e-4f && std::fabs(ax[2] - cs) < 1e-4f); }
+      float flip[16] = { 1,0,0,0, 0,1,0,0, 0,0,-1,0, 0,0,0,1 };
+      BrakeGlow_PickAxle(flip, body, ax);
+      CHECK(ax[2] > 0.99f);                                       // sign matched to the body axis
+      float zero[3] = { 0, 0, 0 };
+      BrakeGlow_PickAxle(flip, zero, ax); CHECK(ax[2] == 0.f); }
     std::puts("brake glow heat model: pass");
     return 0;
 }

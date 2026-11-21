@@ -128,7 +128,8 @@ void BrakeGlow_Draw(void)
                 float carPos[3] = { cp.x / 65536.f, cp.y / 65536.f, cp.z / 65536.f };
                 float off[3];
                 const FixVector &lat = g_carBuffer[car].forward;   // Car::forward is the side axis in this code base
-                float axle[3] = { lat.x / 65536.f, lat.y / 65536.f, lat.z / 65536.f };
+                float body[3] = { lat.x / 65536.f, lat.y / 65536.f, lat.z / 65536.f }, axle[3];
+                BrakeGlow_PickAxle(node->worldF, body, axle);   // follows steering, ignores spin
                 if (BrakeGlow_InboardOffset(node->worldF, axle, carPos, s_extent[car][w], Sys_GetOption("video.brake_glow_inset", 100), off))
                     for (int v = 0; v < 4; v++)
                         for (int a = 0; a < 3; a++)
