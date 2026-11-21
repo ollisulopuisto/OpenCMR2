@@ -888,3 +888,9 @@ add_test(NAME tree_row_converter COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_
 
 
 add_test(NAME tree_row_runtime COMMAND scenery_pack_runtime_test ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/scenery-pack rows)
+
+add_executable(windshield_crack_runtime_test windshield_crack_runtime.cpp
+ ${PROJECT_SOURCE_DIR}/src/render/gfx_core.cpp ${PROJECT_SOURCE_DIR}/src/diagnostics/observer.cpp)
+target_include_directories(windshield_crack_runtime_test PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/game)
+target_link_libraries(windshield_crack_runtime_test PRIVATE SDL3::SDL3)
+add_test(NAME windshield_crack_runtime COMMAND windshield_crack_runtime_test)

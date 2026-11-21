@@ -24,6 +24,12 @@ All notable changes to OpenCMR2 are documented here.
 - F10 diagnostics panel: a Windshield row (dirt/wiper/crack options, glass lookup
   result and state, dirt total, overlay draws vs calls and last skip reason), so a
   screenshot shows why cockpit dirt or cracks are not drawn. Counters only.
+### Fixed
+- Cockpit crack/side panes now follow each exterior triangle's live damage
+  material rather than forcing a damaged texture from cached view state, and
+  reset inherited reflection UV/material state before drawing. Different side
+  groups still draw independently. Removes alternating per-group log spam.
+  Synthetic GL/capture regressions pass; native Mac replay/uprez look unverified.
 ### Changed
 - Fog amount defaults to 20 across runtime, renderer fallbacks and both tuning menus. Saved values and explicit flags still win; the optional atmosphere test preset remains 65. No settings are overwritten.
 - Motion blur is retired: it now defaults to off at every layer (startup

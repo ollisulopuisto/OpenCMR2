@@ -1336,7 +1336,7 @@ private:
     friend void CarLight_CacheBodyTextures(int car, int unused1, int unused2, BYTE flag);
     friend int WindshieldGlass_DrawCrackPane(int car, int state);
     friend int WindshieldGlass_DrawSidePanes(int car, int stateSlot2, int stateSlot3);
-    friend int WindshieldGlass_DrawGroupPane(int car, unsigned group, int state);
+    friend int WindshieldGlass_DrawGroupPane(int car, unsigned group);
     friend int WindshieldGlass_DrawCockpitExtension(int car);
     friend int WindshieldGlass_DrawCockpitMesh(int car);
     friend void FixMatrix_ProjectWorldPointToView(int *pOut, FixVector *pPoint, SceneNode *pView);
