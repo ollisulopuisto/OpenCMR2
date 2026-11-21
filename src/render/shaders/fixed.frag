@@ -264,7 +264,7 @@ void main()
                 // Rotated golden-angle (Vogel) disk, mirrored by Shadow_FilterTap in
                 // src/render/shadow_filter.h. The old 5-tap cross left stair-steps on
                 // the car silhouette; a per-pixel rotation turns them into soft noise.
-                float radius = max(shadowParams.z, 1.5) / float(textureSize(shadowMap, 0).x);
+                float radius = (0.5 + max(shadowParams.z, 0.0)) / float(textureSize(shadowMap, 0).x);   // Shadow_FilterRadius
                 float rot = 6.2831853 * fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
                 float lit = 0.0;
                 for (int i = 0; i < 12; i++) {
