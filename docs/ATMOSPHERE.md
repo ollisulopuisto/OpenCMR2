@@ -64,7 +64,7 @@ All settings are [video] options, off unless enabled:
 | Setting | Range | Default | Meaning |
 | --- | --- | --- | --- |
 | video.fog | 0/1 | 0 | fog pass |
-| video.fog_amount | 0..200 | 20 | density; default 20 (100 is the heavy look) (23 units ~50 percent fog, 60 ~84, 150 ~99) |
+| video.fog_amount | 0..200 | 20 | density; default 20 (100 is the heavy look) (at amount=100: 23 units ~50 percent fog, 60 ~84, 150 ~99) |
 | video.fog_glow | 0..100 | 60 | sun-ward glow strength |
 | video.fog_clear | 0..200 | 0 | near-field clear distance in world units: fog ramps from none at the camera to the full curve at this distance, so the road ahead stays readable while distant haze keeps its density. Global in every direction, not a road-only mask |
 | video.fog_probe | 0/1 | 0 | one-shot diagnostic (SDL_GPU only): on the 0->1 edge the next fogged frame reads back the fog pass input, output and raw depth over a windscreen-centred region and logs per-cell depth vs expected fog factor vs actual color shift, with a verdict separating residual depth pollution from a weak density curve from a Metal pass/compositing failure. Verdict also rides on the F10 "Fog depth" line. The single armed frame stalls on a readback fence; zero cost while off. Toggle off and on to re-run |
