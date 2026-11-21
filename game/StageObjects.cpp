@@ -11991,8 +11991,26 @@ void CarLight_UpdateFlagsAndGlows(Car *pCar)
                 } else {
                     worldPos = glow->pos;
                 }
-                LightField_Add(&worldPos, &worldDir, glowIntensity * 2 > 0x10000 ? 0x10000 : glowIntensity * 2,
-                               colour.x, colour.y, colour.z, pPoint->type == 8 ? 1 : 0);   // type 8 = front headlight in the Subaru CIN (lamps 10-11 of 13)
+                int fogIntensity = glowIntensity * 2 > 0x10000 ? 0x10000 : glowIntensity * 2;
+                int tailLength = 0;
+                FixVector tailDir = { 0, 0, 0 };
+                int tailScale = 0;
+                if (pPoint->slot == 0) {   // slot 0 is the red rear lamp (colour above): not a headlight, see LightField_TailBeam
+                    FixVector offset = { worldPos.x - pCar->position.x, worldPos.y - pCar->position.y, worldPos.z - pCar->position.z };
+                    float tailFloat;
+                    bool rear = LightField_IsRearLamp(&offset, &worldDir, &pCar->right);
+                    if (Sys_GetOption("video.tail_light_debug", 0) != 0)
+                        Sys_Log("tail light: car %d lamp %d slot 0 type %d along-heading %.2f dir-dot %.2f -> %s", LIGHT_CAR, lightIndex, (int)pPoint->type,
+                                ((double)offset.x * pCar->right.x + (double)offset.y * pCar->right.y + (double)offset.z * pCar->right.z) / 4294967296.0,
+                                ((double)worldDir.x * pCar->right.x + (double)worldDir.y * pCar->right.y + (double)worldDir.z * pCar->right.z) / 4294967296.0,
+                                rear ? "tail beam" : "not a rear lamp, original beam");
+                    if (rear && LightField_TailBeam(&worldDir, &offset, Sys_GetOption("video.tail_light_beam", 100), &tailDir, &tailLength, &tailFloat))
+                        tailScale = (int)(tailFloat * 65536.f);   // fog-only: worldDir and fogIntensity stay the real lamp values for motes and glints
+                    else
+                        tailDir = { 0, 0, 0 };
+                }
+                LightField_Add(&worldPos, &worldDir, fogIntensity,
+                               colour.x, colour.y, colour.z, pPoint->type == 8 ? 1 : 0, tailLength, &tailDir, tailScale);   // type 8 = front headlight in the Subaru CIN (lamps 10-11 of 13)
             }
             FixVecScale(&colour, &colour, glowIntensity);
             Glow_NoOpEntryCallback((BYTE)(INT_PTR)glow, (BYTE)colour.x, colour.y, colour.z);

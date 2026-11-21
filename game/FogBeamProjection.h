@@ -34,8 +34,9 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
         // to zero (tiny vectors) fall back to no beam; FixVecLength /
         // FixVecScaleRecip use 64-bit intermediates. The classic glow path
         // keeps its own convention and is untouched.
-        FixVector dirN = src->dir;
-        bool hasBeam = src->dir.x != 0 || src->dir.y != 0 || src->dir.z != 0;
+        const bool tail = src->fogDir.x != 0 || src->fogDir.y != 0 || src->fogDir.z != 0;   // tail lamp: fog-only short beam (LightField_TailBeam)
+        FixVector dirN = tail ? src->fogDir : src->dir;
+        bool hasBeam = dirN.x != 0 || dirN.y != 0 || dirN.z != 0;
         if (hasBeam) {
             int dl = FixVecLength(&dirN);
             if (dl <= 0) { hasBeam = false; dirN.x = dirN.y = dirN.z = 0; }
@@ -45,9 +46,10 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
         // beam. Off-screen lamps stay: their wedge can still cross the frame
         // (the cockpit's own lamps sit below the windscreen line).
         FixVector beamEnd;
-        beamEnd.x = src->pos.x + FixMul(dirN.x, 0x1e0000);
-        beamEnd.y = src->pos.y + FixMul(dirN.y, 0x1e0000);
-        beamEnd.z = src->pos.z + FixMul(dirN.z, 0x1e0000);
+        const int run = src->beamLength > 0 ? src->beamLength : 0x1e0000;   // tail lamps carry a short run (LightField_TailBeam)
+        beamEnd.x = src->pos.x + FixMul(dirN.x, run);
+        beamEnd.y = src->pos.y + FixMul(dirN.y, run);
+        beamEnd.z = src->pos.z + FixMul(dirN.z, run);
         FixVector endView = {0, 0, 0};
         if (hasBeam)
             FixMatrix_TransformPoint(&endView, &beamEnd, &invView);
@@ -144,8 +146,9 @@ inline int FogBeam_ProjectLights(GfxFogLight *fogLights, int maxLights, SceneNod
             fl->beamEndRef = (d > 1.0f ? 1.0f : (d < 0.0f ? 0.0f : d)); }
         // Lamp at/behind the near plane (bonnet, bumper, car-mounted cameras): the anchor is the beam's near-plane crossing, which showed as two
         // bright spots beside the camera. Fade the wedge in over a third of the screen height from there.
-        fl->startRamp = lampIn ? 0.0f : 0.33f;
-        fl->intensity = src->intensity / 65536.0f;
+        // startRamp < 0 marks a bounded tail beam: the shader fades it out at its own projected end (fog.frag).
+        fl->startRamp = lampIn ? (tail && hasBeam ? -1.0f : 0.0f) : 0.33f;
+        fl->intensity = src->intensity / 65536.0f * (src->fogScale > 0 ? src->fogScale / 65536.0f : 1.0f);
         fl->r = src->r / 65536.0f;
         fl->g = src->g / 65536.0f;
         fl->b = src->b / 65536.0f;

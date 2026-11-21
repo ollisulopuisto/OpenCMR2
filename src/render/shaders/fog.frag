@@ -166,6 +166,8 @@ void main()
                 // Lamp at/behind the near plane: the anchor is where the beam crosses the plane, not a lamp the player can see. Fade the wedge
                 // in over lights[i].w so no bright spot sits next to the camera; the lit air farther along the beam is unchanged.
                 if (lights[i].w > 0.0) axial *= smoothstep(0.0, lights[i].w, a);
+                // Bounded tail beam (lights[i].w < 0): a short rear-lamp glow that must end at its projected end, not keep tinting the scene beyond it.
+                if (lights[i].w < 0.0) axial *= 1.0 - smoothstep(0.7, 1.0, a / blen);
                 // Energy-conserving thinning: a beam clipped at the near
                 // plane spears close past the camera and perspective spreads
                 // it over a large screen area (the 2026-11-01 rear-wash /
