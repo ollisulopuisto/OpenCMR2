@@ -21,6 +21,9 @@ All notable changes to OpenCMR2 are documented here.
   two lamps make a wide glow close behind the car. `--tail-light-beam 0..300` (default
   100, 0 restores the old beam), `video.tail_light_beam`, tuning panel row. Lens flare
   for tail lamps seen from behind is not part of this change.
+- Shadow edges: the shadow-map filter is now a 12-tap rotated disk with a 1.5 texel
+  floor instead of a 5-tap cross, so the hard stair-stepped shadow border on the car
+  body and rear window softens into fine noise. Native look not measured.
 - Finland1 forest strips gain a route-aware hedge body: a back card, stepped
   contour cap and closed ends, extruded away from the road. Opt-in through all-mods or `--strip-hedge 1`, with
   verified uprez textures; `--strip-hedge 0` keeps the previous shallow relief.
