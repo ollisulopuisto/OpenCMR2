@@ -10,9 +10,8 @@
 
 namespace WindshieldCrackPane {
 
-// Native selectors 0/3/5 mean intact/damaged/broken. Never manufacture damage
-// from a previous viewport update while the live exterior still uses intact.
-// Per-view diagnostic aggregation. Later intact groups must not erase a draw.
+// Per-car diagnostic aggregation for the latest cockpit draw. Later intact
+// groups in that draw must not erase success. Mirrors do not call this path.
 struct Status {
     int drawn = 0;
     const char *reason = "overlay: no live damaged exterior glass";
@@ -22,6 +21,8 @@ struct Status {
     }
 };
 
+// Native selectors 0/3/5 mean intact/damaged/broken. Never manufacture damage
+// from a previous viewport update while the live exterior still uses intact.
 inline int DamageSelector(int live)
 {
     return live == 3 || live == 5 ? live : -1;
