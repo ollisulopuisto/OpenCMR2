@@ -321,7 +321,7 @@ inline const char *EnhancementHelp(){return
 "  --tire-debris 0..400  Optional stronger wheel debris: average chips per wheel per effects step x100 on loose or wet ground above 10 km/h (default 0 = original; visual only, max 4 per wheel step)\n"
 "  --fov-dolly-curve 0|1  Experimental: 1 spreads the chase dolly (same 1.0 to 0.70 limits) linearly over widening 1.0 to 2.0 instead of reaching 0.70 at about x1.3 (default 0 = current curve; visual only)\n"
 "  --cockpit-eye-shift -100..100  Cockpit camera: move the eye along its forward axis as the view widens (default 0 = off; sign tuned natively; visual only)\n"
-"  --fog-amount 0..200         Atmosphere fog density percent (needs --effect fog=on or video.fog; default 65; 100 = heavy)\n"
+"  --fog-amount 0..200         Atmosphere fog density percent (needs --effect fog=on or video.fog; default 20; 100 = heavy)\n"
 "  --fog-glow 0..100           Sun-ward brightening of the fog, percent (default 60)\n"
 "  --air-motes-amount 0..300   Floating dust motes percent (needs --effect air_motes=on; default 100; live cap 48 at 100)\n"
 "  --fog-lights 0..200         Fog brightening inside head/rear light beams, percent (default 100)\n"

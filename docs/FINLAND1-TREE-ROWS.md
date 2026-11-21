@@ -28,7 +28,7 @@ Use the manual scenery-pack route, not automatic `--trees` or `--spectators` pre
 ./build/macos/src/opencmr2 --data "/path/to/owned/game-data" \
   --scenery-dir "/path/outside/game-data/finland-tree-rows" \
   --textures uprez --tree-rows 1 \
-  --cockpit-extend-rear 80 --cockpit-door-extend 40 --fog-amount 60
+  --cockpit-extend-rear 80 --cockpit-door-extend 40 --fog-amount 20
 ```
 
 For A/B, repeat the same replay/view/options with only `--tree-rows 0` changed. Default is 0; all-mods does not silently enable this pack. The rebuild script passes the binary switch through, but does not generate the private row pack. Look at front, oblique and side views of supported strips, both directions of the stage, and changing light/fog. Measure FPS/frame time and process memory with the same replay and camera, not different driving runs. Check visual trunks against existing collision separately; unchanged collision does not mean the new visible trunks are aligned with it.

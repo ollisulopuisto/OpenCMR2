@@ -51,7 +51,7 @@
 #                               Dim the windshield dirt film to half strength on cracked (state 1) glass (default 0)
 #                               front-glass triangles with the damaged/broken texture, depth tested against the dash. Native look unverified
 #   --fog-amount N / --fog-glow N / --air-motes-amount N / --snow-glint N / --snow-material N
-#                               Other atmosphere dials (docs/ATMOSPHERE.md), also launch-only passthrough
+#                               Other atmosphere dials (docs/ATMOSPHERE.md), also launch-only passthrough; fog amount default 20 (saved/explicit values and atmosphere preset override)
 #   --export-brush-placement    Read-only export of Greece1 roadside wall placement vs the stage route to a NEW JSON
 #                               (numbers only; needs --data). Standalone: no build, no launch, no pack, and it does
 #                               NOT enable video.brush_volume or any extrusion (needs the temp.sht exporter fix, PR #296, to read real archives). Stops with a reason if the checks fail.

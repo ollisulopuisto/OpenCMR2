@@ -18,6 +18,8 @@ void write(fs::path p,std::string s){fs::create_directories(p.parent_path());std
 std::string read(fs::path p){std::ifstream f(p);return std::string(std::istreambuf_iterator<char>(f),{});}
 int main(){
  EnhancementOptions e;std::string error;
+ CHECK(Sys_GetOption("video.fog_amount",65)==20); // real settings path, no INI or CLI
+
  {EnhancementOptions hedge;std::string e2;auto run=[&](std::string value){std::string a[]={"test","--strip-hedge",value};char*av[]={a[0].data(),a[1].data(),a[2].data()};int i=1;e2.clear();return hedge.Consume(i,3,av,e2);};
  CHECK(run("1")&&e2.empty()&&hedge.overrides["video.strip_hedge"]==1);
  CHECK(run("0")&&e2.empty()&&hedge.overrides["video.strip_hedge"]==0);
@@ -120,6 +122,14 @@ CHECK(run({"t","--camera-move-chase","-60"})&&e2.empty()&&t.overrides["video.cam
  // Starting without flags resets transient overrides, not the persisted profile.
  SDL_SetEnvironmentVariable(SDL_GetEnvironment(),"SDL_VIDEODRIVER","dummy",true);
  CHECK(Platform_Init(5,av));CHECK(Sys_GetOption("video.tree_overrides",1)==1);Platform_Shutdown();
+ // Fog defaults and overrides pass through the actual startup/settings path.
+ SDL_SetEnvironmentVariable(SDL_GetEnvironment(),"SDL_VIDEODRIVER","dummy",true);CHECK(Platform_Init(5,av));CHECK(Sys_GetOption("video.fog_amount",65)==20);Platform_Shutdown();
+ write(user/"opencmr2.ini",ini+"fog_amount=37\n");
+ SDL_SetEnvironmentVariable(SDL_GetEnvironment(),"SDL_VIDEODRIVER","dummy",true);CHECK(Platform_Init(5,av));CHECK(Sys_GetOption("video.fog_amount",65)==37);Platform_Shutdown();
+ std::string fogArgs[]={"test","--data",game.string(),"--user-dir",user.string(),"--fog-amount","20","--test-preset","atmosphere"};
+ char* fv[9];for(int j=0;j<9;j++)fv[j]=fogArgs[j].data();
+ SDL_SetEnvironmentVariable(SDL_GetEnvironment(),"SDL_VIDEODRIVER","dummy",true);CHECK(Platform_Init(9,fv));CHECK(Sys_GetOption("video.fog_amount",65)==20);Platform_Shutdown();
+ CHECK(read(user/"opencmr2.ini")==ini+"fog_amount=37\n");write(user/"opencmr2.ini",ini);
  // Same startup reader the actual GPU constructor uses, not a log-only check.
  std::string aa[]={"test","--data",game.string(),"--user-dir",user.string(),"--effect=spatial_aa=on","--effect","metalfx_spatial=on"};
  char* aaArgs[8];for(int j=0;j<8;j++)aaArgs[j]=aa[j].data();

@@ -64,7 +64,7 @@ All settings are [video] options, off unless enabled:
 | Setting | Range | Default | Meaning |
 | --- | --- | --- | --- |
 | video.fog | 0/1 | 0 | fog pass |
-| video.fog_amount | 0..200 | 65 | density; default 65 (100 is the heavy look) (23 units ~50 percent fog, 60 ~84, 150 ~99) |
+| video.fog_amount | 0..200 | 20 | density; default 20 (100 is the heavy look) (23 units ~50 percent fog, 60 ~84, 150 ~99) |
 | video.fog_glow | 0..100 | 60 | sun-ward glow strength |
 | video.fog_clear | 0..200 | 0 | near-field clear distance in world units: fog ramps from none at the camera to the full curve at this distance, so the road ahead stays readable while distant haze keeps its density. Global in every direction, not a road-only mask |
 | video.fog_probe | 0/1 | 0 | one-shot diagnostic (SDL_GPU only): on the 0->1 edge the next fogged frame reads back the fog pass input, output and raw depth over a windscreen-centred region and logs per-cell depth vs expected fog factor vs actual color shift, with a verdict separating residual depth pollution from a weak density curve from a Metal pass/compositing failure. Verdict also rides on the F10 "Fog depth" line. The single armed frame stalls on a readback fence; zero cost while off. Toggle off and on to re-run |
@@ -78,7 +78,7 @@ CLI: `--effect fog --fog-amount 100 --fog-glow 60 --fog-clear 60 --fog-cull 1
 --fog-spatial 1 --fog-evolve -40 --effect air_motes --air-motes-amount 100`
 (--fog-evolve is signed on the command line: negative clears toward the finish,
 positive thickens; stored as 0..200 with 100 neutral). The exaggerated starting look is one
-command: `--test-preset atmosphere` (fog 100/100 + motes 500 + god rays at
+command: `--test-preset atmosphere` (fog 65/100 + motes 500 + god rays at
 80, per launch, nothing saved; explicit flags win, e.g. `--fog-amount 40`).
 God rays are the occlusion-masked light shafts: geometry between the camera
 and the sun blocks the shaft, so beams read as cutting through the fog. It is deliberately
@@ -154,3 +154,5 @@ covered by tests/fog_math.cpp.
 Not proven here: native Mac pixels and frame time, mote appearance in a real
 stage, fog interaction with real skybox/weather depths, Metal MSL output beyond
 compilation. Those need on-device driving, then dial the amounts down to taste.
+
+Fog amount defaults to 20 when neither a saved `video.fog_amount` nor a launch override supplies it. Saved INI values are preserved. `--test-preset atmosphere` deliberately overrides it to 65; `overdo` and plain `--all-mods` do not set fog amount. An explicit `--fog-amount N` wins over both saved values and presets. Remove older explicit `--fog-amount 60` from launch commands, or change it to 20, to use the new look.
