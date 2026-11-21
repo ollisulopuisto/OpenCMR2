@@ -532,6 +532,8 @@ add_executable(scenery_pack_runtime_test scenery_pack_runtime.cpp
 target_include_directories(scenery_pack_runtime_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/src/port/compat)
 target_compile_options(scenery_pack_runtime_test PRIVATE "SHELL:-include ${PROJECT_SOURCE_DIR}/src/port/types.h" -fms-extensions)
 target_link_libraries(scenery_pack_runtime_test PRIVATE SDL3::SDL3)
+target_compile_definitions(scenery_pack_runtime_test PRIVATE OPENCMR2_FIXED_STRIP_SOURCE_HEADER="../tests/fixtures/fixed-strip-synthetic.inc")
+add_test(NAME scenery_strip_integration COMMAND scenery_pack_runtime_test ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/scenery-pack fixed)
 add_test(NAME scenery_pack_runtime COMMAND scenery_pack_runtime_test ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/scenery-pack)
 add_test(NAME cap_loader_integration COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/cap_loader_integration.py $<TARGET_FILE:scenery_pack_format_test> WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 add_executable(driver_names_test driver_names.cpp)
@@ -798,6 +800,10 @@ if(Python3_Interpreter_FOUND)
  add_test(NAME asset_upgrade_wiring COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/asset_upgrade_wiring.py)
 endif()
 
+add_executable(strip_hedge_test strip_hedge.cpp)
+target_include_directories(strip_hedge_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src)
+add_test(NAME strip_hedge COMMAND strip_hedge_test)
+
 add_executable(fixed_strip_test fixed_strip.cpp)
 target_include_directories(fixed_strip_test PRIVATE ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/src)
 add_test(NAME fixed_strip COMMAND fixed_strip_test)
@@ -880,5 +886,5 @@ target_include_directories(tree_row_fit_test PRIVATE ${PROJECT_SOURCE_DIR}/game 
 add_test(NAME tree_row_fit COMMAND tree_row_fit_test)
 add_test(NAME tree_row_converter COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tools/scenery-patch/test_tree_rows.py)
 
-target_compile_definitions(scenery_pack_runtime_test PRIVATE OPENCMR2_FIXED_STRIP_SOURCE_HEADER="../tests/fixtures/fixed-strip-synthetic.inc")
+
 add_test(NAME tree_row_runtime COMMAND scenery_pack_runtime_test ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/scenery-pack rows)

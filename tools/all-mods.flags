@@ -77,3 +77,7 @@ speed_lines=off
 # (no interior glass part) never show windshield damage.
 --windshield-crack-overlay
 1
+
+# Finland1 forest-strip hedge body (0 keeps the previous shallow relief).
+--strip-hedge
+1

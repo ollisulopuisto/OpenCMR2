@@ -6,6 +6,10 @@ All notable changes to OpenCMR2 are documented here.
 
 - Experimental Finland forest-row replacement: opt-in private five-tree trunk/crown packs for two reviewed strip sources, with exact source/geometry gates, away-from-route fitting and behavioural tests. Hand reconstruction, not automatic segmentation; native appearance, FPS and collision fit are unverified. See docs/FINLAND1-TREE-ROWS.md.
 ### Added
+- Finland1 forest strips gain a route-aware hedge body: a back card, stepped
+  contour cap and closed ends, extruded away from the road. Opt-in through all-mods or `--strip-hedge 1`, with
+  verified uprez textures; `--strip-hedge 0` keeps the previous shallow relief.
+  Source data and collision are unchanged. Native look and FPS not measured.
 - Cockpit view: the car's exterior window glass no longer writes depth while a
   cockpit camera is active (`video.cockpit_glass_fog`, default on). The glass
   distance used to fill the depth buffer across the whole windscreen, so the

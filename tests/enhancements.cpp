@@ -18,6 +18,11 @@ void write(fs::path p,std::string s){fs::create_directories(p.parent_path());std
 std::string read(fs::path p){std::ifstream f(p);return std::string(std::istreambuf_iterator<char>(f),{});}
 int main(){
  EnhancementOptions e;std::string error;
+ {EnhancementOptions hedge;std::string e2;auto run=[&](std::string value){std::string a[]={"test","--strip-hedge",value};char*av[]={a[0].data(),a[1].data(),a[2].data()};int i=1;e2.clear();return hedge.Consume(i,3,av,e2);};
+ CHECK(run("1")&&e2.empty()&&hedge.overrides["video.strip_hedge"]==1);
+ CHECK(run("0")&&e2.empty()&&hedge.overrides["video.strip_hedge"]==0);
+ CHECK(run("2")&&!e2.empty());CHECK(run("x")&&!e2.empty());}
+
  {EnhancementOptions pack;char a0[]="test",a1[]="--asset-upgrades";char*av[]={a0,a1};int i=1;CHECK(pack.Consume(i,2,av,error)&&error.empty());pack.Apply();CHECK(pack.trees=="shell"&&pack.treeCoverage=="all"&&pack.spectators=="animated"&&pack.textures=="uprez"&&pack.roads=="finland1"&&pack.overrides["video.texture_uprez"]==1);}
 
  {EnhancementOptions road;std::string a[]={"test","--roads","curved"};char*av[]={a[0].data(),a[1].data(),a[2].data()};int k=1;CHECK(road.Consume(k,3,av,error)&&error.empty()&&road.roads=="curved"&&!road.NeedsPack());road.Apply();CHECK(road.overrides.empty());a[2]="original";av[2]=a[2].data();k=1;CHECK(road.Consume(k,3,av,error)&&error.empty()&&road.roads=="original");a[2]="bad";av[2]=a[2].data();k=1;CHECK(road.Consume(k,3,av,error)&&!error.empty());error.clear();}
