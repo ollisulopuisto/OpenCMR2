@@ -48,6 +48,22 @@ assert np.array_equal(on[16:48,16:48],off[16:48,16:48]), 'clear region darkened:
 ratio=on[80:112,16:48,:3].astype(float)/off[80:112,16:48,:3]
 assert np.all((ratio>.53)&(ratio<.57)), 'occluded region missing or crushed to black'
 assert np.array_equal(on[:,:,3],off[:,:,3]), 'shadow changed alpha'
+# Edge pixels: vertical occluder edge at shadow texel x=32 (screen pixel x=64). Dark on the left, lit on the
+# right, a partial band at the edge, and a band that widens with the softness setting (shadowParams.z).
+edge=np.ones((64,64),dtype='f4');edge[:,:32]=.3
+shadow.write(edge.tobytes())
+def band(z):
+    f[-6]=z;f[-7]=1;ubo.write(u.tobytes());vao.render(vertices=3)
+    img=np.frombuffer(fb.read(components=4),dtype='u1').reshape(128,128,4)[:,:,:3].astype(float)
+    f[-7]=0;ubo.write(u.tobytes());vao.render(vertices=3)
+    base=np.frombuffer(fb.read(components=4),dtype='u1').reshape(128,128,4)[:,:,:3].astype(float)
+    r=(img/np.maximum(base,1))[:,:,1]
+    assert np.all((r[:,40:52]>.53)&(r[:,40:52]<.57)), 'deep shadow side not dark'
+    assert np.all(r[:,76:88]>.99), 'lit side darkened'
+    return int(np.sum((r[:,48:80]>.57)&(r[:,48:80]<.99)))
+widths=[band(z) for z in (0.0,1.0,4.0)]
+assert widths[0]>0, 'no penumbra at 0% softness'
+assert widths[0]<widths[1]<widths[2], 'penumbra does not widen with softness: %s'%widths
 if args.output:
     image=Image.new('RGB',(512,300),'#202329');draw=ImageDraw.Draw(image)
     for i,(label,pixels) in enumerate([('OFF',off),('ON: AMBIENT RETAINED',on)]):

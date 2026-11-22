@@ -261,14 +261,19 @@ void main()
             float bias = shadowParams.x;
             float vis = 1.0;
             if (l.x >= 0.0 && l.x <= 1.0 && l.y >= 0.0 && l.y <= 1.0 && l.z >= 0.0 && l.z <= 1.0) {
-                vec2 ts = max(shadowParams.z, 0.0) / vec2(textureSize(shadowMap, 0));
-                float pcf = 0.0;
-                pcf += (l.z - bias) <= texture(shadowMap, l.xy + vec2(-ts.x, 0.0)).r ? 1.0 : 0.0;
-                pcf += (l.z - bias) <= texture(shadowMap, l.xy + vec2( ts.x, 0.0)).r ? 1.0 : 0.0;
-                pcf += (l.z - bias) <= texture(shadowMap, l.xy + vec2(0.0, -ts.y)).r ? 1.0 : 0.0;
-                pcf += (l.z - bias) <= texture(shadowMap, l.xy + vec2(0.0,  ts.y)).r ? 1.0 : 0.0;
-                float center = (l.z - bias) <= texture(shadowMap, l.xy).r ? 1.0 : 0.0;
-                vis = (center + pcf) / 5.0;
+                // Rotated golden-angle (Vogel) disk, mirrored by Shadow_FilterTap in
+                // src/render/shadow_filter.h. The old 5-tap cross left stair-steps on
+                // the car silhouette; a per-pixel rotation turns them into soft noise.
+                float radius = (0.5 + max(shadowParams.z, 0.0)) / float(textureSize(shadowMap, 0).x);   // Shadow_FilterRadius
+                float rot = 6.2831853 * fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
+                float lit = 0.0;
+                for (int i = 0; i < 12; i++) {
+                    float tapR = sqrt((float(i) + 0.5) / 12.0);
+                    float tapA = float(i) * 2.39996323 + rot;
+                    vec2 o = vec2(cos(tapA), sin(tapA)) * tapR * radius;
+                    lit += (l.z - bias) <= texture(shadowMap, l.xy + o).r ? 1.0 : 0.0;
+                }
+                vis = lit / 12.0;
             }
             // Preserve ambient/base detail rather than crushing shadows to black.
             current.rgb *= mix(0.55, 1.0, vis);
